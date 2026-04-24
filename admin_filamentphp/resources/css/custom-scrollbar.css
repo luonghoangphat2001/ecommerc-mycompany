@@ -1,0 +1,41 @@
+/* Custom Scrollbar for Filament Admin */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.fi-sidebar-nav::-webkit-scrollbar,
+.fi-main-ctn::-webkit-scrollbar,
+.fi-ta-content::-webkit-scrollbar,
+.fi-ta-table-ctn::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar-track,
+.fi-main-ctn::-webkit-scrollbar-track,
+.fi-ta-content::-webkit-scrollbar-track,
+.fi-ta-table-ctn::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar-thumb,
+.fi-main-ctn::-webkit-scrollbar-thumb,
+.fi-ta-content::-webkit-scrollbar-thumb,
+.fi-ta-table-ctn::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 8px;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar-thumb:hover,
+.fi-main-ctn::-webkit-scrollbar-thumb:hover,
+.fi-ta-content::-webkit-scrollbar-thumb:hover,
+.fi-ta-table-ctn::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Firefox */
+.fi-sidebar-nav,
+.fi-main-ctn,
+.fi-ta-content,
+.fi-ta-table-ctn {
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 transparent;
+}

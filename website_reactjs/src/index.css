@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+}
+
+@layer utilities {
+  /* Simple glassmorphism class */
+  .glass {
+    @apply bg-white/70 backdrop-blur-md shadow-sm border border-white/20 rounded-xl;
+  }
+  
+  /* Simple subtle shadow to simulate floating */
+  .floating-shadow {
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+  }
+  
+  /* Minimal hover effect to pull card up */
+  .hover-float {
+    @apply transition-transform duration-300 ease-out hover:-translate-y-1;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "my-ecommerce-root",
+  "private": true,
+  "scripts": {
+    "frontend": "cd website_reactjs && npm start",
+    "backend": "cd admin_filamentphp && php artisan serve",
+    "backend:dev": "cd admin_filamentphp && npm run dev"
+  }
+}

@@ -1,0 +1,33 @@
+# General
+.DS_Store
+.agent
+.agent/
+.vscode/
+.idea/
+*.log
+
+# Backend (admin_filamentphp)
+admin_filamentphp/node_modules/
+admin_filamentphp/public/hot
+admin_filamentphp/public/build
+admin_filamentphp/public/storage
+admin_filamentphp/storage/*.key
+admin_filamentphp/vendor/
+admin_filamentphp/.env
+admin_filamentphp/.env.backup
+admin_filamentphp/.phpunit.result.cache
+admin_filamentphp/docker-compose.override.yml
+admin_filamentphp/Homestead.json
+admin_filamentphp/Homestead.yaml
+
+# Frontend (website_reactjs)
+website_reactjs/node_modules/
+website_reactjs/.pnp
+website_reactjs/.pnp.js
+website_reactjs/coverage/
+website_reactjs/build/
+website_reactjs/.env
+website_reactjs/.env.local
+website_reactjs/.env.development.local
+website_reactjs/.env.test.local
+website_reactjs/.env.production.local
