@@ -282,9 +282,9 @@ class OrderService implements OrderServiceInterface
     /**
      * @inheritDoc
      */
-    public function paginateFiltered(int $perPage = 15): \Illuminate\Pagination\LengthAwarePaginator
+    public function paginateFiltered(int $perPage = 15, ?int $userId = null): \Illuminate\Pagination\LengthAwarePaginator
     {
-        return $this->orderRepository->paginateFiltered($perPage);
+        return $this->orderRepository->paginateFiltered($perPage, $userId);
     }
 
     /**

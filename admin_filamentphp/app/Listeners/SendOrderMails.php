@@ -7,6 +7,7 @@ use App\Mail\OrderAdminMail;
 use App\Mail\OrderCustomerMail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendOrderMails implements ShouldQueue
@@ -25,13 +26,21 @@ class SendOrderMails implements ShouldQueue
     {
         $order = $event->order;
 
-        // Send mail to customer
-        if ($order->email) {
-            Mail::to($order->email)->send(new OrderCustomerMail($order));
-        }
+        try {
+            // Send mail to customer
+            $customerEmail = $order->shippingAddress?->email;
+            if ($customerEmail) {
+                Mail::to($customerEmail)->send(new OrderCustomerMail($order));
+            }
 
-        // Send notification to admin
-        Mail::to(config('mail.from.address'))
-            ->send(new OrderAdminMail($order));
+            // Send notification to admin
+            $adminEmail = config('mail.from.address') ?: config('mail.admin.address', 'admin@example.com');
+            if ($adminEmail) {
+                Mail::to($adminEmail)->send(new OrderAdminMail($order));
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail the order creation
+            Log::error('Failed to send order email: ' . $e->getMessage());
+        }
     }
 }

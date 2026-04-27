@@ -1,59 +1,54 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCircle2 } from 'lucide-react';
+import React, { useMemo } from 'react';
 import useCartStore from '../features/cart/store/useCartStore';
 import useAuthStore from '../features/auth/store/useAuthStore';
+import useSettingsStore from '../store/useSettingsStore';
 import useCheckoutForm from '../features/checkout/hooks/useCheckoutForm';
 import CheckoutForm from '../features/checkout/components/CheckoutForm';
 import OrderSummary from '../features/checkout/components/OrderSummary';
 
 const CheckoutPage = () => {
-  const navigate = useNavigate();
   const { items, getCartTotal, clearCart } = useCartStore();
   const { user } = useAuthStore();
+  const t = useSettingsStore((state) => state.t);
+  const getSetting = useSettingsStore((state) => state.getSetting);
+  
+  // Get shipping methods first for both form and summary
+  const shippingMethods = getSetting('checkout.shipping_methods') || [];
   
   const { 
     formData, 
     isSubmitting, 
-    isSuccess, 
     handleSubmit, 
-    handleInputChange 
+    handleInputChange,
+    handlePaymentChange,
+    handleShippingChange,
+    handleBillingToggle
   } = useCheckoutForm(user, clearCart);
 
-  if (isSuccess) {
-    return (
-      <div className="w-full py-20 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-500">
-        <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center text-green-500 mb-6 shadow-xl shadow-green-100">
-          <CheckCircle2 size={48} />
-        </div>
-        <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Đặt hàng thành công!</h2>
-        <p className="text-slate-500 mb-10 max-w-sm mx-auto">
-          Cảm ơn bạn đã tin dùng NovaStore. Mã đơn hàng của bạn là #NS-9923. Chúng tôi sẽ sớm liên hệ xác nhận.
-        </p>
-        <button 
-          onClick={() => navigate('/')}
-          className="bg-slate-900 text-white font-bold px-10 py-4 rounded-2xl hover:bg-blue-600 transition-all shadow-xl shadow-slate-200"
-        >
-          Quay về trang chủ
-        </button>
-      </div>
-    );
-  }
+  const shippingCost = useMemo(() => {
+    const selected = shippingMethods.find(m => String(m.id) === String(formData.shippingMethod));
+    return selected?.settings?.cost || 0;
+  }, [shippingMethods, formData.shippingMethod]);
 
   return (
     <div className="w-full max-w-6xl mx-auto">
-      <h1 className="text-3xl font-black text-slate-900 mb-10 tracking-tight">Thanh Toán</h1>
+      <h1 className="text-3xl font-black text-slate-900 mb-10 tracking-tight">{t('checkout.shipping_info')}</h1>
+
       
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <CheckoutForm 
           formData={formData} 
-          onInputChange={handleInputChange} 
+          onInputChange={handleInputChange}
+          onPaymentChange={handlePaymentChange}
+          onShippingChange={handleShippingChange}
+          onBillingToggle={handleBillingToggle}
           isSubmitting={isSubmitting} 
         />
         
         <OrderSummary 
           items={items} 
           total={getCartTotal()} 
+          shippingCost={shippingCost}
           isSubmitting={isSubmitting} 
         />
       </form>

@@ -15,6 +15,7 @@ class OrderResource extends BaseResource
             'currency' => $this->currency,
             'subtotal' => $this->subtotal,
             'tax_amount' => $this->tax_amount,
+            'shipping_cost' => $this->shipping_cost,
             'total' => $this->total,
             'shipping_address' => new OrderAddressResource($this->whenLoaded('shippingAddress')),
             'billing_address' => new OrderAddressResource($this->whenLoaded('billingAddress')),

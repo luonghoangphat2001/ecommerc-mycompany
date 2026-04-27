@@ -15,6 +15,8 @@ class GeneralSettings extends Settings
     public int $decimal_places;
     public string $weight_unit;
     public string $dimension_unit;
+    public ?string $logo;
+    public ?string $favicon;
     public static function group(): string
     {
         return 'general';

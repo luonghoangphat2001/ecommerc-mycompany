@@ -559,7 +559,8 @@ return [
         'unauthorized' => 'Unauthorized',
         'forbidden' => 'Forbidden',
         'not_found' => 'Resource not found',
-        'validation_error' => 'Validation Error',
+        'validation_error' => 'Data validation error',
+        'price_mismatch' => 'Product price has changed. Please refresh your cart.',
     ],
 
     'logs' => [

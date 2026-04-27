@@ -35,7 +35,10 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $orders = $this->orderService->paginateFiltered($request->get('per_page', 15));
+        $orders = $this->orderService->paginateFiltered(
+            $request->get('per_page', 15),
+            $request->user()?->id
+        );
 
         $meta = [
             'filters' => [

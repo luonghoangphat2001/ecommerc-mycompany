@@ -1,8 +1,12 @@
 import React from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { formatCurrency } from '../../../utils/format';
+import useSettingsStore from '../../../store/useSettingsStore';
 
 const ProductInfo = ({ product, quantity, onIncrement, onDecrement, onAddToCart, t }) => {
+  const { code, symbol } = useSettingsStore((state) => state.currency);
+  const formatPrice = (amount) => formatCurrency(amount, code, symbol);
+
   return (
     <div className="flex flex-col justify-center">
       {product.is_featured && (
@@ -16,7 +20,7 @@ const ProductInfo = ({ product, quantity, onIncrement, onDecrement, onAddToCart,
       </h1>
       
       <div className="text-3xl font-black text-blue-600 mb-6">
-        {formatCurrency(product.price)}
+        {formatPrice(product.price)}
       </div>
       
       <div className="prose prose-slate text-slate-600 mb-8 leading-relaxed">

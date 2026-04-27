@@ -3,12 +3,13 @@
 namespace App\Services\Address;
 
 use App\Services\Address\Contracts\AddressProviderInterface;
+use App\Services\Address\Contracts\AddressServiceInterface;
 use App\Services\Address\Drivers\VietnamAddressDriver;
 use App\Services\Address\Drivers\FallbackAddressDriver;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 
-class AddressService
+class AddressService implements AddressServiceInterface
 {
     /**
      * Resolve the appropriate driver for a given country.
@@ -53,7 +54,7 @@ class AddressService
                 return \Squire\Models\Country::pluck('name', 'id')->mapWithKeys(fn($v, $k) => [strtolower($k) => $v])->toArray();
             }
             
-            return ['vn' => 'Vietnam'];
+            return ['vn' => trans('address.vietnam') ?? 'Vietnam'];
         });
     }
 

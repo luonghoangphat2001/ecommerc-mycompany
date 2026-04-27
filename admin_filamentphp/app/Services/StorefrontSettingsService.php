@@ -8,6 +8,7 @@ use App\Settings\GeneralSettings;
 use App\Settings\ProductSettings;
 use App\Settings\CheckoutSettings;
 use App\Settings\FooterSettings;
+use App\Models\ShippingMethod;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -62,6 +63,8 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                     'thousand_separator' => $general->thousand_separator,
                     'decimal_separator' => $general->decimal_separator,
                     'decimal_places' => $general->decimal_places,
+                    'logo' => $general->logo ? \Illuminate\Support\Facades\Storage::url($general->logo) : null,
+                    'favicon' => $general->favicon ? \Illuminate\Support\Facades\Storage::url($general->favicon) : null,
                 ],
                 'products' => [
                     'add_to_cart_behavior' => $product->add_to_cart_behavior,
@@ -70,6 +73,13 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                 'checkout' => [
                     'enable_guest_checkout' => $checkout->enable_guest_checkout,
                     'enabled_payment_gateways' => $checkout->enabled_payment_gateways,
+                    'payment_gateways' => $this->getPaymentGatewaysConfig($checkout),
+                    'shipping_methods' => ShippingMethod::where('is_enabled', true)->get()->map(fn($m) => [
+                        'id' => $m->id,
+                        'name' => $m->name,
+                        'type' => $m->type,
+                        'settings' => $m->settings,
+                    ]),
                 ],
                 'footer' => [
                     'copyright' => $footer->copyright,
@@ -77,7 +87,27 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                 ],
                 'languages' => $languages,
                 'translations' => $translations,
+                'countries' => config('countries', []),
             ];
         });
+    }
+
+    private function getPaymentGatewaysConfig($checkout): array
+    {
+        $gateways = [];
+        $enabled = $checkout->enabled_payment_gateways ?? ['cod'];
+
+        foreach ($enabled as $gateway) {
+            $gateways[] = match ($gateway) {
+                'cod' => ['id' => 'cod', 'name' => 'Thanh toán khi nhận hàng (COD)', 'icon' => 'truck'],
+                'stripe' => ['id' => 'stripe', 'name' => 'Thẻ tín dụng / Ghi nợ (Stripe)', 'icon' => 'credit-card', 'public_key' => $checkout->stripe_public_key],
+                'paypal' => ['id' => 'paypal', 'name' => 'PayPal', 'icon' => 'paypal', 'client_id' => $checkout->paypal_client_id, 'mode' => $checkout->paypal_mode],
+                'vnpay' => ['id' => 'vnpay', 'name' => 'VNPay', 'icon' => 'building', 'tmn_code' => $checkout->vnpay_tmn_code],
+                'momo' => ['id' => 'momo', 'name' => 'Ví MoMo', 'icon' => 'wallet', 'partner_code' => $checkout->momo_partner_code],
+                default => ['id' => $gateway, 'name' => ucfirst($gateway), 'icon' => 'credit-card'],
+            };
+        }
+
+        return $gateways;
     }
 }

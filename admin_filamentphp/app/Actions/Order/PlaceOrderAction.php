@@ -36,6 +36,12 @@ class PlaceOrderAction
             foreach ($dto->items as $item) {
                 $product = $this->productRepository->find($item['product_id']);
                 if ($product) {
+                    // 🛡️ Price Integrity Check
+                    if (isset($item['price']) && (float)$item['price'] !== (float)$product->price) {
+                        Log::warning("Price mismatch for product #{$product->id}: Client sent {$item['price']}, DB has {$product->price}");
+                        throw new \Exception(__('admin.api.price_mismatch'));
+                    }
+
                     $itemsForCalc[] = [
                         'product_id' => $product->id,
                         'qty' => $item['qty'],
@@ -47,10 +53,22 @@ class PlaceOrderAction
             }
 
             // 2. Calculate totals using pure service
+            $shippingAddressDTO = new \App\DTOs\Address\AddressDTO(
+                first_name: $dto->shippingAddress['first_name'] ?? '',
+                last_name: $dto->shippingAddress['last_name'] ?? '',
+                phone: $dto->shippingAddress['phone'] ?? '',
+                email: $dto->shippingAddress['email'] ?? '',
+                country_code: $dto->shippingAddress['country'] ?? 'VN',
+                state_id: $dto->shippingAddress['state'] ?? null,
+                city_id: $dto->shippingAddress['city'] ?? null,
+                ward_id: $dto->shippingAddress['region'] ?? null,
+                address_detail: $dto->shippingAddress['street'] ?? '',
+            );
+            
             $calcRequest = new CheckoutRequestDTO(
                 items: $itemsForCalc,
                 shippingMethod: $dto->shippingMethod,
-                shippingAddress: $dto->shippingAddress,
+                shippingAddress: $shippingAddressDTO,
                 couponCode: $dto->couponCode,
                 currency: $dto->currency
             );
@@ -59,18 +77,14 @@ class PlaceOrderAction
 
             // 3. Create Order
             $order = $this->orderRepository->create([
-                'shop_customer_id' => $dto->customerId,
+                'user_id' => $dto->customerId,
                 'number' => 'ORD-' . strtoupper(Str::random(10)),
-                'email' => $dto->email,
-                'phone' => $dto->phone,
                 'subtotal' => $calcResult->subtotal,
                 'tax_amount' => $calcResult->taxTotal,
                 'total' => $calcResult->total,
                 'currency' => $calcResult->currency,
                 'exchange_rate' => $calcResult->exchangeRate,
-                'shipping_method' => $dto->shippingMethod,
-                'notes' => $dto->notes,
-                'status' => 'new',
+                'status' => 'pending',
             ]);
 
             // 4. Create Order Items (Products)
@@ -106,10 +120,36 @@ class PlaceOrderAction
             }
 
             // 6. Create Addresses
-            $order->shippingAddress()->create($dto->shippingAddress);
-            $order->billingAddress()->create($dto->billingAddress);
+            $order->shippingAddress()->create([
+                'type' => 'shipping',
+                'first_name' => $dto->shippingAddress['first_name'] ?? '',
+                'last_name' => $dto->shippingAddress['last_name'] ?? '',
+                'phone' => $dto->shippingAddress['phone'] ?? '',
+                'email' => $dto->shippingAddress['email'] ?? '',
+                'country_code' => $dto->shippingAddress['country'] ?? 'VN',
+                'state_id' => $dto->shippingAddress['state'] ?? null,
+                'city_id' => $dto->shippingAddress['city'] ?? null,
+                'ward_id' => $dto->shippingAddress['region'] ?? null,
+                'address_detail' => $dto->shippingAddress['street'] ?? '',
+            ]);
+            
+            $order->billingAddress()->create([
+                'type' => 'billing',
+                'first_name' => $dto->billingAddress['first_name'] ?? '',
+                'last_name' => $dto->billingAddress['last_name'] ?? '',
+                'phone' => $dto->billingAddress['phone'] ?? '',
+                'email' => $dto->billingAddress['email'] ?? '',
+                'country_code' => $dto->billingAddress['country'] ?? 'VN',
+                'state_id' => $dto->billingAddress['state'] ?? null,
+                'city_id' => $dto->billingAddress['city'] ?? null,
+                'ward_id' => $dto->billingAddress['region'] ?? null,
+                'address_detail' => $dto->billingAddress['street'] ?? '',
+            ]);
 
-            // 7. Dispatch Event
+            // 7. Load relations for event listeners
+            $order->load('shippingAddress', 'billingAddress');
+            
+            // 8. Dispatch Event
             event(new OrderCreated($order));
 
             activity('order')

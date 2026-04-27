@@ -18,5 +18,7 @@ return new class extends SettingsMigration
         $this->migrator->add('general.decimal_places', 0);
         $this->migrator->add('general.weight_unit', 'kg');
         $this->migrator->add('general.dimension_unit', 'cm');
+        $this->migrator->add('general.logo', null);
+        $this->migrator->add('general.favicon', null);
     }
 };

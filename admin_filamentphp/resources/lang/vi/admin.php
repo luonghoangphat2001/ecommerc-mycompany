@@ -568,6 +568,7 @@ return [
         'forbidden' => 'Bị cấm truy cập',
         'not_found' => 'Không tìm thấy tài nguyên',
         'validation_error' => 'Lỗi xác thực dữ liệu',
+        'price_mismatch' => 'Giá sản phẩm đã thay đổi. Vui lòng kiểm tra lại giỏ hàng.',
     ],
 
     'logs' => [

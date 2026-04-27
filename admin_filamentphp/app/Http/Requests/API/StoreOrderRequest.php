@@ -32,6 +32,7 @@ class StoreOrderRequest extends FormRequest
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:shop_products,id',
             'items.*.qty' => 'required|integer|min:1',
+            'items.*.price' => 'nullable|numeric',
             'shipping_method' => 'required|string',
             'payment_method' => 'required|string',
             'currency' => 'nullable|string|size:3',

@@ -76,12 +76,13 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->maxLength(255),
 
                 // Multiselect field for roles
-                Forms\Components\Select::make('role')
+                Forms\Components\Select::make('roles')
                     ->label(trans('admin.common.roles'))
                     ->options(function () {
                         return Shield::getRoles()->pluck('name', 'id')->toArray();
                     })
                     ->relationship('roles', 'name')
+                    ->multiple()
                     ->required(),
 
                 Forms\Components\Section::make('Metadata')

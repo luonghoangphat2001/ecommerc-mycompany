@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PostCategoryController;
@@ -26,6 +27,12 @@ use App\Http\Middleware\CheckTokenExpiration;
 Route::middleware(['api'])->prefix('v1')->group(function () {
     Route::get('storefront-settings', [\App\Http\Controllers\Api\StorefrontSettingsController::class, 'index']);
     Route::post('login', [AuthController::class, 'login']);
+
+    // Address API
+    Route::get('countries', [AddressController::class, 'countries']);
+    Route::get('countries/{countryCode}/states', [AddressController::class, 'states']);
+    Route::get('countries/{countryCode}/states/{stateId}/regions', [AddressController::class, 'regions']);
+    Route::get('countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions', [AddressController::class, 'subRegions']);
 
     Route::get('posts', [PostController::class, 'index']);
     Route::get('posts/{post}', [PostController::class, 'show']);

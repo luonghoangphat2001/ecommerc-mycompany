@@ -100,7 +100,7 @@ interface OrderServiceInterface
      */
     public function hasPendingPayments(Order $order): bool;
 
-    public function paginateFiltered(int $perPage = 15): \Illuminate\Pagination\LengthAwarePaginator;
+    public function paginateFiltered(int $perPage = 15, ?int $userId = null): \Illuminate\Pagination\LengthAwarePaginator;
 
     public function getFullOrder(int|string $id): ?Order;
 

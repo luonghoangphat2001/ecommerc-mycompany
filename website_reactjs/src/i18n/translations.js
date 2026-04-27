@@ -86,6 +86,13 @@ export const translations = {
       order_processing: 'Đang xử lý đơn hàng...',
       success_title: 'Đặt hàng thành công!',
       success_msg: 'Cảm ơn bạn đã mua sắm tại NovaStore. Đơn hàng của bạn đang được xử lý.',
+      order_number: 'Mã đơn hàng',
+      order_status: 'Trạng thái',
+      order_received: 'Đã nhận đơn',
+      continue_shopping: 'Tiếp tục mua sắm',
+      view_orders: 'Xem đơn hàng',
+      cart_empty_error: 'Giỏ hàng của bạn đang trống',
+      generic_error: 'Có lỗi xảy ra trong quá trình đặt hàng. Vui lòng thử lại.',
     }
   },
   en: {
@@ -178,6 +185,13 @@ export const translations = {
       order_processing: 'Processing order...',
       success_title: 'Order Successful!',
       success_msg: 'Thank you for shopping at NovaStore. Your order is being processed.',
+      order_number: 'Order Number',
+      order_status: 'Status',
+      order_received: 'Order Received',
+      continue_shopping: 'Continue Shopping',
+      view_orders: 'View Orders',
+      cart_empty_error: 'Your cart is empty',
+      generic_error: 'An error occurred during checkout. Please try again.',
     }
   }
 };

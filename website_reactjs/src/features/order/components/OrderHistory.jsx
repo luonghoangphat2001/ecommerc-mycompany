@@ -24,8 +24,8 @@ const OrderHistory = ({ orders, onViewOrder }) => {
                                     <Package size={24} />
                                 </div>
                                 <div>
-                                    <p className="font-bold text-slate-900">{order.id}</p>
-                                    <p className="text-xs text-slate-500">{order.date}</p>
+                                    <p className="font-bold text-slate-900">{order.number || order.id}</p>
+                                    <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleDateString('vi-VN')}</p>
                                 </div>
                             </div>
 

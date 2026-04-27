@@ -40,7 +40,7 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
      */
     public function getFullOrder(int|string $id): ?Order
     {
-        return $this->model->with(['items.product', 'shippingAddress', 'billingAddress', 'payments', 'customer'])
+        return $this->model->with(['items.product.media', 'shippingAddress', 'billingAddress', 'payments', 'customer'])
             ->find($id);
     }
 
@@ -93,9 +93,15 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
     /**
      * @inheritDoc
      */
-    public function paginateFiltered(int $perPage = 15): \Illuminate\Pagination\LengthAwarePaginator
+    public function paginateFiltered(int $perPage = 15, ?int $userId = null): \Illuminate\Pagination\LengthAwarePaginator
     {
-        return \Spatie\QueryBuilder\QueryBuilder::for($this->model)
+        $query = $this->model->query();
+        
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+        
+        return \Spatie\QueryBuilder\QueryBuilder::for($query)
             ->allowedFilters([
                 \Spatie\QueryBuilder\AllowedFilter::scope('created_at_between'),
                 'status',

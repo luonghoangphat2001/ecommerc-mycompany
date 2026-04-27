@@ -8,6 +8,8 @@ import { formatCurrency } from '../../../utils/format';
 const ProductCard = ({ product }) => {
   const addToCart = useCartStore((state) => state.addToCart);
   const t = useSettingsStore((state) => state.t);
+  const { code, symbol } = useSettingsStore((state) => state.currency);
+  const formatPrice = (amount) => formatCurrency(amount, code, symbol);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -57,7 +59,7 @@ const ProductCard = ({ product }) => {
         
         <div className="mt-auto flex items-center justify-between pt-4">
           <span className="font-bold text-slate-900">
-            {formatCurrency(product.price)}
+            {formatPrice(product.price)}
           </span>
           
           <button

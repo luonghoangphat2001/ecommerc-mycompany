@@ -3,9 +3,13 @@ import { formatCurrency } from "../../../utils/format"
 import Card from "../../../components/common/Card"
 import useSettingsStore from "../../../store/useSettingsStore"
 
-const OrderSummary = ({ items, total, isSubmitting }) => {
+const OrderSummary = ({ items, total, shippingCost = 0, isSubmitting }) => {
     const t = useSettingsStore(state => state.t);
+    const { code, symbol } = useSettingsStore(state => state.currency);
     const rowClass = "flex justify-between text-slate-500 font-medium";
+
+    const formatPrice = (amount) => formatCurrency(amount, code, symbol);
+    const grandTotal = total + shippingCost;
 
     return (
         <div className="lg:col-span-1">
@@ -19,13 +23,13 @@ const OrderSummary = ({ items, total, isSubmitting }) => {
                         {items.map((item) => (
                             <div key={item.id} className="flex gap-4">
                                 <div className="w-14 h-14 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0">
-                                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                                    <img src={item.image?.url || item.image_url || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80'} alt={item.name} className="w-full h-full object-cover" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-slate-800 truncate">{item.name}</p>
                                     <p className="text-xs text-slate-500">x{item.quantity}</p>
                                 </div>
-                                <p className="text-sm font-bold text-slate-900">{formatCurrency(item.price * item.quantity)}</p>
+                                <p className="text-sm font-bold text-slate-900">{formatPrice(item.price * item.quantity)}</p>
                             </div>
                         ))}
                     </div>
@@ -33,15 +37,19 @@ const OrderSummary = ({ items, total, isSubmitting }) => {
                     <div className="space-y-4 pt-6 border-t border-slate-100">
                         <div className={rowClass}>
                             <span>{t('cart.subtotal')}</span>
-                            <span>{formatCurrency(total)}</span>
+                            <span>{formatPrice(total)}</span>
                         </div>
                         <div className={rowClass}>
                             <span>{t('cart.shipping')}</span>
-                            <span className="text-green-600">{t('cart.free')}</span>
+                            {shippingCost > 0 ? (
+                                <span>{formatPrice(shippingCost)}</span>
+                            ) : (
+                                <span className="text-green-600">{t('cart.free')}</span>
+                            )}
                         </div>
                         <div className="pt-4 border-t border-slate-100 flex justify-between items-center">
                             <span className="text-lg font-bold text-slate-900">{t('cart.total')}</span>
-                            <span className="text-2xl font-black text-blue-600">{formatCurrency(total)}</span>
+                            <span className="text-2xl font-black text-blue-600">{formatPrice(grandTotal)}</span>
                         </div>
                     </div>
                 </Card.Body>

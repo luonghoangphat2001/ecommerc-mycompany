@@ -91,6 +91,14 @@ class ShopSettings extends Page
                                                     ->email(),
                                                 Forms\Components\TextInput::make('general.store_phone')
                                                     ->label(trans('admin.phone')),
+                                                Forms\Components\FileUpload::make('general.logo')
+                                                    ->label(trans('admin.logo'))
+                                                    ->image()
+                                                    ->directory('settings'),
+                                                Forms\Components\FileUpload::make('general.favicon')
+                                                    ->label(trans('admin.logo_favicon'))
+                                                    ->image()
+                                                    ->directory('settings'),
                                             ]),
                                     ]),
 

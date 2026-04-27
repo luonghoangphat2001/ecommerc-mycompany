@@ -95,6 +95,10 @@ class ServiceServiceProvider extends ServiceProvider
             \App\Contracts\Services\StorefrontSettingsServiceInterface::class,
             \App\Services\StorefrontSettingsService::class
         );
+        $this->app->bind(
+            \App\Services\Address\Contracts\AddressServiceInterface::class,
+            \App\Services\Address\AddressService::class
+        );
     }
 
     /**

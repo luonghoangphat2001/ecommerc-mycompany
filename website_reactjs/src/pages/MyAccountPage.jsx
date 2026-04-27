@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useAuthStore from '../features/auth/store/useAuthStore';
 import withAuth from '../features/auth/hoc/withAuth';
 import AccountSidebar from '../features/account/components/AccountSidebar';
@@ -7,20 +7,46 @@ import ProfileDetails from '../features/account/components/ProfileDetails';
 import ChangePassword from '../features/account/components/ChangePassword';
 import OrderTracking from '../features/order/components/OrderTracking';
 import OrderDetail from '../features/order/components/OrderDetail';
+import orderService from '../features/order/services/orderService';
 
 const MyAccountPage = () => {
   const { user, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState('orders');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const orders = [
-    { id: '#NS-9923', date: '24/04/2026', total: 1200000, status: 'Đang xử lý' },
-    { id: '#NS-8812', date: '12/03/2026', total: 2500000, status: 'Đã giao hàng' },
-  ];
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      fetchOrders();
+    }
+  }, [activeTab]);
 
-  const handleViewOrder = (order) => {
-    setSelectedOrder(order);
-    setActiveTab('order-detail');
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await orderService.getAll();
+      // API returns { success: true, data: [], meta: {...} }
+      // axiosClient already unwraps response.data
+      const ordersData = response.data || [];
+      setOrders(ordersData);
+      console.log('Orders:', ordersData);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewOrder = async (order) => {
+    try {
+      const response = await orderService.getById(order.id);
+      setSelectedOrder(response.data);
+      setActiveTab('order-detail');
+    } catch (error) {
+      console.error('Failed to fetch order detail:', error);
+    }
   };
 
   return (

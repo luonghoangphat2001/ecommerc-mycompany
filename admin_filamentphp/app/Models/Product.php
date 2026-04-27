@@ -85,6 +85,7 @@ class Product extends Model implements HasMedia
         'backorder' => 'boolean',
         'requires_shipping' => 'boolean',
         'published_at' => 'date',
+        'product_images' => 'array',
     ];
 
     public function featuredImage()

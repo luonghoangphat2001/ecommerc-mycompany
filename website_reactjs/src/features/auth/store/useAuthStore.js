@@ -22,15 +22,15 @@ const useAuthStore = create(
         try {
           const response = await authService.login(email, password);
           set({ 
-            user: response.user, 
-            accessToken: response.token,
+            user: response.data.user, 
+            accessToken: response.data.token,
             isAuthenticated: true, 
             isLoading: false 
           });
 
           // Trigger cart merge if user has a saved cart on backend (once API is ready)
-          if (response.user.cart_items) {
-            useCartStore.getState().mergeCart(response.user.cart_items);
+          if (response.data.user.cart_items) {
+            useCartStore.getState().mergeCart(response.data.user.cart_items);
           }
 
           return response;

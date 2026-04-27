@@ -10,7 +10,7 @@ class OrderDataDTO
         public string $phone,
         public array $shippingAddress,
         public array $billingAddress,
-        public array $items, // [['product_id' => 1, 'qty' => 2], ...]
+        public array $items, // [['product_id' => 1, 'qty' => 2, 'price' => 100], ...]
         public ?string $shippingMethod = null,
         public ?string $paymentMethod = null,
         public ?string $couponCode = null,
