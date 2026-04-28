@@ -4,6 +4,7 @@ namespace App\Ecommerce\Analytics\Services;
 
 use App\Ecommerce\Analytics\Contracts\WebhookAnalyticsRepositoryInterface;
 use App\Ecommerce\Analytics\Contracts\WebhookAnalyticsServiceInterface;
+use App\Ecommerce\Analytics\Contracts\WebhookLogRepositoryInterface;
 
 class WebhookAnalyticsService implements WebhookAnalyticsServiceInterface
 {
@@ -13,7 +14,7 @@ class WebhookAnalyticsService implements WebhookAnalyticsServiceInterface
     protected $repository;
 
     /**
-     * @var \App\Ecommerce\Analytics\Contracts\WebhookLogRepositoryInterface
+     * @var WebhookLogRepositoryInterface
      */
     protected $logRepository;
 
@@ -21,11 +22,11 @@ class WebhookAnalyticsService implements WebhookAnalyticsServiceInterface
      * WebhookAnalyticsService constructor.
      *
      * @param WebhookAnalyticsRepositoryInterface $repository
-     * @param \App\Ecommerce\Analytics\Contracts\WebhookLogRepositoryInterface $logRepository
+     * @param WebhookLogRepositoryInterface $logRepository
      */
     public function __construct(
         WebhookAnalyticsRepositoryInterface $repository,
-        \App\Ecommerce\Analytics\Contracts\WebhookLogRepositoryInterface $logRepository
+        WebhookLogRepositoryInterface $logRepository
     ) {
         $this->repository = $repository;
         $this->logRepository = $logRepository;

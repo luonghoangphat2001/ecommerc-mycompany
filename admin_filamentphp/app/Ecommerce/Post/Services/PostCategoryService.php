@@ -5,6 +5,7 @@ namespace App\Ecommerce\Post\Services;
 use App\Ecommerce\Post\Contracts\PostCategoryRepositoryInterface;
 use App\Ecommerce\Post\Contracts\PostCategoryServiceInterface;
 use App\Models\PostCategory;
+use Illuminate\Database\Eloquent\Builder;
 
 class PostCategoryService implements PostCategoryServiceInterface
 {
@@ -40,7 +41,7 @@ class PostCategoryService implements PostCategoryServiceInterface
         return $this->categoryRepository->getTreeSortedIds();
     }
 
-    public function applyTreeSorting(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function applyTreeSorting(Builder $query): Builder
     {
         return $this->categoryRepository->applyTreeSorting($query);
     }
@@ -74,7 +75,7 @@ class PostCategoryService implements PostCategoryServiceInterface
     /**
      * @inheritDoc
      */
-    public function getTableQuery(): \Illuminate\Database\Eloquent\Builder
+    public function getTableQuery(): Builder
     {
         return $this->categoryRepository->query()->where('type', 'post');
     }

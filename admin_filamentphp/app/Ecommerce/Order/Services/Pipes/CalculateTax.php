@@ -6,6 +6,7 @@ use App\Ecommerce\Order\DTOs\Checkout\CheckoutResultDTO;
 use App\Ecommerce\Order\DTOs\Checkout\CheckoutRequestDTO;
 use App\Ecommerce\Settings\Contracts\SettingServiceInterface;
 use App\Ecommerce\Core\Helpers\PriceHelper;
+use App\Settings\CheckoutSettings;
 use Closure;
 
 class CalculateTax
@@ -32,7 +33,7 @@ class CalculateTax
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        $settings = app(\App\Settings\CheckoutSettings::class);
+        $settings = app(CheckoutSettings::class);
         $includeTax = $settings->prices_include_tax;
         $taxTotal = 0;
         $resolvedRates = $passable['resolved_tax_rates'] ?? [];

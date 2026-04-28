@@ -2,6 +2,8 @@
 
 namespace App\Ecommerce\Shipping\Contracts;
 
+use Illuminate\Database\Eloquent\Builder;
+
 interface ShippingServiceInterface
 {
     /**
@@ -21,5 +23,5 @@ interface ShippingServiceInterface
      *
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function getShippingZoneTableQuery(): \Illuminate\Database\Eloquent\Builder;
+    public function getShippingZoneTableQuery(): Builder;
 }

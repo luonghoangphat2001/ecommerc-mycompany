@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Biostate\FilamentMenuBuilder\Models\Menu;
 use App\Http\Resources\Api\MenuResource;
+use App\Ecommerce\Menu\Services\MenuService;
 
 class MenuController extends Controller
 {
     protected $menuService;
 
-    public function __construct(\App\Ecommerce\Menu\Services\MenuService $menuService)
+    public function __construct(MenuService $menuService)
     {
         $this->menuService = $menuService;
     }

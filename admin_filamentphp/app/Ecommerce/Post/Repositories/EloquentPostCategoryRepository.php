@@ -5,6 +5,7 @@ namespace App\Ecommerce\Post\Repositories;
 use App\Ecommerce\Post\Contracts\PostCategoryRepositoryInterface;
 use App\Models\PostCategory;
 use App\Ecommerce\Core\Repositories\BaseRepository;
+use Illuminate\Database\Eloquent\Builder;
 
 class EloquentPostCategoryRepository extends BaseRepository implements PostCategoryRepositoryInterface
 {
@@ -26,7 +27,7 @@ class EloquentPostCategoryRepository extends BaseRepository implements PostCateg
     /**
      * @inheritDoc
      */
-    public function applyTreeSorting(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function applyTreeSorting(Builder $query): Builder
     {
         if (empty($query->getQuery()->orders)) {
             $ids = $this->getTreeSortedIds();

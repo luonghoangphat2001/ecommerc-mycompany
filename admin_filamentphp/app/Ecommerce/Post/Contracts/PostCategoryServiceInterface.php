@@ -3,6 +3,8 @@
 namespace App\Ecommerce\Post\Contracts;
 
 use App\Models\PostCategory;
+use Illuminate\Database\Eloquent\Builder;
+
 
 interface PostCategoryServiceInterface
 {
@@ -16,7 +18,7 @@ interface PostCategoryServiceInterface
 
     public function getTreeSortedIds(): array;
 
-    public function applyTreeSorting(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder;
+    public function applyTreeSorting(Builder $query): Builder;
 
     public function paginate(int $perPage = 15, array $columns = ['*'], array $relations = []);
 
@@ -26,5 +28,5 @@ interface PostCategoryServiceInterface
 
     public function findOrFail(int|string $id): PostCategory;
 
-    public function getTableQuery(): \Illuminate\Database\Eloquent\Builder;
+    public function getTableQuery(): Builder;
 }

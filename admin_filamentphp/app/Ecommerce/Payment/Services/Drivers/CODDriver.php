@@ -2,8 +2,8 @@
 
 namespace App\Ecommerce\Payment\Services\Drivers;
 
-use App\Contracts\Shop\PaymentProviderInterface;
 use App\Models\Order;
+use App\Ecommerce\Payment\Contracts\PaymentProviderInterface;
 
 class CODDriver implements PaymentProviderInterface
 {

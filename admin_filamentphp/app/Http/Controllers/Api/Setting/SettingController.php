@@ -6,14 +6,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Setting;
 use App\Http\Resources\Api\SettingsResource;
-
+use App\Ecommerce\Settings\Contracts\SettingServiceInterface;
 
 class SettingController extends Controller
 {
 
     protected $settingService;
 
-    public function __construct(\App\Ecommerce\Settings\Contracts\SettingServiceInterface $settingService)
+    public function __construct(SettingServiceInterface $settingService)
     {
         $this->settingService = $settingService;
     }

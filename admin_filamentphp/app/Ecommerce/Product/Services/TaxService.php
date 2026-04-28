@@ -9,6 +9,7 @@ use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Ecommerce\Product\Contracts\TaxRateRepositoryInterface;
 use App\Ecommerce\Product\Contracts\TaxClassRepositoryInterface;
 use App\Ecommerce\Settings\Contracts\SettingServiceInterface;
+use Illuminate\Database\Eloquent\Builder;
 
 class TaxService implements TaxServiceInterface
 {
@@ -82,7 +83,7 @@ class TaxService implements TaxServiceInterface
     /**
      * @inheritDoc
      */
-    public function getTaxClassTableQuery(): \Illuminate\Database\Eloquent\Builder
+    public function getTaxClassTableQuery(): Builder
     {
         return $this->taxClassRepository->query();
     }

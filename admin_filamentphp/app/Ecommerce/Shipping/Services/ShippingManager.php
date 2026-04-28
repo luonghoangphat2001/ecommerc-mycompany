@@ -3,7 +3,8 @@
 namespace App\Ecommerce\Shipping\Services;
 
 use Illuminate\Support\Manager;
-use App\Services\Shipping\Drivers\FlatRateDriver;
+use App\Ecommerce\Shipping\Services\Drivers\FlatRateDriver;
+use App\Ecommerce\Shipping\Services\Drivers\FreeShippingDriver;
 use InvalidArgumentException;
 
 class ShippingManager extends Manager
@@ -31,11 +32,11 @@ class ShippingManager extends Manager
     /**
      * Create Free Shipping driver.
      *
-     * @return \App\Services\Shipping\Drivers\FreeShippingDriver
+     * @return FreeShippingDriver
      */
     public function createFreeShippingDriver()
     {
-        return new \App\Services\Shipping\Drivers\FreeShippingDriver();
+        return new FreeShippingDriver();
     }
 
     /**

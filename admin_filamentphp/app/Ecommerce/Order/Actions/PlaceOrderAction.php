@@ -11,6 +11,8 @@ use App\Ecommerce\Order\Services\OrderCalculatorService;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use App\Ecommerce\Address\DTOs\Address\AddressDTO;
+use App\Models\Order;
 
 class PlaceOrderAction
 {
@@ -26,7 +28,7 @@ class PlaceOrderAction
      * Handle the place order action.
      *
      * @param OrderDataDTO $dto
-     * @return \App\Models\Order
+     * @return Order
      */
     public function execute(OrderDataDTO $dto)
     {
@@ -53,7 +55,7 @@ class PlaceOrderAction
             }
 
             // 2. Calculate totals using pure service
-            $shippingAddressDTO = new \App\Ecommerce\Address\DTOs\Address\AddressDTO(
+            $shippingAddressDTO = new AddressDTO(
                 first_name: $dto->shippingAddress['first_name'] ?? '',
                 last_name: $dto->shippingAddress['last_name'] ?? '',
                 phone: $dto->shippingAddress['phone'] ?? '',

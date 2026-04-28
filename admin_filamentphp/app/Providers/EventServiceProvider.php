@@ -19,6 +19,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         \App\Ecommerce\Order\Events\OrderCreated::class => [
             \App\Listeners\SendOrderMails::class,
+            \App\Listeners\SendOrderCreatedWebhook::class,
         ],
     ];
 

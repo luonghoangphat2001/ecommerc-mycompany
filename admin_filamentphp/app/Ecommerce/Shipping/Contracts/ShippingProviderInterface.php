@@ -3,6 +3,7 @@
 namespace App\Ecommerce\Shipping\Contracts;
 
 use App\Models\OrderItem;
+use App\Models\Order;
 
 interface ShippingProviderInterface
 {
@@ -19,10 +20,10 @@ interface ShippingProviderInterface
     /**
      * Create a shipping order/package in the provider's system.
      *
-     * @param \App\Models\Order $order
+     * @param Order $order
      * @return string Tracking number or provider reference
      */
-    public function createOrder(\App\Models\Order $order): string;
+    public function createOrder(Order $order): string;
 
     /**
      * Cancel a shipping order.

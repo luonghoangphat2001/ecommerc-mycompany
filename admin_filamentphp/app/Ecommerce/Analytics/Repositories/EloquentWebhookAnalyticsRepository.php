@@ -4,6 +4,7 @@ namespace App\Ecommerce\Analytics\Repositories;
 
 use App\Ecommerce\Analytics\Contracts\WebhookAnalyticsRepositoryInterface;
 use App\Models\WebhookLog;
+use App\Models\Webhook;
 use Flowframe\Trend\Trend;
 use Flowframe\Trend\TrendValue;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +58,6 @@ class EloquentWebhookAnalyticsRepository implements WebhookAnalyticsRepositoryIn
      */
     public function getTotalWebhooksCount(): int
     {
-        return \App\Models\Webhook::count();
+        return Webhook::count();
     }
 }

@@ -4,6 +4,7 @@ namespace App\Ecommerce\Post\Contracts;
 
 use App\Models\Post;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 
 interface PostServiceInterface
 {
@@ -21,5 +22,5 @@ interface PostServiceInterface
 
     public function findOrFail(int|string $id): Post;
 
-    public function getTableQuery(): \Illuminate\Database\Eloquent\Builder;
+    public function getTableQuery(): Builder;
 }

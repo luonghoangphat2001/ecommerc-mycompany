@@ -5,12 +5,23 @@ namespace App\Ecommerce\Order\Services;
 use App\Ecommerce\Order\Contracts\OrderRepositoryInterface;
 use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 use App\Models\Order;
+use App\Models\OrderShipping;
 use App\Ecommerce\Order\Enums\OrderStatus;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 
 use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
+
+use App\Ecommerce\Order\DTOs\Checkout\CreateOrderDTO;
+use App\Ecommerce\Order\Events\OrderCreated;
+use App\Settings\MailSettings;
+use App\Mail\OrderCustomerMail;
+use App\Mail\OrderAdminMail;
+use App\Jobs\SendOrderEmailJob;
+use Illuminate\Support\Facades\Mail;
 
 class OrderService implements OrderServiceInterface
 {
@@ -33,8 +44,13 @@ class OrderService implements OrderServiceInterface
     /**
      * @inheritDoc
      */
-    public function createOrder(array $data, array $items = []): Order
+    public function createOrder(array|CreateOrderDTO $data, array $items = []): Order
     {
+        if ($data instanceof CreateOrderDTO) {
+            $items = $data->items;
+            $data = $data->data;
+        }
+
         return $this->useTransaction(function () use ($data, $items) {
             /** @var Order $order */
             $order = $this->orderRepository->create($data);
@@ -45,7 +61,11 @@ class OrderService implements OrderServiceInterface
                 }
             }
 
-            return $this->recalculateTotals($order);
+            $order = $this->recalculateTotals($order);
+
+            event(new OrderCreated($order));
+
+            return $order;
         });
     }
 
@@ -125,7 +145,7 @@ class OrderService implements OrderServiceInterface
                 subtotal: (int) $subtotal
             );
 
-            $shippingInfo = $order->shipping ?? new \App\Models\OrderShipping(['order_id' => $order->id]);
+            $shippingInfo = $order->shipping ?? new OrderShipping(['order_id' => $order->id]);
             $selectedMethod = $availableMethods->firstWhere('method_id', $shippingInfo->shop_shipping_method_id);
             if (!$selectedMethod) {
                 $selectedMethod = $availableMethods->firstWhere('name', $shippingInfo->method);
@@ -245,16 +265,15 @@ class OrderService implements OrderServiceInterface
      */
     public function sendOrderConfirmationMail(Order $order): void
     {
-        $settings = app(\App\Settings\MailSettings::class);
-        $mailClass = \App\Mail\OrderCustomerMail::class;
+        $settings = app(MailSettings::class);
+        $mailClass = OrderCustomerMail::class;
 
         if ($settings->use_queue_for_emails) {
-            \App\Jobs\SendOrderEmailJob::dispatch($order, $mailClass);
+            SendOrderEmailJob::dispatch($order, $mailClass);
         } else {
             $customerEmail = $order->billingAddress?->email ?? $order->shippingAddress?->email ?? $order->user?->email;
             if ($customerEmail) {
-                \Illuminate\Support\Facades\Mail::to($customerEmail)
-                    ->send(new $mailClass($order));
+                Mail::to($customerEmail)->send(new $mailClass($order));
             }
         }
     }
@@ -264,14 +283,13 @@ class OrderService implements OrderServiceInterface
      */
     public function sendAdminOrderNotification(Order $order): void
     {
-        $settings = app(\App\Settings\MailSettings::class);
-        $mailClass = \App\Mail\OrderAdminMail::class;
+        $settings = app(MailSettings::class);
+        $mailClass = OrderAdminMail::class;
 
         if ($settings->use_queue_for_emails) {
-            \App\Jobs\SendOrderEmailJob::dispatch($order, $mailClass);
+            SendOrderEmailJob::dispatch($order, $mailClass);
         } else {
-            \Illuminate\Support\Facades\Mail::to(config('mail.from.address'))
-                ->send(new $mailClass($order));
+            Mail::to(config('mail.from.address'))->send(new $mailClass($order));
         }
     }
     /**
@@ -285,7 +303,7 @@ class OrderService implements OrderServiceInterface
     /**
      * @inheritDoc
      */
-    public function paginateFiltered(int $perPage = 15, ?int $userId = null): \Illuminate\Pagination\LengthAwarePaginator
+    public function paginateFiltered(int $perPage = 15, ?int $userId = null): LengthAwarePaginator
     {
         return $this->orderRepository->paginateFiltered($perPage, $userId);
     }
@@ -349,7 +367,7 @@ class OrderService implements OrderServiceInterface
     /**
      * @inheritDoc
      */
-    public function getTableQuery(): \Illuminate\Database\Eloquent\Builder
+    public function getTableQuery(): Builder
     {
         return $this->orderRepository->query()
             ->with(['shippingAddress', 'billingAddress', 'metas', 'taxes', 'shipping', 'payments', 'productItems.tax', 'shipping.tax']);

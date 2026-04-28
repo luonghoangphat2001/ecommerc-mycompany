@@ -4,17 +4,18 @@ namespace App\Ecommerce\Order\Contracts;
 
 use App\Models\Order;
 use App\Ecommerce\Order\Enums\OrderStatus;
+use App\Ecommerce\Order\DTOs\Checkout\CreateOrderDTO;
 
 interface OrderServiceInterface
 {
     /**
      * Create a new order.
      *
-     * @param array $data
+     * @param array|CreateOrderDTO $data
      * @param array $items
      * @return Order
      */
-    public function createOrder(array $data, array $items = []): Order;
+    public function createOrder(array|CreateOrderDTO $data, array $items = []): Order;
 
     /**
      * Update order and recalculate totals.

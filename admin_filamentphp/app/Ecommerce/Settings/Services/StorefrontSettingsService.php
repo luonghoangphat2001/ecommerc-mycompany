@@ -11,6 +11,7 @@ use App\Settings\FooterSettings;
 use App\Models\ShippingMethod;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class StorefrontSettingsService implements StorefrontSettingsServiceInterface
 {
@@ -27,12 +28,12 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
         if (!in_array($locale, ['vi', 'en'])) {
             $locale = 'vi';
         }
-        
+
         app()->setLocale($locale);
 
         activity('system')
             ->log('Storefront settings fetched via API. Locale: ' . $locale);
-            
+
         return Cache::remember('storefront_settings_v1_' . $locale, 3600, function () use ($locale) {
             /** @var GeneralSettings $general */
             $general = app(GeneralSettings::class);
@@ -70,8 +71,8 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                     'thousand_separator' => $general->thousand_separator,
                     'decimal_separator' => $general->decimal_separator,
                     'decimal_places' => $general->decimal_places,
-                    'logo' => $general->logo ? \Illuminate\Support\Facades\Storage::url($general->logo) : null,
-                    'favicon' => $general->favicon ? \Illuminate\Support\Facades\Storage::url($general->favicon) : null,
+                    'logo' => $general->logo ? Storage::url($general->logo) : null,
+                    'favicon' => $general->favicon ? Storage::url($general->favicon) : null,
                 ],
                 'products' => [
                     'add_to_cart_behavior' => $product->add_to_cart_behavior,

@@ -1,13 +1,13 @@
-import React from "react"
+import React, { useMemo } from "react"
 import { ShoppingBag } from "lucide-react"
 import { Card, Button } from "../../../components/common"
 import useSettingsStore from "../../../store/useSettingsStore"
 import { useFormatters } from "../../../utils/useFormatters"
 
-const OrderSummary = ({ items, total, shippingCost = 0, isSubmitting }) => {
+const OrderSummary = React.memo(({ items, total, shippingCost = 0, isSubmitting }) => {
     const translate = useSettingsStore((state) => state.translate)
     const { formatCurrency } = useFormatters()
-    const grandTotal = total + shippingCost
+    const grandTotal = useMemo(() => total + shippingCost, [total, shippingCost])
 
     return (
         <div className="lg:col-span-1">
@@ -66,6 +66,6 @@ const OrderSummary = ({ items, total, shippingCost = 0, isSubmitting }) => {
             </Card>
         </div>
     )
-}
+})
 
 export default OrderSummary

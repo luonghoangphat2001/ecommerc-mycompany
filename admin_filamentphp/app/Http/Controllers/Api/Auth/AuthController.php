@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api\Auth;
- 
+
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Traits\ApiResponse;
@@ -9,14 +9,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
- 
+use App\Ecommerce\Core\Services\AuthService;
+
 class AuthController extends Controller
 {
     use ApiResponse;
 
     protected $authService;
- 
-    public function __construct(\App\Ecommerce\Core\Services\AuthService $authService)
+
+    public function __construct(AuthService $authService)
     {
         $this->authService = $authService;
     }
@@ -34,22 +35,22 @@ class AuthController extends Controller
             'password' => 'required',
             'device_name' => 'required',
         ]);
- 
+
         $authData = $this->authService->login(
             $request->email,
             $request->password,
             $request->device_name
         );
- 
+
         return $this->ok([
             'token' => $authData['token'],
             'expires_at' => Carbon::parse($authData['expires_at'])->toDateTimeString(),
             'user' => $authData['user']
         ]);
     }
- 
- 
- 
+
+
+
     /**
      * User Logout
      * 
@@ -60,9 +61,9 @@ class AuthController extends Controller
         if (!$request->user()) {
             return $this->notFound('User not found');
         }
- 
+
         $this->authService->logout($request->user());
- 
+
         return $this->ok(null, 'Logged out successfully');
     }
 
@@ -87,5 +88,4 @@ class AuthController extends Controller
 
         return $this->ok($user->fresh(['defaultShippingAddress', 'defaultBillingAddress']), 'Profile updated successfully');
     }
-
 }

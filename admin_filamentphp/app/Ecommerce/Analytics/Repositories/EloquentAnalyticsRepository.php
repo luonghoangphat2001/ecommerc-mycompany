@@ -5,6 +5,7 @@ namespace App\Ecommerce\Analytics\Repositories;
 use App\Ecommerce\Analytics\Contracts\AnalyticsRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Models\Order;
 
 class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
 {
@@ -215,11 +216,11 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
      */
     public function getNewCustomersQuery(): \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder
     {
-        return \App\Models\Order::query()
+        return Order::query()
             ->with('user')
             ->leftJoin('shop_order_addresses', function ($join) {
                 $join->on('shop_orders.id', '=', 'shop_order_addresses.addressable_id')
-                    ->where('shop_order_addresses.addressable_type', '=', 'App\Models\Order')
+                    ->where('shop_order_addresses.addressable_type', '=', Order::class)
                     ->where('shop_order_addresses.type', '=', 'shipping');
             })
             ->selectRaw("MIN(shop_orders.id) as id, shop_order_addresses.email, shop_orders.user_id, CONCAT(COALESCE(shop_order_addresses.first_name, ''), ' ', COALESCE(shop_order_addresses.last_name, '')) as customer_name, SUM(shop_orders.total) as total_spent, MAX(shop_orders.created_at) as latest_order")

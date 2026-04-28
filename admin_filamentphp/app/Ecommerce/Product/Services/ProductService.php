@@ -7,6 +7,8 @@ use App\Ecommerce\Product\Contracts\ProductServiceInterface;
 use App\Models\Product;
 use App\Traits\HandleTransactions;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use App\Settings\CheckoutSettings;
 
 class ProductService implements ProductServiceInterface
 {
@@ -73,7 +75,7 @@ class ProductService implements ProductServiceInterface
      */
     public function calculateDisplayPrice(Product $product): int
     {
-        $settings = app(\App\Settings\CheckoutSettings::class);
+        $settings = app(CheckoutSettings::class);
         $price = $product->price;
 
         if ($settings->prices_include_tax) {
@@ -136,7 +138,7 @@ class ProductService implements ProductServiceInterface
     /**
      * @inheritDoc
      */
-    public function getTableQuery(): \Illuminate\Database\Eloquent\Builder
+    public function getTableQuery(): Builder
     {
         return $this->productRepository->query()
             ->with(['featuredImage', 'categories', 'brand']);

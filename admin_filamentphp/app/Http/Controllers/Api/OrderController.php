@@ -13,6 +13,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use App\Ecommerce\Customer\Contracts\CustomerResolverServiceInterface;
 
 /**
  * @group Shop
@@ -26,7 +27,7 @@ class OrderController extends Controller
     public function __construct(
         protected PlaceOrderAction $placeOrderAction,
         protected OrderServiceInterface $orderService,
-        protected \App\Ecommerce\Customer\Contracts\CustomerResolverServiceInterface $customerResolver
+        protected CustomerResolverServiceInterface $customerResolver
     ) {}
 
     /**
@@ -37,7 +38,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $userId = $this->customerResolver->resolveCustomerId($request);
-        
+
         $orders = $this->orderService->paginateFiltered(
             $request->get('per_page', 15),
             $userId

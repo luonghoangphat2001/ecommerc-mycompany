@@ -63,6 +63,6 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         Route::put('user/addresses/{address}', [AddressController::class, 'update']);
         Route::delete('user/addresses/{address}', [AddressController::class, 'destroy']);
 
-        Route::apiResource('orders', OrderController::class);
+        Route::apiResource('orders', OrderController::class)->middleware('throttle:checkout');
     });
 });

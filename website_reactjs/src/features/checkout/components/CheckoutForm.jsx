@@ -3,6 +3,7 @@ import { MapPin, CreditCard, Truck, Package } from "lucide-react"
 import useSettingsStore from "../../../store/useSettingsStore"
 import useCheckoutAddress from "../hooks/useCheckoutAddress"
 import { useFormatters } from "../../../utils/useFormatters"
+import { paymentStrategiesMap } from "./PaymentStrategies"
 import { FormInput, FormSelect, FormCheckbox, FormRadio, FormSection } from "../../../components/common"
 
 const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChange, onBillingToggle }) => {
@@ -64,6 +65,11 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                         <FormRadio key={method.id} name="paymentMethod" value={method.id} label={method.name} checked={String(formData.paymentMethod) === String(method.id)} onChange={onPaymentChange} accessory={method.icon === "truck" ? <Truck className="text-blue-600" /> : method.icon === "credit-card" ? <CreditCard className="text-blue-600" /> : null} />
                     ))}
                 </div>
+                {/* Strategy UI for selected payment method */}
+                {(() => {
+                    const SelectedStrategy = paymentStrategiesMap[formData.paymentMethod];
+                    return SelectedStrategy ? <SelectedStrategy /> : null;
+                })()}
             </FormSection>
 
             {shippingMethods.length > 0 && (

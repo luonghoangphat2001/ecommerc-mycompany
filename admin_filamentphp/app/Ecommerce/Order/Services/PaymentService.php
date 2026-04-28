@@ -4,12 +4,13 @@ namespace App\Ecommerce\Order\Services;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Ecommerce\Order\Contracts\PaymentRepositoryInterface;
 
 class PaymentService
 {
     protected $paymentRepository;
 
-    public function __construct(\App\Ecommerce\Order\Contracts\PaymentRepositoryInterface $paymentRepository)
+    public function __construct(PaymentRepositoryInterface $paymentRepository)
     {
         $this->paymentRepository = $paymentRepository;
     }
@@ -22,7 +23,7 @@ class PaymentService
      * @param float|int $amount
      * @return Payment
      */
-    public function process(Order $order, string $method, $amount): \App\Models\Payment
+    public function process(Order $order, string $method, $amount): Payment
     {
         return $this->paymentRepository->create([
             'order_id' => $order->id,

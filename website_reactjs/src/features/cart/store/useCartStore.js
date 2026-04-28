@@ -5,26 +5,39 @@ const useCartStore = create(
   persist(
     (set, get) => ({
       items: [],
+      itemsById: {},
 
       addToCart: (product, quantity = 1) => {
-        const currentItems = get().items;
-        const existingItem = currentItems.find(item => item.id === product.id);
+        const currentById = get().itemsById || {};
+        const existingItem = currentById[product.id];
 
+        let updatedById;
         if (existingItem) {
-          set({
-            items: currentItems.map(item =>
-              item.id === product.id
-                ? { ...item, quantity: item.quantity + quantity }
-                : item
-            )
-          });
+          updatedById = {
+            ...currentById,
+            [product.id]: { ...existingItem, quantity: existingItem.quantity + quantity }
+          };
         } else {
-          set({ items: [...currentItems, { ...product, quantity }] });
+          updatedById = {
+            ...currentById,
+            [product.id]: { ...product, quantity }
+          };
         }
+
+        set({
+          itemsById: updatedById,
+          items: Object.values(updatedById)
+        });
       },
 
       removeFromCart: (productId) => {
-        set({ items: get().items.filter(item => item.id !== productId) });
+        const currentById = { ...get().itemsById };
+        delete currentById[productId];
+
+        set({
+          itemsById: currentById,
+          items: Object.values(currentById)
+        });
       },
 
       updateQuantity: (productId, quantity) => {
@@ -32,41 +45,46 @@ const useCartStore = create(
           get().removeFromCart(productId);
           return;
         }
+
+        const currentById = { ...get().itemsById };
+        if (currentById[productId]) {
+          currentById[productId] = { ...currentById[productId], quantity };
+        }
+
         set({
-          items: get().items.map(item =>
-            item.id === productId ? { ...item, quantity } : item
-          )
+          itemsById: currentById,
+          items: Object.values(currentById)
         });
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], itemsById: {} }),
 
       getCartTotal: () => {
-        return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
+        // O(1) derived access
+        return Object.values(get().itemsById).reduce((total, item) => total + (item.price * item.quantity), 0);
       },
 
       getCartCount: () => {
-        return get().items.reduce((count, item) => count + item.quantity, 0);
+        return Object.values(get().itemsById).reduce((count, item) => count + item.quantity, 0);
       },
 
       mergeCart: async (remoteItems) => {
-        // Simple merge logic: if item exists in both, keep the one with higher quantity or combine
-        // For now, just combining if remoteItems provided
         if (!remoteItems) return;
 
-        const localItems = get().items;
-        const merged = [...localItems];
+        const currentById = { ...get().itemsById };
 
         remoteItems.forEach(remoteItem => {
-          const index = merged.findIndex(item => item.id === remoteItem.id);
-          if (index > -1) {
-            merged[index].quantity = Math.max(merged[index].quantity, remoteItem.quantity);
+          if (currentById[remoteItem.id]) {
+            currentById[remoteItem.id].quantity = Math.max(currentById[remoteItem.id].quantity, remoteItem.quantity);
           } else {
-            merged.push(remoteItem);
+            currentById[remoteItem.id] = remoteItem;
           }
         });
 
-        set({ items: merged });
+        set({
+          itemsById: currentById,
+          items: Object.values(currentById)
+        });
       }
     }),
     {

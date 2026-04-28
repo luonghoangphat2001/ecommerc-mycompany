@@ -7,6 +7,7 @@ use App\Ecommerce\Product\Contracts\ProductCategoryServiceInterface;
 use App\Models\ProductCategory;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProductCategoryService implements ProductCategoryServiceInterface
 {
@@ -42,7 +43,7 @@ class ProductCategoryService implements ProductCategoryServiceInterface
         return $this->categoryRepository->getTreeSortedIds();
     }
 
-    public function applyTreeSorting(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function applyTreeSorting(Builder $query): Builder
     {
         return $this->categoryRepository->applyTreeSorting($query);
     }
@@ -71,7 +72,7 @@ class ProductCategoryService implements ProductCategoryServiceInterface
     /**
      * @inheritDoc
      */
-    public function getTableQuery(): \Illuminate\Database\Eloquent\Builder
+    public function getTableQuery(): Builder
     {
         return $this->categoryRepository->query();
     }

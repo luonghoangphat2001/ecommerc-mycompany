@@ -23,17 +23,15 @@ class CheckTokenExpiration
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        // Kiểm tra token trong database
         $accessToken = PersonalAccessToken::findToken($token);
 
         if (!$accessToken) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        // Kiểm tra thời gian tạo token (15 phút)
         $createdAt = Carbon::parse($accessToken->created_at);
         if ($createdAt->diffInMinutes(Carbon::now()) > 15) {
-            $accessToken->delete(); // Xóa token hết hạn
+            $accessToken->delete();
             return response()->json(['message' => 'Token expired'], 401);
         }
 

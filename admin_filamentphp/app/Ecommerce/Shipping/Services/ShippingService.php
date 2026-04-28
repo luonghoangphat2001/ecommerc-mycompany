@@ -7,6 +7,7 @@ use App\Models\ShippingMethod;
 
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingZoneRepositoryInterface;
+use Illuminate\Database\Eloquent\Builder;
 
 class ShippingService implements ShippingServiceInterface
 {
@@ -21,24 +22,24 @@ class ShippingService implements ShippingServiceInterface
     {
         // Find zone that best matches the location using the repository
         $zone = $this->shippingZoneRepository->findMatchingZone($country, $state, $postcode, $ward);
- 
+
         // Fallback to "Rest of World" zone if not found (getting the first one with no specific country restriction)
         if (!$zone) {
             $zone = $this->shippingZoneRepository->all()->first();
         }
- 
+
         if (!$zone) {
             return collect();
         }
- 
+
         $drivers = [
             'flat_rate' => \App\Ecommerce\Shipping\Services\Drivers\FlatRateDriver::class,
             'free_shipping' => \App\Ecommerce\Shipping\Services\Drivers\FreeShippingDriver::class,
         ];
-        
+
         return $zone->methods()->where('is_enabled', true)->get()->map(function ($method) use ($subtotal, $country, $state, $postcode, $drivers) {
             $driverClass = $drivers[$method->type] ?? null;
-            
+
             if (!$driverClass) {
                 return [
                     'method_id' => $method->id,
@@ -46,14 +47,14 @@ class ShippingService implements ShippingServiceInterface
                     'is_available' => false
                 ];
             }
- 
+
             $driver = app($driverClass);
             $cost = $driver->calculateFee($subtotal, [
                 'country' => $country,
                 'state' => $state,
                 'postcode' => $postcode,
             ], ['cost' => $method->settings['cost'] ?? 0]);
- 
+
             return [
                 'method_id' => $method->id,
                 'name' => $method->name,
@@ -67,7 +68,7 @@ class ShippingService implements ShippingServiceInterface
     /**
      * @inheritDoc
      */
-    public function getShippingZoneTableQuery(): \Illuminate\Database\Eloquent\Builder
+    public function getShippingZoneTableQuery(): Builder
     {
         return $this->shippingZoneRepository->query();
     }

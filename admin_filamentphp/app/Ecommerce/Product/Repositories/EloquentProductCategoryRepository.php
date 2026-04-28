@@ -23,18 +23,20 @@ class EloquentProductCategoryRepository extends BaseRepository implements Produc
      */
     public function getTreeSortedIds(): array
     {
-        $categories = $this->model->all();
-        
-        $buildTree = function ($parentId = null) use (&$buildTree, $categories) {
-            $ids = [];
-            foreach ($categories->where('parent_id', $parentId)->sortBy('sort') as $category) {
-                $ids[] = $category->id;
-                $ids = array_merge($ids, $buildTree($category->id));
-            }
-            return $ids;
-        };
-        
-        return $buildTree(null);
+        return \Illuminate\Support\Facades\Cache::tags(['products', 'categories'])->remember('product_category_tree_ids', 3600, function() {
+            $categories = $this->model->all();
+            
+            $buildTree = function ($parentId = null) use (&$buildTree, $categories) {
+                $ids = [];
+                foreach ($categories->where('parent_id', $parentId)->sortBy('sort') as $category) {
+                    $ids[] = $category->id;
+                    $ids = array_merge($ids, $buildTree($category->id));
+                }
+                return $ids;
+            };
+            
+            return $buildTree(null);
+        });
     }
 
     /**

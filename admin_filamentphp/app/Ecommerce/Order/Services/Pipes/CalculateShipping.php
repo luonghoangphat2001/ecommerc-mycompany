@@ -4,8 +4,7 @@ namespace App\Ecommerce\Order\Services\Pipes;
 
 use App\Ecommerce\Order\DTOs\Checkout\CheckoutResultDTO;
 use App\Ecommerce\Order\DTOs\Checkout\CheckoutRequestDTO;
-use App\Services\Shipping\ShippingManager;
-use App\Ecommerce\Core\Helpers\PriceHelper;
+use App\Ecommerce\Shipping\Services\ShippingManager;
 use Closure;
 
 class CalculateShipping
@@ -39,7 +38,7 @@ class CalculateShipping
         // In a real scenario, this would lookup the ShippingMethod model's type
         try {
             $driver = $this->shippingManager->driver($request->shippingMethod);
-            
+
             $shippingCost = $driver->calculateFee(
                 $result->subtotal,
                 $request->shippingAddress ?? [],
@@ -48,7 +47,6 @@ class CalculateShipping
 
             $result->shippingTotal = $shippingCost;
             $result->total += $shippingCost;
-
         } catch (\Exception $e) {
             // Log error or handle unavailable shipping
         }

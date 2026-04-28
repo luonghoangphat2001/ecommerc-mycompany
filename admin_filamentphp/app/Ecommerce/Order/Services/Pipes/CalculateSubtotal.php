@@ -5,6 +5,7 @@ namespace App\Ecommerce\Order\Services\Pipes;
 use App\Ecommerce\Order\DTOs\Checkout\CheckoutResultDTO;
 use App\Ecommerce\Order\DTOs\Checkout\CheckoutRequestDTO;
 use Closure;
+use App\Settings\CheckoutSettings;
 
 class CalculateSubtotal
 {
@@ -23,7 +24,7 @@ class CalculateSubtotal
         $result = $passable['result'];
 
         $subtotal = 0;
-        $settings = app(\App\Settings\CheckoutSettings::class);
+        $settings = app(CheckoutSettings::class);
         $resolvedRates = $passable['resolved_tax_rates'] ?? [];
 
         foreach ($request->items as $item) {

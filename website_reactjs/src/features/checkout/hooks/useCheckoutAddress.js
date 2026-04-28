@@ -14,7 +14,8 @@ const useCheckoutAddress = (formData) => {
   
   // Settings
   const paymentMethods = getSetting('checkout.payment_gateways') || [
-    { id: 'cod', name: 'Thanh toán khi nhận hàng (COD)', icon: 'truck' }
+    { id: 'cod', name: 'Thanh toán khi nhận hàng (COD)', icon: 'truck' },
+    { id: 'bank_transfer', name: 'Chuyển khoản ngân hàng', icon: 'credit-card' }
   ];
   const shippingMethods = getSetting('checkout.shipping_methods') || [];
   

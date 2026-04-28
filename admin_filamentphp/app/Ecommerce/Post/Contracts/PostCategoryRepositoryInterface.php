@@ -2,9 +2,8 @@
 
 namespace App\Ecommerce\Post\Contracts;
 
-use App\Ecommerce\Core\Repositories\BaseRepository;
-
 use App\Ecommerce\Core\Contracts\BaseRepositoryInterface;
+use Illuminate\Database\Eloquent\Builder;
 
 interface PostCategoryRepositoryInterface extends BaseRepositoryInterface
 {
@@ -18,8 +17,8 @@ interface PostCategoryRepositoryInterface extends BaseRepositoryInterface
     /**
      * Apply tree sorting to the query.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @param Builder $query
+     * @return Builder
      */
-    public function applyTreeSorting(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder;
+    public function applyTreeSorting(Builder $query): Builder;
 }
