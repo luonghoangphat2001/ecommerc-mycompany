@@ -26,7 +26,6 @@ const useRegisterForm = () => {
       setIsLoading(false);
       return;
     }
-    F
     try {
       const response = await authService.register(formData);
       setUser(response.user);
