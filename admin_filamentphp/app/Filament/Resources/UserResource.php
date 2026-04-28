@@ -22,7 +22,6 @@ class UserResource extends Resource implements HasShieldPermissions
 
     protected static ?string $navigationIcon = 'heroicon-o-user';
 
-
     public static function getModelLabel(): string
     {
         return trans('admin.user.label'); // Dịch "Category"
@@ -84,6 +83,99 @@ class UserResource extends Resource implements HasShieldPermissions
                     ->relationship('roles', 'name')
                     ->multiple()
                     ->required(),
+
+                Forms\Components\Section::make(trans('admin.address.default_addresses'))
+                    ->schema([
+                        Forms\Components\Select::make('default_shipping_address_id')
+                            ->label(trans('admin.address.default_shipping'))
+                            ->options(function (Model $record = null) {
+                                if (!$record) return [];
+                                return $record->addresses->mapWithKeys(function ($addr) {
+                                    $full = trim(implode(', ', array_filter([
+                                        $addr->first_name . ' ' . $addr->last_name,
+                                        $addr->street,
+                                        $addr->city_id,
+                                        $addr->state_id
+                                    ])));
+                                    return [$addr->id => $full ?: "Address #{$addr->id}"];
+                                })->toArray();
+                            })
+                            ->nullable(),
+                        Forms\Components\Select::make('default_billing_address_id')
+                            ->label(trans('admin.address.default_billing'))
+                            ->options(function (Model $record = null) {
+                                if (!$record) return [];
+                                return $record->addresses->mapWithKeys(function ($addr) {
+                                    $full = trim(implode(', ', array_filter([
+                                        $addr->first_name . ' ' . $addr->last_name,
+                                        $addr->street,
+                                        $addr->city_id,
+                                        $addr->state_id
+                                    ])));
+                                    return [$addr->id => $full ?: "Address #{$addr->id}"];
+                                })->toArray();
+                            })
+                            ->nullable(),
+                    ])->columns(2),
+
+                Forms\Components\Section::make(trans('admin.address.address_book'))
+                    ->schema([
+                        Forms\Components\Repeater::make('addresses')
+                            ->relationship('addresses')
+                            ->label(trans('admin.address.addresses'))
+                            ->schema([
+                                Forms\Components\Select::make('type')
+                                    ->options([
+                                        'shipping' => trans('admin.address.shipping'),
+                                        'billing' => trans('admin.address.billing'),
+                                    ])
+                                    ->required()
+                                    ->default('shipping'),
+                                Forms\Components\TextInput::make('first_name')->label(trans('admin.first_name'))->required(),
+                                Forms\Components\TextInput::make('last_name')->label(trans('admin.last_name'))->required(),
+                                Forms\Components\TextInput::make('phone')->label(trans('admin.phone'))->required(),
+                                Forms\Components\TextInput::make('email')->label(trans('admin.email'))->email(),
+                                Forms\Components\Select::make('country_code')
+                                    ->label(trans('admin.country'))
+                                    ->options(fn() => app(\App\Ecommerce\Location\Services\Location\LocationManager::class)->getCountries())
+                                    ->required()
+                                    ->default('VN')
+                                    ->live(),
+                                Forms\Components\Select::make('state_id')
+                                    ->label(trans('admin.address.province_state'))
+                                    ->options(function ($get) {
+                                        $countryCode = $get('country_code') ?? 'VN';
+                                        return app(\App\Ecommerce\Location\Services\Location\LocationManager::class)->getStates($countryCode);
+                                    })
+                                    ->required()
+                                    ->live(),
+                                Forms\Components\Select::make('city_id')
+                                    ->label(trans('admin.address.city_district'))
+                                    ->options(function ($get) {
+                                        $countryCode = $get('country_code') ?? 'VN';
+                                        $stateId = $get('state_id');
+                                        if (!$stateId) return [];
+                                        return app(\App\Ecommerce\Location\Services\Location\LocationManager::class)->getCities($countryCode, $stateId);
+                                    })
+                                    ->required()
+                                    ->live(),
+                                Forms\Components\Select::make('ward_id')
+                                    ->label(trans('admin.address.ward_subregion'))
+                                    ->options(function ($get) {
+                                        $countryCode = $get('country_code') ?? 'VN';
+                                        $stateId = $get('state_id');
+                                        $cityId = $get('city_id');
+                                        if (!$cityId) return [];
+                                        return app(\App\Ecommerce\Location\Services\Location\LocationManager::class)->getWards($countryCode, $stateId, $cityId);
+                                    })
+                                    ->required()
+                                    ->live(),
+                                Forms\Components\TextInput::make('street')->label(trans('admin.street'))->required(),
+                                Forms\Components\TextInput::make('postal_code')->label(trans('admin.zip')),
+                            ])
+                            ->columns(2)
+                            ->columnSpanFull(),
+                    ])->collapsible(),
 
                 Forms\Components\Section::make('Metadata')
                     ->schema([
@@ -159,6 +251,6 @@ class UserResource extends Resource implements HasShieldPermissions
     /** @return Builder<User> */
     public static function getEloquentQuery(): Builder
     {
-        return app(\App\Contracts\Services\CustomerServiceInterface::class)->getTableQuery();
+        return app(\App\Ecommerce\Customer\Contracts\CustomerServiceInterface::class)->getTableQuery();
     }
 }

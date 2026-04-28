@@ -42,6 +42,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'github_handle',
         'twitter_handle',
         'meta_data',
+        'default_shipping_address_id',
+        'default_billing_address_id',
     ];
 
     /**
@@ -65,6 +67,18 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function addresses(): \Illuminate\Database\Eloquent\Relations\MorphToMany
     {
         return $this->morphToMany(\App\Models\Address::class, 'addressable');
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Address, self> */
+    public function defaultShippingAddress(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Address::class, 'default_shipping_address_id');
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Address, self> */
+    public function defaultBillingAddress(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Address::class, 'default_billing_address_id');
     }
 
     /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\Comment> */

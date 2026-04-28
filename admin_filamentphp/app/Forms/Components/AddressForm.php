@@ -178,7 +178,7 @@ class AddressForm extends Forms\Components\Component
         $countryField = Forms\Components\Select::make($countryKey)
             ->label(trans('admin.country'))
             ->searchable()
-            ->options(fn() => app(\App\Services\Location\LocationManager::class)->getCountries())
+            ->options(fn() => app(\App\Ecommerce\Location\Services\Location\LocationManager::class)->getCountries())
             ->required()
             ->multiple($this->isMultiple)
             ->live()
@@ -195,7 +195,7 @@ class AddressForm extends Forms\Components\Component
                         ->options(function ($get) use ($countryKey) {
                             $country = $get($countryKey);
                             $countryCode = is_array($country) ? ($country[0] ?? 'VN') : ($country ?? 'VN');
-                            return app(\App\Services\Location\LocationManager::class)->getStates($countryCode);
+                            return app(\App\Ecommerce\Location\Services\Location\LocationManager::class)->getStates($countryCode);
                         })
                         ->multiple($this->isMultiple)
                         ->searchable()
@@ -214,7 +214,7 @@ class AddressForm extends Forms\Components\Component
                             $stateId = is_array($state) ? ($state[0] ?? null) : $state;
 
                             if (!$stateId) return [];
-                            return app(\App\Services\Location\LocationManager::class)->getCities($countryCode, $stateId);
+                            return app(\App\Ecommerce\Location\Services\Location\LocationManager::class)->getCities($countryCode, $stateId);
                         })
                         ->multiple($this->isMultiple)
                         ->searchable()
@@ -229,7 +229,7 @@ class AddressForm extends Forms\Components\Component
                             $state = $get($this->fieldMap['state_id']);
                             $city = $get($this->fieldMap['city_id']);
                             if (!$city) return [];
-                            return app(\App\Services\Location\LocationManager::class)->getWards($country ?? 'VN', $state, $city);
+                            return app(\App\Ecommerce\Location\Services\Location\LocationManager::class)->getWards($country ?? 'VN', $state, $city);
                         })
                         ->searchable()
                         ->required()

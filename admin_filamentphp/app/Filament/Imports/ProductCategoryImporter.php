@@ -3,7 +3,7 @@
 namespace App\Filament\Imports;
 
 use App\Filament\Imports\BaseImporter;
-use App\Contracts\Services\ProductCategoryServiceInterface;
+use App\Ecommerce\Product\Contracts\ProductCategoryServiceInterface;
 use App\Models\ProductCategory;
 use Filament\Actions\Imports\ImportColumn;
 

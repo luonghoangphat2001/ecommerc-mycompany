@@ -21,11 +21,11 @@ const useAuthStore = create(
         set({ isLoading: true, error: null });
         try {
           const response = await authService.login(email, password);
-          set({ 
-            user: response.data.user, 
+          set({
+            user: response.data.user,
             accessToken: response.data.token,
-            isAuthenticated: true, 
-            isLoading: false 
+            isAuthenticated: true,
+            isLoading: false
           });
 
           // Trigger cart merge if user has a saved cart on backend (once API is ready)
@@ -35,9 +35,9 @@ const useAuthStore = create(
 
           return response;
         } catch (error) {
-          set({ 
-            error: error.response?.data?.message || 'Login failed', 
-            isLoading: false 
+          set({
+            error: error.response?.data?.message || 'Login failed',
+            isLoading: false
           });
           throw error;
         }
@@ -48,16 +48,27 @@ const useAuthStore = create(
         try {
           await authService.logout();
         } finally {
-          set({ 
-            user: null, 
+          set({
+            user: null,
             accessToken: null,
-            isAuthenticated: false, 
-            isLoading: false 
+            isAuthenticated: false,
+            isLoading: false
           });
         }
       },
 
-      setUser: (user) => set({ user, isAuthenticated: !!user })
+      setUser: (user) => set({ user, isAuthenticated: !!user }),
+
+      refreshUser: async () => {
+        try {
+          const response = await authService.fetchUser();
+          set({ user: response.data });
+          return response.data;
+        } catch (error) {
+          console.error('Failed to refresh user:', error);
+          return null;
+        }
+      }
     }),
     {
       name: 'auth-storage',
@@ -65,10 +76,10 @@ const useAuthStore = create(
       onRehydrateStorage: () => (state) => {
         state.setHasHydrated(true);
       },
-      partialize: (state) => ({ 
-        user: state.user, 
+      partialize: (state) => ({
+        user: state.user,
         accessToken: state.accessToken,
-        isAuthenticated: state.isAuthenticated 
+        isAuthenticated: state.isAuthenticated
       }),
     }
   )

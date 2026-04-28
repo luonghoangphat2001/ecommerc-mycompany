@@ -12,10 +12,10 @@ class WebhookStatsOverview extends BaseWidget
 
     protected function getStats(): array
     {
-        $service = app(\App\Contracts\Services\WebhookAnalyticsServiceInterface::class);
+        $service = app(\App\Ecommerce\Analytics\Contracts\WebhookAnalyticsServiceInterface::class);
         $stats = $service->getStatsOverview();
 
-        $currencyService = app(\App\Contracts\Services\CurrencyServiceInterface::class);
+        $currencyService = app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class);
 
         return [
             Stat::make(__('admin.webhooks.stats.total_webhooks'), $currencyService->formatNumber($service->getTotalWebhooksCount()))

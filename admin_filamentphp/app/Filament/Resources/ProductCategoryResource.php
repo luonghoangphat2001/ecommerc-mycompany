@@ -128,7 +128,7 @@ class ProductCategoryResource extends Resource implements HasShieldPermissions
                     ->date()
                     ->sortable(),
             ])
-            ->modifyQueryUsing(fn (Builder $query) => app(\App\Contracts\Services\ProductCategoryServiceInterface::class)->applyTreeSorting($query))
+            ->modifyQueryUsing(fn (Builder $query) => app(\App\Ecommerce\Product\Contracts\ProductCategoryServiceInterface::class)->applyTreeSorting($query))
             ->filters([
                 //
             ])
@@ -151,7 +151,7 @@ class ProductCategoryResource extends Resource implements HasShieldPermissions
     /** @return Builder<ProductCategory> */
     public static function getEloquentQuery(): Builder
     {
-        return app(\App\Contracts\Services\ProductCategoryServiceInterface::class)->getTableQuery();
+        return app(\App\Ecommerce\Product\Contracts\ProductCategoryServiceInterface::class)->getTableQuery();
     }
 
     public static function getPages(): array

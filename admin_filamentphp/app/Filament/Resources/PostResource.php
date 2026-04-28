@@ -214,7 +214,7 @@ class PostResource extends Resource implements HasShieldPermissions
                             Components\ImageEntry::make('image')
                                 ->hiddenLabel()
                                 ->grow(false)
-                            ->getStateUsing(fn($record) => app(\App\Services\PostService::class)->getFeaturedImageUrl($record)),
+                            ->getStateUsing(fn($record) => app(\App\Ecommerce\Post\Services\PostService::class)->getFeaturedImageUrl($record)),
                         ])->from('lg'),
                     ]),
                 Components\Section::make(trans('admin.content'))
@@ -231,7 +231,7 @@ class PostResource extends Resource implements HasShieldPermissions
     /** @return Builder<Post> */
     public static function getEloquentQuery(): Builder
     {
-        return app(\App\Contracts\Services\PostServiceInterface::class)->getTableQuery();
+        return app(\App\Ecommerce\Post\Contracts\PostServiceInterface::class)->getTableQuery();
     }
 
     public static function getPages(): array

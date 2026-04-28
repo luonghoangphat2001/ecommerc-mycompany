@@ -7,8 +7,8 @@ use App\Http\Requests\API\Post\StorePostRequest;
 use App\Http\Requests\API\Post\UpdatePostRequest;
 use App\Http\Resources\Api\PostResource;
 use App\Models\Post;
-use App\Contracts\Services\PostServiceInterface;
-use App\DTOs\Post\PostDTO;
+use App\Ecommerce\Post\Contracts\PostServiceInterface;
+use App\Ecommerce\Post\DTOs\Post\PostDTO;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 

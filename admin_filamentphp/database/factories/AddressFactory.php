@@ -11,7 +11,7 @@ class AddressFactory extends Factory
 
     public function definition(): array
     {
-        $locationService = app(\App\Contracts\Services\LocationServiceInterface::class);
+        $locationService = app(\App\Ecommerce\Location\Contracts\LocationServiceInterface::class);
         $countries = $locationService->getCountryOptions();
         $countryCode = !empty($countries) ? array_rand($countries) : 'VN';
 

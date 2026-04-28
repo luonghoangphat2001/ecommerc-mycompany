@@ -8,7 +8,7 @@ class OrderResource extends BaseResource
 {
     public function toArray(Request $request): array
     {
-        return [
+        return array_merge([
             'id' => $this->id,
             'number' => $this->number,
             'status' => $this->status,
@@ -20,8 +20,14 @@ class OrderResource extends BaseResource
             'shipping_address' => new OrderAddressResource($this->whenLoaded('shippingAddress')),
             'billing_address' => new OrderAddressResource($this->whenLoaded('billingAddress')),
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-        ];
+            'status_history' => $this->relationLoaded('activities') || $this->activities 
+                ? $this->activities()->orderBy('created_at', 'asc')->get()->map(fn($activity) => [
+                    'status' => $activity->properties['attributes']['status'] ?? $this->status,
+                    'time' => $activity->created_at->toDateTimeString(),
+                ])->toArray() 
+                : [
+                    ['status' => $this->status, 'time' => $this->created_at->toDateTimeString()]
+                ],
+        ], $this->getTimestamps());
     }
 }

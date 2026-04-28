@@ -152,7 +152,7 @@ class ImportDatabaseSeeder extends Seeder
             
             Payment::factory()->create(['order_id' => $order->id]);
             
-            app(\App\Contracts\Services\OrderServiceInterface::class)->recalculateTotals($order);
+            app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->recalculateTotals($order);
         });
     }
 

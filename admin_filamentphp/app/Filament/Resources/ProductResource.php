@@ -103,18 +103,18 @@ class ProductResource extends Resource implements HasShieldPermissions
                                         Forms\Components\TextInput::make('price')
                                             ->numeric()
                                             ->label(trans('admin.price'))
-                                            ->prefix(app(\App\Contracts\Services\CurrencyServiceInterface::class)->getCurrencySymbol())
+                                            ->prefix(app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->getCurrencySymbol())
                                             ->required(),
                                         Forms\Components\TextInput::make('old_price')
                                             ->numeric()
                                             ->label(trans('admin.old_price'))
-                                            ->prefix(app(\App\Contracts\Services\CurrencyServiceInterface::class)->getCurrencySymbol())
+                                            ->prefix(app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->getCurrencySymbol())
                                             ->required(),
                                         Forms\Components\TextInput::make('cost')
                                             ->label(trans('admin.cost'))
                                             ->helperText(trans('admin.product.cost_helper'))
                                             ->numeric()
-                                            ->prefix(app(\App\Contracts\Services\CurrencyServiceInterface::class)->getCurrencySymbol())
+                                            ->prefix(app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->getCurrencySymbol())
                                             ->required(),
                                     ]),
                             ])
@@ -367,12 +367,12 @@ class ProductResource extends Resource implements HasShieldPermissions
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) app(\App\Contracts\Services\ProductServiceInterface::class)->getLowStockCount();
+        return (string) app(\App\Ecommerce\Product\Contracts\ProductServiceInterface::class)->getLowStockCount();
     }
 
     /** @return Builder<Product> */
     public static function getEloquentQuery(): Builder
     {
-        return app(\App\Contracts\Services\ProductServiceInterface::class)->getTableQuery();
+        return app(\App\Ecommerce\Product\Contracts\ProductServiceInterface::class)->getTableQuery();
     }
 }

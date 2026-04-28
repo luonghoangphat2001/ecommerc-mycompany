@@ -1,19 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCartStore from '../../cart/store/useCartStore';
 import useSettingsStore from '../../../store/useSettingsStore';
+import useUserAddress from '../../address/hooks/useUserAddress';
 import orderService from '../../order/services/orderService';
 
 const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
   const navigate = useNavigate();
   const { items, clearCart, getCartTotal } = useCartStore();
-  const t = useSettingsStore((state) => state.t);
-  
+  const translate = useSettingsStore((state) => state.translate);
+  const { getShippingFormData, getBillingFormData } = useUserAddress();
+
   const [formData, setFormData] = useState({
-    firstName: initialUser?.first_name || '',
-    lastName: initialUser?.last_name || '',
-    email: initialUser?.email || '',
-    phone: initialUser?.phone || '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
     address: '',
     city: '',
     country: 'VN',
@@ -23,7 +25,6 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
     note: '',
     paymentMethod: 'cod',
     shippingMethod: '',
-    // Billing address
     billingSameAsShipping: true,
     billingFirstName: '',
     billingLastName: '',
@@ -37,13 +38,46 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
     billingSubRegion: ''
   });
 
+  // Update form when user data changes (after API load)
+  useEffect(() => {
+    if (initialUser) {
+      const shipping = getShippingFormData();
+      const billing = getBillingFormData();
+      
+      setFormData(prev => ({
+        ...prev,
+        firstName: shipping.firstName || prev.firstName,
+        lastName: shipping.lastName || prev.lastName,
+        email: shipping.email || prev.email,
+        phone: shipping.phone || prev.phone,
+        address: shipping.address || prev.address,
+        city: shipping.city || prev.city,
+        country: shipping.country || prev.country,
+        state: shipping.state || prev.state,
+        region: shipping.region || prev.region,
+        subRegion: shipping.subRegion || prev.subRegion,
+        billingFirstName: billing.billingFirstName || prev.billingFirstName,
+        billingLastName: billing.billingLastName || prev.billingLastName,
+        billingPhone: billing.billingPhone || prev.billingPhone,
+        billingEmail: billing.billingEmail || prev.billingEmail,
+        billingAddress: billing.billingAddress || prev.billingAddress,
+        billingCity: billing.billingCity || prev.billingCity,
+        billingCountry: billing.billingCountry || prev.billingCountry,
+        billingState: billing.billingState || prev.billingState,
+        billingRegion: billing.billingRegion || prev.billingRegion,
+        billingSubRegion: billing.billingSubRegion || prev.billingSubRegion,
+        billingSameAsShipping: billing.billingSameAsShipping
+      }));
+    }
+  }, [initialUser, getShippingFormData, getBillingFormData]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (items.length === 0) {
-      setError(t('checkout.cart_empty_error'));
+      setError(translate('checkout.cart_empty_error'));
       return;
     }
 
@@ -95,7 +129,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
       navigate('/checkout/success', { state: { order } });
     } catch (err) {
       console.error('Checkout error:', err);
-      setError(err.response?.data?.message || t('checkout.generic_error'));
+      setError(err.response?.data?.message || translate('checkout.generic_error'));
     } finally {
       setIsSubmitting(false);
     }

@@ -75,7 +75,7 @@
                                 {{ $customer->name }}
                             </p>
                             <p class="text-[10px] md:text-xs font-black text-primary-600 bg-primary-500/5 px-2 py-0.5 rounded-full inline-block">
-                                {{ app(\App\Contracts\Services\CurrencyServiceInterface::class)->format($customer->total_spent) }}
+                                {{ app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->format($customer->total_spent) }}
                             </p>
                         </div>
 
@@ -113,7 +113,7 @@
 
                         <div class="text-right">
                             <p class="text-sm font-black text-primary-600">
-                                {{ app(\App\Contracts\Services\CurrencyServiceInterface::class)->format($customer->total_spent) }}
+                                {{ app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->format($customer->total_spent) }}
                             </p>
                         </div>
                     </div>

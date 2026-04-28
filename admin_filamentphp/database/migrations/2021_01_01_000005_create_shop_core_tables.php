@@ -43,6 +43,8 @@ return new class extends Migration
         // General Addresses table (Morphable)
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
+            $table->string('type')->default('shipping'); // shipping or billing
+            $table->boolean('is_default')->default(false);
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('company')->nullable();

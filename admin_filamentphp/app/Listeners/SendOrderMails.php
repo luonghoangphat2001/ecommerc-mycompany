@@ -2,7 +2,7 @@
 
 namespace App\Listeners;
 
-use App\Events\OrderCreated;
+use App\Ecommerce\Order\Events\OrderCreated;
 use App\Mail\OrderAdminMail;
 use App\Mail\OrderCustomerMail;
 use Illuminate\Contracts\Queue\ShouldQueue;

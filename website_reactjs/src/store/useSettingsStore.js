@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import axiosClient from '../api/axiosClient';
-import { translations as localTranslations } from '../i18n/translations';
 
 const useSettingsStore = create((set, get) => ({
   settings: null,
@@ -10,23 +9,23 @@ const useSettingsStore = create((set, get) => ({
     code: 'VND',
     symbol: '₫'
   },
-  apiTranslations: {},
+  translations: {},
 
   fetchSettings: async () => {
     set({ loading: true });
     try {
       const response = await axiosClient.get('storefront-settings');
       const data = response.data;
-      
-      set({ 
-        settings: data, 
+
+      set({
+        settings: data,
         language: data.general?.language || 'vi',
         currency: {
           code: data.general?.default_currency || 'VND',
           symbol: data.general?.currency_symbol || '₫'
         },
-        apiTranslations: data.translations || {},
-        loading: false 
+        translations: data.translations || {},
+        loading: false
       });
     } catch (error) {
       console.error('Failed to fetch settings:', error);
@@ -36,31 +35,16 @@ const useSettingsStore = create((set, get) => ({
 
   setLanguage: (lang) => set({ language: lang }),
 
-  t: (key) => {
-    const { language, apiTranslations } = get();
+  translate: (key) => {
+    const { language, translations } = get();
     const keys = key.split('.');
-    
-    // Try API translations first
-    let result = apiTranslations[language];
-    let foundInApi = true;
-    for (const k of keys) {
-      if (result && result[k]) {
-        result = result[k];
-      } else {
-        foundInApi = false;
-        break;
-      }
-    }
 
-    if (foundInApi) return result;
-
-    // Fallback to local translations
-    result = localTranslations[language];
-    for (const k of keys) {
-      if (result && result[k]) {
-        result = result[k];
+    let result = translations[language];
+    for (const keyPart of keys) {
+      if (result && result[keyPart]) {
+        result = result[keyPart];
       } else {
-        return key; // Fallback to key if not found
+        return key; // Return key if translation not found
       }
     }
     return result;

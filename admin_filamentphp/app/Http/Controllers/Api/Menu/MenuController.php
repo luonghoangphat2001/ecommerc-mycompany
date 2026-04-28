@@ -11,7 +11,7 @@ class MenuController extends Controller
 {
     protected $menuService;
 
-    public function __construct(\App\Services\MenuService $menuService)
+    public function __construct(\App\Ecommerce\Menu\Services\MenuService $menuService)
     {
         $this->menuService = $menuService;
     }

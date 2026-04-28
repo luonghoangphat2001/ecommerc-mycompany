@@ -21,10 +21,10 @@ class StatsOverviewWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $analyticsService = app(\App\Contracts\Services\AnalyticsServiceInterface::class);
+        $analyticsService = app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class);
         $data = $analyticsService->getStatsSummary($this->filters ?? []);
 
-        $currencyService = app(\App\Contracts\Services\CurrencyServiceInterface::class);
+        $currencyService = app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class);
 
         return [
             Stat::make(

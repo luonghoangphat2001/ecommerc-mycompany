@@ -138,6 +138,6 @@ class ShippingZoneResource extends Resource
     /** @return Builder<ShippingZone> */
     public static function getEloquentQuery(): Builder
     {
-        return app(\App\Contracts\Services\ShippingServiceInterface::class)->getShippingZoneTableQuery();
+        return app(\App\Ecommerce\Shipping\Contracts\ShippingServiceInterface::class)->getShippingZoneTableQuery();
     }
 }

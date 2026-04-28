@@ -1,0 +1,67 @@
+<?php
+
+$common = [
+    'id' => 'ID',
+    'created_at' => 'Ngày tạo',
+    'updated_at' => 'Ngày cập nhật',
+    'visibility' => 'Hiển thị',
+    'title' => 'Tiêu đề',
+    'phone' => 'Số điện thoại',
+    'email' => 'Email',
+    'name' => 'Tên',
+    'birthday' => 'Ngày sinh',
+    'slug' => 'Slug',
+    'website' => 'Trang web',
+    'description' => 'Mô tả',
+    'content' => 'Nội dung',
+    'gender' => 'Giới tính',
+    'published_at' => 'Ngày xuất bản',
+    'shipping_price' => 'Phí vận chuyển',
+    'shipping_method' => 'Phương thức vận chuyển',
+    'seo_title' => 'Tiêu đề SEO',
+    'seo_description' => 'Mô tả SEO',
+    'position' => 'Vị trí (sắp xếp)',
+];
+
+return array_merge(
+    $common,
+    [
+        /* Specialized Global Labels */
+        'comment_authors' => 'Tác giả bình luận',
+        'status' => 'Trạng thái',
+        'customers_status' => 'Loại khách hàng',
+        'logo' => 'Logo trang web',
+        'logo_favicon' => 'Favicon trang web',
+        'guest' => 'Vãng lai',
+        'bio' => 'Tiểu sử',
+        'github_handle' => 'Tài khoản GitHub',
+        'twitter_handle' => 'Tài khoản Twitter',
+        'tags' => 'Thẻ',
+        'published_date' => 'Ngày xuất bản',
+        'image' => 'Hình ảnh',
+        'add_image' => 'Thêm hình ảnh',
+        'old_price' => 'Giá gốc',
+        'price' => 'Giá',
+        'cost' => 'Giá vốn',
+        'sku' => 'Mã SKU',
+        'sku_label' => 'Mã SKU (Đơn vị lưu kho)',
+        'barcode' => 'Mã vạch (ISBN, UPC, GTIN, v.v.)',
+        'category_parent' => 'Danh mục cha',
+        'qty' => 'Số lượng',
+        'unit_price' => 'Đơn giá',
+        'zip' => 'Mã bưu điện',
+        'state' => 'Tỉnh/Thành phố',
+        'ward' => 'Phường/Xã',
+        'city' => 'Quận/Huyện',
+        'street' => 'Địa chỉ',
+        'first_name' => 'Họ',
+        'last_name' => 'Tên',
+        'company' => 'Công ty',
+        'country' => 'Quốc gia',
+        'address_line_2' => 'Địa chỉ 2 (Tùy chọn)',
+        'bulk_select_all_label' => 'Chọn/bỏ chọn tất cả các mục để thực hiện tác vụ hàng loạt.',
+        
+        /* Reusing variables for deep mapping compatibility */
+        'fields' => $common,
+    ]
+);

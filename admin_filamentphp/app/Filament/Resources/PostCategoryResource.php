@@ -102,7 +102,7 @@ class PostCategoryResource extends Resource implements HasShieldPermissions
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->modifyQueryUsing(fn (Builder $query) => app(\App\Contracts\Services\PostCategoryServiceInterface::class)->applyTreeSorting($query))
+            ->modifyQueryUsing(fn (Builder $query) => app(\App\Ecommerce\Post\Contracts\PostCategoryServiceInterface::class)->applyTreeSorting($query))
             ->filters([
                 //
             ])
@@ -120,7 +120,7 @@ class PostCategoryResource extends Resource implements HasShieldPermissions
     /** @return Builder<PostCategory> */
     public static function getEloquentQuery(): Builder
     {
-        return app(\App\Contracts\Services\PostCategoryServiceInterface::class)->getTableQuery();
+        return app(\App\Ecommerce\Post\Contracts\PostCategoryServiceInterface::class)->getTableQuery();
     }
 
     public static function getRelations(): array

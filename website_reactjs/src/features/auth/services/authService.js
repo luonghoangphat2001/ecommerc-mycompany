@@ -29,6 +29,10 @@ const authService = {
     return await axiosClient.post('logout');
   },
 
+  fetchUser: async () => {
+    return await axiosClient.get('user');
+  },
+
   getCurrentUser: () => {
     // This will now be handled by useAuthStore, 
     // but keeping it as a helper that reads from localStorage 

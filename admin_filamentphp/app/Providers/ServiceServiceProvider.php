@@ -12,92 +12,100 @@ class ServiceServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(
-            \App\Contracts\Services\ProductServiceInterface::class,
-            \App\Services\ProductService::class
+            \App\Ecommerce\Product\Contracts\ProductServiceInterface::class,
+            \App\Ecommerce\Product\Services\ProductService::class
         );
 
         $this->app->bind(
-            \App\Contracts\Services\OrderServiceInterface::class,
-            \App\Services\OrderService::class
+            \App\Ecommerce\Order\Contracts\OrderServiceInterface::class,
+            \App\Ecommerce\Order\Services\OrderService::class
         );
 
         $this->app->bind(
-            \App\Contracts\Services\SettingServiceInterface::class,
-            \App\Services\SettingService::class
+            \App\Ecommerce\Settings\Contracts\SettingServiceInterface::class,
+            \App\Ecommerce\Settings\Services\SettingService::class
         );
 
         $this->app->bind(
-            \App\Contracts\Services\ProductCategoryServiceInterface::class,
-            \App\Services\ProductCategoryService::class
+            \App\Ecommerce\Product\Contracts\ProductCategoryServiceInterface::class,
+            \App\Ecommerce\Product\Services\ProductCategoryService::class
         );
 
         $this->app->bind(
-            \App\Contracts\Services\CustomerServiceInterface::class,
-            \App\Services\CustomerService::class
+            \App\Ecommerce\Customer\Contracts\CustomerServiceInterface::class,
+            \App\Ecommerce\Customer\Services\CustomerService::class
         );
 
         $this->app->bind(
-            \App\Contracts\Services\OrderExportServiceInterface::class,
-            \App\Services\OrderExportService::class
+            \App\Ecommerce\Order\Contracts\OrderExportServiceInterface::class,
+            \App\Ecommerce\Order\Services\OrderExportService::class
         );
 
         $this->app->bind(
-            \App\Contracts\Services\PostServiceInterface::class,
-            \App\Services\PostService::class
+            \App\Ecommerce\Post\Contracts\PostServiceInterface::class,
+            \App\Ecommerce\Post\Services\PostService::class
         );
         $this->app->bind(
-            \App\Contracts\Services\PostCategoryServiceInterface::class,
-            \App\Services\PostCategoryService::class
+            \App\Ecommerce\Post\Contracts\PostCategoryServiceInterface::class,
+            \App\Ecommerce\Post\Services\PostCategoryService::class
         );
         $this->app->bind(
-            \App\Contracts\Services\PageServiceInterface::class,
-            \App\Services\PageService::class
+            \App\Ecommerce\Page\Contracts\PageServiceInterface::class,
+            \App\Ecommerce\Page\Services\PageService::class
         );
-        $this->app->singleton(\App\Services\MenuService::class);
+        $this->app->singleton(\App\Ecommerce\Menu\Services\MenuService::class);
         $this->app->bind(
-            \App\Contracts\Services\BrandServiceInterface::class,
-            \App\Services\BrandService::class
+            \App\Ecommerce\Product\Contracts\BrandServiceInterface::class,
+            \App\Ecommerce\Product\Services\BrandService::class
         );
-        $this->app->singleton(\App\Services\AuthService::class);
+        $this->app->singleton(\App\Ecommerce\Core\Services\AuthService::class);
         $this->app->bind(
-            \App\Contracts\Services\AnalyticsServiceInterface::class,
-            \App\Services\AnalyticsService::class
-        );
-        $this->app->bind(
-            \App\Contracts\Services\PanelServiceInterface::class,
-            \App\Services\PanelService::class
+            \App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class,
+            \App\Ecommerce\Analytics\Services\AnalyticsService::class
         );
         $this->app->bind(
-            \App\Contracts\Services\WebhookAnalyticsServiceInterface::class,
-            \App\Services\WebhookAnalyticsService::class
+            \App\Ecommerce\Core\Contracts\PanelServiceInterface::class,
+            \App\Ecommerce\Core\Services\PanelService::class
         );
         $this->app->bind(
-            \App\Contracts\Services\CurrencyServiceInterface::class,
-            \App\Services\CurrencyService::class
+            \App\Ecommerce\Analytics\Contracts\WebhookAnalyticsServiceInterface::class,
+            \App\Ecommerce\Analytics\Services\WebhookAnalyticsService::class
         );
         $this->app->bind(
-            \App\Contracts\Services\ShopSettingServiceInterface::class,
-            \App\Services\ShopSettingService::class
+            \App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class,
+            \App\Ecommerce\Core\Services\CurrencyService::class
         );
         $this->app->bind(
-            \App\Contracts\Services\LocationServiceInterface::class,
-            \App\Services\LocationService::class
+            \App\Ecommerce\Settings\Contracts\ShopSettingServiceInterface::class,
+            \App\Ecommerce\Settings\Services\ShopSettingService::class
         );
         $this->app->bind(
-            \App\Contracts\Services\ShippingServiceInterface::class,
-            \App\Services\ShippingService::class
+            \App\Ecommerce\Location\Contracts\LocationServiceInterface::class,
+            \App\Ecommerce\Location\Services\LocationService::class
         );
         $this->app->bind(
-            \App\Contracts\Services\TaxServiceInterface::class,
-            \App\Services\TaxService::class
+            \App\Ecommerce\Shipping\Contracts\ShippingServiceInterface::class,
+            \App\Ecommerce\Shipping\Services\ShippingService::class
         );
         $this->app->bind(
-            \App\Contracts\Services\StorefrontSettingsServiceInterface::class,
-            \App\Services\StorefrontSettingsService::class
+            \App\Ecommerce\Product\Contracts\TaxServiceInterface::class,
+            \App\Ecommerce\Product\Services\TaxService::class
         );
         $this->app->bind(
-            \App\Services\Address\Contracts\AddressServiceInterface::class,
-            \App\Services\Address\AddressService::class
+            \App\Ecommerce\Settings\Contracts\StorefrontSettingsServiceInterface::class,
+            \App\Ecommerce\Settings\Services\StorefrontSettingsService::class
+        );
+        $this->app->bind(
+            \App\Ecommerce\Address\Services\Contracts\AddressServiceInterface::class,
+            \App\Ecommerce\Address\Services\AddressService::class
+        );
+        $this->app->bind(
+            \App\Ecommerce\Customer\Contracts\CustomerResolverServiceInterface::class,
+            \App\Ecommerce\Customer\Services\CustomerResolverService::class
+        );
+        $this->app->bind(
+            \App\Ecommerce\Address\Contracts\AddressBookServiceInterface::class,
+            \App\Ecommerce\Address\Services\AddressBookService::class
         );
     }
 

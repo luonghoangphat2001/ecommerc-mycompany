@@ -3,9 +3,8 @@
 namespace App\Http\Resources\Api;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
-class MediaResource extends JsonResource
+class MediaResource extends BaseResource
 {
     /**
      * Transform the resource into an array.
@@ -14,7 +13,7 @@ class MediaResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        return array_merge([
             'id' => $this->id,
             'disk' => $this->disk,
             'directory' => $this->directory,
@@ -22,7 +21,6 @@ class MediaResource extends JsonResource
             'name' => $this->name,
             'path' => $this->path,
             'url' => \Illuminate\Support\Facades\Storage::url($this->path),
-
             'width' => $this->width,
             'height' => $this->height,
             'size' => $this->size,
@@ -34,9 +32,7 @@ class MediaResource extends JsonResource
             'caption' => $this->caption ?? null,
             'exif' => $this->exif ?? null,
             'curations' => $this->curations ?? null,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
             'tenant_id' => $this->tenant_id ?? null,
-        ];
+        ], $this->getTimestamps());
     }
 }

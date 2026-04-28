@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Settings;
 
-use App\Contracts\Repositories\WebhookLogRepositoryInterface;
+use App\Ecommerce\Analytics\Contracts\WebhookLogRepositoryInterface;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables\Columns\TextColumn;

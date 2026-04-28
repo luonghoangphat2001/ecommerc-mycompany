@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Actions\Order\PlaceOrderAction;
-use App\Contracts\Services\OrderServiceInterface;
-use App\DTOs\Order\OrderDataDTO;
+use App\Ecommerce\Order\Actions\PlaceOrderAction;
+use App\Ecommerce\Order\Contracts\OrderServiceInterface;
+use App\Ecommerce\Order\DTOs\Order\OrderDataDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\StoreOrderRequest;
 use App\Http\Resources\Api\OrderResource;
@@ -25,7 +25,8 @@ class OrderController extends Controller
 
     public function __construct(
         protected PlaceOrderAction $placeOrderAction,
-        protected OrderServiceInterface $orderService
+        protected OrderServiceInterface $orderService,
+        protected \App\Ecommerce\Customer\Contracts\CustomerResolverServiceInterface $customerResolver
     ) {}
 
     /**
@@ -35,14 +36,16 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
+        $userId = $this->customerResolver->resolveCustomerId($request);
+        
         $orders = $this->orderService->paginateFiltered(
             $request->get('per_page', 15),
-            $request->user()?->id
+            $userId
         );
 
         $meta = [
             'filters' => [
-                'status' => \App\Enums\OrderStatus::cases(),
+                'status' => \App\Ecommerce\Order\Enums\OrderStatus::cases(),
             ]
         ];
 
@@ -55,6 +58,8 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request)
     {
         $dto = OrderDataDTO::fromRequest($request->validated());
+
+        $dto->customerId = $this->customerResolver->resolveCustomerId($request, $dto->email);
 
         $order = $this->placeOrderAction->execute($dto);
 

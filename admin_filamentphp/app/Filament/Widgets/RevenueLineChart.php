@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use Filament\Widgets\ChartWidget;
 use Filament\Support\RawJs;
 use App\Settings\DBSettings;
-use App\Contracts\Services\AnalyticsServiceInterface;
+use App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface;
 
 class RevenueLineChart extends ChartWidget
 {
@@ -41,7 +41,7 @@ class RevenueLineChart extends ChartWidget
 
     protected function getOptions(): RawJs
     {
-        $currencyService = app(\App\Contracts\Services\CurrencyServiceInterface::class);
+        $currencyService = app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class);
 
         return RawJs::make(<<<JS
             {

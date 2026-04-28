@@ -3,9 +3,8 @@
 namespace App\Http\Resources\Api;
 
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
-class PostCategoryResource extends JsonResource
+class PostCategoryResource extends BaseResource
 {
     /**
      * Transform the resource into an array.
@@ -14,16 +13,14 @@ class PostCategoryResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        return array_merge([
             'id' => $this->id,
-            'name' => $this->name,
+            'name' => $this->translate('name'),
             'slug' => $this->slug,
-            'description' => $this->description,
+            'description' => $this->translate('description'),
             'is_visible' => $this->is_visible,
             'posts_count' => $this->whenCounted('posts'),
             'posts' => PostResource::collection($this->whenLoaded('posts')),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-        ];
+        ], $this->getTimestamps());
     }
 }

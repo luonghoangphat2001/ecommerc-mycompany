@@ -1,32 +1,93 @@
-# 🛍️ My Ecommerce Fullstack Project
+# 🛍️ My Ecommerce — Fullstack Monorepo
 
-Dự án Thương mại điện tử toàn diện bao gồm Backend quản trị (Laravel/FilamentPHP) và Frontend (ReactJS).
+Một dự án Thương mại điện tử **fullstack** gồm 2 ứng dụng độc lập:
 
-## 📂 Cấu trúc dự án
+| Ứng dụng | Mô tả | Công nghệ |
+|----------|------|-----------|
+| **`admin_filamentphp/`** | Backend API + Admin Panel cho người quản trị | Laravel 11, FilamentPHP 3, MySQL |
+| **`website_reactjs/`** | Storefront cho khách hàng cuối (mua hàng, tài khoản, đơn hàng) | React 19, Tailwind, Zustand, TanStack Query |
 
-- **`admin_filamentphp/`**: Hệ thống quản trị nội bộ (Backend API & Admin Panel).
-- **`website_reactjs/`**: Giao diện người dùng cuối (Frontend Dashboard/Web).
-
-## 🚀 Hướng dẫn chạy nhanh (Quick Start)
-
-| Component | Thư mục | Lệnh thực thi | URL mặc định |
-| :--- | :--- | :--- | :--- |
-| **Frontend** | `website_reactjs` | `npm start` | `http://localhost:3000` |
-| **Backend** | `admin_filamentphp` | `php artisan serve` | `http://localhost:8000` |
+Hai ứng dụng giao tiếp qua REST API tại prefix `/api/v1/`.
 
 ---
 
-## 🛠 Cấu hình API
+## 🏗 Kiến trúc tổng quan
 
-Hệ thống sử dụng prefix `api/v1/admin/` cho toàn bộ các endpoint quản trị. 
-- **Frontend** được cấu hình proxy qua `http://localhost:8000` để tránh lỗi CORS.
-- Tài liệu API (Swagger) có thể truy cập tại: `http://localhost:3000/api-docs`.
+```text
+My_Ecommerce/
+├── admin_filamentphp/      # Laravel + Filament — backend & admin panel
+│   ├── app/Filament/       # Resource (Product, Order, User, ...)
+│   ├── app/Models/         # Eloquent models
+│   ├── routes/api.php      # REST API endpoints
+│   └── routes/web.php      # Admin panel routes
+│
+├── website_reactjs/        # React storefront
+│   ├── src/features/       # account, auth, cart, checkout, order, product
+│   ├── src/pages/          # Home, Shop, ProductDetail, Cart, Checkout, MyAccount
+│   ├── src/components/common/   # Button, Card, FormInput, Alert, IconBadge, ...
+│   └── src/store/          # Zustand stores (auth, cart, settings)
+│
+├── package.json            # Workspace metadata
+└── README.md               # File này
+```
+
+---
+
+## 🚀 Quick start
+
+### 1. Backend (Laravel + Filament)
+```bash
+cd admin_filamentphp
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve            # http://localhost:8000
+```
+- Admin panel: `http://localhost:8000/admin`
+- API base URL: `http://localhost:8000/api/v1/`
+
+### 2. Frontend (React storefront)
+```bash
+cd website_reactjs
+npm install --legacy-peer-deps
+cp .env.example .env
+npm start                    # http://localhost:3000
+```
+
+> Frontend đã cấu hình proxy sang `http://127.0.0.1:8000` nên không cần xử lý CORS khi dev.
+
+---
 
 ## 📦 Yêu cầu hệ thống
 
-- PHP >= 8.1 & Composer
-- Node.js >= 18 & NPM
-- MySQL/PostgreSQL
+| Thành phần | Phiên bản |
+|-----------|-----------|
+| PHP       | ≥ 8.2     |
+| Composer  | ≥ 2.0     |
+| Node.js   | ≥ 18      |
+| NPM       | ≥ 9       |
+| MySQL     | ≥ 8.0     |
 
 ---
-⚡ Được thiết kế và phát triển bởi **Antigravity AI Assistant**.
+
+## 🔧 Quy ước phát triển
+
+- **API versioning**: tất cả endpoint đặt sau `/api/v1/`.
+- **Auth**: Laravel Sanctum (token lưu trong `localStorage` ở frontend).
+- **Phân quyền**: `bezhansalleh/filament-shield` (RBAC ở admin).
+- **Code style frontend**: 4-space indent, double quotes, không semicolon (Prettier).
+- **Code style backend**: Laravel Pint (chuẩn PSR-12).
+
+---
+
+## 📚 Tài liệu chi tiết
+
+- [Backend README](./admin_filamentphp/README.md) — hướng dẫn cài đặt Laravel/Filament, danh sách Resource, API.
+- [Frontend README](./website_reactjs/README.md) — kiến trúc thư mục, design system, shared components.
+
+---
+
+## 📄 License
+
+Code phía Laravel kế thừa [MIT License](./admin_filamentphp/LICENSE.md). Phần còn lại theo chính sách nội bộ của dự án.

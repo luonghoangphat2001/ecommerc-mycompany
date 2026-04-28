@@ -8,8 +8,8 @@ use App\Http\Requests\API\PostCategory\UpdatePostCategoryRequest;
 use App\Http\Resources\Api\PostCategoryResource;
 use App\Http\Resources\Api\PostResource;
 use App\Models\PostCategory;
-use App\Contracts\Services\PostCategoryServiceInterface;
-use App\DTOs\PostCategory\PostCategoryDTO;
+use App\Ecommerce\Post\Contracts\PostCategoryServiceInterface;
+use App\Ecommerce\Post\DTOs\PostCategory\PostCategoryDTO;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 

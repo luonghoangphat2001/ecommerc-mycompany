@@ -31,7 +31,7 @@ class LatestOrdersTable extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(app(\App\Contracts\Services\OrderServiceInterface::class)->getTableQuery())
+            ->query(app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTableQuery())
             ->defaultPaginationPageOption(5)
             ->defaultSort('created_at', 'desc')
             ->columns([

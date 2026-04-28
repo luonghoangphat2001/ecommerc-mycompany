@@ -12,108 +12,113 @@ class RepositoryServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(
-            \App\Contracts\Repositories\ProductRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentProductRepository::class
+            \App\Ecommerce\Product\Contracts\ProductRepositoryInterface::class,
+            \App\Ecommerce\Product\Repositories\EloquentProductRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\BrandRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentBrandRepository::class
+            \App\Ecommerce\Product\Contracts\BrandRepositoryInterface::class,
+            \App\Ecommerce\Product\Repositories\EloquentBrandRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\ProductCategoryRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentProductCategoryRepository::class
+            \App\Ecommerce\Product\Contracts\ProductCategoryRepositoryInterface::class,
+            \App\Ecommerce\Product\Repositories\EloquentProductCategoryRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\TaxClassRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentTaxClassRepository::class
+            \App\Ecommerce\Product\Contracts\TaxClassRepositoryInterface::class,
+            \App\Ecommerce\Product\Repositories\EloquentTaxClassRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\TaxRateRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentTaxRateRepository::class
+            \App\Ecommerce\Product\Contracts\TaxRateRepositoryInterface::class,
+            \App\Ecommerce\Product\Repositories\EloquentTaxRateRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\ShippingZoneRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentShippingZoneRepository::class
+            \App\Ecommerce\Shipping\Contracts\ShippingZoneRepositoryInterface::class,
+            \App\Ecommerce\Shipping\Repositories\EloquentShippingZoneRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\ShippingMethodRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentShippingMethodRepository::class
+            \App\Ecommerce\Shipping\Contracts\ShippingMethodRepositoryInterface::class,
+            \App\Ecommerce\Shipping\Repositories\EloquentShippingMethodRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\OrderRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentOrderRepository::class
+            \App\Ecommerce\Order\Contracts\OrderRepositoryInterface::class,
+            \App\Ecommerce\Order\Repositories\EloquentOrderRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\SettingRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentSettingRepository::class
+            \App\Ecommerce\Settings\Contracts\SettingRepositoryInterface::class,
+            \App\Ecommerce\Settings\Repositories\EloquentSettingRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\CustomerRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentCustomerRepository::class
+            \App\Ecommerce\Customer\Contracts\CustomerRepositoryInterface::class,
+            \App\Ecommerce\Customer\Repositories\EloquentCustomerRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\PostRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentPostRepository::class
+            \App\Ecommerce\Post\Contracts\PostRepositoryInterface::class,
+            \App\Ecommerce\Post\Repositories\EloquentPostRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\PageRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentPageRepository::class
+            \App\Ecommerce\Page\Contracts\PageRepositoryInterface::class,
+            \App\Ecommerce\Page\Repositories\EloquentPageRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\MenuRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentMenuRepository::class
+            \App\Ecommerce\Menu\Contracts\MenuRepositoryInterface::class,
+            \App\Ecommerce\Menu\Repositories\EloquentMenuRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\UserRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentUserRepository::class
+            \App\Ecommerce\User\Contracts\UserRepositoryInterface::class,
+            \App\Ecommerce\User\Repositories\EloquentUserRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\PaymentRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentPaymentRepository::class
+            \App\Ecommerce\Order\Contracts\PaymentRepositoryInterface::class,
+            \App\Ecommerce\Order\Repositories\EloquentPaymentRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\WebhookRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentWebhookRepository::class
+            \App\Ecommerce\Analytics\Contracts\WebhookRepositoryInterface::class,
+            \App\Ecommerce\Analytics\Repositories\EloquentWebhookRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\WebhookLogRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentWebhookLogRepository::class
+            \App\Ecommerce\Analytics\Contracts\WebhookLogRepositoryInterface::class,
+            \App\Ecommerce\Analytics\Repositories\EloquentWebhookLogRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\AnalyticsRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentAnalyticsRepository::class
+            \App\Ecommerce\Analytics\Contracts\AnalyticsRepositoryInterface::class,
+            \App\Ecommerce\Analytics\Repositories\EloquentAnalyticsRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\WebhookAnalyticsRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentWebhookAnalyticsRepository::class
+            \App\Ecommerce\Analytics\Contracts\WebhookAnalyticsRepositoryInterface::class,
+            \App\Ecommerce\Analytics\Repositories\EloquentWebhookAnalyticsRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\PostCategoryRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentPostCategoryRepository::class
+            \App\Ecommerce\Post\Contracts\PostCategoryRepositoryInterface::class,
+            \App\Ecommerce\Post\Repositories\EloquentPostCategoryRepository::class
         );
 
         $this->app->bind(
-            \App\Contracts\Repositories\CountryRepositoryInterface::class,
-            \App\Repositories\Eloquent\EloquentCountryRepository::class
+            \App\Ecommerce\Address\Contracts\AddressRepositoryInterface::class,
+            \App\Ecommerce\Address\Repositories\EloquentAddressRepository::class
+        );
+
+        $this->app->bind(
+            \App\Ecommerce\Location\Contracts\CountryRepositoryInterface::class,
+            \App\Ecommerce\Location\Repositories\EloquentCountryRepository::class
         );
     }
 

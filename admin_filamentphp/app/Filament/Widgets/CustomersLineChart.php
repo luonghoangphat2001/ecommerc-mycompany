@@ -3,7 +3,7 @@
 namespace App\Filament\Widgets;
 
 use Filament\Widgets\ChartWidget;
-use App\Contracts\Services\AnalyticsServiceInterface;
+use App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface;
 
 class CustomersLineChart extends ChartWidget
 {

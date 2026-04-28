@@ -3,8 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Order;
-use App\Models\User;
-use App\Enums\OrderStatus;
+use App\Ecommerce\Order\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -19,7 +18,7 @@ class OrderFactory extends Factory
             'user_id' => null,
             'subtotal' => 0, // Will be calculated
             'total' => 0,    // Will be calculated
-            'status' => $this->faker->randomElement(OrderStatus::class),
+            'status' => $this->faker->randomElement(OrderStatus::cases()),
             'currency' => 'VND',
             'exchange_rate' => 1.0,
             'type' => 'shop',

@@ -125,6 +125,6 @@ class TaxClassResource extends Resource
     /** @return Builder<TaxClass> */
     public static function getEloquentQuery(): Builder
     {
-        return app(\App\Contracts\Services\TaxServiceInterface::class)->getTaxClassTableQuery();
+        return app(\App\Ecommerce\Product\Contracts\TaxServiceInterface::class)->getTaxClassTableQuery();
     }
 }

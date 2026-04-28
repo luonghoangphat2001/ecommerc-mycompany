@@ -17,7 +17,7 @@ class CustomStartEcommerceWidget extends Widget
 
     public function getViewData(): array
     {
-        $analyticsService = app(\App\Contracts\Services\AnalyticsServiceInterface::class);
+        $analyticsService = app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class);
         return $analyticsService->getStatsSummary();
     }
 }

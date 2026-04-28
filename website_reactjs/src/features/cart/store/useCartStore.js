@@ -5,15 +5,15 @@ const useCartStore = create(
   persist(
     (set, get) => ({
       items: [],
-      
+
       addToCart: (product, quantity = 1) => {
         const currentItems = get().items;
         const existingItem = currentItems.find(item => item.id === product.id);
-        
+
         if (existingItem) {
           set({
-            items: currentItems.map(item => 
-              item.id === product.id 
+            items: currentItems.map(item =>
+              item.id === product.id
                 ? { ...item, quantity: item.quantity + quantity }
                 : item
             )
@@ -22,11 +22,11 @@ const useCartStore = create(
           set({ items: [...currentItems, { ...product, quantity }] });
         }
       },
-      
+
       removeFromCart: (productId) => {
         set({ items: get().items.filter(item => item.id !== productId) });
       },
-      
+
       updateQuantity: (productId, quantity) => {
         if (quantity <= 0) {
           get().removeFromCart(productId);
@@ -38,13 +38,13 @@ const useCartStore = create(
           )
         });
       },
-      
+
       clearCart: () => set({ items: [] }),
-      
+
       getCartTotal: () => {
         return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
       },
-      
+
       getCartCount: () => {
         return get().items.reduce((count, item) => count + item.quantity, 0);
       },
@@ -53,7 +53,7 @@ const useCartStore = create(
         // Simple merge logic: if item exists in both, keep the one with higher quantity or combine
         // For now, just combining if remoteItems provided
         if (!remoteItems) return;
-        
+
         const localItems = get().items;
         const merged = [...localItems];
 

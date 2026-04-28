@@ -25,8 +25,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(\App\Services\Location\LocationManager::class, function ($app) {
-            return new \App\Services\Location\LocationManager($app);
+        $this->app->singleton(\App\Ecommerce\Location\Services\Location\LocationManager::class, function ($app) {
+            return new \App\Ecommerce\Location\Services\Location\LocationManager($app);
         });
     }
 

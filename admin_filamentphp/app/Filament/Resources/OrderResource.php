@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\OrderStatus;
+use App\Ecommerce\Order\Enums\OrderStatus;
 use App\Filament\Resources\ProductResource;
 use App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource\RelationManagers;
@@ -114,16 +114,16 @@ class OrderResource extends Resource implements HasShieldPermissions
                                             ->content(fn(?Model $record) => $record?->method),
                                         Forms\Components\Placeholder::make('amount')
                                             ->label(trans('admin.order.shipping_cost'))
-                                            ->content(fn(?Model $record) => $record instanceof \App\Models\OrderShipping ? self::formatMoney(app(\App\Contracts\Services\OrderServiceInterface::class)->getTotalShipping($record->order)) : '0'),
+                                            ->content(fn(?Model $record) => $record instanceof \App\Models\OrderShipping ? self::formatMoney(app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTotalShipping($record->order)) : '0'),
                                         Forms\Components\TextInput::make('tax.amount')
                                             ->label(trans('admin.order.tax'))
-                                            ->prefix(app(\App\Contracts\Services\CurrencyServiceInterface::class)->getCurrencySymbol())
+                                            ->prefix(app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->getCurrencySymbol())
                                             ->numeric()
                                             ->default(0)
                                             ->required(),
                                         Forms\Components\Placeholder::make('shipping_total')
                                             ->label(trans('admin.order.total_payment'))
-                                            ->content(fn(?Model $record) => $record instanceof \App\Models\OrderShipping ? self::formatMoney(app(\App\Contracts\Services\OrderServiceInterface::class)->getShippingTotalWithTax($record->order)) : '0'),
+                                            ->content(fn(?Model $record) => $record instanceof \App\Models\OrderShipping ? self::formatMoney(app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getShippingTotalWithTax($record->order)) : '0'),
                                     ]),
                             ])->collapsible(),
 
@@ -160,11 +160,11 @@ class OrderResource extends Resource implements HasShieldPermissions
 
                                         Forms\Components\Placeholder::make('shipping_price_display')
                                             ->label(trans('admin.order.shipping_cost'))
-                                            ->content(fn(?Order $record) => $record ? self::formatMoney((float)app(\App\Contracts\Services\OrderServiceInterface::class)->getTotalShipping($record)) : '0'),
+                                            ->content(fn(?Order $record) => $record ? self::formatMoney((float)app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTotalShipping($record)) : '0'),
 
                                         Forms\Components\Placeholder::make('tax_price_display')
                                             ->label(trans('admin.order.total_tax_display'))
-                                            ->content(fn(?Order $record) => $record ? self::formatMoney(app(\App\Contracts\Services\OrderServiceInterface::class)->getTaxTotal($record)) : '0'),
+                                            ->content(fn(?Order $record) => $record ? self::formatMoney(app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTaxTotal($record)) : '0'),
 
                                         Forms\Components\Placeholder::make('total_display')
                                             ->label(trans('admin.order.total_payment'))
@@ -297,6 +297,7 @@ class OrderResource extends Resource implements HasShieldPermissions
                     ->date()
                     ->toggleable(),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\Filter::make('created_at')
@@ -317,19 +318,19 @@ class OrderResource extends Resource implements HasShieldPermissions
                         ->label(trans('admin.order.process'))
                         ->icon('heroicon-m-arrow-path')
                         ->color('warning')
-                        ->action(fn(Order $record) => app(\App\Contracts\Services\OrderServiceInterface::class)->updateStatus($record, OrderStatus::Processing))
+                        ->action(fn(Order $record) => app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->updateStatus($record, OrderStatus::Processing))
                         ->visible(fn(Order $record) => $record->status === OrderStatus::Pending || $record->status === OrderStatus::New),
                     Tables\Actions\Action::make('ship')
                         ->label(trans('admin.order.ship'))
                         ->icon('heroicon-m-truck')
                         ->color('info')
-                        ->action(fn(Order $record) => app(\App\Contracts\Services\OrderServiceInterface::class)->updateStatus($record, OrderStatus::Delivering))
+                        ->action(fn(Order $record) => app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->updateStatus($record, OrderStatus::Delivering))
                         ->visible(fn(Order $record) => $record->status === OrderStatus::Processing),
                     Tables\Actions\Action::make('complete')
                         ->label(trans('admin.order.complete'))
                         ->icon('heroicon-m-check-badge')
                         ->color('success')
-                        ->action(fn(Order $record) => app(\App\Contracts\Services\OrderServiceInterface::class)->updateStatus($record, OrderStatus::Completed))
+                        ->action(fn(Order $record) => app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->updateStatus($record, OrderStatus::Completed))
                         ->visible(fn(Order $record) => $record->status === OrderStatus::Delivering),
                 ]),
             ])
@@ -366,7 +367,7 @@ class OrderResource extends Resource implements HasShieldPermissions
     /** @return Builder<Order> */
     public static function getEloquentQuery(): Builder
     {
-        return app(\App\Contracts\Services\OrderServiceInterface::class)->getTableQuery()
+        return app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTableQuery()
             ->withoutGlobalScope(SoftDeletingScope::class);
     }
 
@@ -382,13 +383,13 @@ class OrderResource extends Resource implements HasShieldPermissions
                     ->searchable()
                     ->getSearchResultsUsing(function (string $search, Forms\Get $get) {
                         $orderType = $get('../../type');
-                        $productService = app(\App\Contracts\Services\ProductServiceInterface::class);
+                        $productService = app(\App\Ecommerce\Product\Contracts\ProductServiceInterface::class);
 
                         return $productService->searchByName($search, $orderType, 50);
                     })
-                    ->getOptionLabelUsing(fn($value): ?string => app(\App\Contracts\Services\ProductServiceInterface::class)->find((string)$value)?->name)
+                    ->getOptionLabelUsing(fn($value): ?string => app(\App\Ecommerce\Product\Contracts\ProductServiceInterface::class)->find((string)$value)?->name)
                     ->reactive()
-                    ->afterStateUpdated(fn($state, Forms\Set $set) => $set('unit_price', app(\App\Contracts\Services\ProductServiceInterface::class)->find($state)?->price ?? 0))
+                    ->afterStateUpdated(fn($state, Forms\Set $set) => $set('unit_price', app(\App\Ecommerce\Product\Contracts\ProductServiceInterface::class)->find($state)?->price ?? 0))
                     ->distinct()
                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                     ->columnSpan(['md' => 5]),
@@ -402,7 +403,7 @@ class OrderResource extends Resource implements HasShieldPermissions
 
                 Forms\Components\TextInput::make('unit_price')
                     ->label(trans('admin.unit_price'))
-                    ->prefix(app(\App\Contracts\Services\CurrencyServiceInterface::class)->getCurrencySymbol())
+                    ->prefix(app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->getCurrencySymbol())
                     ->disabled()
                     ->dehydrated()
                     ->numeric()
@@ -411,7 +412,7 @@ class OrderResource extends Resource implements HasShieldPermissions
 
                 Forms\Components\TextInput::make('tax.amount')
                     ->label(trans('admin.order.tax'))
-                    ->prefix(app(\App\Contracts\Services\CurrencyServiceInterface::class)->getCurrencySymbol())
+                    ->prefix(app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->getCurrencySymbol())
                     ->numeric()
                     ->default(0)
                     ->reactive()
@@ -423,7 +424,7 @@ class OrderResource extends Resource implements HasShieldPermissions
                     ->icon('heroicon-m-arrow-top-right-on-square')
                     ->url(function (array $arguments, Repeater $component): ?string {
                         $itemData = $component->getRawItemState($arguments['item']);
-                        $product = app(\App\Contracts\Services\ProductServiceInterface::class)->find($itemData['shop_product_id']);
+                        $product = app(\App\Ecommerce\Product\Contracts\ProductServiceInterface::class)->find($itemData['shop_product_id']);
                         return $product ? ProductResource::getUrl('edit', ['record' => $product]) : null;
                     }, shouldOpenInNewTab: true)
                     ->hidden(fn(array $arguments, Repeater $component): bool => blank($component->getRawItemState($arguments['item'])['shop_product_id'])),

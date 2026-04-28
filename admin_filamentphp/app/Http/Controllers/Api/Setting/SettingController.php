@@ -13,7 +13,7 @@ class SettingController extends Controller
 
     protected $settingService;
 
-    public function __construct(\App\Contracts\Services\SettingServiceInterface $settingService)
+    public function __construct(\App\Ecommerce\Settings\Contracts\SettingServiceInterface $settingService)
     {
         $this->settingService = $settingService;
     }

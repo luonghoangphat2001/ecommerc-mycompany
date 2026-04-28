@@ -3,7 +3,7 @@
 namespace App\Filament\Imports;
 
 use App\Filament\Imports\BaseImporter;
-use App\Contracts\Services\BrandServiceInterface;
+use App\Ecommerce\Product\Contracts\BrandServiceInterface;
 use App\Models\Brand;
 use Filament\Actions\Imports\ImportColumn;
 

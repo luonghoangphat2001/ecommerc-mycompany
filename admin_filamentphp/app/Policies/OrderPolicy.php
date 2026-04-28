@@ -15,7 +15,7 @@ class OrderPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_order') || true; // Allow customers to view their orders
+        return $user->can('view_any_order');
     }
 
     /**
@@ -23,7 +23,7 @@ class OrderPolicy
      */
     public function view(User $user, Order $order): bool
     {
-        return $user->can('view_order') || $order->user_id === $user->id;
+        return $user->can('view_order');
     }
 
     /**

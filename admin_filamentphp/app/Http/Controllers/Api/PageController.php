@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\API\Page\StorePageRequest;
 use App\Http\Requests\API\Page\UpdatePageRequest;
 use App\Http\Resources\Api\PageResource;
-use App\Contracts\Services\PageServiceInterface;
-use App\DTOs\Page\PageDTO;
+use App\Ecommerce\Page\Contracts\PageServiceInterface;
+use App\Ecommerce\Page\DTOs\Page\PageDTO;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 

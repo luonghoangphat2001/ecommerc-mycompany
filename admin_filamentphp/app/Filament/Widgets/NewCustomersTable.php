@@ -32,11 +32,11 @@ class NewCustomersTable extends BaseWidget
 
     public function table(Table $table): Table
     {
-        $analyticsService = app(\App\Contracts\Services\AnalyticsServiceInterface::class);
+        $analyticsService = app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class);
 
         return $table
             ->query(fn () => 
-                app(\App\Contracts\Services\AnalyticsServiceInterface::class)->getFilteredNewCustomersQuery(request('date_from'), request('date_to'))
+                app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class)->getFilteredNewCustomersQuery(request('date_from'), request('date_to'))
                     ->orderByDesc('latest_order')
             )
             ->defaultPaginationPageOption(5)
@@ -74,7 +74,7 @@ class NewCustomersTable extends BaseWidget
                                 ->columnSpanFull(),
                         ])
                         ->query(function ($query, $data) {
-                            app(\App\Contracts\Services\AnalyticsServiceInterface::class)->applyNewCustomersFilter($query, $data['start_date'] ?? null, $data['end_date'] ?? null);
+                            app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class)->applyNewCustomersFilter($query, $data['start_date'] ?? null, $data['end_date'] ?? null);
                         }),
 
                 ],

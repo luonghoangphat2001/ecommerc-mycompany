@@ -28,7 +28,7 @@ class CleanupWebhookLogsCommand extends Command
     {
         $days = (int) $this->option('days');
         
-        $count = app(\App\Contracts\Services\WebhookAnalyticsServiceInterface::class)->cleanupLogs($days);
+        $count = app(\App\Ecommerce\Analytics\Contracts\WebhookAnalyticsServiceInterface::class)->cleanupLogs($days);
 
         $this->info(__('admin.cleanup.webhook_logs_success', ['count' => $count, 'days' => $days]));
     }

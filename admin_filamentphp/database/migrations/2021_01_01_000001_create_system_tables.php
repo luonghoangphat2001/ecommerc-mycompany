@@ -23,6 +23,8 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->date('birthday')->nullable();
             $table->json('meta_data')->nullable();
+            $table->unsignedBigInteger('default_shipping_address_id')->nullable();
+            $table->unsignedBigInteger('default_billing_address_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

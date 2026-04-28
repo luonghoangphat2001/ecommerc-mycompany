@@ -8,11 +8,11 @@ const useHeader = () => {
   const navigate = useNavigate();
   const { user, logout, _hasHydrated } = useAuthStore();
   const cartCount = useCartStore((state) => state.getCartCount());
-  const { settings, language, setLanguage, currency, setCurrency, t } = useSettingsStore();
+  const { settings, language, setLanguage, currency, setCurrency, translate } = useSettingsStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    if (window.confirm(t('header.logout_confirm') || 'Are you sure?')) {
+    if (window.confirm(translate('header.logout_confirm') || 'Are you sure?')) {
       logout();
       navigate('/');
     }
@@ -31,7 +31,7 @@ const useHeader = () => {
     isMobileMenuOpen,
     setLanguage,
     setCurrency,
-    t,
+    translate,
     handleLogout,
     toggleMobileMenu,
     closeMobileMenu

@@ -14,7 +14,7 @@ const useAddressSelect = () => {
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
-    
+
     try {
       setLoading(true);
       const response = await addressService.getCountries({ signal: abortControllerRef.current.signal });

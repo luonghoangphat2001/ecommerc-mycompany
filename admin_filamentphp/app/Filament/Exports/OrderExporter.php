@@ -24,11 +24,11 @@ class OrderExporter extends BaseExporter
                 ->getStateUsing(fn ($record) => $record->status->value),
             ExportColumn::make('currency'),
             ExportColumn::make('shipping.amount')
-                ->label(trans('admin.fields.shipping_price')),
+                ->label(trans('admin.order.shipping_cost')),
             ExportColumn::make('shipping.method')
                 ->label(trans('admin.fields.shipping_method')),
             ExportColumn::make('notes')
-                ->getStateUsing(fn ($record) => app(\App\Contracts\Services\OrderServiceInterface::class)->getMetaValue($record, 'notes')),
+                ->getStateUsing(fn ($record) => app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getMetaValue($record, 'notes')),
             ExportColumn::make('type'),
         ];
     }

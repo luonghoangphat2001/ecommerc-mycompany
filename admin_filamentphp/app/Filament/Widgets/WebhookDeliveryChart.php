@@ -15,7 +15,7 @@ class WebhookDeliveryChart extends ChartWidget
 
     protected function getData(): array
     {
-        $data = app(\App\Contracts\Services\WebhookAnalyticsServiceInterface::class)->getDeliveryChartData(7);
+        $data = app(\App\Ecommerce\Analytics\Contracts\WebhookAnalyticsServiceInterface::class)->getDeliveryChartData(7);
 
         return [
             'datasets' => [

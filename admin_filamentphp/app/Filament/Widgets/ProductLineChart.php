@@ -48,7 +48,7 @@ class ProductLineChart extends ApexChartWidget
      */
     protected function getOptions(): array
     {
-        $products = collect(app(\App\Contracts\Services\AnalyticsServiceInterface::class)->getTopProductsChartData(10, app()->getLocale()));
+        $products = collect(app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class)->getTopProductsChartData(10, app()->getLocale()));
 
         // Chuẩn bị dữ liệu cho biểu đồ
         $series = [

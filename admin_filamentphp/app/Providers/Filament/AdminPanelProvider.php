@@ -24,7 +24,7 @@ use Kenepa\TranslationManager\TranslationManagerPlugin;
 use Filament\Navigation\UserMenuItem;
 use Illuminate\Support\Facades\Auth;
 use Leandrocfe\FilamentApexCharts\FilamentApexChartsPlugin;
-use App\Contracts\Services\PanelServiceInterface;
+use App\Ecommerce\Core\Contracts\PanelServiceInterface;
 use Biostate\FilamentMenuBuilder\FilamentMenuBuilderPlugin;
 use Awcodes\Curator\CuratorPlugin;
 use Filament\View\PanelsRenderHook;

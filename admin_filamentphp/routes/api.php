@@ -26,6 +26,8 @@ use App\Http\Middleware\CheckTokenExpiration;
 
 Route::middleware(['api'])->prefix('v1')->group(function () {
     Route::get('storefront-settings', [\App\Http\Controllers\Api\StorefrontSettingsController::class, 'index']);
+    Route::get('menus', [\App\Http\Controllers\Api\Menu\MenuController::class, 'index']);
+    Route::post('cart/sync', [\App\Http\Controllers\Api\CartController::class, 'sync']);
     Route::post('login', [AuthController::class, 'login']);
 
     // Address API
@@ -52,7 +54,14 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         \App\Http\Middleware\HandleIdempotency::class
     ])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('user', fn(Request $request) => $request->user());
+        Route::get('user', fn(Request $request) => $request->user()->load(['defaultShippingAddress', 'defaultBillingAddress']));
+        Route::put('user', [AuthController::class, 'updateProfile']);
+        Route::put('user/profile', [AuthController::class, 'updateProfile']);
+        
+        Route::get('user/addresses', [AddressController::class, 'index']);
+        Route::post('user/addresses', [AddressController::class, 'store']);
+        Route::put('user/addresses/{address}', [AddressController::class, 'update']);
+        Route::delete('user/addresses/{address}', [AddressController::class, 'destroy']);
 
         Route::apiResource('orders', OrderController::class);
     });

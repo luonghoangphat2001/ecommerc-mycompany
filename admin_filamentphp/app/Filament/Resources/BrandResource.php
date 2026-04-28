@@ -144,7 +144,7 @@ class BrandResource extends Resource implements HasShieldPermissions
     /** @return Builder<Brand> */
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return app(\App\Contracts\Services\BrandServiceInterface::class)->getTableQuery();
+        return app(\App\Ecommerce\Product\Contracts\BrandServiceInterface::class)->getTableQuery();
     }
 
     public static function getPages(): array

@@ -44,7 +44,7 @@ class TopProductDonutChart extends ApexChartWidget
 
     protected function getOptions(): array
     {
-        $topProducts = collect(app(\App\Contracts\Services\AnalyticsServiceInterface::class)->getTopProductsDonutChartData(5, app()->getLocale()));
+        $topProducts = collect(app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class)->getTopProductsDonutChartData(5, app()->getLocale()));
 
         // Chuyển dữ liệu thành mảng
         $labels = $topProducts->pluck('product_name')->toArray();

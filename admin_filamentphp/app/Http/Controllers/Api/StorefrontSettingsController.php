@@ -4,10 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
-use App\Contracts\Services\StorefrontSettingsServiceInterface;
+use App\Ecommerce\Settings\Contracts\StorefrontSettingsServiceInterface;
+
+use App\Traits\ApiResponse;
 
 class StorefrontSettingsController extends Controller
 {
+    use ApiResponse;
+
     protected StorefrontSettingsServiceInterface $settingsService;
 
     public function __construct(StorefrontSettingsServiceInterface $settingsService)
@@ -17,10 +21,7 @@ class StorefrontSettingsController extends Controller
 
     public function index(): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => $this->settingsService->getStorefrontSettings()
-        ]);
+        return $this->success($this->settingsService->getStorefrontSettings());
     }
 }
 

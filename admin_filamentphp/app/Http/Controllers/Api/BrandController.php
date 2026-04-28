@@ -7,8 +7,8 @@ use App\Http\Requests\API\Brand\StoreBrandRequest;
 use App\Http\Requests\API\Brand\UpdateBrandRequest;
 use App\Http\Resources\Api\BrandResource;
 use App\Models\Brand;
-use App\Contracts\Services\BrandServiceInterface;
-use App\DTOs\Brand\BrandDTO;
+use App\Ecommerce\Product\Contracts\BrandServiceInterface;
+use App\Ecommerce\Product\DTOs\Brand\BrandDTO;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 

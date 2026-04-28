@@ -16,7 +16,7 @@ class AuthController extends Controller
 
     protected $authService;
  
-    public function __construct(\App\Services\AuthService $authService)
+    public function __construct(\App\Ecommerce\Core\Services\AuthService $authService)
     {
         $this->authService = $authService;
     }
@@ -65,4 +65,27 @@ class AuthController extends Controller
  
         return $this->ok(null, 'Logged out successfully');
     }
+
+    /**
+     * Update user profile
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return $this->notFound('User not found');
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'phone' => 'sometimes|string|max:20',
+            'default_shipping_address_id' => 'sometimes|nullable|exists:addresses,id',
+            'default_billing_address_id' => 'sometimes|nullable|exists:addresses,id',
+        ]);
+
+        $user->update($validated);
+
+        return $this->ok($user->fresh(['defaultShippingAddress', 'defaultBillingAddress']), 'Profile updated successfully');
+    }
+
 }

@@ -27,7 +27,7 @@ class OrderStatusPieChart extends ApexChartWidget
 
     protected function getOptions(): array
     {
-        $orders = app(\App\Contracts\Services\AnalyticsServiceInterface::class)->getOrderStatusDistribution();
+        $orders = app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class)->getOrderStatusDistribution();
 
         // Tổng số đơn hàng
         $totalOrders = array_sum($orders);

@@ -51,14 +51,14 @@ trait ApiResponse
      * @param mixed $data
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function error($message = null, $code = 400, $data = null)
+    protected function error($message = null, $code = 400, $errors = [])
     {
         $message = $message ?? __('admin.api.error');
 
         return response()->json([
             'success' => false,
             'message' => $message,
-            'data' => $data
+            'errors' => $errors
         ], $code);
     }
 

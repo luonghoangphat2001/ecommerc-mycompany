@@ -6,7 +6,7 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use App\Models\Order;
 use Carbon\Carbon;
 use Filament\Support\Enums\MaxWidth;
-use App\Contracts\Services\AnalyticsServiceInterface;
+use App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface;
 
 class OrderStatusBarChart extends ApexChartWidget
 {

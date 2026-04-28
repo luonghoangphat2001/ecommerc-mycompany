@@ -1,6 +1,7 @@
 import axiosClient from '../../../api/axiosClient';
 
 const addressService = {
+  // Location/Geography APIs
   getCountries: (config = {}) => {
     return axiosClient.get('countries', config);
   },
@@ -18,6 +19,23 @@ const addressService = {
   getSubRegions: (countryCode, stateId, regionId, config = {}) => {
     const url = `countries/${countryCode}/states/${stateId}/regions/${regionId}/sub-regions`;
     return axiosClient.get(url, config);
+  },
+
+  // User Address APIs
+  listUserAddresses: () => {
+    return axiosClient.get('user/addresses');
+  },
+
+  createUserAddress: (data) => {
+    return axiosClient.post('user/addresses', data);
+  },
+
+  updateUserAddress: (id, data) => {
+    return axiosClient.put(`user/addresses/${id}`, data);
+  },
+
+  deleteUserAddress: (id) => {
+    return axiosClient.delete(`user/addresses/${id}`);
   }
 };
 

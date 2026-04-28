@@ -7,8 +7,8 @@ use App\Http\Requests\API\ProductCategory\StoreProductCategoryRequest;
 use App\Http\Requests\API\ProductCategory\UpdateProductCategoryRequest;
 use App\Http\Resources\Api\ProductCategoryResource;
 use App\Models\ProductCategory;
-use App\Contracts\Services\ProductCategoryServiceInterface;
-use App\DTOs\ProductCategory\ProductCategoryDTO;
+use App\Ecommerce\Product\Contracts\ProductCategoryServiceInterface;
+use App\Ecommerce\Product\DTOs\ProductCategory\ProductCategoryDTO;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 

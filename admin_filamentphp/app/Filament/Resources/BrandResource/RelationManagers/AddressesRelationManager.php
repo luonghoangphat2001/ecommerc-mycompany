@@ -38,7 +38,7 @@ class AddressesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('city'),
 
                 Tables\Columns\TextColumn::make('country')
-                    ->formatStateUsing(fn($state): ?string => app(\App\Contracts\Services\LocationServiceInterface::class)->getCountryName($state)),
+                    ->formatStateUsing(fn($state): ?string => app(\App\Ecommerce\Location\Contracts\LocationServiceInterface::class)->getCountryName($state)),
             ])
             ->filters([
                 //

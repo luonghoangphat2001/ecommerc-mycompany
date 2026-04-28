@@ -1,9 +1,10 @@
 import React from "react"
 import { Package } from "lucide-react"
-import { formatCurrency } from "../../../utils/format"
+import { useFormatters } from "../../../utils/useFormatters"
 import Card from "../../../components/common/Card"
 
 const OrderHistory = ({ orders, onViewOrder }) => {
+    const { formatCurrency } = useFormatters()
     return (
         <Card className="p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
             <Card.Header className="px-0 pt-0 border-none">
@@ -13,19 +14,14 @@ const OrderHistory = ({ orders, onViewOrder }) => {
             <Card.Body className="px-0 pb-0">
                 <div className="space-y-4">
                     {orders.map((order) => (
-                        <div 
-                            key={order.id} 
-                            onClick={() => onViewOrder(order)}
-                            className="group p-6 border border-slate-100 rounded-3xl hover:border-blue-200 hover:bg-blue-50/20 transition-all cursor-pointer flex items-center justify-between"
-                        >
-
+                        <div key={order.id} onClick={() => onViewOrder(order)} className="group p-6 border border-slate-100 rounded-3xl hover:border-blue-200 hover:bg-blue-50/20 transition-all cursor-pointer flex items-center justify-between">
                             <div className="flex items-center gap-6">
                                 <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors">
                                     <Package size={24} />
                                 </div>
                                 <div>
                                     <p className="font-bold text-slate-900">{order.number || order.id}</p>
-                                    <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleDateString('vi-VN')}</p>
+                                    <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleDateString("vi-VN")}</p>
                                 </div>
                             </div>
 

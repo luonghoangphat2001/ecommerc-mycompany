@@ -22,14 +22,14 @@ class TopProduct extends Widget
 
     public function getViewData(): array
     {
-        $analyticsService = app(\App\Contracts\Services\AnalyticsServiceInterface::class);
+        $analyticsService = app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class);
         $topProducts = collect($analyticsService->getTopProducts(6, app()->getLocale()));
 
         return [
             'topThree' => $topProducts->take(3),
             'otherProducts' => $topProducts->slice(3),
             'heading' => trans('admin.chart.header_top_product'),
-            'currency' => app(\App\Contracts\Services\CurrencyServiceInterface::class)->getCurrencySymbol()
+            'currency' => app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->getCurrencySymbol()
         ];
     }
 }

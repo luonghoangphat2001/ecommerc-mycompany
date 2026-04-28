@@ -115,7 +115,7 @@ class ShopSettings extends Page
                                                     ->live()
                                                     ->afterStateUpdated(function ($state, Forms\Set $set) {
                                                         if (!$state) return;
-                                                        $info = app(\App\Contracts\Services\ShopSettingServiceInterface::class)->getLocalizationInfo($state);
+                                                        $info = app(\App\Ecommerce\Settings\Contracts\ShopSettingServiceInterface::class)->getLocalizationInfo($state);
                                                         if ($info) {
                                                             $set('general.default_currency', $info['default_currency']);
                                                             $set('general.currency_symbol', $info['currency_symbol']);
@@ -558,7 +558,7 @@ class ShopSettings extends Page
                 $data['general']['decimal_places'] = (int) $data['general']['decimal_places'];
             }
 
-            $service = app(\App\Contracts\Services\ShopSettingServiceInterface::class);
+            $service = app(\App\Ecommerce\Settings\Contracts\ShopSettingServiceInterface::class);
             $service->updateAllSettings($data);
 
             Notification::make()

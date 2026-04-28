@@ -1,67 +1,150 @@
-# 🚀 Ecommerce Admin Dashboard Pro
+# 🛒 Ecommerce Storefront — `website_reactjs`
 
-Một giao diện quản trị thương mại điện tử hiện đại, hiệu suất cao được xây dựng trên nền tảng **React 19**, kết hợp với sức mạnh của **GSAP** cho các hiệu ứng chuyển động và **Tailwind CSS** cho phong cách thiết kế Glassmorphism sang trọng.
+Giao diện **người mua** của hệ thống My Ecommerce. Một SPA hiện đại xây trên **React 19**, sử dụng **Tailwind CSS** với phong cách Glassmorphism, kết nối tới backend Laravel/Filament qua REST API `/api/v1/`.
 
-![Antigravity Design](https://img.shields.io/badge/Design-Antigravity-blueviolet?style=for-the-badge)
-![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
-![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)
-![GSAP](https://img.shields.io/badge/Animations-GSAP-green?style=for-the-badge)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css&logoColor=white)
+![Zustand](https://img.shields.io/badge/State-Zustand-orange)
+![TanStack Query](https://img.shields.io/badge/Data-TanStack_Query-FF4154)
 
-## ✨ Tính năng nổi bật
+---
 
-- **🔒 Bảo mật & Phân quyền**: Tích hợp trang Login với Protected Routes. Lưu trạng thái đăng nhập vào LocalStorage.
-- **📊 Tổng quan thông minh**: Dashboard hiển thị các chỉ số quan trọng (Sản phẩm, Đơn hàng, Doanh thu) với hiệu ứng Staggered Animation mượt mà.
-- **📦 Quản lý Sản phẩm & Đơn hàng**: Danh sách hiển thị theo phong cách Glassmorphism, hỗ trợ lọc và tìm kiếm cơ bản.
-- **🛠 Core API chuẩn chỉnh**: Hệ thống Axios Client chuyên nghiệp với Interceptors tự động xử lý Token và lỗi Global (401, 403, 500).
-- **📖 API Documentation**: Tích hợp **Swagger UI** (truy cập qua `/api-docs`) dành riêng cho nhà phát triển để xem trực tiếp cấu trúc dữ liệu từ Backend.
-- **🎨 Thẩm mỹ Antigravity**: Hiệu ứng lơ lửng, chiều sâu không gian (Z-axis layering) và Blur nền tinh tế.
+## ✨ Tính năng
 
-## 🛠 Bộ công nghệ (Tech Stack)
+| Module | Chức năng |
+|--------|-----------|
+| **Auth** | Đăng ký, đăng nhập, quên & đặt lại mật khẩu, lưu token Sanctum vào `localStorage` |
+| **Catalog** | Trang chủ với sản phẩm nổi bật, Shop với lọc/tìm kiếm, trang chi tiết sản phẩm |
+| **Cart** | Giỏ hàng với Zustand persist, cập nhật số lượng, xóa item |
+| **Checkout** | Form giao hàng + thanh toán đa phương thức, chọn shipping method, hỗ trợ địa chỉ Việt Nam (tỉnh/quận/phường) |
+| **Account** | Quản lý hồ sơ, sổ địa chỉ (mặc định shipping/billing), đổi mật khẩu, lịch sử & theo dõi đơn hàng |
+| **i18n** | Đa ngôn ngữ qua `useSettingsStore.translate()` (key-based) |
+| **API Docs** | Swagger UI tại `/api-docs` (cần backend đang chạy) |
 
-- **Frontend**: React 19, React Router v7.
-- **Styling**: Tailwind CSS (v3), Lucide React (Icons).
-- **Animation**: GSAP (GreenSock Animation Platform).
-- **Data Handling**: Axios (Core Interceptors), Mock Data fallback.
-- **Docs**: Swagger UI React.
+---
+
+## 🧰 Tech stack
+
+- **Core**: React 19, React Router v7
+- **Styling**: Tailwind CSS 3.4, Lucide React (icons)
+- **State**: Zustand 5 (auth, cart, settings — có persist)
+- **Data fetching**: TanStack Query 5 + Axios (interceptors xử lý 401/403/500)
+- **Animation**: GSAP 3
+- **Docs**: Swagger UI React
+
+---
 
 ## 📂 Cấu trúc thư mục
 
 ```text
 src/
-├── components/     # Các thành phần tái sử dụng (Sidebar, Header, Layout)
-├── pages/          # Các trang chính được phân module (Dashboard, Products, Orders, Login, Docs)
-├── services/       # Core xử lý API (Axios Client, Product/Order Services)
-└── styles/         # Cấu hình CSS toàn cục & Tailwind Directives
+├── api/                    # Axios client + interceptors
+├── components/
+│   └── common/             # Design system: Button, Card, FormInput, FormSelect,
+│                           # FormCheckbox, FormRadio, FormSection, Alert,
+│                           # IconBadge, EmptyState, BackgroundOrbs, PageHeading,
+│                           # Loading, Error, Logo, NavLink, Skeleton
+├── features/               # Tổ chức theo domain
+│   ├── account/            # Profile, AddressBook, ChangePassword
+│   ├── address/            # Hooks lấy danh sách quốc gia / tỉnh / phường
+│   ├── auth/               # Login/Register/Forgot/Reset hooks + store
+│   ├── cart/               # CartItem, CartSummary, store
+│   ├── checkout/           # CheckoutForm, OrderSummary, hooks
+│   ├── home/               # Hero, Features
+│   ├── order/              # OrderHistory, OrderDetail, OrderTracking
+│   └── product/            # ProductCard, ProductInfo, ProductGallery
+├── hooks/                  # Hooks dùng chung
+├── pages/                  # HomePage, ShopPage, ProductDetailPage, CartPage,
+│                           # CheckoutPage, OrderSuccessPage, MyAccountPage,
+│                           # Login/{LoginPage,RegisterPage,ForgotPasswordPage,ResetPasswordPage}
+├── store/                  # Zustand stores (settings, ...)
+├── utils/                  # useFormatters, helpers
+└── App.js / index.js
 ```
 
-## 🚀 Hướng dẫn cài đặt
+---
 
-### 1. Truy cập thư mục
-```bash
-cd website_reactjs
+## 🎨 Design system — `components/common/`
+
+Tất cả component trong thư mục này đều dùng **Glassmorphism** (`bg-white/60 backdrop-blur-xl rounded-[2.5rem]`) và export qua `index.js`.
+
+```jsx
+import {
+    Button, Card, FormInput, FormSelect, FormSection, FormCheckbox, FormRadio,
+    Alert, IconBadge, EmptyState, BackgroundOrbs, PageHeading,
+} from "../components/common"
 ```
 
-### 2. Cài đặt thư viện
+Một số component thường dùng:
+
+| Component | Props chính |
+|-----------|-------------|
+| `Button`  | `variant` (primary/blue/secondary/ghost/danger), `size` (sm/md/lg/xl/block), `as` (Link, button, ...) |
+| `Card`    | `shadow` (none/sm/md/lg), `overflow`, sub-components: `Header`, `Body`, `Footer`, `Title` |
+| `FormInput` | `icon` (focus-aware), `labelExtra`, `disabled`, `placeholder` |
+| `FormSelect` | `options` dạng `[[key, label], ...]`, `placeholder` |
+| `Alert` | `variant` (error/success/info/warning), `shake` |
+| `IconBadge` | `icon`, `color` (9 màu), `size` (sm/md/lg/xl) |
+| `EmptyState` | `icon`, `title`, `description`, `action` |
+| `BackgroundOrbs` | `preset` (auth/hero) hoặc `orbs` tự định nghĩa |
+
+---
+
+## 🚀 Cài đặt & chạy
+
+### 1. Cài dependencies
 ```bash
 npm install --legacy-peer-deps
 ```
 
-### 3. Cấu hình biến môi trường
-Tạo file `.env` tại thư mục gốc và nhập thông tin (Tham khảo `.env.example`):
+### 2. Cấu hình env
+```bash
+cp .env.example .env
+```
+Nội dung `.env`:
 ```env
 REACT_APP_API_URL=http://127.0.0.1:8000/api
-REACT_APP_ADMIN_USER=admin
-REACT_APP_ADMIN_PASS=123456
 ```
 
-### 4. Chạy ứng dụng
+> Mặc định đã có `"proxy": "http://127.0.0.1:8000"` trong `package.json` nên không bị CORS khi dev.
+
+### 3. Chạy dev server
 ```bash
-npm start
+npm start                    # http://localhost:3000
 ```
 
-## 📝 Ghi chú cho Developer
-- Để truy cập tài liệu API Swagger, hãy gõ trực tiếp URL: `http://localhost:3000/api-docs` (Yêu cầu Backend Laravel/Swagger đang chạy).
-- Mật khẩu mặc định: `admin` / `123456`.
+### 4. Build production
+```bash
+npm run build
+```
 
 ---
-⚡ Được thiết kế và phát triển bởi **Antigravity AI Assistant**.
+
+## 🔗 Tích hợp backend
+
+| Endpoint kiểu | Đường dẫn |
+|---------------|-----------|
+| Auth          | `POST /api/v1/auth/{register,login,logout,forgot-password,reset-password}` |
+| Sản phẩm      | `GET /api/v1/products`, `GET /api/v1/products/{id}` |
+| Đơn hàng      | `GET/POST /api/v1/orders` |
+| Địa chỉ       | `GET/POST/PUT/DELETE /api/v1/addresses` |
+| Settings      | `GET /api/v1/settings` |
+
+Token Sanctum được Axios tự inject vào header `Authorization: Bearer ...` (xem `src/api/`).
+
+---
+
+## 🧑‍💻 Code style
+
+- **Indent**: 4 spaces
+- **Quotes**: double `"..."`
+- **Semicolons**: KHÔNG dùng
+- **JSX**: ưu tiên một dòng dài cho element ngắn
+- **Comments**: tránh viết comment giải thích — đặt tên rõ ràng & tách biến
+
+---
+
+## 📝 Ghi chú dev
+
+- Swagger UI: `http://localhost:3000/api-docs` (cần backend đang chạy).
+- Dữ liệu test: dùng tài khoản seed từ Filament backend (`php artisan db:seed`).

@@ -22,14 +22,14 @@ class TopCustomers extends Widget
 
     public function getViewData(): array
     {
-        $analyticsService = app(\App\Contracts\Services\AnalyticsServiceInterface::class);
+        $analyticsService = app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class);
         $customers = collect($analyticsService->getTopCustomers(6))->map(fn($item) => (object)$item);
 
         return [
             'topThree' => $customers->take(3),
             'otherCustomers' => $customers->slice(3),
             'heading' => trans('admin.chart.header_top_customer'),
-            'currency' => app(\App\Contracts\Services\CurrencyServiceInterface::class)->getCurrencySymbol()
+            'currency' => app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->getCurrencySymbol()
         ];
     }
 }

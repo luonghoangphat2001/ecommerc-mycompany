@@ -41,7 +41,7 @@ class MonthlyCustomersChart extends ApexChartWidget
      */
     protected function getOptions(): array
     {
-        $stats = app(\App\Contracts\Services\AnalyticsServiceInterface::class)->getMonthlyCustomerStats();
+        $stats = app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class)->getMonthlyCustomerStats();
 
         return [
             'chart' => [
@@ -82,7 +82,7 @@ class MonthlyCustomersChart extends ApexChartWidget
 
     protected function getFooter(): ?string
     {
-        $stats = app(\App\Contracts\Services\AnalyticsServiceInterface::class)->getMonthlyCustomerStats();
+        $stats = app(\App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface::class)->getMonthlyCustomerStats();
         $currentMonth = $stats['current_count'];
         $previousMonth = $stats['previous_count'];
 

@@ -115,4 +115,17 @@ class Product extends Model implements HasMedia
     {
         return $query->where('type', $type);
     }
+
+    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+              ->width(150)
+              ->height(150)
+              ->nonQueued();
+
+        $this->addMediaConversion('large')
+              ->width(800)
+              ->height(800)
+              ->nonQueued();
+    }
 }

@@ -17,7 +17,7 @@ class ProductResource extends BaseResource
      */
     public function toArray($request)
     {
-        return [
+        return array_merge([
             'id' => $this->id,
             'name' => $this->translate('name'),
             'description' => $this->translate('description'),
@@ -26,11 +26,16 @@ class ProductResource extends BaseResource
             'price' => $this->price,
             'stock' => $this->stock,
             'featured' => $this->featured,
-            'is_visible' => $this->is_visible,
+            'is_available' => $this->qty > 0 && $this->is_visible,
             'brand' => new BrandResource($this->whenLoaded('brand')),
             'categories' => ProductCategoryResource::collection($this->whenLoaded('categories')),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-        ];
+            'meta_seo' => [
+                'title' => $this->seo_title ?? $this->translate('name'),
+                'description' => $this->seo_description ?? $this->translate('description'),
+            ],
+            'og_image' => $this->relationLoaded('featuredImage') && $this->featuredImage 
+                ? \Illuminate\Support\Facades\Storage::url($this->featuredImage->path) 
+                : null,
+        ], $this->getVisibility(), $this->getTimestamps());
     }
 }

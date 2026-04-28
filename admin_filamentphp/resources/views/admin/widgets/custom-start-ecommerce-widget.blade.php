@@ -5,7 +5,7 @@
                 <x-filament::card class=" text-white">
                     <div class="flex  justify-between items-center">
                         <div>
-                            <p class="text-xl font-bold">{{ app(\App\Contracts\Services\CurrencyServiceInterface::class)->format($totalSales) }}</p>
+                            <p class="text-xl font-bold">{{ app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->format($totalSales) }}</p>
                             <p class="text-sm">{{ __('Total Sales') }}</p>
                         </div>
                         <x-filament::icon icon="heroicon-o-shopping-cart" class="w-8 h-8" />
@@ -16,7 +16,7 @@
             <x-filament::card class=" text-white">
                 <div class="bg-green-400 flex justify-between items-center">
                     <div>
-                        <p class="text-xl font-bold">{{ app(\App\Contracts\Services\CurrencyServiceInterface::class)->formatNumber($todayOrders) }}</p>
+                        <p class="text-xl font-bold">{{ app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->formatNumber($todayOrders) }}</p>
                         <p class="text-sm">{{ __('Today Orders') }}</p>
                     </div>
                     <x-filament::icon icon="heroicon-m-arrow-trending-up" class="w-8 h-8" />
@@ -26,7 +26,7 @@
             <x-filament::card class="bg-yellow-400 text-white">
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-xl font-bold">{{ app(\App\Contracts\Services\CurrencyServiceInterface::class)->formatNumber($completedOrders) }}</p>
+                        <p class="text-xl font-bold">{{ app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->formatNumber($completedOrders) }}</p>
                         <p class="text-sm">{{ __('Processing Orders') }}</p>
                     </div>
                     <x-filament::icon icon="heroicon-o-shopping-cart" class="w-8 h-8" />
@@ -36,7 +36,7 @@
             <x-filament::card class="bg-red-400 text-white">
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-xl font-bold">{{ app(\App\Contracts\Services\CurrencyServiceInterface::class)->formatNumber($pendingOrders) }}</p>
+                        <p class="text-xl font-bold">{{ app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class)->formatNumber($pendingOrders) }}</p>
                         <p class="text-sm">{{ __('Delivered Orders') }}</p>
                     </div>
                     <x-filament::icon icon="heroicon-o-clock" class="w-8 h-8" />

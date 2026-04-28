@@ -59,7 +59,7 @@ class OrderItemResource extends BaseResource
             'product_id' => $this->shop_product_id,
             'product' => [
                 'id' => $product?->id,
-                'name' => $product?->name,
+                'name' => $product ? $this->translateField($product, 'name') : null,
                 'image' => $imageUrl ? [
                     'url' => $imageUrl,
                 ] : null,
