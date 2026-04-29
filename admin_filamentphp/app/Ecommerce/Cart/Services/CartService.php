@@ -3,8 +3,9 @@
 namespace App\Ecommerce\Cart\Services;
 
 use App\Ecommerce\Cart\Actions\CartValidationAction;
+use App\Ecommerce\Cart\Contracts\CartServiceInterface;
 
-class CartService
+class CartService implements CartServiceInterface
 {
     protected $cartValidationAction;
 

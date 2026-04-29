@@ -22,11 +22,6 @@ class ServiceServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(
-            \App\Ecommerce\Settings\Contracts\SettingServiceInterface::class,
-            \App\Ecommerce\Settings\Services\SettingService::class
-        );
-
-        $this->app->bind(
             \App\Ecommerce\Product\Contracts\ProductCategoryServiceInterface::class,
             \App\Ecommerce\Product\Services\ProductCategoryService::class
         );
@@ -53,7 +48,10 @@ class ServiceServiceProvider extends ServiceProvider
             \App\Ecommerce\Page\Contracts\PageServiceInterface::class,
             \App\Ecommerce\Page\Services\PageService::class
         );
-        $this->app->singleton(\App\Ecommerce\Menu\Services\MenuService::class);
+        $this->app->bind(
+            \App\Ecommerce\Menu\Contracts\MenuServiceInterface::class,
+            \App\Ecommerce\Menu\Services\MenuService::class
+        );
         $this->app->bind(
             \App\Ecommerce\Product\Contracts\BrandServiceInterface::class,
             \App\Ecommerce\Product\Services\BrandService::class
@@ -110,6 +108,22 @@ class ServiceServiceProvider extends ServiceProvider
         $this->app->bind(
             \App\Ecommerce\Coupon\Contracts\CouponServiceInterface::class,
             \App\Ecommerce\Coupon\Services\CouponService::class
+        );
+        $this->app->bind(
+            \App\Ecommerce\Loyalty\Contracts\LoyaltyServiceInterface::class,
+            \App\Ecommerce\Loyalty\Services\LoyaltyService::class
+        );
+        $this->app->bind(
+            \App\Ecommerce\Inventory\Contracts\InventoryServiceInterface::class,
+            \App\Ecommerce\Inventory\Services\InventoryService::class
+        );
+        $this->app->bind(
+            \App\Ecommerce\Payment\Contracts\PaymentServiceInterface::class,
+            \App\Ecommerce\Payment\Services\PaymentService::class
+        );
+        $this->app->bind(
+            \App\Ecommerce\Cart\Contracts\CartServiceInterface::class,
+            \App\Ecommerce\Cart\Services\CartService::class
         );
     }
 

@@ -3,7 +3,6 @@
 namespace App\Ecommerce\Settings\Services;
 
 use App\Ecommerce\Settings\Contracts\StorefrontSettingsServiceInterface;
-use App\Ecommerce\Settings\Contracts\SettingServiceInterface;
 use App\Settings\GeneralSettings;
 use App\Settings\ProductSettings;
 use App\Settings\CheckoutSettings;
@@ -15,11 +14,9 @@ use Illuminate\Support\Facades\Storage;
 
 class StorefrontSettingsService implements StorefrontSettingsServiceInterface
 {
-    protected SettingServiceInterface $settingService;
-
-    public function __construct(SettingServiceInterface $settingService)
+    public function __construct()
     {
-        $this->settingService = $settingService;
+        // No dependencies needed - uses Spatie Settings directly
     }
 
     public function getStorefrontSettings(): array

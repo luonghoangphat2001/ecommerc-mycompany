@@ -5,8 +5,9 @@ namespace App\Ecommerce\Payment\Services;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Ecommerce\Payment\Contracts\PaymentRepositoryInterface;
+use App\Ecommerce\Payment\Contracts\PaymentServiceInterface;
 
-class PaymentService
+class PaymentService implements PaymentServiceInterface
 {
     protected $paymentRepository;
 

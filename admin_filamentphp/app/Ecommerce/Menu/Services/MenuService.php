@@ -3,8 +3,9 @@
 namespace App\Ecommerce\Menu\Services;
 
 use App\Ecommerce\Menu\Contracts\MenuRepositoryInterface;
+use App\Ecommerce\Menu\Contracts\MenuServiceInterface;
 
-class MenuService
+class MenuService implements MenuServiceInterface
 {
     /**
      * @var MenuRepositoryInterface

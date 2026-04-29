@@ -58,11 +58,6 @@ class RepositoryServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(
-            \App\Ecommerce\Settings\Contracts\SettingRepositoryInterface::class,
-            \App\Ecommerce\Settings\Repositories\EloquentSettingRepository::class
-        );
-
-        $this->app->bind(
             \App\Ecommerce\Customer\Contracts\CustomerRepositoryInterface::class,
             \App\Ecommerce\Customer\Repositories\EloquentCustomerRepository::class
         );
@@ -132,6 +127,11 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(
             \App\Ecommerce\Coupon\Contracts\CouponRepositoryInterface::class,
             \App\Ecommerce\Coupon\Repositories\EloquentCouponRepository::class
+        );
+
+        $this->app->bind(
+            \App\Ecommerce\Inventory\Contracts\InventoryRepositoryInterface::class,
+            \App\Ecommerce\Inventory\Repositories\EloquentInventoryRepository::class
         );
 
         $this->app->bind(

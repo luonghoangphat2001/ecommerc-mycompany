@@ -4,13 +4,20 @@ namespace App\Ecommerce\Inventory\Services;
 
 use Illuminate\Support\Facades\DB;
 use App\Models\InventoryRecord;
-use App\Models\InventoryRecordItem;
-use App\Models\InventoryMovement;
 use App\Models\Product;
+use App\Ecommerce\Inventory\Contracts\InventoryServiceInterface;
+use App\Ecommerce\Inventory\Contracts\InventoryRepositoryInterface;
 use Exception;
 
-class InventoryService
+class InventoryService implements InventoryServiceInterface
 {
+    protected InventoryRepositoryInterface $inventoryRepository;
+
+    public function __construct(InventoryRepositoryInterface $inventoryRepository)
+    {
+        $this->inventoryRepository = $inventoryRepository;
+    }
+
     /**
      * Process Inventory Record and record atomic movements.
      *
@@ -43,30 +50,20 @@ class InventoryService
 
     protected function addStock(int $productId, int $warehouseId, int $quantity, string $refType, int $refId): void
     {
-        $currentStock = DB::table('shop_product_inventory_stocks')
-            ->where('shop_product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->value('stock_quantity') ?? 0;
+        $currentStock = $this->inventoryRepository->getStock($productId, $warehouseId);
+        $newStock = $this->inventoryRepository->addStock($productId, $warehouseId, $quantity);
 
-        DB::table('shop_product_inventory_stocks')
-            ->updateOrInsert(
-                ['shop_product_id' => $productId, 'warehouse_id' => $warehouseId],
-                ['stock_quantity' => $currentStock + $quantity]
-            );
-
-        DB::table('shop_inventory_movements')->insert([
+        $this->inventoryRepository->recordMovement([
             'shop_product_id' => $productId,
             'warehouse_id' => $warehouseId,
             'reference_type' => $refType,
             'reference_id' => $refId,
             'prev_stock' => $currentStock,
             'quantity_changed' => $quantity,
-            'new_stock' => $currentStock + $quantity,
+            'new_stock' => $newStock,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
-
 
         $product = Product::find($productId);
         if ($product) {
@@ -76,33 +73,20 @@ class InventoryService
 
     protected function deductStock(int $productId, int $warehouseId, int $quantity, string $refType, int $refId): void
     {
-        $currentStock = DB::table('shop_product_inventory_stocks')
-            ->where('shop_product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->value('stock_quantity') ?? 0;
+        $currentStock = $this->inventoryRepository->getStock($productId, $warehouseId);
+        $newStock = $this->inventoryRepository->deductStock($productId, $warehouseId, $quantity);
 
-        if ($currentStock < $quantity) {
-            throw new Exception(__('messages.insufficient_stock'));
-        }
-
-        DB::table('shop_product_inventory_stocks')
-            ->where('shop_product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->decrement('stock_quantity', $quantity);
-
-        DB::table('shop_inventory_movements')->insert([
+        $this->inventoryRepository->recordMovement([
             'shop_product_id' => $productId,
             'warehouse_id' => $warehouseId,
             'reference_type' => $refType,
             'reference_id' => $refId,
             'prev_stock' => $currentStock,
             'quantity_changed' => -$quantity,
-            'new_stock' => $currentStock - $quantity,
+            'new_stock' => $newStock,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
-
 
         $product = Product::find($productId);
         if ($product) {

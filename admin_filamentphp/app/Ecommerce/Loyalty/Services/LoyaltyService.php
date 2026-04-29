@@ -6,11 +6,12 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Order;
 use App\Models\User;
 use App\Ecommerce\Loyalty\Contracts\LoyaltyRepositoryInterface;
+use App\Ecommerce\Loyalty\Contracts\LoyaltyServiceInterface;
 use Carbon\Carbon;
 
 use Exception;
 
-class LoyaltyService
+class LoyaltyService implements LoyaltyServiceInterface
 {
     protected LoyaltyRepositoryInterface $loyaltyRepository;
 
