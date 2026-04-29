@@ -7,11 +7,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Translatable\HasTranslations;
+use App\Traits\HasWebhooks;
+use Awcodes\Curator\Models\Media;
+use App\Models\Inventory;
+use Spatie\MediaLibrary\MediaCollections\Models\Media as SpatieMedia;
+
+
+
 
 
 /**
@@ -28,7 +36,8 @@ class Product extends Model implements HasMedia
     use HasFactory;
     use InteractsWithMedia;
     use SoftDeletes;
-    use \App\Traits\HasWebhooks;
+    use HasWebhooks;
+
 
     /**
      * @var string
@@ -90,11 +99,24 @@ class Product extends Model implements HasMedia
 
     public function featuredImage()
     {
-        return $this->belongsTo(\Awcodes\Curator\Models\Media::class, 'product_images');
+        return $this->belongsTo(Media::class, 'product_images');
+    }
+
+    /**
+     * Relate warehouses for localized stocks.
+     *
+     * @return BelongsToMany
+     */
+    public function inventories(): BelongsToMany
+    {
+        return $this->belongsToMany(Inventory::class, 'shop_product_inventory_stocks', 'shop_product_id', 'warehouse_id')
+            ->withPivot('stock_quantity')
+            ->withTimestamps();
     }
 
     /** @return BelongsTo<Brand,self> */
     public function brand(): BelongsTo
+
     {
         return $this->belongsTo(Brand::class, 'shop_brand_id');
     }
@@ -116,7 +138,8 @@ class Product extends Model implements HasMedia
         return $query->where('type', $type);
     }
 
-    public function registerMediaConversions(\Spatie\MediaLibrary\MediaCollections\Models\Media $media = null): void
+    public function registerMediaConversions(SpatieMedia $media = null): void
+
     {
         $this->addMediaConversion('thumb')
               ->width(150)
@@ -127,5 +150,23 @@ class Product extends Model implements HasMedia
               ->width(800)
               ->height(800)
               ->nonQueued();
+    }
+
+    /** @return HasMany<UpsellProduct> */
+    public function upsells(): HasMany
+    {
+        return $this->hasMany(UpsellProduct::class, 'shop_product_id');
+    }
+
+    /** @return HasMany<CrossSellProduct> */
+    public function crossSells(): HasMany
+    {
+        return $this->hasMany(CrossSellProduct::class, 'shop_product_id');
+    }
+
+    /** @return HasMany<ComboProductItem> */
+    public function comboItems(): HasMany
+    {
+        return $this->hasMany(ComboProductItem::class, 'shop_product_id');
     }
 }

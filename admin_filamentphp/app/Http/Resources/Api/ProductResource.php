@@ -7,6 +7,7 @@ use Awcodes\Curator\Models\Media;
 use App\Http\Resources\Api\MediaResource;
 use App\Http\Resources\Api\BrandResource;
 use App\Http\Resources\Api\ProductCategoryResource;
+use App\Http\Resources\Api\InventoryResource;
 
 class ProductResource extends BaseResource
 {
@@ -29,6 +30,7 @@ class ProductResource extends BaseResource
             'is_available' => $this->qty > 0 && $this->is_visible,
             'brand' => new BrandResource($this->whenLoaded('brand')),
             'categories' => ProductCategoryResource::collection($this->whenLoaded('categories')),
+            'inventories' => InventoryResource::collection($this->whenLoaded('inventories')),
             'meta_seo' => [
                 'title' => $this->seo_title ?? $this->translate('name'),
                 'description' => $this->seo_description ?? $this->translate('description'),

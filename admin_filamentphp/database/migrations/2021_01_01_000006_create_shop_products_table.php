@@ -33,10 +33,13 @@ return new class extends Migration
             $table->date('published_at')->nullable();
             $table->string('seo_title')->nullable();
             $table->string('seo_description')->nullable();
-            $table->unsignedBigInteger('product_images')->nullable(); 
+            $table->unsignedBigInteger('product_images')->nullable();
+            $table->unsignedBigInteger('total_stock')->default(0);
+            $table->integer('version')->default(1);
             $table->softDeletes();
             $table->timestamps();
         });
+
 
         // Product Meta
         Schema::create('shop_product_meta', function (Blueprint $table) {

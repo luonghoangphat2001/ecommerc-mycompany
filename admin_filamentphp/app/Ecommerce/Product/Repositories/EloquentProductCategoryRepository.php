@@ -5,6 +5,8 @@ namespace App\Ecommerce\Product\Repositories;
 use App\Ecommerce\Product\Contracts\ProductCategoryRepositoryInterface;
 use App\Models\ProductCategory;
 use App\Ecommerce\Core\Repositories\BaseRepository;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 
 class EloquentProductCategoryRepository extends BaseRepository implements ProductCategoryRepositoryInterface
 {
@@ -23,7 +25,7 @@ class EloquentProductCategoryRepository extends BaseRepository implements Produc
      */
     public function getTreeSortedIds(): array
     {
-        return \Illuminate\Support\Facades\Cache::tags(['products', 'categories'])->remember('product_category_tree_ids', 3600, function() {
+        return Cache::remember('product_category_tree_ids', 3600, function() {
             $categories = $this->model->all();
             
             $buildTree = function ($parentId = null) use (&$buildTree, $categories) {
@@ -42,7 +44,7 @@ class EloquentProductCategoryRepository extends BaseRepository implements Produc
     /**
      * @inheritDoc
      */
-    public function applyTreeSorting(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function applyTreeSorting(Builder $query): Builder
     {
         if (empty($query->getQuery()->orders)) {
             $ids = $this->getTreeSortedIds();

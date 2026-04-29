@@ -15,6 +15,8 @@ return [
         'orders_retrieved' => 'Lấy danh sách đơn hàng thành công.',
         'order_placed' => 'Đặt hàng thành công.',
         'order_not_found' => 'Không tìm thấy đơn hàng.',
+        'product_not_found' => 'Không tìm thấy sản phẩm.',
+        'combo_not_found' => 'Không tìm thấy combo sản phẩm.',
         'success' => 'Thành công',
         'error' => 'Lỗi',
         'created' => 'Tạo thành công',

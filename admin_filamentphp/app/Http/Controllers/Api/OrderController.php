@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Ecommerce\Order\Actions\PlaceOrderAction;
+use App\Ecommerce\Checkout\Actions\PlaceOrderAction;
 use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 use App\Ecommerce\Order\DTOs\Order\OrderDataDTO;
+
 use App\Http\Controllers\Controller;
 use App\Http\Requests\API\StoreOrderRequest;
 use App\Http\Resources\Api\OrderResource;

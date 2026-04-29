@@ -14,8 +14,10 @@ use Illuminate\Database\Eloquent\Builder;
 
 use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
+use App\Ecommerce\Checkout\Services\CheckoutCalculatorService;
+use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
+use App\Ecommerce\Address\DTOs\Address\AddressDTO;
 
-use App\Ecommerce\Order\DTOs\Checkout\CreateOrderDTO;
 use App\Ecommerce\Order\Events\OrderCreated;
 use App\Settings\MailSettings;
 use App\Mail\OrderCustomerMail;
@@ -30,27 +32,25 @@ class OrderService implements OrderServiceInterface
     protected $orderRepository;
     protected $taxService;
     protected $shippingService;
+    protected $calculator;
 
     public function __construct(
         OrderRepositoryInterface $orderRepository,
         TaxServiceInterface $taxService,
-        ShippingServiceInterface $shippingService
+        ShippingServiceInterface $shippingService,
+        CheckoutCalculatorService $calculator
     ) {
         $this->orderRepository = $orderRepository;
         $this->taxService = $taxService;
         $this->shippingService = $shippingService;
+        $this->calculator = $calculator;
     }
 
     /**
      * @inheritDoc
      */
-    public function createOrder(array|CreateOrderDTO $data, array $items = []): Order
+    public function createOrder(array $data, array $items = []): Order
     {
-        if ($data instanceof CreateOrderDTO) {
-            $items = $data->items;
-            $data = $data->data;
-        }
-
         return $this->useTransaction(function () use ($data, $items) {
             /** @var Order $order */
             $order = $this->orderRepository->create($data);
@@ -95,91 +95,77 @@ class OrderService implements OrderServiceInterface
     public function recalculateTotals(Order $order): Order
     {
         return $this->useTransaction(function () use ($order) {
-            // 1. Flush volatile pricing line items (not Taxes/Shipping anymore as they have dedicated tables)
+            // 1. Flush volatile pricing line items
             $order->items()->whereIn('type', ['tax', 'shipping', 'fee'])->delete();
 
-            $subtotal = $order->productItems()->sum('total');
-            $address = $order->shippingAddress;
-            $country = $address?->country_code ?? 'VN';
-
-            $totalTaxAmount = 0;
-
-            // 2. Process Itemized Taxes
+            // 2. Build items for checkout calculation
+            $itemsForCalc = [];
             foreach ($order->productItems as $item) {
-                if ($product = $item->product) {
-                    $taxClass = $product->taxClass;
-                    if ($taxClass) {
-                        $taxResult = $this->taxService->calculate($taxClass, $item->total, $country);
-                        $taxAmount = $taxResult['amount'];
-                        $taxRateId = $taxResult['tax_rate_id'];
-                        $rateName = $taxResult['rate_name'];
-
-                        if ($taxAmount >= 0) {
-                            $order->taxes()->updateOrCreate(
-                                ['shop_order_item_id' => $item->id],
-                                [
-                                    'shop_tax_rate_id' => $taxRateId,
-                                    'name' => $rateName,
-                                    'amount' => $taxAmount,
-                                    'is_shipping' => false,
-                                ]
-                            );
-                            $totalTaxAmount += $taxAmount;
-                        }
-                    }
-                }
+                $itemsForCalc[] = [
+                    'product_id' => $item->shop_product_id,
+                    'qty' => $item->qty,
+                    'unit_price' => $item->unit_price,
+                    'total' => $item->unit_price * $item->qty,
+                    'tax_class_id' => $item->product?->tax_class_id,
+                ];
             }
 
-            // Cleanup taxes for items that no longer exist
-            $order->taxes()
-                ->whereNotNull('shop_order_item_id')
-                ->whereNotIn('shop_order_item_id', $order->productItems->pluck('id'))
-                ->delete();
-
-            // 3. Resolve Shipping Eligibility & Allocation
-            $availableMethods = $this->shippingService->getAvailableMethods(
-                country: $country,
-                state: $address?->state_id,
-                postcode: $address?->postal_code,
-                ward: $address?->ward_id,
-                subtotal: (int) $subtotal
+            // 3. Use CheckoutCalculatorService (same as checkout flow)
+            $address = $order->shippingAddress;
+            $shippingAddressDTO = new AddressDTO(
+                first_name: $address?->first_name ?? '',
+                last_name: $address?->last_name ?? '',
+                phone: $address?->phone ?? '',
+                email: $address?->email ?? '',
+                country_code: $address?->country_code ?? 'VN',
+                state_id: $address?->state_id ?? null,
+                city_id: $address?->city_id ?? null,
+                ward_id: $address?->ward_id ?? null,
+                address_detail: $address?->address_detail ?? '',
             );
 
-            $shippingInfo = $order->shipping ?? new OrderShipping(['order_id' => $order->id]);
-            $selectedMethod = $availableMethods->firstWhere('method_id', $shippingInfo->shop_shipping_method_id);
-            if (!$selectedMethod) {
-                $selectedMethod = $availableMethods->firstWhere('name', $shippingInfo->method);
-            }
-            if (!$selectedMethod) {
-                $selectedMethod = $availableMethods->first();
-            }
+            // Get coupon code from order coupon snapshot
+            $couponCode = $order->coupons()->first()?->coupon_code ?? null;
 
-            if ($selectedMethod) {
-                $shipping = $order->shipping()->updateOrCreate(
-                    ['order_id' => $order->id],
-                    [
-                        'shop_shipping_method_id' => $selectedMethod['method_id'],
-                        'method' => $selectedMethod['name'],
-                        'amount' => $selectedMethod['cost'],
-                    ]
-                );
+            $calcRequest = new CheckoutRequestDTO(
+                items: $itemsForCalc,
+                shippingMethod: $order->shipping?->method,
+                shippingAddress: $shippingAddressDTO,
+                couponCode: $couponCode,
+                currency: $order->currency ?? 'VND'
+            );
 
-                // Create/Update Shipping Tax in relational table
-                $shippingTaxRecord = $order->taxes()->updateOrCreate(
-                    ['is_shipping' => true, 'shop_order_item_id' => null],
-                    [
-                        'name' => 'Shipping Tax',
-                        'amount' => $shipping->tax_amount ?? 0,
-                    ]
-                );
-                $totalTaxAmount += $shippingTaxRecord->amount;
+            $calcResult = $this->calculator->calculate($calcRequest);
+
+            // 4. Save tax details from calculation
+            foreach ($calcResult->appliedTaxes as $tax) {
+                $order->items()->create([
+                    'type' => 'tax',
+                    'name' => $tax['name'],
+                    'qty' => 1,
+                    'unit_price' => $tax['amount'],
+                    'total' => $tax['amount'],
+                ]);
             }
 
-            // 4. Update core order payload signature
+            // 5. Save shipping item
+            if ($calcResult->shippingTotal > 0) {
+                $order->items()->create([
+                    'type' => 'shipping',
+                    'name' => 'Giao hàng: ' . ($order->shipping?->method ?? 'Standard'),
+                    'qty' => 1,
+                    'unit_price' => $calcResult->shippingTotal,
+                    'total' => $calcResult->shippingTotal,
+                ]);
+            }
+
+            // 6. Update order totals with all calculations (same as checkout)
             $order->update([
-                'subtotal' => $subtotal,
-                'tax_amount' => $totalTaxAmount,
-                'total' => $subtotal + $totalTaxAmount + ($selectedMethod['cost'] ?? 0),
+                'subtotal' => $calcResult->subtotal,
+                'tax_amount' => $calcResult->taxTotal,
+                'total' => $calcResult->total,
+                'currency' => $calcResult->currency,
+                'exchange_rate' => $calcResult->exchangeRate,
             ]);
 
             return $order;

@@ -14,9 +14,12 @@ use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Support\Facades\Hash;
+use App\Models\LoyaltyLog;
+use App\Models\LoyaltyPoint;
 use App\Models\Post;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable implements FilamentUser, MustVerifyEmail
@@ -125,5 +128,17 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function meta(): HasMany
     {
         return $this->hasMany(UserMeta::class);
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Relations\HasOne<\App\Models\LoyaltyPoint> */
+    public function loyaltyPoint(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(LoyaltyPoint::class, 'user_id');
+    }
+
+    /** @return HasMany<\App\Models\LoyaltyLog> */
+    public function loyaltyLogs(): HasMany
+    {
+        return $this->hasMany(LoyaltyLog::class, 'user_id');
     }
 }

@@ -33,7 +33,7 @@ class ProductController extends Controller
     {
         $products = $this->productService->paginate(
             perPage: $request->get('per_page', 15),
-            relations: ['categories', 'brand', 'featuredImage']
+            relations: ['categories', 'brand', 'featuredImage', 'inventories']
         );
         
         return $this->ok(ProductResource::collection($products));
@@ -48,7 +48,7 @@ class ProductController extends Controller
     {
         $product = $this->productService->findOrFail(
             $id,
-            relations: ['categories', 'brand', 'featuredImage', 'comments']
+            relations: ['categories', 'brand', 'featuredImage', 'comments', 'inventories']
         );
 
         return $this->ok(new ProductResource($product));

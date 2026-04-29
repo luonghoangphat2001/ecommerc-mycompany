@@ -15,6 +15,8 @@ return [
         'orders_retrieved' => 'Orders retrieved successfully.',
         'order_placed' => 'Order placed successfully.',
         'order_not_found' => 'Order not found.',
+        'product_not_found' => 'Product not found.',
+        'combo_not_found' => 'Combo product not found.',
         'success' => 'Success',
         'error' => 'Error',
         'created' => 'Created successfully',

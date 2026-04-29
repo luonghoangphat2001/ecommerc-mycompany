@@ -29,6 +29,9 @@ use Awcodes\Curator\Models\Media;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Traits\HasCurrencyFormat;
+use App\Filament\Resources\ProductResource\RelationManagers\InventoryRelationManager;
+use App\Filament\Resources\ProductResource\RelationManagers\CommentsRelationManager;
+
 
 class ProductResource extends Resource implements HasShieldPermissions
 {
@@ -324,9 +327,11 @@ class ProductResource extends Resource implements HasShieldPermissions
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\ProductResource\RelationManagers\CommentsRelationManager::class,
+            InventoryRelationManager::class,
+            CommentsRelationManager::class,
         ];
     }
+
 
     public static function getWidgets(): array
     {

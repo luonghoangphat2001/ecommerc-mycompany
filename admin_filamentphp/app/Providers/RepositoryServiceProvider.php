@@ -12,6 +12,12 @@ class RepositoryServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(
+            \App\Ecommerce\Loyalty\Contracts\LoyaltyRepositoryInterface::class,
+            \App\Ecommerce\Loyalty\Repositories\EloquentLoyaltyRepository::class
+        );
+
+        $this->app->bind(
+
             \App\Ecommerce\Product\Contracts\ProductRepositoryInterface::class,
             \App\Ecommerce\Product\Repositories\EloquentProductRepository::class
         );
@@ -82,14 +88,16 @@ class RepositoryServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(
-            \App\Ecommerce\Order\Contracts\PaymentRepositoryInterface::class,
-            \App\Ecommerce\Order\Repositories\EloquentPaymentRepository::class
+            \App\Ecommerce\Payment\Contracts\PaymentRepositoryInterface::class,
+            \App\Ecommerce\Payment\Repositories\EloquentPaymentRepository::class
         );
 
+
         $this->app->bind(
-            \App\Ecommerce\Analytics\Contracts\WebhookRepositoryInterface::class,
-            \App\Ecommerce\Analytics\Repositories\EloquentWebhookRepository::class
+            \App\Ecommerce\Order\Contracts\OrderRefundRepositoryInterface::class,
+            \App\Ecommerce\Order\Repositories\EloquentOrderRefundRepository::class
         );
+
 
         $this->app->bind(
             \App\Ecommerce\Analytics\Contracts\WebhookLogRepositoryInterface::class,
@@ -125,7 +133,13 @@ class RepositoryServiceProvider extends ServiceProvider
             \App\Ecommerce\Coupon\Contracts\CouponRepositoryInterface::class,
             \App\Ecommerce\Coupon\Repositories\EloquentCouponRepository::class
         );
+
+        $this->app->bind(
+            \App\Ecommerce\Analytics\Contracts\WebhookRepositoryInterface::class,
+            \App\Ecommerce\Analytics\Repositories\EloquentWebhookRepository::class
+        );
     }
+
 
     /**
      * Bootstrap services.

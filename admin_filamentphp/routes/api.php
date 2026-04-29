@@ -44,6 +44,12 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
 
     Route::get('products', [ProductController::class, 'index']);
     Route::get('products/{product}', [ProductController::class, 'show']);
+    Route::get('products/{productId}/upsells', [\App\Http\Controllers\Api\UpsellController::class, 'index']);
+    Route::get('products/{productId}/cross-sells', [\App\Http\Controllers\Api\CrossSellController::class, 'index']);
+
+    // Combos
+    Route::get('combos', [\App\Http\Controllers\Api\ComboController::class, 'index']);
+    Route::get('combos/{slug}', [\App\Http\Controllers\Api\ComboController::class, 'show']);
     Route::get('product-categories', [ProductCategoryController::class, 'index']);
     Route::get('brands', [BrandController::class, 'index']);
     Route::get('pages', [PageController::class, 'index']);
@@ -63,6 +69,10 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         Route::post('user/addresses', [AddressController::class, 'store']);
         Route::put('user/addresses/{address}', [AddressController::class, 'update']);
         Route::delete('user/addresses/{address}', [AddressController::class, 'destroy']);
+
+        // Loyalty
+        Route::get('user/loyalty/points', [\App\Http\Controllers\Api\LoyaltyController::class, 'getPoints']);
+        Route::get('user/loyalty/history', [\App\Http\Controllers\Api\LoyaltyController::class, 'getHistory']);
 
         Route::apiResource('orders', OrderController::class)->middleware('throttle:checkout');
     });

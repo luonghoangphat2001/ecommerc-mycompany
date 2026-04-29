@@ -11,6 +11,10 @@ use App\Settings\AdvancedSettings;
 use App\Settings\ApiSettings;
 use App\Settings\WebhookSettings;
 use App\Settings\CouponSettings;
+use App\Settings\LoyaltySettings;
+use App\Settings\InventorySettings;
+use App\Settings\MarketingSettings;
+
 
 class ShopSettingService implements ShopSettingServiceInterface
 {
@@ -31,7 +35,11 @@ class ShopSettingService implements ShopSettingServiceInterface
             'api' => ApiSettings::class,
             'webhook' => WebhookSettings::class,
             'coupon' => CouponSettings::class,
+            'loyalty' => LoyaltySettings::class,
+            'inventory' => InventorySettings::class,
+            'marketing' => MarketingSettings::class,
         ];
+
 
         foreach ($groups as $key => $class) {
             if (isset($data[$key])) {

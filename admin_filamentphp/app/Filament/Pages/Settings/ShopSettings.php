@@ -12,6 +12,9 @@ use App\Settings\AdvancedSettings;
 use App\Settings\ApiSettings;
 use App\Settings\WebhookSettings;
 use App\Settings\CouponSettings;
+use App\Settings\LoyaltySettings;
+use App\Settings\InventorySettings;
+use App\Settings\MarketingSettings;
 use Filament\Forms\Components\Tabs;
 use Filament\Notifications\Notification;
 use Filament\Actions\Action;
@@ -23,6 +26,10 @@ use App\Filament\Pages\Settings\Tabs\ShippingTab;
 use App\Filament\Pages\Settings\Tabs\CouponTab;
 use App\Filament\Pages\Settings\Tabs\EmailTab;
 use App\Filament\Pages\Settings\Tabs\AdvancedTab;
+use App\Filament\Pages\Settings\Tabs\LoyaltyTab;
+use App\Filament\Pages\Settings\Tabs\InventoryTab;
+use App\Filament\Pages\Settings\Tabs\MarketingTab;
+
 use Exception;
 
 class ShopSettings extends Page
@@ -56,9 +63,13 @@ class ShopSettings extends Page
             'api' => app(ApiSettings::class)->toArray(),
             'webhook' => app(WebhookSettings::class)->toArray(),
             'coupon' => app(CouponSettings::class)->toArray(),
+            'loyalty' => app(LoyaltySettings::class)->toArray(),
+            'inventory' => app(InventorySettings::class)->toArray(),
+            'marketing' => app(MarketingSettings::class)->toArray(),
         ];
 
         $this->form->fill($this->data);
+
     }
 
     public function getTitle(): string
@@ -86,9 +97,13 @@ class ShopSettings extends Page
                         CheckoutTab::make(),
                         ShippingTab::make(),
                         CouponTab::make(),
+                        LoyaltyTab::make(),
+                        InventoryTab::make(),
+                        MarketingTab::make(),
                         EmailTab::make(),
                         AdvancedTab::make(),
                     ])
+
                     ->columnSpanFull(),
             ]);
     }

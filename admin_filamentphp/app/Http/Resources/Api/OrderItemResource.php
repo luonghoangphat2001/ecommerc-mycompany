@@ -68,6 +68,7 @@ class OrderItemResource extends BaseResource
             'unit_price' => $this->unit_price,
             'total' => $this->total,
             'type' => $this->type,
+            'metadata' => $this->metadata,
         ];
     }
 }

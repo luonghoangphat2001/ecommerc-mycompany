@@ -6,6 +6,7 @@ use App\Filament\Resources\OrderResource;
 use App\Models\Order;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 
 class EditOrder extends EditRecord
 {
@@ -13,7 +14,7 @@ class EditOrder extends EditRecord
 
     protected function resolveRecord(int | string $key): Order
     {
-        return app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getFullOrder($key);
+        return app(OrderServiceInterface::class)->getFullOrder($key);
     }
 
     protected function getHeaderActions(): array
@@ -26,28 +27,28 @@ class EditOrder extends EditRecord
                     ->color('info')
                     ->requiresConfirmation()
                     ->action(function (Order $record) {
-                        app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->sendOrderConfirmationMail($this->record);
+                        app(OrderServiceInterface::class)->sendOrderConfirmationMail($this->record);
                         \Filament\Notifications\Notification::make()
                             ->title(trans('admin.order.send_email_user_success'))
                             ->success()
                             ->send();
                     })
-                    ->visible(fn(Order $record) => app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->hasPendingPayments($record)),
+                    ->visible(fn(Order $record) => app(OrderServiceInterface::class)->hasPendingPayments($record)),
                 Actions\Action::make('confirm_payment')
                     ->label(trans('admin.order.confirm_payment'))
                     ->icon('heroicon-o-credit-card')
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(function (Order $record) {
-                        app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->confirmPayment($record);
-                        app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->sendOrderConfirmationMail($this->record);
+                        app(OrderServiceInterface::class)->confirmPayment($record);
+                        app(OrderServiceInterface::class)->sendOrderConfirmationMail($this->record);
                         \Filament\Notifications\Notification::make()
                             ->title(trans('admin.order.send_email_user_success'))
                             ->success()
                             ->send();
                         \Filament\Notifications\Notification::make()->title(trans('admin.order.payment_confirmed'))->success()->send();
                     })
-                    ->visible(fn(Order $record) => app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->hasPendingPayments($record)),
+                    ->visible(fn(Order $record) => app(OrderServiceInterface::class)->hasPendingPayments($record)),
 
                 Actions\Action::make('cancel_order')
                     ->label(trans('admin.order.cancel_order'))
@@ -59,7 +60,7 @@ class EditOrder extends EditRecord
                             ->required(),
                     ])
                     ->action(function (Order $record, array $data) {
-                        app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->cancel($record, $data['reason']);
+                        app(OrderServiceInterface::class)->cancel($record, $data['reason']);
                         \Filament\Notifications\Notification::make()->title(trans('admin.order.cancelled_success'))->success()->send();
                     })
                     ->visible(fn(Order $record) => !in_array($record->status, [\App\Ecommerce\Order\Enums\OrderStatus::Cancelled, \App\Ecommerce\Order\Enums\OrderStatus::Completed, \App\Ecommerce\Order\Enums\OrderStatus::Refunded])),
@@ -74,7 +75,7 @@ class EditOrder extends EditRecord
                             ->required(),
                     ])
                     ->action(function (Order $record, array $data) {
-                        app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->refund($record, $data['reason']);
+                        app(OrderServiceInterface::class)->refund($record, $data['reason']);
                         \Filament\Notifications\Notification::make()->title(trans('admin.order.refunded_success'))->success()->send();
                     })
                     ->visible(fn(Order $record) => $record->status === \App\Ecommerce\Order\Enums\OrderStatus::Completed),
@@ -117,7 +118,7 @@ class EditOrder extends EditRecord
                 ->modalDescription(trans('admin.order.recalculate_totals_desc'))
                 ->hidden(fn(Order $record) => !in_array($record->status, [\App\Ecommerce\Order\Enums\OrderStatus::Pending, \App\Ecommerce\Order\Enums\OrderStatus::Processing]))
                 ->action(function (Order $record) {
-                    app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->recalculateTotals($record);
+                    app(OrderServiceInterface::class)->recalculateTotals($record);
 
                     \Filament\Notifications\Notification::make()
                         ->title(trans('admin.order.recalculated_success'))

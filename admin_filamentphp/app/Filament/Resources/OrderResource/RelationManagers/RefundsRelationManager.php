@@ -43,8 +43,14 @@ class RefundsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                // Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->using(function (array $data) {
+                        $order = $this->getOwnerRecord();
+                        $refundAction = app(\App\Ecommerce\Order\Actions\RefundOrderAction::class);
+                        return $refundAction->execute($order, (int) $data['amount'], $data['reason'] ?? '');
+                    }),
             ])
+
             ->actions([
                 // Tables\Actions\EditAction::make(),
                 // Tables\Actions\DeleteAction::make(),
