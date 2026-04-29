@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\CrossSellResource;
-use App\Models\Product;
-use App\Settings\MarketingSettings;
+use App\Ecommerce\CrossSell\Contracts\CrossSellServiceInterface;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -17,6 +16,13 @@ use Illuminate\Http\JsonResponse;
 class CrossSellController extends Controller
 {
     use ApiResponse;
+
+    protected CrossSellServiceInterface $crossSellService;
+
+    public function __construct(CrossSellServiceInterface $crossSellService)
+    {
+        $this->crossSellService = $crossSellService;
+    }
 
     /**
      * Get cross-sell products for a product.
@@ -46,21 +52,7 @@ class CrossSellController extends Controller
      */
     public function index(int $productId): JsonResponse
     {
-        if (!app(MarketingSettings::class)->cross_sell_enabled) {
-            return $this->ok([]);
-        }
-
-        $product = Product::find($productId);
-
-        if (!$product) {
-            return $this->notFound(__('messages.api.product_not_found'));
-        }
-
-        $crossSells = $product->crossSells()
-            ->where('is_active', true)
-            ->with('crossSellProduct')
-            ->orderBy('sort_order')
-            ->get();
+        $crossSells = $this->crossSellService->getCrossSellsForProduct($productId);
 
         return $this->ok(CrossSellResource::collection($crossSells));
     }

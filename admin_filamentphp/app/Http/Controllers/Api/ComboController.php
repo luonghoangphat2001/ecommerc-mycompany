@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\ComboResource;
-use App\Models\ComboProduct;
-use App\Settings\MarketingSettings;
+use App\Ecommerce\Combo\Contracts\ComboServiceInterface;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +17,13 @@ use Illuminate\Http\Request;
 class ComboController extends Controller
 {
     use ApiResponse;
+
+    protected ComboServiceInterface $comboService;
+
+    public function __construct(ComboServiceInterface $comboService)
+    {
+        $this->comboService = $comboService;
+    }
 
     /**
      * Get all active combo products.
@@ -44,29 +50,14 @@ class ComboController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        if (!app(MarketingSettings::class)->combo_enabled) {
-            return $this->ok([]);
-        }
-
         $validated = $request->validate([
             'per_page' => 'integer|min:1|max:100',
             'page' => 'integer|min:1',
         ]);
 
-        $combos = ComboProduct::where('is_active', true)
-            ->where(function ($query) {
-                $query->whereNull('start_date')
-                    ->orWhere('start_date', '<=', now());
-            })
-            ->where(function ($query) {
-                $query->whereNull('end_date')
-                    ->orWhere('end_date', '>=', now());
-            })
-            ->with(['items.product'])
-            ->orderBy('sort_order', 'asc')
-            ->paginate($validated['per_page'] ?? 15);
+        $combos = $this->comboService->getActiveCombos();
 
-        return $this->ok(ComboResource::collection($combos));
+        return $this->ok(ComboResource::collection($combos->paginate($validated['per_page'] ?? 15)));
     }
 
     /**
@@ -99,22 +90,7 @@ class ComboController extends Controller
      */
     public function show(string $slug): JsonResponse
     {
-        if (!app(MarketingSettings::class)->combo_enabled) {
-            return $this->notFound(__('messages.api.combo_not_found'));
-        }
-
-        $combo = ComboProduct::where('slug', $slug)
-            ->where('is_active', true)
-            ->where(function ($query) {
-                $query->whereNull('start_date')
-                    ->orWhere('start_date', '<=', now());
-            })
-            ->where(function ($query) {
-                $query->whereNull('end_date')
-                    ->orWhere('end_date', '>=', now());
-            })
-            ->with(['items.product'])
-            ->first();
+        $combo = $this->comboService->getComboBySlug($slug);
 
         if (!$combo) {
             return $this->notFound(__('messages.api.combo_not_found'));

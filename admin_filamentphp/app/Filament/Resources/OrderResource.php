@@ -62,32 +62,70 @@ class OrderResource extends Resource implements HasShieldPermissions
                 Forms\Components\Group::make()
                     ->schema([
                         Forms\Components\Section::make(trans('admin.order.contact_info'))
-                            ->description(trans('admin.order.contact_info_desc'))
                             ->schema([
-                                Forms\Components\Grid::make(2)
-                                    ->relationship('shippingAddress')
+                                Forms\Components\Grid::make(3)
                                     ->schema([
-                                        Forms\Components\TextInput::make('first_name')
-                                            ->label(trans('admin.first_name'))
-                                            ->required(),
+                                        // Cột 1: Contact Info
+                                        Forms\Components\Group::make()
+                                            ->schema([
+                                                Forms\Components\Placeholder::make('contact_header')
+                                                    ->label(trans('admin.order.contact_info'))
+                                                    ->content(trans('admin.order.contact_info_desc')),
+                                                Forms\Components\Grid::make(2)
+                                                    ->relationship('shippingAddress')
+                                                    ->schema([
+                                                        Forms\Components\TextInput::make('first_name')
+                                                            ->label(trans('admin.first_name'))
+                                                            ->required(),
 
-                                        Forms\Components\TextInput::make('last_name')
-                                            ->label(trans('admin.last_name'))
-                                            ->required(),
+                                                        Forms\Components\TextInput::make('last_name')
+                                                            ->label(trans('admin.last_name'))
+                                                            ->required(),
 
-                                        Forms\Components\TextInput::make('email')
-                                            ->label('Email')
-                                            ->email()
-                                            ->required(),
+                                                        Forms\Components\TextInput::make('email')
+                                                            ->label('Email')
+                                                            ->email()
+                                                            ->required(),
 
-                                        Forms\Components\TextInput::make('phone')
-                                            ->label(trans('admin.phone'))
-                                            ->required(),
+                                                        Forms\Components\TextInput::make('phone')
+                                                            ->label(trans('admin.phone'))
+                                                            ->required(),
+                                                    ]),
+                                            ])
+                                            ->disabled(fn(?Order $record) => $record && !in_array($record->status, [OrderStatus::Pending, OrderStatus::Processing])),
+
+                                        // Cột 2: Shipping Address
+                                        Forms\Components\Group::make()
+                                            ->schema([
+                                                Forms\Components\Placeholder::make('shipping_header')
+                                                    ->label(trans('admin.order.shipping_address')),
+                                                Forms\Components\Group::make()
+                                                    ->relationship('shippingAddress')
+                                                    ->schema([
+                                                        \App\Forms\Components\AddressForm::make('shippingAddress_dummy')
+                                                            ->label('')
+                                                            ->dehydrated(false)
+                                                    ]),
+                                            ])
+                                            ->disabled(fn(?Order $record) => $record && !in_array($record->status, [OrderStatus::Pending, OrderStatus::Processing])),
+
+                                        // Cột 3: Billing Address
+                                        Forms\Components\Group::make()
+                                            ->schema([
+                                                Forms\Components\Placeholder::make('billing_header')
+                                                    ->label(trans('admin.order.billing_address')),
+                                                Forms\Components\Group::make()
+                                                    ->relationship('billingAddress')
+                                                    ->schema([
+                                                        \App\Forms\Components\AddressForm::make('billingAddress_dummy')
+                                                            ->label('')
+                                                            ->dehydrated(false)
+                                                    ]),
+                                            ])
+                                            ->disabled(fn(?Order $record) => $record && !in_array($record->status, [OrderStatus::Pending, OrderStatus::Processing])),
                                     ]),
                             ])
-                            ->collapsible()
-                            ->disabled(fn(?Order $record) => $record && !in_array($record->status, [OrderStatus::Pending, OrderStatus::Processing])),
-
+                            ->collapsible(),
                         Forms\Components\Section::make(trans('admin.order.details'))
                             ->headerActions([
                                 Action::make('reset')
@@ -126,30 +164,6 @@ class OrderResource extends Resource implements HasShieldPermissions
                                             ->content(fn(?Model $record) => $record instanceof \App\Models\OrderShipping ? self::formatMoney(app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getShippingTotalWithTax($record->order)) : '0'),
                                     ]),
                             ])->collapsible(),
-
-                        Forms\Components\Section::make(trans('admin.order.notes'))
-                            ->schema([
-                                Forms\Components\Repeater::make('metas')
-                                    ->relationship('metas')
-                                    ->schema([
-                                        Forms\Components\TextInput::make('key')
-                                            ->label(trans('admin.fields.key'))
-                                            ->required()
-                                            ->disabled(fn($state) => in_array($state, ['ip_address', 'user_agent', 'cancellation_reason']))
-                                            ->columnSpan(1),
-                                        Forms\Components\Textarea::make('value')
-                                            ->label(trans('admin.fields.value'))
-                                            ->rows(1)
-                                            ->columnSpan(1),
-                                    ])
-                                    ->columns(2)
-                                    ->label(trans('admin.order.metadata_notes'))
-                                    ->itemLabel(fn(array $state): ?string => $state['key'] ?? null)
-                                    ->collapsible(),
-                            ])
-                            ->collapsible()
-                            ->disabled(fn(?Order $record) => $record && !in_array($record->status, [OrderStatus::Pending, OrderStatus::Processing])),
-
                         Forms\Components\Section::make(trans('admin.order.payment'))
                             ->schema([
                                 Forms\Components\Grid::make(5)
@@ -202,7 +216,7 @@ class OrderResource extends Resource implements HasShieldPermissions
                                     ->deletable(false),
                             ]),
                     ])
-                    ->columnSpan(['lg' => 2]),
+                    ->columnSpan(['md' => 2]),
 
                 // SIDEBAR (PHẢI - 1/3)
                 Forms\Components\Group::make()
@@ -246,33 +260,31 @@ class OrderResource extends Resource implements HasShieldPermissions
                                     ->content(fn(?Order $record): ?string => $record?->updated_at?->diffForHumans()),
                             ]),
 
-                        Forms\Components\Section::make(trans('admin.order.shipping_address'))
-                            ->schema([
-                                Forms\Components\Group::make()
-                                    ->relationship('shippingAddress')
-                                    ->schema([
-                                        \App\Forms\Components\AddressForm::make('shippingAddress_dummy')
-                                            ->label('')
-                                            ->dehydrated(false)
-                                    ]),
-                            ])
-                            ->collapsible()
-                            ->disabled(fn(?Order $record) => $record && !in_array($record->status, [OrderStatus::Pending, OrderStatus::Processing])),
 
-                        Forms\Components\Section::make(trans('admin.order.billing_address'))
+                        Forms\Components\Section::make(trans('admin.order.notes'))
                             ->schema([
-                                Forms\Components\Group::make()
-                                    ->relationship('billingAddress')
+                                Forms\Components\Repeater::make('metas')
+                                    ->relationship('metas')
                                     ->schema([
-                                        \App\Forms\Components\AddressForm::make('billingAddress_dummy')
-                                            ->label('')
-                                            ->dehydrated(false)
-                                    ]),
+                                        Forms\Components\TextInput::make('key')
+                                            ->label(trans('admin.fields.key'))
+                                            ->required()
+                                            ->disabled(fn($state) => in_array($state, ['ip_address', 'user_agent', 'cancellation_reason']))
+                                            ->columnSpan(1),
+                                        Forms\Components\Textarea::make('value')
+                                            ->label(trans('admin.fields.value'))
+                                            ->rows(1)
+                                            ->columnSpan(1),
+                                    ])
+                                    ->columns(2)
+                                    ->label(trans('admin.order.metadata_notes'))
+                                    ->itemLabel(fn(array $state): ?string => $state['key'] ?? null)
+                                    ->collapsible(),
                             ])
                             ->collapsible()
                             ->disabled(fn(?Order $record) => $record && !in_array($record->status, [OrderStatus::Pending, OrderStatus::Processing])),
                     ])
-                    ->columnSpan(['lg' => 1]),
+                    ->columnSpan(['md' => 1]),
             ])
             ->columns(3);
     }

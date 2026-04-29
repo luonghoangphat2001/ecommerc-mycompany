@@ -135,6 +135,21 @@ class RepositoryServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(
+            \App\Ecommerce\Upsell\Contracts\UpsellRepositoryInterface::class,
+            \App\Ecommerce\Upsell\Repositories\EloquentUpsellRepository::class
+        );
+
+        $this->app->bind(
+            \App\Ecommerce\CrossSell\Contracts\CrossSellRepositoryInterface::class,
+            \App\Ecommerce\CrossSell\Repositories\EloquentCrossSellRepository::class
+        );
+
+        $this->app->bind(
+            \App\Ecommerce\Combo\Contracts\ComboRepositoryInterface::class,
+            \App\Ecommerce\Combo\Repositories\EloquentComboRepository::class
+        );
+
+        $this->app->bind(
             \App\Ecommerce\Analytics\Contracts\WebhookRepositoryInterface::class,
             \App\Ecommerce\Analytics\Repositories\EloquentWebhookRepository::class
         );

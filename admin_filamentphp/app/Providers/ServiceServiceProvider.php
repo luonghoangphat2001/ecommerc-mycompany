@@ -125,6 +125,18 @@ class ServiceServiceProvider extends ServiceProvider
             \App\Ecommerce\Cart\Contracts\CartServiceInterface::class,
             \App\Ecommerce\Cart\Services\CartService::class
         );
+        $this->app->bind(
+            \App\Ecommerce\Upsell\Contracts\UpsellServiceInterface::class,
+            \App\Ecommerce\Upsell\Services\UpsellService::class
+        );
+        $this->app->bind(
+            \App\Ecommerce\CrossSell\Contracts\CrossSellServiceInterface::class,
+            \App\Ecommerce\CrossSell\Services\CrossSellService::class
+        );
+        $this->app->bind(
+            \App\Ecommerce\Combo\Contracts\ComboServiceInterface::class,
+            \App\Ecommerce\Combo\Services\ComboService::class
+        );
     }
 
     /**

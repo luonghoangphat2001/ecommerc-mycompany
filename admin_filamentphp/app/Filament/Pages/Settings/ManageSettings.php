@@ -51,7 +51,7 @@ class ManageSettings extends SettingsPage
                     ->columnSpanFull(),
 
                 Forms\Components\TextInput::make('name')
-                    ->label(trans('admin.website_name'))
+                    ->label(trans('admin.website'))
                     ->maxLength(255)
                     ->default(fn() => DBSettings::load()->name),
 
@@ -63,7 +63,7 @@ class ManageSettings extends SettingsPage
                     ->default(fn() => DBSettings::load()->new_user_role),
 
                 Forms\Components\MarkdownEditor::make('about')
-                    ->label(trans('admin.website_description'))
+                    ->label(trans('admin.description'))
                     ->columnSpanFull()
                     ->default(fn() => DBSettings::load()->about),
 

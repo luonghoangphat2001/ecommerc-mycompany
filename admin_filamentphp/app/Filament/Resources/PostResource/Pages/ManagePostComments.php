@@ -28,17 +28,17 @@ class ManagePostComments extends ManageRelatedRecords
 
         $recordTitle = $recordTitle instanceof Htmlable ? $recordTitle->toHtml() : $recordTitle;
 
-        return trans('admin.comment.post.label');
+        return trans('admin.comment.label');
     }
 
     public function getBreadcrumb(): string
     {
-        return trans('admin.comment.post.label');
+        return trans('admin.comment.label');
     }
 
     public static function getNavigationLabel(): string
     {
-        return trans('admin.comment.post.label');
+        return trans('admin.comment.label');
     }
 
     public function form(Form $form): Form

@@ -1,10 +1,10 @@
 # General
 .DS_Store
-.agent
 .agent/
 .vscode/
 .idea/
 *.log
+.windsurf/
 
 # Backend (admin_filamentphp)
 admin_filamentphp/node_modules/

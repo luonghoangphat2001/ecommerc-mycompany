@@ -24,7 +24,7 @@ class CommentsRelationManager extends RelationManager
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
-        return trans('admin.comment.post.label');
+        return trans('admin.comment.label');
     }
 
     public function form(Form $form): Form
@@ -33,21 +33,21 @@ class CommentsRelationManager extends RelationManager
             ->columns(1)
             ->schema([
                 Forms\Components\TextInput::make('title')
-                    ->label(trans('admin.comment.post.label'))
+                    ->label(trans('admin.comment.label'))
                     ->required(),
 
                 Forms\Components\Select::make('user_id')
                     ->relationship('user', 'name')
-                    ->label(trans('admin.comment.post.customer'))
+                    ->label(trans('admin.comment.customer'))
                     ->searchable()
                     ->required(),
 
                 Forms\Components\Toggle::make('is_visible')
-                    ->label(trans('admin.comment.post.is_visible'))
+                    ->label(trans('admin.is_visible'))
                     ->default(true),
 
                 Forms\Components\MarkdownEditor::make('content')
-                    ->label(trans('admin.comment.post.content'))
+                    ->label(trans('admin.comment.content'))
                     ->required(),
             ]);
     }
@@ -60,11 +60,11 @@ class CommentsRelationManager extends RelationManager
                 TextEntry::make('title')
                     ->label(trans('admin.comment.post.title')),
                 TextEntry::make('user.name')
-                    ->label(trans('admin.comment.post.customer')),
+                    ->label(trans('admin.comment.customer')),
                 IconEntry::make('is_visible')
-                    ->label(trans('admin.comment.post.is_visible')),
+                    ->label(trans('admin.is_visible')),
                 TextEntry::make('content')
-                    ->label(trans('admin.comment.post.content'))
+                    ->label(trans('admin.comment.content'))
                     ->markdown(),
             ]);
     }
@@ -79,12 +79,12 @@ class CommentsRelationManager extends RelationManager
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label(trans('admin.comment.post.customer'))
+                    ->label(trans('admin.comment.customer'))
                     ->searchable()
                     ->sortable(),
 
                 Tables\Columns\IconColumn::make('is_visible')
-                    ->label(trans('admin.comment.post.is_visible'))
+                    ->label(trans('admin.is_visible'))
                     ->sortable(),
             ])
             ->filters([

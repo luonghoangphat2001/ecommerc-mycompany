@@ -4,20 +4,12 @@ namespace App\Ecommerce\Checkout\Services\Pipes;
 
 use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
-use App\Ecommerce\Settings\Contracts\SettingServiceInterface;
 use App\Settings\CheckoutSettings;
 use App\Settings\CouponSettings;
 use Closure;
 
 class CalculateTax
 {
-    protected $settingService;
-
-    public function __construct(SettingServiceInterface $settingService)
-    {
-        $this->settingService = $settingService;
-    }
-
     /**
      * Handle the pipe.
      *

@@ -154,7 +154,7 @@ class AdminPanelProvider extends PanelProvider
                     ->defaultLocales(['vi', 'en']),
                 FilamentShieldPlugin::make(),
                 FilamentFabricatorPlugin::make(),
-                FilamentMenuBuilderPlugin::make(),
+                // FilamentMenuBuilderPlugin::make(), // Temporarily disabled due to error
                 CuratorPlugin::make()
                     ->label('Media')
                     ->pluralLabel('Media')

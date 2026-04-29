@@ -142,7 +142,7 @@ class ProductResource extends Resource implements HasShieldPermissions
                                             ->numeric()
                                             ->required(),
                                         Forms\Components\TextInput::make('security_stock')
-                                            ->label(trans('admin.security_stock'))
+                                            ->label(trans('admin.inventory.low_stock_threshold'))
                                             ->helperText(trans('admin.product.security_stock_helper'))
                                             ->numeric()
                                             ->required(),
@@ -257,7 +257,7 @@ class ProductResource extends Resource implements HasShieldPermissions
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('security_stock')
-                    ->label(trans('admin.security_stock'))
+                    ->label(trans('admin.inventory.low_stock_threshold'))
                     ->searchable()
                     ->sortable()
                     ->toggleable()

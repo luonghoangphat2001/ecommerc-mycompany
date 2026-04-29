@@ -66,7 +66,7 @@ class GeneralTab
                                         }
                                     }),
                                 Select::make('general.default_currency')
-                                    ->label(trans('admin.currency'))
+                                    ->label(trans('admin.shop.settings.currency'))
                                     ->options(config('locale-info.currencies'))
                                     ->searchable()
                                     ->preload()

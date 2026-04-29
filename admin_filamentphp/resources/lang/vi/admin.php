@@ -4,7 +4,11 @@ return array_merge(
     include __DIR__ . '/fields.php',
     include __DIR__ . '/enums.php',
     include __DIR__ . '/messages.php',
+    include __DIR__ . '/webhooks.php',
     [
+        'create' => 'Tạo mới',
+        'associations' => 'Liên kết',
+        'is_visible' => 'Hiển thị',
         'sidebar' => [
             'group' => [
                 'general' => 'Tổng quan',
@@ -146,6 +150,7 @@ return array_merge(
                 'hash_secret' => 'Chuỗi bí mật (Hash Secret)',
                 'partner_code' => 'Mã đối tác (Partner Code)',
                 'access_key' => 'Khóa truy cập (Access Key)',
+                'currency' => 'Đơn vị tiền tệ',
                 'currency_symbol' => 'Biểu tượng tiền tệ',
                 'currency_position' => 'Vị trí hiển thị tiền',
                 'thousand_separator' => 'Dấu phân cách phần nghìn',
@@ -380,6 +385,7 @@ return array_merge(
             'prev_stock' => 'Tồn kho trước',
             'qty_changed' => 'Số lượng thay đổi',
             'new_stock' => 'Tồn kho mới',
+            'low_stock_threshold' => 'Ngưỡng tồn kho thấp',
             'in' => 'Nhập',
             'out' => 'Xuất',
             'transfer' => 'Chuyển kho',
@@ -388,6 +394,7 @@ return array_merge(
             'management' => 'Quản lý Kho hàng',
             'records' => 'Nhật ký Kho',
             'movements' => 'Lịch sử Kho',
+            'location' => 'Địa điểm',
         ],
     ]
 

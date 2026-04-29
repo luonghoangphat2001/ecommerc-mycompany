@@ -4,8 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\UpsellResource;
-use App\Models\Product;
-use App\Settings\MarketingSettings;
+use App\Ecommerce\Upsell\Contracts\UpsellServiceInterface;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
@@ -17,6 +16,13 @@ use Illuminate\Http\JsonResponse;
 class UpsellController extends Controller
 {
     use ApiResponse;
+
+    protected UpsellServiceInterface $upsellService;
+
+    public function __construct(UpsellServiceInterface $upsellService)
+    {
+        $this->upsellService = $upsellService;
+    }
 
     /**
      * Get upsell products for a product.
@@ -46,21 +52,7 @@ class UpsellController extends Controller
      */
     public function index(int $productId): JsonResponse
     {
-        if (!app(MarketingSettings::class)->upsell_enabled) {
-            return $this->ok([]);
-        }
-
-        $product = Product::find($productId);
-
-        if (!$product) {
-            return $this->notFound(__('messages.api.product_not_found'));
-        }
-
-        $upsells = $product->upsells()
-            ->where('is_active', true)
-            ->with('upsellProduct')
-            ->orderBy('sort_order')
-            ->get();
+        $upsells = $this->upsellService->getUpsellsForProduct($productId);
 
         return $this->ok(UpsellResource::collection($upsells));
     }

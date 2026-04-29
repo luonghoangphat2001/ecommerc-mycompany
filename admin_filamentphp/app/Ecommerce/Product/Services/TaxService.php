@@ -8,28 +8,25 @@ use App\Models\TaxRate;
 use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Ecommerce\Product\Contracts\TaxRateRepositoryInterface;
 use App\Ecommerce\Product\Contracts\TaxClassRepositoryInterface;
-use App\Ecommerce\Settings\Contracts\SettingServiceInterface;
+use App\Settings\CheckoutSettings;
 use Illuminate\Database\Eloquent\Builder;
 
 class TaxService implements TaxServiceInterface
 {
     protected $taxRateRepository;
     protected $taxClassRepository;
-    protected $settingService;
 
     public function __construct(
         TaxRateRepositoryInterface $taxRateRepository,
-        TaxClassRepositoryInterface $taxClassRepository,
-        SettingServiceInterface $settingService
+        TaxClassRepositoryInterface $taxClassRepository
     ) {
         $this->taxRateRepository = $taxRateRepository;
         $this->taxClassRepository = $taxClassRepository;
-        $this->settingService = $settingService;
     }
 
     /**
      * Calculate tax for a given amount and tax class.
-     * 
+     *
      * @param TaxClass $taxClass
      * @param int $amount (in cents/lowest denominator)
      * @param string|null $country (ISO 3166-1 alpha-2)
@@ -37,17 +34,11 @@ class TaxService implements TaxServiceInterface
      */
     public function calculate($taxClass, int $amount, ?string $country = null): array
     {
-        // Get settings from SettingService
-        $settings = $this->settingService->getSetting('tax', [
-            'enabled' => true,
-            'prices_include_tax' => false,
-        ]);
+        // Get settings from Spatie Settings
+        $checkoutSettings = app(CheckoutSettings::class);
 
-        if (!($settings['enabled'] ?? true)) {
-            return ['amount' => 0, 'rate_name' => 'Tax Disabled', 'rate_percent' => 0];
-        }
-
-        $includeTax = $settings['prices_include_tax'] ?? false;
+        // Tax is always enabled by default, can be controlled via other means
+        $includeTax = $checkoutSettings->prices_include_tax ?? false;
 
         // Query best matching tax rate using repository
         $rate = $this->taxRateRepository->findMatchingRate($taxClass->id, $country);

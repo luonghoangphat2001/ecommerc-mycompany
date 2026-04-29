@@ -34,7 +34,7 @@ class InventoryTab
                                 Select::make('inventory.warehouse_selection_strategy')
                                     ->label(trans('admin.inventory.warehouse_selection_strategy'))
                                     ->options([
-                                        'stock_volume' => trans('admin.inventory.strategy_volume'),
+                                        'stock_volume' => trans('admin.inventory.low_stock_threshold'),
                                         'proximity' => trans('admin.inventory.strategy_proximity'),
                                     ])
                                     ->required(),

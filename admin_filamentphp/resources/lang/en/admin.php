@@ -4,7 +4,11 @@ return array_merge(
     include __DIR__ . '/fields.php',
     include __DIR__ . '/enums.php',
     include __DIR__ . '/messages.php',
+    include __DIR__ . '/webhooks.php',
     [
+        'create' => 'Create',
+        'is_visible' => 'Is Visible',
+        'associations' => 'Associations',
         'sidebar' => [
             'group' => [
                 'general' => 'General',
@@ -146,6 +150,7 @@ return array_merge(
                 'hash_secret' => 'Hash Secret',
                 'partner_code' => 'Partner Code',
                 'access_key' => 'Access Key',
+                'currency' => 'Currency',
                 'currency_symbol' => 'Currency Symbol',
                 'currency_position' => 'Currency Position',
                 'thousand_separator' => 'Thousand Separator',
@@ -348,6 +353,7 @@ return array_merge(
             'prev_stock' => 'Previous Stock',
             'qty_changed' => 'Quantity Changed',
             'new_stock' => 'New Stock',
+            'low_stock_threshold' => 'Low Stock Threshold',
             'in' => 'In',
             'out' => 'Out',
             'transfer' => 'Transfer',
@@ -356,6 +362,7 @@ return array_merge(
             'management' => 'Inventory Management',
             'records' => 'Inventory Records',
             'movements' => 'Inventory Movements',
+            'location' => 'Location',
         ],
     ]
 

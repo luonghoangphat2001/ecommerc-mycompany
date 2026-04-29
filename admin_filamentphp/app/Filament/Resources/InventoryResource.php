@@ -45,7 +45,7 @@ class InventoryResource extends Resource
                     ->unique(Inventory::class, 'slug', ignoreRecord: true),
 
                 Forms\Components\TextInput::make('location')
-                    ->label(trans('admin.location'))
+                    ->label(trans('admin.inventory.location'))
                     ->columnSpanFull(),
                 Forms\Components\Toggle::make('is_active')
                     ->label(trans('admin.is_active'))
