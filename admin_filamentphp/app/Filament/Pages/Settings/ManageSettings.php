@@ -122,9 +122,6 @@ class ManageSettings extends SettingsPage
                         'AUD' => 'A$',
                     ][$state] ?? '')),
 
-
-
-
                 Forms\Components\Toggle::make('send_welcome_email')
                     ->label(trans('admin.settings.setting.send_welcome_email'))
                     ->default(fn() => DBSettings::load()->send_welcome_email)

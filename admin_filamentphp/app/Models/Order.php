@@ -64,6 +64,13 @@ class Order extends Model
         return $this->hasMany(OrderRefund::class, 'order_id');
     }
 
+    /** @return HasMany<OrderCoupon> */
+    public function coupons(): HasMany
+    {
+        return $this->hasMany(OrderCoupon::class, 'order_id');
+    }
+
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

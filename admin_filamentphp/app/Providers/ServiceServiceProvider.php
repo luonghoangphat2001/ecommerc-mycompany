@@ -107,6 +107,10 @@ class ServiceServiceProvider extends ServiceProvider
             \App\Ecommerce\Address\Contracts\AddressBookServiceInterface::class,
             \App\Ecommerce\Address\Services\AddressBookService::class
         );
+        $this->app->bind(
+            \App\Ecommerce\Coupon\Contracts\CouponServiceInterface::class,
+            \App\Ecommerce\Coupon\Services\CouponService::class
+        );
     }
 
     /**

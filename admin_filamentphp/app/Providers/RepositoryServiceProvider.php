@@ -120,6 +120,11 @@ class RepositoryServiceProvider extends ServiceProvider
             \App\Ecommerce\Location\Contracts\CountryRepositoryInterface::class,
             \App\Ecommerce\Location\Repositories\EloquentCountryRepository::class
         );
+
+        $this->app->bind(
+            \App\Ecommerce\Coupon\Contracts\CouponRepositoryInterface::class,
+            \App\Ecommerce\Coupon\Repositories\EloquentCouponRepository::class
+        );
     }
 
     /**

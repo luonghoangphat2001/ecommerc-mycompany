@@ -46,4 +46,11 @@ return [
         'completed' => 'Nhập hoàn tất: :rows dòng đã nhập.',
         'failed' => ':rows dòng thất bại.',
     ],
+    /* Coupon Messages */
+    'coupon_expired' => 'Mã giảm giá đã hết hạn.',
+    'coupon_usage_limit_reached' => 'Mã giảm giá này đã đạt giới hạn lượt sử dụng.',
+    'coupon_min_amount_not_met' => 'Số tiền đơn hàng chưa đạt mức tối thiểu để áp dụng mã này.',
+    'coupon_restriction_not_met' => 'Đơn hàng không đáp ứng điều kiện áp dụng mã giảm giá này.',
+    'coupon_not_found' => 'Mã giảm giá không hợp lệ hoặc không tồn tại.',
+    'coupon_applied_success' => 'Áp dụng mã giảm giá thành công.',
 ];

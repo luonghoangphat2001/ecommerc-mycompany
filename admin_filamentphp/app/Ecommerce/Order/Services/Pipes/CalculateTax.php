@@ -7,6 +7,7 @@ use App\Ecommerce\Order\DTOs\Checkout\CheckoutRequestDTO;
 use App\Ecommerce\Settings\Contracts\SettingServiceInterface;
 use App\Ecommerce\Core\Helpers\PriceHelper;
 use App\Settings\CheckoutSettings;
+use App\Settings\CouponSettings;
 use Closure;
 
 class CalculateTax
@@ -33,10 +34,18 @@ class CalculateTax
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        $settings = app(CheckoutSettings::class);
-        $includeTax = $settings->prices_include_tax;
+        $checkoutSettings = app(CheckoutSettings::class);
+        $couponSettings = app(CouponSettings::class);
+
+        $includeTax = $checkoutSettings->prices_include_tax;
+        $taxAfterCoupon = $couponSettings->calculate_tax_after_coupon ?? true;
+        
         $taxTotal = 0;
         $resolvedRates = $passable['resolved_tax_rates'] ?? [];
+
+        // Calculate total subtotal to distribute discount proportionally
+        $totalEligibleSubtotal = collect($request->items)->sum(fn($i) => (int)($i['total'] ?? 0));
+        $totalDiscount = (int)($result->discountTotal ?? 0);
 
         foreach ($request->items as $item) {
             if (isset($item['tax_class_id'])) {
@@ -46,6 +55,12 @@ class CalculateTax
                     $ratePercent = (float) $rate->rate;
                     $taxAmount = 0;
                     $itemTotal = (int) ($item['total'] ?? 0);
+
+                    // If tax is calculated after coupon, deduct proportional discount
+                    if ($taxAfterCoupon && $totalDiscount > 0 && $totalEligibleSubtotal > 0) {
+                        $itemProportionalDiscount = ($itemTotal / $totalEligibleSubtotal) * $totalDiscount;
+                        $itemTotal = max(0, (int)($itemTotal - $itemProportionalDiscount));
+                    }
 
                     if ($includeTax) {
                         // Amount in item total is gross. Tax = Gross - (Gross / (1 + Rate))

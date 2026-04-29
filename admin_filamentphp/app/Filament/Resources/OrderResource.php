@@ -152,7 +152,7 @@ class OrderResource extends Resource implements HasShieldPermissions
 
                         Forms\Components\Section::make(trans('admin.order.payment'))
                             ->schema([
-                                Forms\Components\Grid::make(4)
+                                Forms\Components\Grid::make(5)
                                     ->schema([
                                         Forms\Components\Placeholder::make('subtotal')
                                             ->label(trans('admin.order.subtotal'))
@@ -166,6 +166,15 @@ class OrderResource extends Resource implements HasShieldPermissions
                                             ->label(trans('admin.order.total_tax_display'))
                                             ->content(fn(?Order $record) => $record ? self::formatMoney(app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTaxTotal($record)) : '0'),
 
+                                        Forms\Components\Placeholder::make('discount_display')
+                                            ->label(trans('admin.coupon.discount'))
+                                            ->content(function (?Order $record) {
+                                                if (!$record) return '0';
+                                                $coupon = $record->coupons()->first();
+                                                if (!$coupon) return '0';
+                                                return '-' . self::formatMoney((float)$coupon->discount_amount) . ' (' . $coupon->coupon_code . ')';
+                                            }),
+
                                         Forms\Components\Placeholder::make('total_display')
                                             ->label(trans('admin.order.total_payment'))
                                             ->extraAttributes(['class' => 'font-bold text-primary-600 text-2xl'])
@@ -173,6 +182,7 @@ class OrderResource extends Resource implements HasShieldPermissions
                                     ]),
 
                                 Forms\Components\Hidden::make('total'),
+
                             ]),
 
                         Forms\Components\Section::make(trans('admin.order.refunds'))

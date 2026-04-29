@@ -9,6 +9,10 @@ use Closure;
 
 class ApplyDiscount
 {
+    public function __construct(
+        protected \App\Ecommerce\Coupon\Contracts\CouponServiceInterface $couponService
+    ) {}
+
     /**
      * Handle the pipe.
      *
@@ -27,11 +31,23 @@ class ApplyDiscount
             return $next($passable);
         }
 
-        // Placeholder for Coupon logic
-        // In a real scenario, this would lookup a Coupon model
-        $discountAmount = 0;
-        if ($request->couponCode === 'DISCOUNT10') {
-            $discountAmount = PriceHelper::round($result->subtotal * 0.1);
+        try {
+            // 1. Validate without incrementing usage count
+            $dto = $this->couponService->validateCoupon(
+                $request->couponCode,
+                $request->items,
+                (float)$result->subtotal
+            );
+
+            // 2. Calculate discount
+            $discountAmount = $this->couponService->calculateDiscount(
+                $dto->coupon,
+                $request->items,
+                (float)$result->subtotal
+            );
+        } catch (\App\Exceptions\CouponValidationException $e) {
+            // If validation fails during checkout calc, just ignore the discount
+            $discountAmount = 0;
         }
 
         $result->discountTotal = $discountAmount;

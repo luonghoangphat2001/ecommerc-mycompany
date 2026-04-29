@@ -89,6 +89,30 @@ class PlaceOrderAction
                 'status' => 'pending',
             ]);
 
+            // 3.1 Apply Coupon & Create Snapshot
+            if ($dto->couponCode && $calcResult->discountTotal > 0) {
+                $couponService = app(\App\Ecommerce\Coupon\Contracts\CouponServiceInterface::class);
+                try {
+                    // This safely increments usage count via Atomic Lock
+                    $couponService->applyCoupon(
+                        $dto->couponCode,
+                        $calcRequest->items,
+                        (float)$calcResult->subtotal,
+                        $dto->customerId
+                    );
+
+                    // Save Snapshot
+                    \App\Models\OrderCoupon::create([
+                        'order_id' => $order->id,
+                        'coupon_code' => $dto->couponCode,
+                        'discount_amount' => $calcResult->discountTotal,
+                    ]);
+                } catch (\App\Exceptions\CouponValidationException $e) {
+                    // Rollback if applying failed
+                    throw new \Exception($e->getMessage());
+                }
+            }
+
             // 4. Create Order Items (Products)
             foreach ($itemsForCalc as $item) {
                 $order->items()->create([

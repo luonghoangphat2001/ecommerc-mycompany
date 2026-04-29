@@ -10,6 +10,7 @@ use App\Settings\EmailSettings;
 use App\Settings\AdvancedSettings;
 use App\Settings\ApiSettings;
 use App\Settings\WebhookSettings;
+use App\Settings\CouponSettings;
 
 class ShopSettingService implements ShopSettingServiceInterface
 {
@@ -29,6 +30,7 @@ class ShopSettingService implements ShopSettingServiceInterface
             'advanced' => AdvancedSettings::class,
             'api' => ApiSettings::class,
             'webhook' => WebhookSettings::class,
+            'coupon' => CouponSettings::class,
         ];
 
         foreach ($groups as $key => $class) {
@@ -44,7 +46,7 @@ class ShopSettingService implements ShopSettingServiceInterface
     public function updateGeneralSettings(array $data): void
     {
         $settings = app(GeneralSettings::class);
-        
+
         $settings->store_name = $data['store_name'] ?? $settings->store_name;
         $settings->store_email = $data['store_email'] ?? $settings->store_email;
         $settings->store_phone = $data['store_phone'] ?? $settings->store_phone;
@@ -57,7 +59,7 @@ class ShopSettingService implements ShopSettingServiceInterface
         $settings->decimal_places = $data['decimal_places'] ?? $settings->decimal_places;
         $settings->weight_unit = $data['weight_unit'] ?? $settings->weight_unit;
         $settings->dimension_unit = $data['dimension_unit'] ?? $settings->dimension_unit;
-        
+
         $settings->save();
     }
 
@@ -67,7 +69,7 @@ class ShopSettingService implements ShopSettingServiceInterface
     public function getLocalizationInfo(string $countryCode): array
     {
         $locales = config('locale-info');
-        
+
         if (!isset($locales[$countryCode])) {
             return [];
         }

@@ -28,6 +28,7 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
     Route::get('storefront-settings', [\App\Http\Controllers\Api\StorefrontSettingsController::class, 'index']);
     Route::get('menus', [\App\Http\Controllers\Api\Menu\MenuController::class, 'index']);
     Route::post('cart/sync', [\App\Http\Controllers\Api\CartController::class, 'sync']);
+    Route::post('coupons/apply', [\App\Http\Controllers\Api\CouponController::class, 'apply']);
     Route::post('login', [AuthController::class, 'login']);
 
     // Address API
