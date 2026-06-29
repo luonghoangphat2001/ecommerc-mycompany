@@ -104,6 +104,15 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
+     * Find product by slug.
+     */
+    public function findBySlug(string $slug, array $relations = []): ?Product
+    {
+        /** @var Product */
+        return $this->productRepository->findBySlug($slug, $relations);
+    }
+
+    /**
      * @inheritDoc
      */
     public function firstOrNew(array $attributes): Product

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Post;
 use App\Models\PostCategory;
+use App\Models\Page;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -31,8 +32,8 @@ class ContentSeeder extends Seeder
         // 4. Create Bulk Posts (Using Factory Pattern)
         $this->seedPosts($author, $categories, $tagNames);
 
-        // 5. Create Sample Static Pages (Filament Fabricator)
-        $this->seedFabricatorPages();
+        // 5. Create sample static pages
+        $this->seedPages();
     }
 
     protected function seedMedia(): void
@@ -146,26 +147,26 @@ class ContentSeeder extends Seeder
         }
     }
 
-    protected function seedFabricatorPages(): void
+    protected function seedPages(): void
     {
-        if (class_exists(\Z3d0X\FilamentFabricator\Models\Page::class) && \Z3d0X\FilamentFabricator\Models\Page::count() === 0) {
-            \Z3d0X\FilamentFabricator\Models\Page::create([
+        if (Page::count() === 0) {
+            Page::create([
                 'title' => 'Trang chủ',
                 'slug' => '/',
                 'layout' => 'default',
                 'blocks' => [
                     [
                         'type' => 'text',
-                        'data' => ['name' => 'Chào mừng đến với Filament Core'],
+                        'data' => ['name' => 'Chào mừng đến với Ecommerce'],
                     ],
                     [
                         'type' => 'text_area',
-                        'data' => ['text_area' => 'Đây là trang chủ được xây dựng bằng Filament Fabricator.'],
+                        'data' => ['text_area' => 'Đây là trang chủ được xây dựng bằng Laravel thuần.'],
                     ],
                 ],
             ]);
 
-            \Z3d0X\FilamentFabricator\Models\Page::create([
+            Page::create([
                 'title' => 'Giới thiệu',
                 'slug' => 'about-us',
                 'layout' => 'default',

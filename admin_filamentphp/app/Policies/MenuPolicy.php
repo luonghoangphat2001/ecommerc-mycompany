@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Models\User;
-use Biostate\FilamentMenuBuilder\Models\Menu;
+use App\Models\Menu;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class MenuPolicy

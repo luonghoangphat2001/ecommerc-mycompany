@@ -58,7 +58,7 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        return $this->ok(new PostResource($post->load(['author', 'categories', 'comments'])));
+        return $this->ok(new PostResource($post->load(['author', 'categories', 'comments', 'featuredImage'])));
     }
 
     /**

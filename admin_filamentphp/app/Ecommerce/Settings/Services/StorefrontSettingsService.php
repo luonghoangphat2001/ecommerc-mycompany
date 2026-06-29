@@ -41,7 +41,7 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
             /** @var FooterSettings $footer */
             $footer = app(FooterSettings::class);
 
-            $locales = config('translation-manager.available_locales', ['vi', 'en']);
+            $locales = config('app.supported_locales', ['vi', 'en']);
             $languages = [];
             $translations = [];
 

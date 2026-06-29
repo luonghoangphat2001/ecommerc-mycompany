@@ -53,7 +53,14 @@ class UpsellController extends Controller
     public function index(int $productId): JsonResponse
     {
         $upsells = $this->upsellService->getUpsellsForProduct($productId);
-
+        
+        // Load relationships on each upsell item
+        $upsells->each(function ($item) {
+            if ($item->relationLoaded('upsellProduct')) {
+                $item->upsellProduct->load('featuredImage', 'categories', 'brand');
+            }
+        });
+        
         return $this->ok(UpsellResource::collection($upsells));
     }
 }

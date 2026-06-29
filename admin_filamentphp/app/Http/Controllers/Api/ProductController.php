@@ -40,6 +40,23 @@ class ProductController extends Controller
     }
 
     /**
+     * Get product details by slug.
+     */
+    public function showBySlug($slug)
+    {
+        $product = $this->productService->findBySlug(
+            $slug,
+            ['categories', 'brand', 'featuredImage', 'comments', 'inventories']
+        );
+        
+        if (!$product) {
+            return $this->error('Product not found', 404);
+        }
+        
+        return $this->ok(new ProductResource($product));
+    }
+
+    /**
      * Get product details.
      *
      * @urlParam id int required The ID of the product. Example: 1
@@ -48,7 +65,7 @@ class ProductController extends Controller
     {
         $product = $this->productService->findOrFail(
             $id,
-            relations: ['categories', 'brand', 'featuredImage', 'comments', 'inventories']
+            ['categories', 'brand', 'featuredImage', 'comments', 'inventories']
         );
 
         return $this->ok(new ProductResource($product));

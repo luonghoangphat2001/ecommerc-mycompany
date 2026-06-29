@@ -4,7 +4,7 @@ namespace App\Ecommerce\Menu\Repositories;
 
 use App\Ecommerce\Menu\Contracts\MenuRepositoryInterface;
 use App\Ecommerce\Core\Repositories\BaseRepository;
-use Biostate\FilamentMenuBuilder\Models\Menu;
+use App\Models\Menu;
 
 class EloquentMenuRepository extends BaseRepository implements MenuRepositoryInterface
 {

@@ -3,7 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AddressController;
-use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PostCategoryController;
 use App\Http\Controllers\Api\ProductCategoryController;
@@ -26,8 +26,20 @@ use App\Http\Middleware\CheckTokenExpiration;
 
 Route::middleware(['api'])->prefix('v1')->group(function () {
     Route::get('storefront-settings', [\App\Http\Controllers\Api\StorefrontSettingsController::class, 'index']);
-    Route::get('menus', [\App\Http\Controllers\Api\Menu\MenuController::class, 'index']);
+    Route::get('menus', [\App\Http\Controllers\Api\MenuController::class, 'index']);
+    Route::get('menus/{handle}', [\App\Http\Controllers\Api\MenuController::class, 'show']);
+    
+    // Cart API
+    Route::post('cart', [\App\Http\Controllers\Api\CartController::class, 'index']);
     Route::post('cart/sync', [\App\Http\Controllers\Api\CartController::class, 'sync']);
+    Route::post('cart/items', [\App\Http\Controllers\Api\CartController::class, 'addItem']);
+    Route::put('cart/items/{itemId}', [\App\Http\Controllers\Api\CartController::class, 'updateItem']);
+    Route::delete('cart/items/{itemId}', [\App\Http\Controllers\Api\CartController::class, 'removeItem']);
+    Route::delete('cart', [\App\Http\Controllers\Api\CartController::class, 'clear']);
+    Route::post('cart/suggestions', [\App\Http\Controllers\Api\CartController::class, 'suggestions']);
+    Route::post('cart/shipping-methods', [\App\Http\Controllers\Api\CartController::class, 'shippingMethods']);
+    
+    // Coupon API
     Route::post('coupons/apply', [\App\Http\Controllers\Api\CouponController::class, 'apply']);
     Route::post('login', [AuthController::class, 'login']);
 
@@ -43,9 +55,12 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
     Route::get('post-categories/{post_category}/posts', [PostCategoryController::class, 'posts']);
 
     Route::get('products', [ProductController::class, 'index']);
-    Route::get('products/{product}', [ProductController::class, 'show']);
+    Route::get('products/by-slug/{slug}', [ProductController::class, 'showBySlug']);
+    // Specific routes must come BEFORE the generic {product} route
+    Route::get('products/{productId}/inventory', [\App\Http\Controllers\Api\ProductInventoryController::class, 'index']);
     Route::get('products/{productId}/upsells', [\App\Http\Controllers\Api\UpsellController::class, 'index']);
     Route::get('products/{productId}/cross-sells', [\App\Http\Controllers\Api\CrossSellController::class, 'index']);
+    Route::get('products/{product}', [ProductController::class, 'show']);
 
     // Combos
     Route::get('combos', [\App\Http\Controllers\Api\ComboController::class, 'index']);

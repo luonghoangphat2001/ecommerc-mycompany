@@ -70,17 +70,10 @@ class CartValidationAction
             ];
         }
 
-        // Example calculation
-        $shipping = $subtotal > 0 ? 30000 : 0; // flat rate shipping
-        $tax = $subtotal * 0.1; // 10% VAT
-        $total = $subtotal + $shipping + $tax;
-
+        // Return validated items and notifications
+        // Calculations (subtotal, shipping, tax, total) are handled by CartCalculationService
         return [
             'items' => $validatedItems,
-            'subtotal' => (float)$subtotal,
-            'shipping' => (float)$shipping,
-            'tax' => (float)$tax,
-            'total' => (float)$total,
             'notifications' => $notifications,
         ];
     }

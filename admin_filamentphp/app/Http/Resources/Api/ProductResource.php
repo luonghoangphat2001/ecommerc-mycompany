@@ -25,7 +25,8 @@ class ProductResource extends BaseResource
             'slug' => $this->slug,
             'image' => new MediaResource($this->whenLoaded('featuredImage')),
             'price' => $this->price,
-            'stock' => $this->stock,
+            'qty' => $this->qty,
+            'stock' => $this->qty, // Keep backward compatibility
             'featured' => $this->featured,
             'is_available' => $this->qty > 0 && $this->is_visible,
             'brand' => new BrandResource($this->whenLoaded('brand')),

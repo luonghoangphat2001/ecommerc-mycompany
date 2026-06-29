@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Models\User;
-use Z3d0X\FilamentFabricator\Models\Page;
+use App\Models\Page;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class PagePolicy

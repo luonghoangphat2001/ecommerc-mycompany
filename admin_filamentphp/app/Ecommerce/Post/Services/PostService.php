@@ -32,7 +32,7 @@ class PostService implements PostServiceInterface
      */
     public function getPaginatedPosts(int $perPage = 10): LengthAwarePaginator
     {
-        return $this->postRepository->paginate($perPage, ['*'], ['author', 'category', 'comments.customer']);
+        return $this->postRepository->paginate($perPage, ['*'], ['author', 'categories', 'comments', 'featuredImage']);
     }
 
     /**

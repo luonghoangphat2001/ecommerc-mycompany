@@ -2,11 +2,7 @@
 
 namespace App\Ecommerce\Order\Enums;
 
-use Filament\Support\Contracts\HasColor;
-use Filament\Support\Contracts\HasIcon;
-use Filament\Support\Contracts\HasLabel;
-
-enum OrderStatus: string implements HasColor, HasIcon, HasLabel
+enum OrderStatus: string
 {
     case Pending = 'pending';
 

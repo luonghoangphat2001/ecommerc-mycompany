@@ -5,10 +5,6 @@ namespace App\Providers;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate;
-use App\Models\User;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Mail\Events\MessageSent;
 use App\Listeners\LogSentMessage;
@@ -63,19 +59,10 @@ class AppServiceProvider extends ServiceProvider
             // Log or ignore if database is not ready
         }
 
-        Gate::define('use-translation-manager', function (?User $user) {
-            // Your authorization logic
-            return $user !== null && $user->hasRole('super_admin');
-        });
-
         // Register Mail Log Listener
         Event::listen(
             MessageSent::class,
             LogSentMessage::class
         );
-
-
-
-        // Config::set('translation-manager.navigation_group', Lang::get('admin.settings.navGroup'));
     }
 }

@@ -19,7 +19,10 @@ class PostResource extends BaseResource
             'slug' => $this->slug,
             'content' => $this->translate('content'),
             'post_type' => $this->post_type,
-            'image' => $this->image,
+            'image' => $this->whenLoaded('featuredImage') ? new MediaResource($this->featuredImage) : null,
+            'image_url' => $this->relationLoaded('featuredImage') && $this->featuredImage
+                ? \Illuminate\Support\Facades\Storage::url($this->featuredImage->path)
+                : null,
             'published_at' => $this->published_at,
             'seo_title' => $this->seo_title,
             'seo_description' => $this->seo_description,

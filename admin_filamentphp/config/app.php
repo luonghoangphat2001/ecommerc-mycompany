@@ -95,6 +95,8 @@ return [
 
     'fallback_locale' => 'en',
 
+    'supported_locales' => ['vi', 'en'],
+
     /*
     |--------------------------------------------------------------------------
     | Faker Locale
@@ -174,8 +176,6 @@ return [
         App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\HorizonServiceProvider::class,
-        App\Providers\Filament\AdminPanelProvider::class,
-        App\Providers\Filament\AppPanelProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
         App\Providers\ServiceServiceProvider::class,

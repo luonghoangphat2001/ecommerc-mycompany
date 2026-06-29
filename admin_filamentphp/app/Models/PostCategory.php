@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Translatable\HasTranslations;
-use Biostate\FilamentMenuBuilder\Traits\Menuable;
 
 /**
  *     schema="Category",
@@ -19,7 +18,6 @@ use Biostate\FilamentMenuBuilder\Traits\Menuable;
  */
 class PostCategory extends Model
 {
-    use Menuable;
     use HasTranslations;
     use HasFactory;
     use SoftDeletes;

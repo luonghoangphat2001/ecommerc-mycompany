@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Product;
-use App\Models\User;
 use App\Models\Brand;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -27,7 +26,6 @@ class ProductFactory extends Factory
         $name = $this->faker->randomElement($products) . ' ' . $this->faker->randomNumber(5);
 
         return [
-            'author_id' => User::factory(),
             'shop_brand_id' => Brand::factory(),
             'name' => [
                 'vi' => $name,

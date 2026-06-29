@@ -41,4 +41,13 @@ interface ProductRepositoryInterface extends BaseRepositoryInterface
      * @return int
      */
     public function getLowStockCount(): int;
+
+    /**
+     * Find product by slug.
+     *
+     * @param string $slug
+     * @param array $relations
+     * @return \App\Models\Product|null
+     */
+    public function findBySlug(string $slug, array $relations = []): ?\App\Models\Product;
 }

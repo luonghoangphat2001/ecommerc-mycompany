@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use Illuminate\Support\Facades\Artisan;
 
 class DatabaseSeeder extends Seeder
 {
@@ -30,14 +29,8 @@ class DatabaseSeeder extends Seeder
         ]))->first();
         $this->command->info('Admin user created.');
 
-        // 2. Shield Logic
-        $this->command->warn("Generating Filament Shield permissions...");
-        try {
-            Artisan::call('shield:generate --all --panel=admin');
-            $this->command->info("Filament Shield permissions generated successfully.");
-        } catch (\Exception $e) {
-            $this->command->error("Error generating permissions: " . $e->getMessage());
-        }
+        // 2. Permission bootstrap
+        $this->command->warn("Skipping panel-specific permission generator.");
 
         // 3. Create Default Role
         $this->command->warn("Creating default User role...");

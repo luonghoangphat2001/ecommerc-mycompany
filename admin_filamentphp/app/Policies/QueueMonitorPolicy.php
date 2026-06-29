@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Models\User;
-use Croustibat\FilamentJobsMonitor\Models\QueueMonitor;
+use App\Models\QueueMonitor;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class QueueMonitorPolicy

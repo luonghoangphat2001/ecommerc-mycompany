@@ -2,9 +2,6 @@
 
 namespace App\Models;
 
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Models\Contracts\HasTenants;
-use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class User extends Authenticatable implements FilamentUser, MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasRoles;
     use HasApiTokens;
@@ -94,11 +91,6 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function payments(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
     {
         return $this->hasManyThrough(\App\Models\Payment::class, \App\Models\Order::class, 'user_id');
-    }
-
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return $this->hasPermissionTo('access-admin-panel') || $this->hasRole('super_admin');
     }
 
     /** @return HasMany<Post> */

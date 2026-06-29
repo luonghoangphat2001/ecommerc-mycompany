@@ -61,4 +61,18 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
     {
         return $this->model->whereColumn('qty', '<', 'security_stock')->count();
     }
+
+    /**
+     * Find product by slug.
+     */
+    public function findBySlug(string $slug, array $relations = []): ?Product
+    {
+        $query = $this->model->where('slug', $slug);
+        
+        if (!empty($relations)) {
+            $query->with($relations);
+        }
+        
+        return $query->first();
+    }
 }

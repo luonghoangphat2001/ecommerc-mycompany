@@ -44,4 +44,15 @@ class MenuService implements MenuServiceInterface
     {
         return $this->menuRepository->findBySlug($slug);
     }
+
+    /**
+     * Get menu by handle.
+     *
+     * @param string $handle
+     * @return \Illuminate\Database\Eloquent\Model|null
+     */
+    public function getMenuByHandle(string $handle)
+    {
+        return \App\Models\Menu::where('handle', $handle)->with('items.children')->first();
+    }
 }

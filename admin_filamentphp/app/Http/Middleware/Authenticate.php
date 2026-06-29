@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use Filament\Facades\Filament;
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
 
 class Authenticate extends Middleware
@@ -15,6 +14,6 @@ class Authenticate extends Middleware
      */
     protected function redirectTo($request)
     {
-        return Filament::getLoginUrl();
+        return route('admin.login');
     }
 }

@@ -4,7 +4,7 @@ namespace App\Ecommerce\Page\Repositories;
 
 use App\Ecommerce\Page\Contracts\PageRepositoryInterface;
 use App\Ecommerce\Core\Repositories\BaseRepository;
-use Z3d0X\FilamentFabricator\Models\Page;
+use App\Models\Page;
 
 class EloquentPageRepository extends BaseRepository implements PageRepositoryInterface
 {
