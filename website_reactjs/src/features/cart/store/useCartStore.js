@@ -6,29 +6,40 @@ const useCartStore = create(
     (set, get) => ({
       items: [],
       itemsById: {},
+      summary: null, // { subtotal, shipping, tax, total, items_count }
+      notifications: [], // API notifications (stock_adjusted, price_change, etc.)
+      isCartOpen: false,
 
-      addToCart: (product, quantity = 1) => {
-        const currentById = get().itemsById || {};
-        const existingItem = currentById[product.id];
+      toggleCart: () => set((state) => ({ isCartOpen: !state.isCartOpen })),
+      closeCart: () => set({ isCartOpen: false }),
+      openCart: () => set({ isCartOpen: true }),
 
-        let updatedById;
-        if (existingItem) {
-          updatedById = {
-            ...currentById,
-            [product.id]: { ...existingItem, quantity: existingItem.quantity + quantity }
-          };
-        } else {
-          updatedById = {
-            ...currentById,
-            [product.id]: { ...product, quantity }
-          };
-        }
-
-        set({
-          itemsById: updatedById,
-          items: Object.values(updatedById)
-        });
-      },
+        addToCart: (product, quantity = 1) => {
+            const currentById = get().itemsById || {};
+            const existingItem = currentById[product.id];
+            
+            let updatedById;
+            if (existingItem) {
+                updatedById = {
+                    ...currentById,
+                    [product.id]: { ...existingItem, quantity: existingItem.quantity + quantity }
+                };
+            } else {
+                updatedById = {
+                    ...currentById,
+                    [product.id]: { 
+                        ...product, 
+                        quantity,
+                        selectedWarehouse: product.selectedWarehouse || null
+                    }
+                };
+            }
+            
+            set({
+                itemsById: updatedById,
+                items: Object.values(updatedById)
+            });
+        },
 
       removeFromCart: (productId) => {
         const currentById = { ...get().itemsById };
@@ -57,11 +68,19 @@ const useCartStore = create(
         });
       },
 
-      clearCart: () => set({ items: [], itemsById: {} }),
+      clearCart: () => set({ items: [], itemsById: {}, summary: null, notifications: [] }),
+
+      // Set full cart data from API (items + summary + notifications)
+      setCart: (data) => set({
+        items: data.items || get().items,
+        itemsById: data.items ? Object.fromEntries(data.items.map(i => [i.id, i])) : get().itemsById,
+        summary: data.summary || get().summary,
+        notifications: data.notifications || [],
+      }),
 
       getCartTotal: () => {
-        // O(1) derived access
-        return Object.values(get().itemsById).reduce((total, item) => total + (item.price * item.quantity), 0);
+        // Use summary total if available, otherwise calculate locally
+        return get().summary?.total || Object.values(get().itemsById).reduce((total, item) => total + (item.price * item.quantity), 0);
       },
 
       getCartCount: () => {
@@ -85,7 +104,15 @@ const useCartStore = create(
           itemsById: currentById,
           items: Object.values(currentById)
         });
-      }
+      },
+
+      // Get notifications for a specific item
+      getItemNotifications: (itemId) => {
+        return get().notifications.filter(n => n.product_id === itemId);
+      },
+
+      // Clear notifications
+      clearNotifications: () => set({ notifications: [] }),
     }),
     {
       name: 'ecommerce-cart-storage',

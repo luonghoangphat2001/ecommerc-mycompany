@@ -24,3 +24,17 @@
     @apply transition-transform duration-300 ease-out hover:-translate-y-1;
   }
 }
+
+/* Mini Cart Animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s ease-out;
+}

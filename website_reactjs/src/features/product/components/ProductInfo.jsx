@@ -3,7 +3,7 @@ import { ShoppingCart } from "lucide-react"
 import { Button } from "../../../components/common"
 import { useFormatters } from "../../../utils/useFormatters"
 
-const ProductInfo = ({ product, quantity, onIncrement, onDecrement, onAddToCart, translate }) => {
+const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAddToCart, translate }) => {
     const { formatCurrency } = useFormatters()
 
     return (
@@ -49,14 +49,23 @@ const ProductInfo = ({ product, quantity, onIncrement, onDecrement, onAddToCart,
                         +
                     </button>
                 </div>
-                <div className="text-sm text-slate-500 font-medium">
-                    {translate("product.stock")}: {product.qty || 0}
+                <div className={`text-sm font-medium ${stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {stock > 0 ? 'Còn hàng' : 'Hết hàng'}
                 </div>
             </div>
 
-            <Button onClick={onAddToCart} disabled={product.qty === 0} variant="blue" size="block" className="gap-3 !rounded-full hover:-translate-y-0.5 hover:shadow-xl">
+            <Button 
+                onClick={() => { 
+                  console.log('Button clicked - stock:', stock, 'product available:', stock > 0);
+                  onAddToCart(); 
+                }} 
+                disabled={stock <= 0}
+                variant="blue" 
+                size="block" 
+                className="gap-3 !rounded-full hover:-translate-y-0.5 hover:shadow-xl"
+            >
                 <ShoppingCart size={22} />
-                {translate("product.add_to_cart")}
+                {stock > 0 ? translate("product.add_to_cart") : 'Hết hàng'} ({stock || 0})
             </Button>
         </div>
     )

@@ -1,5 +1,6 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Layout from './components/layout/Layout';
 import { Loading, ErrorBoundary } from './components/common';
 
@@ -18,6 +19,9 @@ const ResetPasswordPage = lazy(() => import('./pages/Login/ResetPasswordPage'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage'));
 const MyAccountPage = lazy(() => import('./pages/MyAccountPage'));
+const PostsPage = lazy(() => import('./pages/PostsPage'));
+const PostDetailPage = lazy(() => import('./pages/PostDetailPage'));
+const StaticPage = lazy(() => import('./pages/StaticPage'));
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -31,6 +35,7 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <Suspense fallback={<Loading />}>
+          <Toaster position="top-right" />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -42,7 +47,7 @@ function App() {
 
               <Route index element={<HomePage />} />
               <Route path="shop" element={<ShopPage />} />
-              <Route path="products/:id" element={<ProductDetailPage />} />
+              <Route path="products/:slug" element={<ProductDetailPage />} />
               <Route path="cart" element={<CartPage />} />
               
               <Route 
@@ -57,6 +62,18 @@ function App() {
                 path="my-account" 
                 element={isAuthenticated ? <MyAccountPage /> : <Navigate to="/login" />} 
               />
+              
+              {/* Blog & Static Pages */}
+              <Route path="posts" element={<PostsPage />} />
+              <Route path="posts/:slug" element={<PostDetailPage />} />
+              <Route path="about" element={<StaticPage />} />
+              <Route path="contact" element={<StaticPage />} />
+              <Route path="shipping" element={<StaticPage />} />
+              <Route path="returns" element={<StaticPage />} />
+              <Route path="faq" element={<StaticPage />} />
+              <Route path="privacy" element={<StaticPage />} />
+              <Route path="terms" element={<StaticPage />} />
+              <Route path="p/:page" element={<StaticPage />} />
             </Route>
           </Routes>
         </Suspense>

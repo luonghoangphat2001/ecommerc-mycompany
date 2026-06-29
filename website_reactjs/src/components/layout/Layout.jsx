@@ -2,10 +2,13 @@ import React, { useEffect } from "react"
 import { Outlet } from "react-router-dom"
 import Header from "./Header"
 import Footer from "./Footer"
+import MiniCart from "../../features/cart/components/MiniCart"
 import useSettingsStore from "../../store/useSettingsStore"
+import useHeader from "../../hooks/useHeader"
 
 const Layout = () => {
     const favicon = useSettingsStore((state) => state.getSetting("general.favicon"))
+    const { isCartOpen, closeCart } = useHeader()
 
     useEffect(() => {
         if (favicon) {
@@ -31,6 +34,8 @@ const Layout = () => {
             </main>
 
             <Footer />
+            
+            <MiniCart isOpen={isCartOpen} onClose={closeCart} />
         </div>
     )
 }

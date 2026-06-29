@@ -1,19 +1,46 @@
 import React from "react"
-import { useNavigate } from "react-router-dom"
-import { ArrowLeft } from "lucide-react"
+import { useNavigate, useParams } from "react-router-dom"
+import { ArrowLeft, TrendingUp, ShoppingBag } from "lucide-react"
+import { useQuery } from '@tanstack/react-query'
+import productApi from "../features/product/services/productApi"
 import useProductDetail from "../features/product/hooks/useProductDetail"
 import ProductImage from "../features/product/components/ProductImage"
 import ProductInfo from "../features/product/components/ProductInfo"
+import ProductInventoryDetail from "../features/product/components/ProductInventoryDetail"
+import RelatedProducts from "../features/product/components/RelatedProducts"
 import Loading from "../components/common/Loading"
 import Error from "../components/common/Error"
 import useSettingsStore from "../store/useSettingsStore"
 
 const ProductDetailPage = () => {
+    const { slug } = useParams()
     const navigate = useNavigate()
     const translate = useSettingsStore((state) => state.translate)
-    const { product, isLoading, isError, error, quantity, handleAddToCart, incrementQuantity, decrementQuantity } = useProductDetail()
-
-    if (isLoading) return <Loading />
+    
+    // Fetch product by slug
+    const { data: productData, isLoading, isError, error } = useQuery({
+        queryKey: ['product-by-slug', slug],
+        queryFn: () => productApi.getProductBySlug(slug),
+        enabled: !!slug,
+    });
+    
+    const product = productData?.data
+    
+    // Use product detail hook with product object
+    const { 
+        stock, 
+        inventory, 
+        upsells, 
+        crossSells, 
+        quantity, 
+        handleAddToCart, 
+        incrementQuantity, 
+        decrementQuantity, 
+        selectedWarehouse, 
+        setSelectedWarehouse 
+    } = useProductDetail(product)
+    
+    if (isLoading || !product) return <Loading />
     if (isError || !product) return <Error message={error?.message || translate("product.not_found")} />
 
     return (
@@ -26,8 +53,35 @@ const ProductDetailPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
                 <ProductImage src={product.image?.url} alt={product.name} />
 
-                <ProductInfo product={product} quantity={quantity} onIncrement={incrementQuantity} onDecrement={decrementQuantity} onAddToCart={handleAddToCart} translate={translate} />
+                <div>
+                    <ProductInfo 
+                        product={product} 
+                        stock={stock} 
+                        quantity={quantity} 
+                        onIncrement={incrementQuantity} 
+                        onDecrement={decrementQuantity} 
+                        onAddToCart={handleAddToCart} 
+                        translate={translate} 
+                    />
+                    <ProductInventoryDetail 
+                        inventory={inventory} 
+                        selectedWarehouse={selectedWarehouse}
+                        onSelectWarehouse={setSelectedWarehouse}
+                    />
+                </div>
             </div>
+
+            <RelatedProducts 
+                products={upsells} 
+                title="Sản phẩm mua kèm (Upsell)" 
+                icon={TrendingUp} 
+            />
+            
+            <RelatedProducts 
+                products={crossSells} 
+                title="Sản phẩm mua thêm (Cross-sell)" 
+                icon={ShoppingBag} 
+            />
         </div>
     )
 }

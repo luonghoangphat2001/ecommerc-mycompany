@@ -10,6 +10,11 @@ const useHeader = () => {
   const cartCount = useCartStore((state) => state.getCartCount());
   const { settings, language, setLanguage, currency, setCurrency, translate } = useSettingsStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Use cart store for cart open state
+  const isCartOpen = useCartStore((state) => state.isCartOpen);
+  const toggleCart = useCartStore((state) => state.toggleCart);
+  const closeCart = useCartStore((state) => state.closeCart);
 
   const handleLogout = () => {
     if (window.confirm(translate('header.logout_confirm') || 'Are you sure?')) {
@@ -29,12 +34,15 @@ const useHeader = () => {
     language,
     currency,
     isMobileMenuOpen,
+    isCartOpen,
     setLanguage,
     setCurrency,
     translate,
     handleLogout,
     toggleMobileMenu,
-    closeMobileMenu
+    closeMobileMenu,
+    toggleCart,
+    closeCart
   };
 };
 
