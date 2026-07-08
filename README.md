@@ -4,8 +4,8 @@ Một dự án Thương mại điện tử **fullstack** gồm 2 ứng dụng đ
 
 | Ứng dụng | Mô tả | Công nghệ |
 |----------|------|-----------|
-| **`admin_filamentphp/`** | Backend API + Admin Panel cho người quản trị | Laravel 11, FilamentPHP 3, MySQL |
-| **`website_reactjs/`** | Storefront cho khách hàng cuối (mua hàng, tài khoản, đơn hàng) | React 19, Tailwind, Zustand, TanStack Query |
+| **`dashboard/`** | Backend API + Admin Panel cho người quản trị | Laravel 11, FilamentPHP 3, MySQL |
+| **`website/`** | Storefront cho khách hàng cuối (mua hàng, tài khoản, đơn hàng) | React 19, Tailwind, Zustand, TanStack Query |
 
 Hai ứng dụng giao tiếp qua REST API tại prefix `/api/v1/`.
 
@@ -15,13 +15,13 @@ Hai ứng dụng giao tiếp qua REST API tại prefix `/api/v1/`.
 
 ```text
 My_Ecommerce/
-├── admin_filamentphp/      # Laravel + Filament — backend & admin panel
+├── dashboard/      # Laravel + Filament — backend & admin panel
 │   ├── app/Filament/       # Resource (Product, Order, User, ...)
 │   ├── app/Models/         # Eloquent models
 │   ├── routes/api.php      # REST API endpoints
 │   └── routes/web.php      # Admin panel routes
 │
-├── website_reactjs/        # React storefront
+├── website/        # React storefront
 │   ├── src/features/       # account, auth, cart, checkout, order, product
 │   ├── src/pages/          # Home, Shop, ProductDetail, Cart, Checkout, MyAccount
 │   ├── src/components/common/   # Button, Card, FormInput, Alert, IconBadge, ...
@@ -37,7 +37,7 @@ My_Ecommerce/
 
 ### 1. Backend (Laravel + Filament)
 ```bash
-cd admin_filamentphp
+cd dashboard
 composer install
 cp .env.example .env
 php artisan key:generate
@@ -49,7 +49,7 @@ php artisan serve            # http://localhost:8000
 
 ### 2. Frontend (React storefront)
 ```bash
-cd website_reactjs
+cd website
 npm install --legacy-peer-deps
 cp .env.example .env
 npm start                    # http://localhost:3000
@@ -83,11 +83,11 @@ npm start                    # http://localhost:3000
 
 ## 📚 Tài liệu chi tiết
 
-- [Backend README](./admin_filamentphp/README.md) — hướng dẫn cài đặt Laravel/Filament, danh sách Resource, API.
-- [Frontend README](./website_reactjs/README.md) — kiến trúc thư mục, design system, shared components.
+- [Backend README](./dashboard/README.md) — hướng dẫn cài đặt Laravel/Filament, danh sách Resource, API.
+- [Frontend README](./website/README.md) — kiến trúc thư mục, design system, shared components.
 
 ---
 
 ## 📄 License
 
-Code phía Laravel kế thừa [MIT License](./admin_filamentphp/LICENSE.md). Phần còn lại theo chính sách nội bộ của dự án.
+Code phía Laravel kế thừa [MIT License](./dashboard/LICENSE.md). Phần còn lại theo chính sách nội bộ của dự án.

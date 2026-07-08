@@ -1,4 +1,4 @@
-# 🛒 Ecommerce Storefront — `website_reactjs`
+# 🛒 Ecommerce Storefront — `website`
 
 Giao diện **người mua** của hệ thống My Ecommerce. Một SPA hiện đại xây trên **React 19**, sử dụng **Tailwind CSS** với phong cách Glassmorphism, kết nối tới backend Laravel/Filament qua REST API `/api/v1/`.
 
@@ -162,8 +162,8 @@ Dự án áp dụng mô hình phân tách rõ ràng giữa UI (Giao diện) và 
 - **Lazy Loading:** Tải các trang (`HomePage`, `ShopPage`, ...) theo nhu cầu bằng `React.lazy()`.
 - **Error Boundary:** Bao bọc toàn bộ ứng dụng để xử lý crash UI mượt mà.
 - **Strategy Pattern:** Tách biệt UI cho từng phương thức thanh toán (`PaymentStrategies.jsx`).
-- **Refresh Token Pattern:** Tự động cấp lại token trong [axiosClient.js](file:///Users/luonghoangphat/Documents/My_Ecommerce/website_reactjs/src/api/axiosClient.js).
-- **Data Normalization:** Lưu trữ State giỏ hàng `O(1)` bằng `itemsById` trong [useCartStore.js](file:///Users/luonghoangphat/Documents/My_Ecommerce/website_reactjs/src/features/cart/store/useCartStore.js).
+- **Refresh Token Pattern:** Tự động cấp lại token trong [axiosClient.js](file:///Users/luonghoangphat/Documents/My_Ecommerce/website/src/api/axiosClient.js).
+- **Data Normalization:** Lưu trữ State giỏ hàng `O(1)` bằng `itemsById` trong [useCartStore.js](file:///Users/luonghoangphat/Documents/My_Ecommerce/website/src/features/cart/store/useCartStore.js).
 - **Memoization:** Tiết kiệm re-render qua `useMemo` và `React.memo()`.
 
 ### 📊 Luồng Dữ liệu (Strict Data Flow)

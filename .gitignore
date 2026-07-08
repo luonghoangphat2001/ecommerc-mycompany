@@ -6,29 +6,29 @@
 *.log
 .windsurf/
 
-# Backend (admin_filamentphp)
-admin_filamentphp/node_modules/
-admin_filamentphp/public/hot
-admin_filamentphp/public/build
-admin_filamentphp/public/storage
-admin_filamentphp/storage/*.key
-admin_filamentphp/vendor/
-admin_filamentphp/.env
-admin_filamentphp/.env.backup
-admin_filamentphp/.phpunit.result.cache
-admin_filamentphp/docker-compose.override.yml
-admin_filamentphp/Homestead.json
-admin_filamentphp/Homestead.yaml
-admin_filamentphp/.playwright-cli
-admin_filamentphp/output
-# Frontend (website_reactjs)
-website_reactjs/node_modules/
-website_reactjs/.pnp
-website_reactjs/.pnp.js
-website_reactjs/coverage/
-website_reactjs/build/
-website_reactjs/.env
-website_reactjs/.env.local
-website_reactjs/.env.development.local
-website_reactjs/.env.test.local
-website_reactjs/.env.production.local
+# Backend (dashboard)
+dashboard/node_modules/
+dashboard/public/hot
+dashboard/public/build
+dashboard/public/storage
+dashboard/storage/*.key
+dashboard/vendor/
+dashboard/.env
+dashboard/.env.backup
+dashboard/.phpunit.result.cache
+dashboard/docker-compose.override.yml
+dashboard/Homestead.json
+dashboard/Homestead.yaml
+dashboard/.playwright-cli
+dashboard/output
+# Frontend (website)
+website/node_modules/
+website/.pnp
+website/.pnp.js
+website/coverage/
+website/build/
+website/.env
+website/.env.local
+website/.env.development.local
+website/.env.test.local
+website/.env.production.local
