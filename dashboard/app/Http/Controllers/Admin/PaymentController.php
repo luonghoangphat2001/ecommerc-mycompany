@@ -14,7 +14,7 @@ class PaymentController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Payments';
+        return 'admin.sidebar.payments';
     }
 
     protected function routePrefix(): string

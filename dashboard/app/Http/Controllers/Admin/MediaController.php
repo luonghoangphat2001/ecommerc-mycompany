@@ -17,7 +17,7 @@ class MediaController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Media';
+        return 'admin.sidebar.media';
     }
 
     protected function routePrefix(): string

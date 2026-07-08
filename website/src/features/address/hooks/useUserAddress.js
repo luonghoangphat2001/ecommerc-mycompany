@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import useAuthStore from '../../auth/store/useAuthStore';
 import addressService from '../services/addressService';
 import axiosClient from '../../../api/axiosClient';
+import { unwrapApiList, unwrapApiObject } from '../../../api/apiResponse';
 
 /**
  * Hook to manage user addresses with auto-sync to auth store
@@ -82,7 +83,7 @@ const useUserAddress = () => {
   const fetchUserAddresses = useCallback(async () => {
     try {
       const response = await addressService.listUserAddresses();
-      return response.data || [];
+      return unwrapApiList(response, []);
     } catch (error) {
       console.error('Failed to fetch addresses:', error);
       return [];
@@ -97,7 +98,7 @@ const useUserAddress = () => {
   const createAddress = useCallback(async (data) => {
     try {
       const response = await addressService.createUserAddress(data);
-      return response.data;
+      return unwrapApiObject(response);
     } catch (error) {
       console.error('Failed to create address:', error);
       return null;
@@ -113,7 +114,7 @@ const useUserAddress = () => {
   const updateAddress = useCallback(async (id, data) => {
     try {
       const response = await addressService.updateUserAddress(id, data);
-      return response.data;
+      return unwrapApiObject(response);
     } catch (error) {
       console.error('Failed to update address:', error);
       return null;

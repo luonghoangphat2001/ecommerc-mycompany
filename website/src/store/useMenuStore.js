@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axiosClient from '../api/axiosClient';
+import { unwrapApiList } from '../api/apiResponse';
 
 const useMenuStore = create((set, get) => ({
   menus: [],
@@ -11,7 +12,7 @@ const useMenuStore = create((set, get) => ({
     try {
       const response = await axiosClient.get('menus');
       set({
-        menus: response.data || [],
+        menus: unwrapApiList(response, []),
         loading: false
       });
     } catch (error) {

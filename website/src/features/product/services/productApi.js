@@ -1,41 +1,41 @@
-import axiosClient from '../../../api/axiosClient';
+import apiService from '../../../api/apiService';
 
 const productApi = {
   getAllProducts: (params) => {
-    return axiosClient.get('products', { params });
+    return apiService.get('products', { params });
   },
 
   getProductById: (id) => {
-    return axiosClient.get(`products/${id}`);
+    return apiService.get(`products/${id}`);
   },
 
   getProductBySlug: (slug) => {
-    return axiosClient.get(`products/by-slug/${slug}`);
+    return apiService.get(`products/by-slug/${slug}`);
   },
 
   getProductsByCategory: (categoryId) => {
-    return axiosClient.get(`product-categories/${categoryId}/products`);
+    return apiService.get(`product-categories/${categoryId}/products`);
   },
 
   getInventory: (productId, variantId = null) => {
     const params = variantId ? { variant_id: variantId } : {};
-    return axiosClient.get(`products/${productId}/inventory`, { params });
+    return apiService.get(`products/${productId}/inventory`, { params });
   },
 
   getRecommendations: (productId) => {
-    return axiosClient.get(`products/${productId}/recommendations`);
+    return apiService.get(`products/${productId}/recommendations`);
   },
 
   getUpsellProducts: (productId) => {
-    return axiosClient.get(`products/${productId}/upsells`);
+    return apiService.get(`products/${productId}/upsells`);
   },
 
   getCrossSellProducts: (productId) => {
-    return axiosClient.get(`products/${productId}/cross-sells`);
+    return apiService.get(`products/${productId}/cross-sells`);
   },
 
   getRelatedProducts: (productId) => {
-    return axiosClient.get(`products/${productId}/related`);
+    return apiService.get(`products/${productId}/related`);
   }
 };
 

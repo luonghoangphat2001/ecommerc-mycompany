@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axiosClient from '../api/axiosClient';
+import { unwrapApiObject } from '../api/apiResponse';
 
 const useSettingsStore = create((set, get) => ({
   settings: null,
@@ -15,7 +16,7 @@ const useSettingsStore = create((set, get) => ({
     set({ loading: true });
     try {
       const response = await axiosClient.get('storefront-settings');
-      const data = response.data;
+      const data = unwrapApiObject(response);
 
       set({
         settings: data,

@@ -3,11 +3,27 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Settings\ApiSettings;
+use App\Settings\AdvancedSettings;
+use App\Settings\CouponSettings;
+use App\Settings\CustomSettings;
+use App\Settings\DBSettings;
+use App\Settings\EmailSettings;
+use App\Settings\FooterSettings;
+use App\Settings\GeneralSettings;
+use App\Settings\InventorySettings;
+use App\Settings\LoyaltySettings;
+use App\Settings\MailSettings;
+use App\Settings\MaintenanceSettings;
+use App\Settings\MarketingSettings;
+use App\Settings\ProductSettings;
+use App\Settings\WebhookSettings;
 use App\Models\Setting;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Cache;
 
 class SettingController extends BaseCrudController
 {
@@ -18,7 +34,7 @@ class SettingController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Settings';
+        return 'admin.sidebar.settings';
     }
 
     protected function routePrefix(): string
@@ -41,7 +57,7 @@ class SettingController extends BaseCrudController
         }
 
         return view('admin.settings.tabs', [
-            'title' => 'Settings',
+            'title' => __('admin.sidebar.settings'),
             'schema' => $schema,
             'activeTab' => $activeTab,
             'values' => $this->settingValues(),
@@ -56,18 +72,41 @@ class SettingController extends BaseCrudController
         abort_unless(isset($schema[$group]), 404);
 
         $submitted = (array) $request->input('settings', []);
-        foreach ($schema[$group]['fields'] as $name => $field) {
-            if (($field['type'] ?? 'text') === 'password' && blank($submitted[$name] ?? null)) {
-                continue;
+        $settingsClass = $this->settingsClassForGroup($group);
+
+        if ($settingsClass) {
+            $settings = app($settingsClass);
+
+            foreach ($schema[$group]['fields'] as $name => $field) {
+                $type = $field['type'] ?? 'text';
+
+                if ($type === 'password' && blank($submitted[$name] ?? null) && ! $request->hasFile("settings.$name")) {
+                    continue;
+                }
+
+                $currentValue = data_get($settings, $name);
+                $value = $this->normalizeSettingValue($submitted[$name] ?? null, $field, $request, $group, $name, $currentValue);
+
+                data_set($settings, $name, $value);
             }
 
-            $value = $this->normalizeSettingValue($submitted[$name] ?? null, $field);
+            $settings->save();
+        } else {
+            foreach ($schema[$group]['fields'] as $name => $field) {
+                if (($field['type'] ?? 'text') === 'password' && blank($submitted[$name] ?? null)) {
+                    continue;
+                }
 
-            Setting::updateOrCreate(
-                ['group' => $group, 'name' => $name],
-                ['payload' => $value, 'locked' => false]
-            );
+                $value = $this->normalizeSettingValue($submitted[$name] ?? null, $field, $request, $group, $name);
+
+                Setting::updateOrCreate(
+                    ['group' => $group, 'name' => $name],
+                    ['payload' => $value, 'locked' => false]
+                );
+            }
         }
+
+        $this->flushStorefrontCaches();
 
         return redirect()
             ->route('admin.settings.index', ['tab' => $group])
@@ -109,22 +148,50 @@ class SettingController extends BaseCrudController
 
     private function settingValues(): array
     {
-        return Setting::query()
-            ->get(['group', 'name', 'payload'])
-            ->groupBy('group')
-            ->map(fn ($items) => $items->pluck('payload', 'name')->toArray())
-            ->toArray();
+        $values = [];
+
+        foreach ($this->settingsSchema() as $group => $section) {
+            $settingsClass = $this->settingsClassForGroup($group);
+
+            if ($settingsClass) {
+                $values[$group] = get_object_vars(app($settingsClass));
+                continue;
+            }
+
+            $values[$group] = Setting::query()
+                ->where('group', $group)
+                ->get(['name', 'payload'])
+                ->pluck('payload', 'name')
+                ->toArray();
+        }
+
+        return $values;
     }
 
-    private function normalizeSettingValue(mixed $value, array $field): mixed
+    private function normalizeSettingValue(mixed $value, array $field, ?Request $request = null, ?string $group = null, ?string $name = null, mixed $currentValue = null): mixed
     {
         return match ($field['type'] ?? 'text') {
+            'image' => $this->storeUploadedSettingFile($request, $group, $name, $currentValue),
             'boolean' => (bool) $value,
             'number' => $value === null || $value === '' ? null : (int) $value,
             'decimal' => $value === null || $value === '' ? null : (float) $value,
             'json' => $this->decodeJsonSetting($value),
             default => $value === '' ? null : $value,
         };
+    }
+
+    private function storeUploadedSettingFile(?Request $request, ?string $group, ?string $name, mixed $currentValue = null): mixed
+    {
+        if (! $request || ! $group || ! $name) {
+            return $currentValue;
+        }
+
+        $file = $request->file("settings.$name");
+        if (! $file) {
+            return $currentValue;
+        }
+
+        return $file->storePublicly("settings/{$group}", 'public');
     }
 
     private function decodeJsonSetting(mixed $value): mixed
@@ -142,9 +209,11 @@ class SettingController extends BaseCrudController
     {
         return [
             'settings' => [
-                'label' => 'Storefront',
-                'description' => 'Thông tin hiển thị cơ bản của admin/storefront.',
+                'label' => 'admin.sidebar.storefront_settings',
+                'description' => 'admin.settings.storefront_description',
                 'fields' => [
+                    'logo' => ['label' => 'Logo', 'type' => 'image', 'default' => null],
+                    'logo_favicon' => ['label' => 'Favicon', 'type' => 'image', 'default' => null],
                     'name' => ['label' => 'Tên hệ thống', 'default' => 'My E-commerce'],
                     'about' => ['label' => 'Mô tả', 'type' => 'textarea', 'default' => ''],
                     'timezone' => ['label' => 'Timezone', 'default' => 'Asia/Ho_Chi_Minh'],
@@ -157,8 +226,8 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'ecommerce' => [
-                'label' => 'Ecommerce',
-                'description' => 'Nhóm setting ecommerce tổng quát bị thiếu sau khi bỏ Filament.',
+                'label' => 'admin.sidebar.ecommerce_settings',
+                'description' => 'admin.settings.ecommerce_description',
                 'fields' => [
                     'enabled' => ['label' => 'Bật ecommerce', 'type' => 'boolean', 'default' => true],
                     'catalog_mode' => ['label' => 'Catalog mode', 'type' => 'boolean', 'default' => false],
@@ -171,13 +240,15 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'general' => [
-                'label' => 'General',
-                'description' => 'Cấu hình cửa hàng, tiền tệ, đơn vị đo.',
+                'label' => 'admin.sidebar.general_settings',
+                'description' => 'admin.settings.general_description',
                 'fields' => [
-                    'store_name' => ['label' => 'Store name', 'default' => 'My E-commerce Store'],
+                    'store_name' => ['label' => 'Site name', 'default' => 'My E-commerce Store'],
                     'store_email' => ['label' => 'Store email', 'type' => 'email', 'default' => 'admin@example.com'],
                     'store_phone' => ['label' => 'Store phone', 'default' => '0123456789'],
                     'store_country' => ['label' => 'Country', 'default' => 'VN'],
+                    'logo' => ['label' => 'Header logo', 'type' => 'image', 'default' => null],
+                    'favicon' => ['label' => 'Site favicon', 'type' => 'image', 'default' => null],
                     'default_currency' => ['label' => 'Default currency', 'default' => 'VND'],
                     'currency_position' => ['label' => 'Currency position', 'type' => 'select', 'default' => 'right_space', 'options' => ['left' => 'Left', 'right' => 'Right', 'left_space' => 'Left space', 'right_space' => 'Right space']],
                     'decimal_places' => ['label' => 'Decimal places', 'type' => 'number', 'default' => 0],
@@ -186,8 +257,8 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'products' => [
-                'label' => 'Products',
-                'description' => 'Hành vi sản phẩm và review.',
+                'label' => 'admin.sidebar.product_settings',
+                'description' => 'admin.settings.product_description',
                 'fields' => [
                     'add_to_cart_behavior' => ['label' => 'Add to cart behavior', 'type' => 'select', 'default' => 'ajax', 'options' => ['ajax' => 'Ajax', 'redirect' => 'Redirect']],
                     'enable_reviews' => ['label' => 'Bật review', 'type' => 'boolean', 'default' => true],
@@ -196,8 +267,8 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'checkout' => [
-                'label' => 'Checkout',
-                'description' => 'Checkout, tax và payment gateways.',
+                'label' => 'admin.sidebar.checkout_settings',
+                'description' => 'admin.settings.checkout_description',
                 'fields' => [
                     'enable_guest_checkout' => ['label' => 'Guest checkout', 'type' => 'boolean', 'default' => true],
                     'tax_calculation_address' => ['label' => 'Tax address', 'type' => 'select', 'default' => 'shipping', 'options' => ['shipping' => 'Shipping', 'billing' => 'Billing', 'base' => 'Base']],
@@ -211,17 +282,17 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'shipping' => [
-                'label' => 'Shipping',
-                'description' => 'Quản lý khu vực và phương thức vận chuyển giống flow cũ.',
+                'label' => 'admin.sidebar.shipping_settings',
+                'description' => 'admin.settings.shipping_description',
                 'fields' => [],
                 'management_actions' => [
-                    ['label' => 'Quản lý Shipping Zones', 'route' => 'admin.shipping-zones.index'],
-                    ['label' => 'Quản lý Shipping Methods', 'route' => 'admin.shipping-methods.index'],
+                    ['label' => 'admin.settings.manage_shipping_zones', 'route' => 'admin.shipping-zones.index'],
+                    ['label' => 'admin.settings.manage_shipping_methods', 'route' => 'admin.shipping-methods.index'],
                 ],
             ],
             'inventory' => [
-                'label' => 'Inventory',
-                'description' => 'Theo flow InventoryService/Checkout PlaceOrder: multi-warehouse, split shipping, reservation.',
+                'label' => 'admin.sidebar.inventory_settings',
+                'description' => 'admin.settings.inventory_description',
                 'fields' => [
                     'multi_warehouse_enabled' => ['label' => 'Multi warehouse', 'type' => 'boolean', 'default' => false],
                     'split_shipping_enabled' => ['label' => 'Split shipping', 'type' => 'boolean', 'default' => false],
@@ -229,14 +300,14 @@ class SettingController extends BaseCrudController
                     'reservation_expiry_minutes' => ['label' => 'Reservation expiry minutes', 'type' => 'number', 'default' => 15],
                 ],
                 'management_actions' => [
-                    ['label' => 'Quản lý Kho', 'route' => 'admin.inventories.index'],
-                    ['label' => 'Quản lý Phiếu Kho', 'route' => 'admin.inventory-records.index'],
-                    ['label' => 'Xem Biến Động Kho', 'route' => 'admin.inventory-movements.index'],
+                    ['label' => 'admin.settings.manage_inventories', 'route' => 'admin.inventories.index'],
+                    ['label' => 'admin.settings.manage_inventory_records', 'route' => 'admin.inventory-records.index'],
+                    ['label' => 'admin.settings.view_inventory_movements', 'route' => 'admin.inventory-movements.index'],
                 ],
             ],
             'coupon' => [
-                'label' => 'Coupons',
-                'description' => 'Khuyến mãi và tính thuế coupon.',
+                'label' => 'admin.sidebar.coupon_settings',
+                'description' => 'admin.settings.coupon_description',
                 'fields' => [
                     'enable_coupons' => ['label' => 'Bật coupons', 'type' => 'boolean', 'default' => true],
                     'allow_multiple_coupons' => ['label' => 'Cho nhiều coupon', 'type' => 'boolean', 'default' => false],
@@ -244,8 +315,8 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'loyalty' => [
-                'label' => 'Loyalty',
-                'description' => 'Điểm thưởng khách hàng.',
+                'label' => 'admin.sidebar.loyalty_settings',
+                'description' => 'admin.settings.loyalty_description',
                 'fields' => [
                     'enabled' => ['label' => 'Bật loyalty', 'type' => 'boolean', 'default' => false],
                     'points_per_currency' => ['label' => 'Points per currency', 'type' => 'number', 'default' => 1],
@@ -253,22 +324,22 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'marketing' => [
-                'label' => 'Combo / Cross-sell',
-                'description' => 'Theo flow cũ của ComboService, CrossSellService, UpsellService qua MarketingSettings.',
+                'label' => 'admin.sidebar.marketing_settings',
+                'description' => 'admin.settings.marketing_description',
                 'fields' => [
                     'upsell_enabled' => ['label' => 'Bật upsell', 'type' => 'boolean', 'default' => false],
                     'cross_sell_enabled' => ['label' => 'Bật cross-sell', 'type' => 'boolean', 'default' => false],
                     'combo_enabled' => ['label' => 'Bật combo products', 'type' => 'boolean', 'default' => false],
                 ],
                 'management_actions' => [
-                    ['label' => 'Quản lý Upsell', 'route' => 'admin.upsell-products.index', 'visible_when' => 'upsell_enabled'],
-                    ['label' => 'Quản lý Cross-sell', 'route' => 'admin.cross-sell-products.index', 'visible_when' => 'cross_sell_enabled'],
-                    ['label' => 'Quản lý Combo', 'route' => 'admin.combo-products.index', 'visible_when' => 'combo_enabled'],
+                    ['label' => 'admin.settings.manage_upsell', 'route' => 'admin.upsell-products.index', 'visible_when' => 'upsell_enabled'],
+                    ['label' => 'admin.settings.manage_cross_sell', 'route' => 'admin.cross-sell-products.index', 'visible_when' => 'cross_sell_enabled'],
+                    ['label' => 'admin.settings.manage_combo', 'route' => 'admin.combo-products.index', 'visible_when' => 'combo_enabled'],
                 ],
             ],
             'emails' => [
-                'label' => 'Emails',
-                'description' => 'EmailSettings cũ: sender và notification template.',
+                'label' => 'admin.sidebar.emails_settings',
+                'description' => 'admin.settings.emails_description',
                 'fields' => [
                     'sender_name' => ['label' => 'Sender name', 'default' => 'Admin'],
                     'sender_email' => ['label' => 'Sender email', 'type' => 'email', 'default' => 'admin@admin.com'],
@@ -277,16 +348,16 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'footer' => [
-                'label' => 'Footer',
-                'description' => 'FooterSettings cho StorefrontSettingsService.',
+                'label' => 'admin.sidebar.footer_settings',
+                'description' => 'admin.settings.footer_description',
                 'fields' => [
                     'copyright' => ['label' => 'Copyright', 'default' => '© 2025 Company Name'],
                     'links' => ['label' => 'Footer links JSON', 'type' => 'json', 'default' => []],
                 ],
             ],
             'mail' => [
-                'label' => 'SMTP',
-                'description' => 'Thông tin SMTP dùng bởi Laravel mailer.',
+                'label' => 'admin.sidebar.mail_settings',
+                'description' => 'admin.settings.mail_description',
                 'fields' => [
                     'email_from_address' => ['label' => 'From address', 'type' => 'email', 'default' => null],
                     'email_from_name' => ['label' => 'From name', 'default' => null],
@@ -299,8 +370,8 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'webhook' => [
-                'label' => 'Webhooks',
-                'description' => 'Cấu hình webhook delivery.',
+                'label' => 'admin.sidebar.webhooks',
+                'description' => 'admin.settings.webhook_description',
                 'fields' => [
                     'enabled' => ['label' => 'Bật webhooks', 'type' => 'boolean', 'default' => false],
                     'log_retention_days' => ['label' => 'Log retention days', 'type' => 'number', 'default' => 30],
@@ -308,8 +379,8 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'api' => [
-                'label' => 'API',
-                'description' => 'Cấu hình API bảo mật và idempotency.',
+                'label' => 'admin.sidebar.api_settings',
+                'description' => 'admin.settings.api_description',
                 'fields' => [
                     'enabled' => ['label' => 'Bật API', 'type' => 'boolean', 'default' => true],
                     'idempotency_ttl' => ['label' => 'Idempotency TTL', 'type' => 'number', 'default' => 86400],
@@ -318,8 +389,8 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'advanced' => [
-                'label' => 'Advanced',
-                'description' => 'Page mapping và cấu hình nâng cao.',
+                'label' => 'admin.sidebar.advanced_settings',
+                'description' => 'admin.settings.advanced_description',
                 'fields' => [
                     'cart_page_id' => ['label' => 'Cart page ID', 'type' => 'number', 'default' => null],
                     'checkout_page_id' => ['label' => 'Checkout page ID', 'type' => 'number', 'default' => null],
@@ -327,13 +398,44 @@ class SettingController extends BaseCrudController
                 ],
             ],
             'custom' => [
-                'label' => 'Custom Code',
-                'description' => 'CSS/JS custom cho storefront.',
+                'label' => 'admin.sidebar.custom_settings',
+                'description' => 'admin.settings.custom_description',
                 'fields' => [
                     'custom_css' => ['label' => 'Custom CSS', 'type' => 'textarea', 'default' => ''],
                     'custom_js' => ['label' => 'Custom JS', 'type' => 'textarea', 'default' => ''],
                 ],
             ],
         ];
+    }
+
+    private function settingsClassForGroup(string $group): ?string
+    {
+        return match ($group) {
+            'settings' => DBSettings::class,
+            'general' => GeneralSettings::class,
+            'products' => ProductSettings::class,
+            'checkout' => \App\Settings\CheckoutSettings::class,
+            'inventory' => InventorySettings::class,
+            'coupon' => CouponSettings::class,
+            'loyalty' => LoyaltySettings::class,
+            'marketing' => MarketingSettings::class,
+            'emails' => EmailSettings::class,
+            'footer' => FooterSettings::class,
+            'mail' => MailSettings::class,
+            'webhook' => WebhookSettings::class,
+            'api' => ApiSettings::class,
+            'advanced' => AdvancedSettings::class,
+            'custom' => CustomSettings::class,
+            'maintenance' => MaintenanceSettings::class,
+            default => null,
+        };
+    }
+
+    private function flushStorefrontCaches(): void
+    {
+        foreach (config('app.supported_locales', ['vi', 'en']) as $localeConfig) {
+            $locale = is_array($localeConfig) ? ($localeConfig['code'] ?? 'vi') : (string) $localeConfig;
+            Cache::forget('storefront_settings_v1_' . $locale);
+        }
     }
 }

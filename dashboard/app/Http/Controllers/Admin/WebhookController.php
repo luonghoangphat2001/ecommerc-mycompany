@@ -14,7 +14,7 @@ class WebhookController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Webhooks';
+        return 'admin.sidebar.webhooks';
     }
 
     protected function routePrefix(): string

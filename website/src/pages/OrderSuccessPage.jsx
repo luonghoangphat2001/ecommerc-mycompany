@@ -5,7 +5,7 @@ import useSettingsStore from "../store/useSettingsStore"
 
 const OrderSuccessPage = () => {
     const translate = useSettingsStore((state) => state.translate)
-    const storeName = useSettingsStore((state) => state.getSetting("general.store_name")) || "NovaStore"
+    const storeName = useSettingsStore((state) => state.getSetting("general.site_name") || state.getSetting("general.store_name") || "NovaStore")
     const location = useLocation()
     const navigate = useNavigate()
     const order = location.state?.order

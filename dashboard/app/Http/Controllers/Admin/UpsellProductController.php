@@ -15,7 +15,7 @@ class UpsellProductController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Upsell Products';
+        return 'admin.sidebar.upsell_products';
     }
 
     protected function routePrefix(): string

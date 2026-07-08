@@ -1,27 +1,27 @@
-import axiosClient from '../../../api/axiosClient';
+import apiService from '../../../api/apiService';
 
 const checkoutApi = {
   createOrder: (orderData) => {
-    return axiosClient.post('checkout/orders', orderData);
+    return apiService.post('checkout/orders', orderData);
   },
 
   validateShippingAddress: (addressData) => {
-    return axiosClient.post('checkout/validate-shipping', addressData);
+    return apiService.post('checkout/validate-shipping', addressData);
   },
 
   getShippingMethods: () => {
-    return axiosClient.get('checkout/shipping-methods');
+    return apiService.get('checkout/shipping-methods');
   },
 
   calculateShipping: (addressId, shippingMethodId) => {
-    return axiosClient.post('checkout/calculate-shipping', {
+    return apiService.post('checkout/calculate-shipping', {
       address_id: addressId,
       shipping_method_id: shippingMethodId,
     });
   },
 
   getOrderSummary: (orderId) => {
-    return axiosClient.get(`checkout/orders/${orderId}/summary`);
+    return apiService.get(`checkout/orders/${orderId}/summary`);
   },
 };
 

@@ -14,7 +14,7 @@ class InventoryMovementController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Inventory Movements';
+        return 'admin.settings.view_inventory_movements';
     }
 
     protected function routePrefix(): string

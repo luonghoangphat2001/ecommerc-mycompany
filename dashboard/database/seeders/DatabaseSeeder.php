@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
         // 3. Create Default Role
         $this->command->warn("Creating default User role...");
         try {
+            Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
             $role = Role::firstOrCreate(['name' => 'Thành viên đăng ký', 'guard_name' => 'web']);
             $role->revokePermissionTo(Permission::all()); 
             $this->command->info("Default User role created successfully.");

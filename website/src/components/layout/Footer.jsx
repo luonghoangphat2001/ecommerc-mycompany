@@ -14,7 +14,7 @@ const Footer = () => {
     const currentYear = new Date().getFullYear()
 
     // Store info from settings
-    const storeName = general?.store_name || "My E-commerce"
+    const storeName = general?.site_name || general?.store_name || "My E-commerce"
     const storeEmail = general?.store_email || "contact@example.com"
     const storePhone = general?.store_phone || "1900 1234"
     const storeCountry = general?.store_country || "Vietnam"

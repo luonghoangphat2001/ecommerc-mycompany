@@ -4,7 +4,7 @@ import useSettingsStore from "../../store/useSettingsStore"
 
 const Logo = () => {
     const logo = useSettingsStore((state) => state.getSetting("general.logo"))
-    const storeName = useSettingsStore((state) => state.getSetting("general.store_name")) || "NovaStore"
+    const storeName = useSettingsStore((state) => state.getSetting("general.site_name") || state.getSetting("general.store_name") || "NovaStore")
 
     return (
         <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">

@@ -6,7 +6,9 @@ use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\Menu;
 use App\Models\MenuItem;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class MenuItemController extends BaseCrudController
@@ -18,7 +20,7 @@ class MenuItemController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Menu Items';
+        return 'admin.sidebar.menu_items';
     }
 
     protected function routePrefix(): string
@@ -28,7 +30,7 @@ class MenuItemController extends BaseCrudController
 
     protected function searchable(): array
     {
-        return array_values(array_filter(['label', 'name', 'url', 'target', 'type', 'route'], fn (string $column) => Schema::hasColumn('menu_items', $column)));
+        return array_values(array_filter(['label', 'name', 'url', 'target', 'type', 'route', 'menuable_type'], fn (string $column) => Schema::hasColumn('menu_items', $column) || in_array($column, ['label', 'name', 'type'], true)));
     }
 
     protected function fields(): array
@@ -69,6 +71,18 @@ class MenuItemController extends BaseCrudController
             $fields['route'] = ['label' => 'Route', 'rules' => ['nullable', 'string', 'max:255']];
         }
 
+        if (Schema::hasColumn('menu_items', 'route_parameters')) {
+            $fields['route_parameters'] = ['label' => 'Route parameters JSON', 'type' => 'textarea', 'rules' => ['nullable', 'string']];
+        }
+
+        if (Schema::hasColumn('menu_items', 'menuable_type')) {
+            $fields['menuable_type'] = ['label' => 'Menuable type', 'rules' => ['nullable', 'string', 'max:255']];
+        }
+
+        if (Schema::hasColumn('menu_items', 'menuable_id')) {
+            $fields['menuable_id'] = ['label' => 'Menuable ID', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']];
+        }
+
         if (Schema::hasColumn('menu_items', 'target')) {
             $fields['target'] = [
                 'label' => 'Target',
@@ -80,6 +94,22 @@ class MenuItemController extends BaseCrudController
 
         if (Schema::hasColumn('menu_items', 'order')) {
             $fields['order'] = ['label' => 'Order', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']];
+        }
+
+        if (Schema::hasColumn('menu_items', 'use_menuable_name')) {
+            $fields['use_menuable_name'] = ['label' => 'Use menuable name', 'type' => 'boolean', 'rules' => ['nullable', 'boolean']];
+        }
+
+        if (Schema::hasColumn('menu_items', 'link_class')) {
+            $fields['link_class'] = ['label' => 'Link class', 'rules' => ['nullable', 'string', 'max:255']];
+        }
+
+        if (Schema::hasColumn('menu_items', 'wrapper_class')) {
+            $fields['wrapper_class'] = ['label' => 'Wrapper class', 'rules' => ['nullable', 'string', 'max:255']];
+        }
+
+        if (Schema::hasColumn('menu_items', 'parameters')) {
+            $fields['parameters'] = ['label' => 'Parameters JSON', 'type' => 'textarea', 'rules' => ['nullable', 'string']];
         }
 
         return $fields;
@@ -126,6 +156,34 @@ class MenuItemController extends BaseCrudController
             $rules['order'] = ['nullable', 'integer', 'min:0'];
         }
 
+        if (Schema::hasColumn('menu_items', 'route_parameters')) {
+            $rules['route_parameters'] = ['nullable', 'string'];
+        }
+
+        if (Schema::hasColumn('menu_items', 'menuable_type')) {
+            $rules['menuable_type'] = ['nullable', 'string', 'max:255'];
+        }
+
+        if (Schema::hasColumn('menu_items', 'menuable_id')) {
+            $rules['menuable_id'] = ['nullable', 'integer', 'min:0'];
+        }
+
+        if (Schema::hasColumn('menu_items', 'use_menuable_name')) {
+            $rules['use_menuable_name'] = ['nullable', 'boolean'];
+        }
+
+        if (Schema::hasColumn('menu_items', 'link_class')) {
+            $rules['link_class'] = ['nullable', 'string', 'max:255'];
+        }
+
+        if (Schema::hasColumn('menu_items', 'wrapper_class')) {
+            $rules['wrapper_class'] = ['nullable', 'string', 'max:255'];
+        }
+
+        if (Schema::hasColumn('menu_items', 'parameters')) {
+            $rules['parameters'] = ['nullable', 'string'];
+        }
+
         return $rules;
     }
 
@@ -135,6 +193,13 @@ class MenuItemController extends BaseCrudController
             $data['parent_id'] = null;
         }
 
+        foreach (['route_parameters', 'parameters'] as $jsonField) {
+            if (array_key_exists($jsonField, $data) && is_string($data[$jsonField]) && trim($data[$jsonField]) !== '') {
+                $decoded = json_decode($data[$jsonField], true);
+                $data[$jsonField] = json_last_error() === JSON_ERROR_NONE ? $decoded : $data[$jsonField];
+            }
+        }
+
         foreach (array_keys($data) as $key) {
             if (! Schema::hasColumn('menu_items', $key)) {
                 unset($data[$key]);
@@ -142,5 +207,18 @@ class MenuItemController extends BaseCrudController
         }
 
         return $data;
+    }
+
+    protected function afterSave(Model $record, \Illuminate\Http\Request $request): void
+    {
+        Cache::forget('all_menus');
+    }
+
+    public function destroy(int $id): RedirectResponse
+    {
+        $response = parent::destroy($id);
+        Cache::forget('all_menus');
+
+        return $response;
     }
 }

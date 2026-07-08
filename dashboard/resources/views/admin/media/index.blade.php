@@ -3,12 +3,12 @@
 @section('content')
     <div class="page-header">
         <div>
-            <h1 class="page-title">Media</h1>
-            <p class="page-description">Xem thư viện media bằng grid hoặc table, preview ảnh trực tiếp.</p>
+            <h1 class="page-title">{{ __('admin.sidebar.media') }}</h1>
+            <p class="page-description">{{ __('admin.media.description') }}</p>
         </div>
         <div class="actions">
-            <a class="btn btn-secondary" href="{{ route($routePrefix . '.export', request()->query()) }}">Export CSV</a>
-            <a class="btn" href="{{ route($routePrefix . '.create') }}">Tạo mới</a>
+            <a class="btn btn-secondary" href="{{ route($routePrefix . '.export', request()->query()) }}">{{ __('admin.actions.export_csv') }}</a>
+            <a class="btn" href="{{ route($routePrefix . '.create') }}">{{ __('admin.actions.create') }}</a>
         </div>
     </div>
 
@@ -20,7 +20,7 @@
         <div class="toolbar-row media-toolbar">
             <form method="get" class="searchbar">
                 <input type="hidden" name="view" value="{{ $viewMode }}">
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="Tìm media theo tên, file, mime...">
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __('admin.media.search_placeholder') }}">
             </form>
 
             <div class="actions">
@@ -32,7 +32,7 @@
         <form method="post" action="{{ route($routePrefix . '.import') }}" class="import-form media-import" enctype="multipart/form-data">
             @csrf
             <input type="file" name="file" accept=".csv,text/csv">
-            <button class="btn btn-secondary" type="submit">Import CSV</button>
+            <button class="btn btn-secondary" type="submit">{{ __('admin.actions.import_csv') }}</button>
         </form>
 
         @error('file')
@@ -56,17 +56,17 @@
                             <span>{{ number_format((int) $item->size / 1024, 1) }} KB · {{ $item->width ?: '-' }}x{{ $item->height ?: '-' }}</span>
                         </div>
                         <div class="actions media-actions">
-                            <a class="link-action" href="{{ route($routePrefix . '.show', $item->id) }}">Xem</a>
-                            <a class="link-action" href="{{ route($routePrefix . '.edit', $item->id) }}">Sửa</a>
+                            <a class="link-action" href="{{ route($routePrefix . '.show', $item->id) }}">{{ __('admin.actions.view') }}</a>
+                            <a class="link-action" href="{{ route($routePrefix . '.edit', $item->id) }}">{{ __('admin.actions.edit') }}</a>
                             <form method="post" action="{{ route($routePrefix . '.destroy', $item->id) }}">
                                 @csrf
                                 @method('delete')
-                                <button class="link-action link-danger" type="submit" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</button>
+                                <button class="link-action link-danger" type="submit" onclick="return confirm('{{ __('admin.messages.confirm_delete') }}')">{{ __('admin.actions.delete') }}</button>
                             </form>
                         </div>
                     </article>
                 @empty
-                    <div class="empty-state">Không có media</div>
+                    <div class="empty-state">{{ __('admin.media.empty_state') }}</div>
                 @endforelse
             </div>
         @else
@@ -74,14 +74,14 @@
                 <table style="min-width: 980px;">
                     <thead>
                         <tr>
-                            <th>Preview</th>
+                            <th>{{ __('admin.media.preview') }}</th>
                             <th>ID</th>
-                            <th>Tên</th>
-                            <th>File</th>
-                            <th>Mime</th>
-                            <th>Size</th>
-                            <th>Dimensions</th>
-                            <th>Thao tác</th>
+                            <th>{{ __('fields.name') }}</th>
+                            <th>{{ __('admin.media.file') }}</th>
+                            <th>{{ __('admin.media.mime') }}</th>
+                            <th>{{ __('admin.media.size') }}</th>
+                            <th>{{ __('admin.media.dimensions') }}</th>
+                            <th>{{ __('admin.table_actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,18 +104,18 @@
                                 <td>{{ $item->width ?: '-' }}x{{ $item->height ?: '-' }}</td>
                                 <td>
                                     <div class="actions">
-                                        <a class="link-action" href="{{ route($routePrefix . '.show', $item->id) }}">Xem</a>
-                                        <a class="link-action" href="{{ route($routePrefix . '.edit', $item->id) }}">Sửa</a>
+                                        <a class="link-action" href="{{ route($routePrefix . '.show', $item->id) }}">{{ __('admin.actions.view') }}</a>
+                                        <a class="link-action" href="{{ route($routePrefix . '.edit', $item->id) }}">{{ __('admin.actions.edit') }}</a>
                                         <form method="post" action="{{ route($routePrefix . '.destroy', $item->id) }}">
                                             @csrf
                                             @method('delete')
-                                            <button class="link-action link-danger" type="submit" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</button>
+                                            <button class="link-action link-danger" type="submit" onclick="return confirm('{{ __('admin.messages.confirm_delete') }}')">{{ __('admin.actions.delete') }}</button>
                                         </form>
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="empty-state">Không có media</td></tr>
+                            <tr><td colspan="8" class="empty-state">{{ __('admin.media.empty_state') }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>

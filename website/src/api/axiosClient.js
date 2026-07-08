@@ -1,7 +1,10 @@
 import axios from 'axios';
+import { unwrapApiData } from './apiResponse';
+
+const apiBaseUrl = (process.env.REACT_APP_API_URL || '/api/v1').replace(/\/$/, '');
 
 const axiosClient = axios.create({
-  baseURL: '/api/v1/',
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -42,10 +45,7 @@ const processQueue = (error, token = null) => {
 
 axiosClient.interceptors.response.use(
   (response) => {
-    if (response && response.data) {
-      return response.data;
-    }
-    return response;
+    return unwrapApiData(response);
   },
   async (error) => {
     const originalRequest = error.config;
@@ -69,7 +69,8 @@ axiosClient.interceptors.response.use(
 
       return new Promise(function(resolve, reject) {
         axiosClient.post('refresh-token')
-          .then(({ accessToken }) => {
+          .then((refreshResponse) => {
+            const accessToken = refreshResponse?.accessToken || refreshResponse?.token;
             try {
               const authStorage = JSON.parse(localStorage.getItem('auth-storage'));
               if (authStorage && authStorage.state) {
@@ -102,4 +103,3 @@ axiosClient.interceptors.response.use(
 );
 
 export default axiosClient;
-

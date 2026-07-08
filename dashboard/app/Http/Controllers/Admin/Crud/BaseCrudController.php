@@ -64,6 +64,11 @@ abstract class BaseCrudController extends Controller
         return [];
     }
 
+    protected function canImportExport(): bool
+    {
+        return true;
+    }
+
     public function index(Request $request): View
     {
         $modelClass = $this->modelClass();
@@ -72,14 +77,14 @@ abstract class BaseCrudController extends Controller
         $this->applySearch($query, $request);
 
         return view('admin.crud.index', [
-            'title' => $this->title(),
+            'title' => __($this->title()),
             'items' => $query->latest('id')->paginate(15)->withQueryString(),
             'fields' => $this->visibleFields('index'),
             'routePrefix' => $this->routePrefix(),
             'canCreate' => $this->canCreate(),
             'canEdit' => $this->canEdit(),
             'canDelete' => $this->canDelete(),
-            'canImportExport' => true,
+            'canImportExport' => $this->canImportExport(),
             'headerActions' => $this->headerActions(),
         ]);
     }
@@ -87,7 +92,7 @@ abstract class BaseCrudController extends Controller
     public function create(): View
     {
         return view('admin.crud.form', [
-            'title' => 'Tạo mới - ' . $this->title(),
+            'title' => __('admin.actions.create') . ' - ' . __($this->title()),
             'record' => null,
             'fields' => $this->visibleFields('form'),
             'routePrefix' => $this->routePrefix(),
@@ -101,7 +106,7 @@ abstract class BaseCrudController extends Controller
         $record = $modelClass::findOrFail($id);
 
         return view('admin.crud.show', [
-            'title' => 'Chi tiết - ' . $this->title(),
+            'title' => __('admin.actions.view') . ' - ' . __($this->title()),
             'record' => $record,
             'fields' => $this->visibleFields('show'),
             'routePrefix' => $this->routePrefix(),
@@ -117,7 +122,7 @@ abstract class BaseCrudController extends Controller
         $record = $modelClass::create($data);
         $this->afterSave($record, $request);
 
-        return redirect()->route($this->routePrefix() . '.index')->with('status', 'Tạo mới thành công');
+        return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.created'));
     }
 
     public function edit(int $id): View
@@ -126,7 +131,7 @@ abstract class BaseCrudController extends Controller
         $record = $modelClass::findOrFail($id);
 
         return view('admin.crud.form', [
-            'title' => 'Chỉnh sửa - ' . $this->title(),
+            'title' => __('admin.actions.edit') . ' - ' . __($this->title()),
             'record' => $record,
             'fields' => $this->visibleFields('form'),
             'routePrefix' => $this->routePrefix(),
@@ -143,7 +148,7 @@ abstract class BaseCrudController extends Controller
         $record->update($data);
         $this->afterSave($record, $request);
 
-        return redirect()->route($this->routePrefix() . '.index')->with('status', 'Cập nhật thành công');
+        return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.updated'));
     }
 
     public function destroy(int $id): RedirectResponse
@@ -152,7 +157,7 @@ abstract class BaseCrudController extends Controller
         $record = $modelClass::findOrFail($id);
         $record->delete();
 
-        return redirect()->route($this->routePrefix() . '.index')->with('status', 'Xóa thành công');
+        return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.deleted'));
     }
 
     public function export(Request $request): StreamedResponse
@@ -192,13 +197,13 @@ abstract class BaseCrudController extends Controller
         $handle = fopen($path, 'r');
 
         if (! $handle) {
-            return back()->with('status', 'Không đọc được file import');
+            return back()->with('status', __('admin.messages.import_failed'));
         }
 
         $headers = fgetcsv($handle);
         if (! is_array($headers) || $headers === []) {
             fclose($handle);
-            return back()->with('status', 'File import không có header');
+            return back()->with('status', __('admin.messages.import_missing_header'));
         }
 
         $headers = array_map(fn ($header) => trim((string) $header), $headers);
@@ -233,7 +238,7 @@ abstract class BaseCrudController extends Controller
         fclose($handle);
 
         return redirect()->route($this->routePrefix() . '.index')
-            ->with('status', "Import hoàn tất: {$created} dòng thành công, {$skipped} dòng bỏ qua");
+            ->with('status', __('admin.messages.import_completed', ['created' => $created, 'skipped' => $skipped]));
     }
 
     protected function rules(?int $id = null): array

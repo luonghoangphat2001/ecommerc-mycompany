@@ -18,7 +18,7 @@ class RoleController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Roles';
+        return 'admin.sidebar.roles';
     }
 
     protected function routePrefix(): string

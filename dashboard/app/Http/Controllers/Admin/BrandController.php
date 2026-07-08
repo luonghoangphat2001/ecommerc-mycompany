@@ -14,7 +14,7 @@ class BrandController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Brands';
+        return 'admin.sidebar.brands';
     }
 
     protected function routePrefix(): string

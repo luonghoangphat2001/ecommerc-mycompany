@@ -39,13 +39,17 @@ class PageController extends Controller
         return $this->created(new PageResource($page));
     }
 
-    public function show($id)
+    public function show($page)
     {
-        $page = $this->pageService->getPageById($id);
-        if (!$page) {
+        $pageModel = is_numeric($page)
+            ? $this->pageService->getPageById((int) $page)
+            : $this->pageService->getPageBySlug((string) $page);
+
+        if (!$pageModel) {
             return $this->notFound();
         }
-        return $this->ok(new PageResource($page));
+
+        return $this->ok(new PageResource($pageModel));
     }
 
     public function update(UpdatePageRequest $request, $id)

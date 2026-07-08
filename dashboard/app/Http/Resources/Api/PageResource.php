@@ -14,6 +14,8 @@ class PageResource extends BaseResource
             'slug' => $this->slug,
             'content' => $this->content,
             'layout' => $this->layout,
+            'parent_id' => $this->parent_id ?? null,
+            'blocks' => $this->blocks ?? [],
         ], $this->getTimestamps());
     }
 }

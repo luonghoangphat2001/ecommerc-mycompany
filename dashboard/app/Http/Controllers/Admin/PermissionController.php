@@ -14,7 +14,7 @@ class PermissionController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Permissions';
+        return 'admin.sidebar.permissions';
     }
 
     protected function routePrefix(): string

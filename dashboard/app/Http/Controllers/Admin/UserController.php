@@ -19,7 +19,7 @@ class UserController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Users';
+        return 'admin.sidebar.users';
     }
 
     protected function routePrefix(): string

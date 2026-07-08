@@ -16,7 +16,7 @@ class ShippingMethodController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Shipping Methods';
+        return 'admin.settings.manage_shipping_methods';
     }
 
     protected function routePrefix(): string

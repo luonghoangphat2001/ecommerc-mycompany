@@ -9,6 +9,7 @@ import ChangePassword from "../features/account/components/ChangePassword"
 import OrderTracking from "../features/order/components/OrderTracking"
 import OrderDetail from "../features/order/components/OrderDetail"
 import orderService from "../features/order/services/orderService"
+import { unwrapApiList, unwrapApiObject } from "../api/apiResponse"
 
 const MyAccountPage = () => {
     const { user, logout } = useAuthStore()
@@ -28,8 +29,7 @@ const MyAccountPage = () => {
             setLoading(true)
             const response = await orderService.getAll()
             // API returns { success: true, data: [], meta: {...} }
-            // axiosClient already unwraps response.data
-            const ordersData = response.data || []
+            const ordersData = unwrapApiList(response, [])
             setOrders(ordersData)
             console.log("Orders:", ordersData)
         } catch (error) {
@@ -43,7 +43,7 @@ const MyAccountPage = () => {
     const handleViewOrder = async (order) => {
         try {
             const response = await orderService.getById(order.id)
-            setSelectedOrder(response.data)
+            setSelectedOrder(unwrapApiObject(response))
             setActiveTab("order-detail")
         } catch (error) {
             console.error("Failed to fetch order detail:", error)

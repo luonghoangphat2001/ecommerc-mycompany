@@ -23,6 +23,6 @@ class EloquentMenuRepository extends BaseRepository implements MenuRepositoryInt
      */
     public function findBySlug(string $slug)
     {
-        return $this->model->where('slug', $slug)->first();
+        return $this->model->with('items.children')->where('slug', $slug)->first();
     }
 }

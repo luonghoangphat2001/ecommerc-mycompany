@@ -14,7 +14,7 @@ class PageController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Pages';
+        return 'admin.sidebar.pages';
     }
 
     protected function routePrefix(): string
@@ -39,7 +39,12 @@ class PageController extends BaseCrudController
                 'rules' => ['nullable', 'integer', 'exists:pages,id'],
                 'options' => ['' => '-- Root --'] + Page::orderBy('id')->pluck('title', 'id')->toArray(),
             ],
-            'blocks' => ['label' => 'Blocks JSON', 'type' => 'textarea', 'rules' => ['nullable', 'string']],
+            'blocks' => [
+                'label' => 'Blocks JSON',
+                'type' => 'textarea',
+                'rules' => ['nullable', 'string'],
+                'hint' => 'Hỗ trợ block dạng media, text, textarea, gallery, code-editor, number.',
+            ],
         ];
     }
 
@@ -59,7 +64,13 @@ class PageController extends BaseCrudController
     protected function formData(?\Illuminate\Database\Eloquent\Model $record = null): array
     {
         if (! $record) {
-            return ['blocks' => '[]'];
+            return [
+                'blocks' => json_encode([
+                    ['type' => 'media', 'value' => null, 'caption' => ''],
+                    ['type' => 'text', 'value' => ''],
+                    ['type' => 'textarea', 'value' => ''],
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+            ];
         }
 
         return [

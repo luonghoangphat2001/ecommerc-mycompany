@@ -21,7 +21,7 @@ class InventoryRecordController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Inventory Records';
+        return 'admin.settings.manage_inventory_records';
     }
 
     protected function routePrefix(): string

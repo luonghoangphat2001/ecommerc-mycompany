@@ -4,7 +4,7 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">{{ $title }}</h1>
-            <p class="page-description">Quản lý danh sách, tìm kiếm, import/export và thao tác dữ liệu.</p>
+            <p class="page-description">{{ __('admin.list.description') }}</p>
         </div>
         <div class="actions">
             @foreach (($headerActions ?? []) as $action)
@@ -18,10 +18,10 @@
                 @endif
             @endforeach
             @if ($canImportExport ?? false)
-                <a class="btn btn-secondary" href="{{ route($routePrefix . '.export', request()->query()) }}">Export CSV</a>
+                <a class="btn btn-secondary" href="{{ route($routePrefix . '.export', request()->query()) }}">{{ __('admin.actions.export_csv') }}</a>
             @endif
             @if ($canCreate ?? true)
-                <a class="btn" href="{{ route($routePrefix . '.create') }}">Tạo mới</a>
+                <a class="btn" href="{{ route($routePrefix . '.create') }}">{{ __('admin.actions.create') }}</a>
             @endif
         </div>
     </div>
@@ -33,14 +33,14 @@
     <div class="table-panel card">
         <div class="toolbar-row">
             <form method="get" class="searchbar">
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="Tìm kiếm...">
+                <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __('admin.actions.search') }}...">
             </form>
 
             @if ($canImportExport ?? false)
                 <form method="post" action="{{ route($routePrefix . '.import') }}" class="import-form" enctype="multipart/form-data">
                     @csrf
                     <input type="file" name="file" accept=".csv,text/csv">
-                    <button class="btn btn-secondary" type="submit">Import CSV</button>
+                    <button class="btn btn-secondary" type="submit">{{ __('admin.actions.import_csv') }}</button>
                 </form>
             @endif
         </div>
@@ -57,7 +57,7 @@
                         @foreach ($fields as $name => $field)
                             <th>{{ $field['label'] ?? $name }}</th>
                         @endforeach
-                        <th>Thao tác</th>
+                        <th>{{ __('admin.table_actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -70,15 +70,15 @@
                             @endforeach
                             <td>
                                 <div class="actions">
-                                    <a class="link-action" href="{{ route($routePrefix . '.show', $item->id) }}">Xem</a>
+                                    <a class="link-action" href="{{ route($routePrefix . '.show', $item->id) }}">{{ __('admin.actions.view') }}</a>
                                     @if ($canEdit ?? true)
-                                        <a class="link-action" href="{{ route($routePrefix . '.edit', $item->id) }}">Sửa</a>
+                                        <a class="link-action" href="{{ route($routePrefix . '.edit', $item->id) }}">{{ __('admin.actions.edit') }}</a>
                                     @endif
                                     @if ($canDelete ?? true)
                                         <form method="post" action="{{ route($routePrefix . '.destroy', $item->id) }}">
                                             @csrf
                                             @method('delete')
-                                            <button class="link-action link-danger" type="submit" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</button>
+                                            <button class="link-action link-danger" type="submit" onclick="return confirm('{{ __('admin.messages.confirm_delete') }}')">{{ __('admin.actions.delete') }}</button>
                                         </form>
                                     @endif
                                 </div>
@@ -86,7 +86,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="100%" class="empty-state">Không có dữ liệu</td>
+                            <td colspan="100%" class="empty-state">{{ __('admin.messages.empty_state') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

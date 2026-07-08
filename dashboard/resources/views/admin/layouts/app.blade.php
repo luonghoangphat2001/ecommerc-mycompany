@@ -1,47 +1,87 @@
 @php
     $navGroups = [
-        'Platform' => [
-            ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => 'admin.dashboard'],
+        [
+            'label' => 'admin.sidebar.group.dashboard',
+            'items' => [
+                ['label' => 'admin.sidebar.dashboard', 'route' => 'admin.dashboard', 'match' => 'admin.dashboard'],
+            ],
         ],
-        'Access' => [
-            ['label' => 'Users', 'route' => 'admin.users.index', 'match' => 'admin.users.*'],
-            ['label' => 'Roles', 'route' => 'admin.roles.index', 'match' => 'admin.roles.*'],
-            ['label' => 'Permissions', 'route' => 'admin.permissions.index', 'match' => 'admin.permissions.*'],
+        [
+            'label' => 'admin.sidebar.group.products',
+            'items' => [
+                ['label' => 'admin.sidebar.products', 'route' => 'admin.products.index', 'match' => 'admin.products.*'],
+                ['label' => 'admin.sidebar.product_categories', 'route' => 'admin.product-categories.index', 'match' => 'admin.product-categories.*'],
+                ['label' => 'admin.sidebar.brands', 'route' => 'admin.brands.index', 'match' => 'admin.brands.*'],
+            ],
         ],
-        'Commerce' => [
-            ['label' => 'Products', 'route' => 'admin.products.index', 'match' => 'admin.products.*'],
-            ['label' => 'Brands', 'route' => 'admin.brands.index', 'match' => 'admin.brands.*'],
-            ['label' => 'Product Categories', 'route' => 'admin.product-categories.index', 'match' => 'admin.product-categories.*'],
-            ['label' => 'Tax Classes', 'route' => 'admin.tax-classes.index', 'match' => 'admin.tax-classes.*'],
-            ['label' => 'Tax Rates', 'route' => 'admin.tax-rates.index', 'match' => 'admin.tax-rates.*'],
-            ['label' => 'Orders', 'route' => 'admin.orders.index', 'match' => 'admin.orders.*'],
-            ['label' => 'Payments', 'route' => 'admin.payments.index', 'match' => 'admin.payments.*'],
-            ['label' => 'Refunds', 'route' => 'admin.refunds.index', 'match' => 'admin.refunds.*'],
+        [
+            'label' => 'admin.sidebar.group.orders',
+            'items' => [
+                ['label' => 'admin.sidebar.orders', 'route' => 'admin.orders.index', 'match' => 'admin.orders.*'],
+                ['label' => 'admin.sidebar.refunds', 'route' => 'admin.refunds.index', 'match' => 'admin.refunds.*'],
+            ],
         ],
-        'Content' => [
-            ['label' => 'Posts', 'route' => 'admin.posts.index', 'match' => 'admin.posts.*'],
-            ['label' => 'Post Categories', 'route' => 'admin.post-categories.index', 'match' => 'admin.post-categories.*'],
-            ['label' => 'Pages', 'route' => 'admin.pages.index', 'match' => 'admin.pages.*'],
-            ['label' => 'Menus', 'route' => 'admin.menus.index', 'match' => 'admin.menus.*'],
-            ['label' => 'Menu Items', 'route' => 'admin.menu-items.index', 'match' => 'admin.menu-items.*'],
-            ['label' => 'Langs', 'route' => 'admin.language-lines.index', 'match' => 'admin.language-lines.*'],
-            ['label' => 'Media', 'route' => 'admin.media.index', 'match' => 'admin.media.*'],
+        [
+            'label' => 'admin.sidebar.group.customers',
+            'items' => [
+                ['label' => 'admin.sidebar.users', 'route' => 'admin.users.index', 'match' => 'admin.users.*'],
+            ],
         ],
-        'System' => [
-            ['label' => 'Settings', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*'],
-            ['label' => 'Webhooks', 'route' => 'admin.webhooks.index', 'match' => 'admin.webhooks.*'],
-            ['label' => 'Webhook Logs', 'route' => 'admin.webhook-logs.index', 'match' => 'admin.webhook-logs.*'],
-            ['label' => 'Mail Logs', 'route' => 'admin.mail-logs.index', 'match' => 'admin.mail-logs.*'],
+        [
+            'label' => 'admin.sidebar.group.content',
+            'items' => [
+                ['label' => 'admin.sidebar.posts', 'route' => 'admin.posts.index', 'match' => 'admin.posts.*'],
+                ['label' => 'admin.sidebar.post_categories', 'route' => 'admin.post-categories.index', 'match' => 'admin.post-categories.*'],
+                ['label' => 'admin.sidebar.pages', 'route' => 'admin.pages.index', 'match' => 'admin.pages.*'],
+                ['label' => 'admin.sidebar.menus', 'route' => 'admin.menus.index', 'match' => 'admin.menus.*'],
+                ['label' => 'admin.sidebar.menu_items', 'route' => 'admin.menu-items.index', 'match' => 'admin.menu-items.*'],
+                ['label' => 'admin.sidebar.comments', 'route' => 'admin.comments.index', 'match' => 'admin.comments.*'],
+                ['label' => 'admin.sidebar.media', 'route' => 'admin.media.index', 'match' => 'admin.media.*'],
+            ],
+        ],
+        [
+            'label' => 'admin.sidebar.group.settings',
+            'items' => [
+                [
+                    'label' => 'admin.sidebar.tax',
+                    'children' => [
+                        ['label' => 'admin.sidebar.classes', 'route' => 'admin.tax-classes.index', 'match' => 'admin.tax-classes.*'],
+                        ['label' => 'admin.sidebar.rates', 'route' => 'admin.tax-rates.index', 'match' => 'admin.tax-rates.*'],
+                    ],
+                ],
+                [
+                    'label' => 'admin.sidebar.permissions',
+                    'children' => [
+                        ['label' => 'admin.sidebar.roles', 'route' => 'admin.roles.index', 'match' => 'admin.roles.*'],
+                        ['label' => 'admin.sidebar.permissions', 'route' => 'admin.permissions.index', 'match' => 'admin.permissions.*'],
+                    ],
+                ],
+                [
+                    'label' => 'admin.sidebar.integrations',
+                    'children' => [
+                        ['label' => 'admin.sidebar.webhooks', 'route' => 'admin.webhooks.index', 'match' => 'admin.webhooks.*'],
+                        ['label' => 'admin.sidebar.webhook_logs', 'route' => 'admin.webhook-logs.index', 'match' => 'admin.webhook-logs.*'],
+                    ],
+                ],
+                ['label' => 'admin.sidebar.mail_logs', 'route' => 'admin.mail-logs.index', 'match' => 'admin.mail-logs.*'],
+                ['label' => 'admin.sidebar.general_settings', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'query' => ['tab' => 'settings']]
+            ],
         ],
     ];
+
+    $navUrl = function (array $item): string {
+        return isset($item['query'])
+            ? route($item['route'], $item['query'])
+            : route($item['route']);
+    };
 @endphp
 
 <!doctype html>
-<html lang="vi">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Admin' }}</title>
+    <title>{{ $title ?? __('admin.brand.title') }}</title>
     <style>
         :root {
             --fi-bg: #f8fafc;
@@ -108,6 +148,40 @@
             text-transform: uppercase;
             padding: 0 10px 7px;
         }
+        .nav-section {
+            margin: 6px 0 10px;
+            border-radius: 10px;
+        }
+        .nav-summary {
+            list-style: none;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            min-height: 38px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            color: #334155;
+            font-weight: 700;
+        }
+        .nav-summary::-webkit-details-marker { display: none; }
+        .nav-summary:hover { background: var(--fi-soft); color: var(--fi-text); }
+        .nav-caret {
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid #94a3b8;
+            border-bottom: 2px solid #94a3b8;
+            transform: rotate(45deg);
+            transition: transform .15s ease, border-color .15s ease;
+            flex: 0 0 auto;
+            margin-right: 2px;
+        }
+        .nav-section[open] > .nav-summary .nav-caret {
+            transform: rotate(225deg);
+            border-color: var(--fi-primary);
+        }
         .nav-link {
             min-height: 36px;
             display: flex;
@@ -134,6 +208,20 @@
             flex: 0 0 auto;
         }
         .nav-link.active .nav-dot { background: var(--fi-primary); }
+        .nav-subgroup { margin: 4px 0 10px; }
+        .nav-subheading {
+            color: #475569;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 10px 6px;
+        }
+        .nav-subgroup.active .nav-subheading { color: #0f172a; }
+        .nav-subitems { padding-left: 8px; }
+        .nav-link-child {
+            padding-left: 18px;
+            font-size: 13px;
+            font-weight: 600;
+        }
         .main { min-width: 0; flex: 1; display: flex; flex-direction: column; }
         .topbar {
             min-height: 64px;
@@ -811,20 +899,60 @@
                 <div class="brand">
                     <div class="brand-mark">A</div>
                     <div>
-                        <div class="brand-title">Admin Panel</div>
-                        <div class="brand-subtitle">Laravel thuần</div>
+                    <div class="brand-title">{{ __('admin.brand.title') }}</div>
+                    <div class="brand-subtitle">{{ __('admin.brand.subtitle') }}</div>
                     </div>
                 </div>
 
-                @foreach ($navGroups as $group => $items)
-                    <nav class="nav-group" aria-label="{{ $group }}">
-                        <div class="nav-heading">{{ $group }}</div>
-                        @foreach ($items as $item)
-                            <a class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}" href="{{ route($item['route']) }}">
-                                <span>{{ $item['label'] }}</span>
-                                <span class="nav-dot"></span>
-                            </a>
-                        @endforeach
+                @foreach ($navGroups as $section)
+                    <nav class="nav-group" aria-label="{{ __($section['label']) }}">
+                        @if ($section['label'] === 'admin.sidebar.group.dashboard' || count($section['items']) === 1 && !isset($section['items'][0]['children']))
+                            @foreach ($section['items'] as $item)
+                                <a class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}" href="{{ $navUrl($item) }}">
+                                    <span>{{ __($item['label']) }}</span>
+                                    <span class="nav-dot"></span>
+                                </a>
+                            @endforeach
+                        @else
+                            @php
+                                $sectionActive = collect($section['items'])->contains(function ($item) {
+                                    if (isset($item['children'])) {
+                                        return collect($item['children'])->contains(fn ($child) => request()->routeIs($child['match']));
+                                    }
+
+                                    return request()->routeIs($item['match']);
+                                });
+                            @endphp
+                            <details class="nav-section" {{ $sectionActive ? 'open' : '' }}>
+                                <summary class="nav-summary">
+                                    <span>{{ __($section['label']) }}</span>
+                                    <span class="nav-caret" aria-hidden="true"></span>
+                                </summary>
+                                <div class="nav-subitems">
+                                    @foreach ($section['items'] as $item)
+                                        @if (isset($item['children']))
+                                            @php($childActive = collect($item['children'])->contains(fn ($child) => request()->routeIs($child['match'])))
+                                            <div class="nav-subgroup {{ $childActive ? 'active' : '' }}">
+                                                <div class="nav-subheading">{{ __($item['label']) }}</div>
+                                                <div class="nav-subitems">
+                                                    @foreach ($item['children'] as $child)
+                                                        <a class="nav-link nav-link-child {{ request()->routeIs($child['match']) ? 'active' : '' }}" href="{{ isset($child['query']) ? route($child['route'], $child['query']) : route($child['route']) }}">
+                                                            <span>{{ __($child['label']) }}</span>
+                                                            <span class="nav-dot"></span>
+                                                        </a>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @else
+                                            <a class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}" href="{{ $navUrl($item) }}">
+                                                <span>{{ __($item['label']) }}</span>
+                                                <span class="nav-dot"></span>
+                                            </a>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </details>
+                        @endif
                     </nav>
                 @endforeach
             </aside>
@@ -832,13 +960,17 @@
             <div class="main">
                 <header class="topbar">
                     <div>
-                        <div class="topbar-title">{{ $title ?? 'Admin' }}</div>
+                        <div class="topbar-title">{{ $title ?? __('admin.brand.title') }}</div>
                         <div class="topbar-meta">{{ auth()->user()->email }}</div>
                     </div>
-                    <form action="{{ route('admin.logout') }}" method="post">
-                        @csrf
-                        <button class="btn btn-secondary" type="submit">Đăng xuất</button>
-                    </form>
+                    <div class="actions">
+                        <a class="btn btn-secondary" href="{{ request()->fullUrlWithQuery(['lang' => 'vi']) }}">VI</a>
+                        <a class="btn btn-secondary" href="{{ request()->fullUrlWithQuery(['lang' => 'en']) }}">EN</a>
+                        <form action="{{ route('admin.logout') }}" method="post">
+                            @csrf
+                            <button class="btn btn-secondary" type="submit">{{ __('admin.auth.logout') }}</button>
+                        </form>
+                    </div>
                 </header>
 
                 <main class="content">

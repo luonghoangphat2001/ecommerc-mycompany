@@ -2,6 +2,7 @@
 
 return [
     'label' => 'Order',
+    'code' => 'Code',
     'number' => 'Order Number',
     'customer' => 'Customer',
     'status' => 'Status',
@@ -9,6 +10,10 @@ return [
     'address' => 'Street address',
     'total_price' => 'Total Price',
     'shipping_price' => 'Shipping cost',
+    'unit_price' => 'Unit price',
+    'discount' => 'Discount',
+    'coupons' => 'Coupons',
+    'tracking_number' => 'Tracking number',
     'created_at' => 'Created at',
     'notes' => 'Notes',
     'order_open' => 'Order processing',

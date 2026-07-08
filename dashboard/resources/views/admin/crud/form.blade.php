@@ -4,10 +4,10 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">{{ $title }}</h1>
-            <p class="page-description">Cập nhật thông tin và lưu thay đổi.</p>
+            <p class="page-description">{{ __('admin.form.description') }}</p>
         </div>
         <div class="actions">
-            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">Quay lại</a>
+            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">{{ __('admin.actions.back') }}</a>
         </div>
     </div>
 
@@ -57,6 +57,10 @@
                             <input id="{{ $name }}" type="{{ $type }}" name="{{ $name }}" value="{{ old($name, $displayValue) }}">
                         @endif
 
+                        @if (!empty($field['hint']))
+                            <small class="field-hint">{{ $field['hint'] }}</small>
+                        @endif
+
                         @error($name)
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -65,8 +69,8 @@
             </div>
 
             <div class="form-footer">
-                <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">Hủy</a>
-                <button class="btn" type="submit">Lưu thay đổi</button>
+                <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">{{ __('admin.actions.cancel') }}</a>
+                <button class="btn" type="submit">{{ __('admin.actions.save') }}</button>
             </div>
         </form>
     </div>

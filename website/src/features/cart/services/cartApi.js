@@ -1,19 +1,19 @@
-import axiosClient from '../../../api/axiosClient';
+import apiService from '../../../api/apiService';
 
 const cartApi = {
   // POST cart with items from localStorage
   getCart: (items = []) => {
-    return axiosClient.post('cart', { items });
+    return apiService.post('cart', { items });
   },
 
   // Sync and validate cart
   syncCart: (items = []) => {
-    return axiosClient.post('cart/sync', { items });
+    return apiService.post('cart/sync', { items });
   },
 
   // Add item to cart
   addToCart: (productId, quantity, variantId = null) => {
-    return axiosClient.post('cart/items', {
+    return apiService.post('cart/items', {
       product_id: productId,
       variant_id: variantId,
       quantity,
@@ -22,32 +22,32 @@ const cartApi = {
 
   // Update item quantity
   updateCartItem: (itemId, quantity) => {
-    return axiosClient.put(`cart/items/${itemId}`, { quantity });
+    return apiService.put(`cart/items/${itemId}`, { quantity });
   },
 
   // Remove item
   removeCartItem: (itemId) => {
-    return axiosClient.delete(`cart/items/${itemId}`);
+    return apiService.delete(`cart/items/${itemId}`);
   },
 
   // Clear cart
   clearCart: () => {
-    return axiosClient.delete('cart');
+    return apiService.delete('cart');
   },
 
   // Get shipping methods for current cart
   getShippingMethods: (items = [], country = 'VN', state = null) => {
-    return axiosClient.post('cart/shipping-methods', { items, country, state });
+    return apiService.post('cart/shipping-methods', { items, country, state });
   },
 
   // Get cart suggestions (cross-sell)
   getCartSuggestions: (items = []) => {
-    return axiosClient.post('cart/suggestions', { items });
+    return apiService.post('cart/suggestions', { items });
   },
 
   // Apply coupon
   applyCoupon: (code, items = [], subtotal = 0) => {
-    return axiosClient.post('coupons/apply', { code, items, subtotal });
+    return apiService.post('coupons/apply', { code, items, subtotal });
   },
 };
 

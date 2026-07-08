@@ -1,9 +1,9 @@
-import axiosClient from '../../../api/axiosClient';
+import apiService from '../../../api/apiService';
 
 
 const authService = {
   login: async (email, password) => {
-    return await axiosClient.post('login', {
+    return apiService.post('login', {
       email,
       password,
       device_name: 'storefront_web'
@@ -11,26 +11,26 @@ const authService = {
   },
 
   register: async (userData) => {
-    return await axiosClient.post('register', {
+    return apiService.post('register', {
       ...userData,
       device_name: 'storefront_web'
     });
   },
 
   forgotPassword: async (email) => {
-    return await axiosClient.post('forgot-password', { email });
+    return apiService.post('forgot-password', { email });
   },
 
   resetPassword: async (data) => {
-    return await axiosClient.post('reset-password', data);
+    return apiService.post('reset-password', data);
   },
 
   logout: async () => {
-    return await axiosClient.post('logout');
+    return apiService.post('logout');
   },
 
   fetchUser: async () => {
-    return await axiosClient.get('user');
+    return apiService.get('user');
   },
 
   getCurrentUser: () => {
@@ -47,4 +47,3 @@ const authService = {
 };
 
 export default authService;
-

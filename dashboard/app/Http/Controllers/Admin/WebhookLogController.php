@@ -19,7 +19,7 @@ class WebhookLogController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Webhook Logs';
+        return 'admin.sidebar.webhook_logs';
     }
 
     protected function routePrefix(): string
@@ -43,6 +43,11 @@ class WebhookLogController extends BaseCrudController
     }
 
     protected function canDelete(): bool
+    {
+        return false;
+    }
+
+    protected function canImportExport(): bool
     {
         return false;
     }

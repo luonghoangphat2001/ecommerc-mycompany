@@ -4,10 +4,10 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">{{ $title }}</h1>
-            <p class="page-description">Thiết lập role và phân quyền theo ma trận giống Filament Shield.</p>
+            <p class="page-description">{{ __('admin.roles.description') }}</p>
         </div>
         <div class="actions">
-            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">Quay lại</a>
+            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">{{ __('admin.actions.back') }}</a>
         </div>
     </div>
 
@@ -20,20 +20,20 @@
         <div class="shield-layout">
             <div class="card shield-card">
                 <div class="panel-heading">
-                    <div>
-                        <h2>Role details</h2>
-                        <p>Tên role và guard dùng cho Spatie Permission.</p>
-                    </div>
+                        <div>
+                            <h2>{{ __('admin.roles.details') }}</h2>
+                            <p>{{ __('admin.roles.details_desc') }}</p>
+                        </div>
                 </div>
 
                 <div class="form-grid compact-grid">
                     <div class="form-row">
-                        <label for="name">Role</label>
+                        <label for="name">{{ __('admin.sidebar.roles') }}</label>
                         <input id="name" type="text" name="name" value="{{ old('name', $record->name ?? '') }}" required>
                         @error('name')<div class="error">{{ $message }}</div>@enderror
                     </div>
                     <div class="form-row">
-                        <label for="guard_name">Guard</label>
+                        <label for="guard_name">{{ __('admin.roles.guard') }}</label>
                         <input id="guard_name" type="text" name="guard_name" value="{{ old('guard_name', $record->guard_name ?? 'web') }}" required>
                         @error('guard_name')<div class="error">{{ $message }}</div>@enderror
                     </div>
@@ -41,21 +41,21 @@
             </div>
 
             <div class="card shield-card shield-summary">
-                <div class="label">Selected permissions</div>
+                <div class="label">{{ __('admin.roles.selected_permissions') }}</div>
                 <div class="value"><span data-permission-count>{{ count(old('permissions', $selectedPermissions)) }}</span></div>
-                <p class="page-description">Tick theo từng capability hoặc chọn cả resource.</p>
+                <p class="page-description">{{ __('admin.roles.summary_desc') }}</p>
             </div>
         </div>
 
         <div class="card shield-permissions">
             <div class="panel-heading shield-heading">
                 <div>
-                    <h2>Permissions</h2>
-                    <p>Resource được group theo module, action nằm ngang như Shield.</p>
+                    <h2>{{ __('admin.sidebar.permissions') }}</h2>
+                    <p>{{ __('admin.roles.permissions_desc') }}</p>
                 </div>
                 <div class="actions">
-                    <button class="btn btn-secondary" type="button" data-check-all>Chọn tất cả</button>
-                    <button class="btn btn-secondary" type="button" data-uncheck-all>Bỏ chọn</button>
+                    <button class="btn btn-secondary" type="button" data-check-all>{{ __('admin.actions.choose_all') }}</button>
+                    <button class="btn btn-secondary" type="button" data-uncheck-all>{{ __('admin.actions.clear_all') }}</button>
                 </div>
             </div>
 
@@ -90,14 +90,14 @@
                         </div>
                     </section>
                 @empty
-                    <div class="empty-state">Chưa có permissions.</div>
+                    <div class="empty-state">{{ __('admin.roles.empty_state') }}</div>
                 @endforelse
             </div>
         </div>
 
         <div class="form-footer sticky-footer">
-            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">Hủy</a>
-            <button class="btn" type="submit">Lưu thay đổi</button>
+            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">{{ __('admin.actions.cancel') }}</a>
+            <button class="btn" type="submit">{{ __('admin.actions.save') }}</button>
         </div>
     </form>
 

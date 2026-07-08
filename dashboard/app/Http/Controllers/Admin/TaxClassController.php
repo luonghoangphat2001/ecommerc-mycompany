@@ -14,7 +14,7 @@ class TaxClassController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Tax Classes';
+        return 'admin.sidebar.classes';
     }
 
     protected function routePrefix(): string

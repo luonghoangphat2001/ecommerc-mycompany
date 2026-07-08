@@ -18,7 +18,7 @@ class ComboProductController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Combo Products';
+        return 'admin.sidebar.combo_products';
     }
 
     protected function routePrefix(): string

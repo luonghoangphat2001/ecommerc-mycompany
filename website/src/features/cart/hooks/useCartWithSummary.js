@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import cartApi from '../services/cartApi';
 import useCartStore from '../store/useCartStore';
 import { useEffect } from 'react';
+import { unwrapApiObject } from '../../../api/apiResponse';
 
 /**
  * Hook to sync cart with backend and get full summary (subtotal, shipping, tax, total)
@@ -22,7 +23,7 @@ export const useCartWithSummary = () => {
       }));
       
       const response = await cartApi.getCart(localItems);
-      return response.data;
+      return unwrapApiObject(response);
     },
     enabled: items.length > 0,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -53,7 +54,7 @@ export const useCartWithSummary = () => {
   const syncMutation = useMutation({
     mutationFn: (items) => cartApi.syncCart(items),
     onSuccess: (response) => {
-      queryClient.setQueryData(['cart', 'summary'], response.data);
+      queryClient.setQueryData(['cart', 'summary'], unwrapApiObject(response));
     },
   });
 
@@ -67,7 +68,7 @@ export const useCartWithSummary = () => {
     }));
     
     const response = await cartApi.getShippingMethods(localItems, country, state);
-    return response.data;
+    return unwrapApiObject(response);
   };
 
   return {

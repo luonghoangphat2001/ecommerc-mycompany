@@ -2,6 +2,7 @@
 
 return [
     'label' => 'Đơn hàng',
+    'code' => 'Mã',
     'number' => 'Mã đơn hàng',
     'customer' => 'Khách hàng',
     'status' => 'Trạng thái',
@@ -9,6 +10,10 @@ return [
     'address' => 'Địa chỉ đường phố',
     'total_price' => 'Tổng tiền',
     'shipping_price' => 'Phí vận chuyển',
+    'unit_price' => 'Đơn giá',
+    'discount' => 'Giảm giá',
+    'coupons' => 'Mã giảm giá',
+    'tracking_number' => 'Mã vận đơn',
     'created_at' => 'Ngày tạo',
     'notes' => 'Ghi chú',
     'order_open' => 'Đơn hàng đang xử lý',

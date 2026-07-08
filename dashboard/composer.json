@@ -40,9 +40,10 @@
         "phpunit/phpunit": "^10.1",
         "spatie/laravel-ignition": "^2.0"
     },
-    "autoload": {
+        "autoload": {
         "psr-4": {
             "App\\": "app/",
+            "Awcodes\\Curator\\": "app/Awcodes/Curator/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }

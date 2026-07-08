@@ -1,12 +1,12 @@
-import axiosClient from '../../../api/axiosClient';
+import apiService from '../../../api/apiService';
 
 const menuApi = {
   getAllMenus: () => {
-    return axiosClient.get('menus');
+    return apiService.get('menus');
   },
 
   getMenuBySlug: (slug) => {
-    return axiosClient.get(`menus/${slug}`);
+    return apiService.get(`menus/${slug}`);
   },
 };
 

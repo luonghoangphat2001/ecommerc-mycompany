@@ -19,7 +19,7 @@ class PostController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Posts';
+        return 'admin.sidebar.posts';
     }
 
     protected function routePrefix(): string

@@ -19,7 +19,7 @@ class OrderController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Orders';
+        return 'admin.sidebar.orders';
     }
 
     protected function routePrefix(): string
@@ -43,7 +43,19 @@ class OrderController extends BaseCrudController
 
     public function show(int $id): View
     {
-        $order = Order::with(['items', 'payments', 'refunds'])->findOrFail($id);
+        $order = Order::with([
+            'items.product.featuredImage',
+            'payments',
+            'refunds',
+            'metas',
+            'coupons',
+            'shipping',
+            'shipping.tax',
+            'shippingAddress',
+            'billingAddress',
+            'user',
+            'taxes',
+        ])->findOrFail($id);
 
         return view('admin.orders.show', compact('order'));
     }

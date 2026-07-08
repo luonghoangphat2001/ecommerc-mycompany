@@ -1,16 +1,16 @@
-import axiosClient from '../../../api/axiosClient';
+import apiService from '../../../api/apiService';
 
 const pageApi = {
   getHomeContent: () => {
-    return axiosClient.get('pages/home');
+    return apiService.get('pages/home');
   },
 
   getAboutContent: () => {
-    return axiosClient.get('pages/about');
+    return apiService.get('pages/about');
   },
 
   getPageBySlug: (slug) => {
-    return axiosClient.get(`pages/${slug}`);
+    return apiService.get(`pages/${slug}`);
   },
 };
 

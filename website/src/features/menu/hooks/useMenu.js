@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import menuApi from '../services/menuApi';
+import { unwrapApiList, unwrapApiObject } from '../../../api/apiResponse';
 
 /**
  * Hook to fetch menu data from API
@@ -10,7 +11,7 @@ export const useMenu = (slug = 'main-menu') => {
     queryFn: async () => {
       try {
         const response = await menuApi.getMenuBySlug(slug);
-        return response.data;
+        return unwrapApiObject(response);
       } catch (error) {
         console.error('Failed to fetch menu:', error);
         return { menu_items: [] };
@@ -37,7 +38,7 @@ export const useAllMenus = () => {
     queryFn: async () => {
       try {
         const response = await menuApi.getAllMenus();
-        return response.data;
+        return unwrapApiList(response, []);
       } catch (error) {
         console.error('Failed to fetch menus:', error);
         return [];

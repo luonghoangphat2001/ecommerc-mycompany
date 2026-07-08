@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import authService from '../services/authService';
 import useCartStore from '../../cart/store/useCartStore';
+import { unwrapApiObject } from '../../../api/apiResponse';
 
 const useAuthStore = create(
   persist(
@@ -21,16 +22,19 @@ const useAuthStore = create(
         set({ isLoading: true, error: null });
         try {
           const response = await authService.login(email, password);
+          const data = unwrapApiObject(response);
+          const user = data.user || data;
+          const token = data.accessToken || data.token;
           set({
-            user: response.data.user,
-            accessToken: response.data.token,
+            user,
+            accessToken: token || null,
             isAuthenticated: true,
             isLoading: false
           });
 
           // Trigger cart merge if user has a saved cart on backend (once API is ready)
-          if (response.data.user.cart_items) {
-            useCartStore.getState().mergeCart(response.data.user.cart_items);
+          if (user?.cart_items) {
+            useCartStore.getState().mergeCart(user.cart_items);
           }
 
           return response;
@@ -62,8 +66,9 @@ const useAuthStore = create(
       refreshUser: async () => {
         try {
           const response = await authService.fetchUser();
-          set({ user: response.data });
-          return response.data;
+          const data = unwrapApiObject(response);
+          set({ user: data.user || data });
+          return data;
         } catch (error) {
           console.error('Failed to refresh user:', error);
           return null;

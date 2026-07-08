@@ -4,6 +4,7 @@ import useCartStore from '../../cart/store/useCartStore';
 import useSettingsStore from '../../../store/useSettingsStore';
 import useUserAddress from '../../address/hooks/useUserAddress';
 import orderService from '../../order/services/orderService';
+import { unwrapApiObject } from '../../../api/apiResponse';
 
 const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
   const navigate = useNavigate();
@@ -122,7 +123,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
       };
 
       const response = await orderService.create(orderData);
-      const order = response.data;
+      const order = unwrapApiObject(response);
       
       clearCart();
       // Redirect to professional success page with order data

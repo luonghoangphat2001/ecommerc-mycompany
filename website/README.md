@@ -101,10 +101,12 @@ cp .env.example .env
 Nội dung `.env`:
 
 ```env
-REACT_APP_API_URL=http://127.0.0.1:8000/api
+REACT_APP_API_URL=http://127.0.0.1:8000/api/v1
+REACT_APP_ADMIN_EMAIL=admin@admin.com
+REACT_APP_ADMIN_PASSWORD=password
 ```
 
-> Mặc định đã có `"proxy": "http://127.0.0.1:8000"` trong `package.json` nên không bị CORS khi dev.
+> `axiosClient` sẽ ưu tiên `REACT_APP_API_URL`, rồi mới fallback sang `"/api/v1"` nếu env chưa có. Proxy trong `package.json` vẫn là lớp dự phòng khi dev.
 
 ### 3. Chạy dev server
 

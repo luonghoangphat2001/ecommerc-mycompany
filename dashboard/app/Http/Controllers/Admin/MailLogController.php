@@ -17,7 +17,7 @@ class MailLogController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Mail Logs';
+        return 'admin.sidebar.mail_logs';
     }
 
     protected function routePrefix(): string
@@ -41,6 +41,11 @@ class MailLogController extends BaseCrudController
     }
 
     protected function canDelete(): bool
+    {
+        return false;
+    }
+
+    protected function canImportExport(): bool
     {
         return false;
     }

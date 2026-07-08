@@ -15,7 +15,7 @@ class CrossSellProductController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Cross-sell Products';
+        return 'admin.sidebar.cross_sell_products';
     }
 
     protected function routePrefix(): string

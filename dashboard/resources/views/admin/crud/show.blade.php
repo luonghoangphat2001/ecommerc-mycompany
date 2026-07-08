@@ -4,12 +4,12 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">{{ $title }}</h1>
-            <p class="page-description">Xem nhanh thông tin bản ghi #{{ $record->id }}.</p>
+            <p class="page-description">{{ __('admin.show.description', ['id' => $record->id]) }}</p>
         </div>
         <div class="actions">
-            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">Quay lại</a>
+            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">{{ __('admin.actions.back') }}</a>
             @if ($canEdit ?? true)
-                <a class="btn" href="{{ route($routePrefix . '.edit', $record->id) }}">Sửa</a>
+                <a class="btn" href="{{ route($routePrefix . '.edit', $record->id) }}">{{ __('admin.actions.edit') }}</a>
             @endif
         </div>
     </div>
@@ -30,11 +30,11 @@
                         </tr>
                     @endforeach
                     <tr>
-                        <th>Created</th>
+                        <th>{{ __('admin.common.created_at') }}</th>
                         <td>{{ $record->created_at }}</td>
                     </tr>
                     <tr>
-                        <th>Updated</th>
+                        <th>{{ __('admin.common.updated_at') }}</th>
                         <td>{{ $record->updated_at }}</td>
                     </tr>
                 </tbody>

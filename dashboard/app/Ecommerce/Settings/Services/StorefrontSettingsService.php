@@ -7,6 +7,7 @@ use App\Settings\GeneralSettings;
 use App\Settings\ProductSettings;
 use App\Settings\CheckoutSettings;
 use App\Settings\FooterSettings;
+use App\Settings\CustomSettings;
 use App\Models\ShippingMethod;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -40,6 +41,8 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
             $checkout = app(CheckoutSettings::class);
             /** @var FooterSettings $footer */
             $footer = app(FooterSettings::class);
+            /** @var CustomSettings $custom */
+            $custom = app(CustomSettings::class);
 
             $locales = config('app.supported_locales', ['vi', 'en']);
             $languages = [];
@@ -58,6 +61,7 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
 
             return [
                 'general' => [
+                    'site_name' => $general->store_name,
                     'store_name' => $general->store_name,
                     'store_email' => $general->store_email,
                     'store_phone' => $general->store_phone,
@@ -68,6 +72,11 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                     'thousand_separator' => $general->thousand_separator,
                     'decimal_separator' => $general->decimal_separator,
                     'decimal_places' => $general->decimal_places,
+                    'logo' => $general->logo ? Storage::url($general->logo) : null,
+                    'favicon' => $general->favicon ? Storage::url($general->favicon) : null,
+                ],
+                'header' => [
+                    'site_name' => $general->store_name,
                     'logo' => $general->logo ? Storage::url($general->logo) : null,
                     'favicon' => $general->favicon ? Storage::url($general->favicon) : null,
                 ],
@@ -89,6 +98,10 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                 'footer' => [
                     'copyright' => $footer->copyright,
                     'links' => $footer->links,
+                ],
+                'custom' => [
+                    'custom_css' => $custom->custom_css,
+                    'custom_js' => $custom->custom_js,
                 ],
                 'languages' => $languages,
                 'translations' => $translations,

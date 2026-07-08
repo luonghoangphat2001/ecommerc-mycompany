@@ -30,7 +30,7 @@ class MenuService implements MenuServiceInterface
     public function getAllMenus()
     {
         return \Illuminate\Support\Facades\Cache::rememberForever('all_menus', function () {
-            return $this->menuRepository->all();
+            return $this->menuRepository->all(['*'], ['items.children']);
         });
     }
 

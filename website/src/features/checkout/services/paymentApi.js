@@ -1,35 +1,35 @@
-import axiosClient from '../../../api/axiosClient';
+import apiService from '../../../api/apiService';
 
 const paymentApi = {
   getPaymentMethods: () => {
-    return axiosClient.get('checkout/payment-methods');
+    return apiService.get('checkout/payment-methods');
   },
 
   processPayment: (orderId, paymentData) => {
-    return axiosClient.post(`checkout/orders/${orderId}/payment`, paymentData);
+    return apiService.post(`checkout/orders/${orderId}/payment`, paymentData);
   },
 
   processMomoPayment: (orderId) => {
-    return axiosClient.post(`checkout/orders/${orderId}/payment/momo`);
+    return apiService.post(`checkout/orders/${orderId}/payment/momo`);
   },
 
   processVNPayPayment: (orderId) => {
-    return axiosClient.post(`checkout/orders/${orderId}/payment/vnpay`);
+    return apiService.post(`checkout/orders/${orderId}/payment/vnpay`);
   },
 
   processCODPayment: (orderId) => {
-    return axiosClient.post(`checkout/orders/${orderId}/payment/cod`);
+    return apiService.post(`checkout/orders/${orderId}/payment/cod`);
   },
 
   verifyPayment: (paymentId, transactionId) => {
-    return axiosClient.post('checkout/payment/verify', {
+    return apiService.post('checkout/payment/verify', {
       payment_id: paymentId,
       transaction_id: transactionId,
     });
   },
 
   getPaymentStatus: (orderId) => {
-    return axiosClient.get(`checkout/orders/${orderId}/payment-status`);
+    return apiService.get(`checkout/orders/${orderId}/payment-status`);
   },
 };
 

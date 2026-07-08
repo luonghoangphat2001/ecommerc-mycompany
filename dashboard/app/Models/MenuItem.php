@@ -18,13 +18,24 @@ class MenuItem extends Model
         'label',
         'title',
         'name',
+        'menuable_type',
+        'menuable_id',
         'url',
+        'route',
+        'route_parameters',
         'target',
+        'use_menuable_name',
+        'link_class',
+        'wrapper_class',
+        'parameters',
         'order',
     ];
 
     protected $casts = [
         'title' => 'array',
+        'route_parameters' => 'array',
+        'parameters' => 'array',
+        'use_menuable_name' => 'boolean',
     ];
 
     public function menu(): BelongsTo

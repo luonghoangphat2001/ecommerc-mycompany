@@ -1,24 +1,24 @@
-import axiosClient from '../../../api/axiosClient';
+import apiService from '../../../api/apiService';
 
 const postApi = {
   getPosts: (params) => {
-    return axiosClient.get('posts', { params });
+    return apiService.get('posts', { params });
   },
 
   getPostBySlug: (slug) => {
-    return axiosClient.get(`posts/${slug}`);
+    return apiService.get(`posts/${slug}`);
   },
 
   getPostById: (id) => {
-    return axiosClient.get(`posts/id/${id}`);
+    return apiService.get(`posts/id/${id}`);
   },
 
   getPostsByCategory: (categoryId) => {
-    return axiosClient.get(`posts/categories/${categoryId}`);
+    return apiService.get(`posts/categories/${categoryId}`);
   },
 
   getFeaturedPosts: () => {
-    return axiosClient.get('posts/featured');
+    return apiService.get('posts/featured');
   },
 };
 

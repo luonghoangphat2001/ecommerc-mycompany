@@ -18,7 +18,7 @@ class ProductController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Products';
+        return 'admin.sidebar.products';
     }
 
     protected function routePrefix(): string

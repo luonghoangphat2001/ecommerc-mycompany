@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import addressService from '../services/addressService';
+import { unwrapApiObject } from '../../../api/apiResponse';
 
 const useAddressSelect = () => {
   const [countries, setCountries] = useState({});
@@ -18,7 +19,7 @@ const useAddressSelect = () => {
     try {
       setLoading(true);
       const response = await addressService.getCountries({ signal: abortControllerRef.current.signal });
-      setCountries(response.data || {});
+      setCountries(unwrapApiObject(response, {}));
     } catch (error) {
       if (error.name !== 'CanceledError') {
         console.error('Failed to fetch countries:', error);
@@ -41,7 +42,7 @@ const useAddressSelect = () => {
     try {
       setLoading(true);
       const response = await addressService.getStates(countryCode);
-      setStates(response.data || {});
+      setStates(unwrapApiObject(response, {}));
     } catch (error) {
       console.error('Failed to fetch states:', error);
       // Fallback for VN
@@ -121,7 +122,7 @@ const useAddressSelect = () => {
     try {
       setLoading(true);
       const response = await addressService.getRegions(countryCode, stateId);
-      setRegions(response.data || {});
+      setRegions(unwrapApiObject(response, {}));
     } catch (error) {
       console.error('Failed to fetch regions:', error);
     } finally {
@@ -134,7 +135,7 @@ const useAddressSelect = () => {
     try {
       setLoading(true);
       const response = await addressService.getSubRegions(countryCode, stateId, regionId);
-      setSubRegions(response.data || {});
+      setSubRegions(unwrapApiObject(response, {}));
     } catch (error) {
       console.error('Failed to fetch sub-regions:', error);
     } finally {

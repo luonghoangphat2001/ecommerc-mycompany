@@ -1,30 +1,30 @@
 // src/services/orderService.js
-import axiosClient from '../../../api/axiosClient';
+import apiService from '../../../api/apiService';
 
 const API_URL = 'orders';
 
 const orderService = {
   getAll: (params) => {
-    return axiosClient.get(API_URL, { params });
+    return apiService.get(API_URL, { params });
   },
 
   getById: (id) => {
     const url = `${API_URL}/${id}`;
-    return axiosClient.get(url);
+    return apiService.get(url);
   },
 
   create: (data) => {
-    return axiosClient.post(API_URL, data);
+    return apiService.post(API_URL, data);
   },
 
   update: (id, data) => {
     const url = `${API_URL}/${id}`;
-    return axiosClient.put(url, data);
+    return apiService.put(url, data);
   },
 
   delete: (id) => {
     const url = `${API_URL}/${id}`;
-    return axiosClient.delete(url);
+    return apiService.delete(url);
   },
 
   // -- MOCK DATA DỰ PHÒNG NẾU SERVER JSON LỖI HOẶC CHƯA CHẠY -- //

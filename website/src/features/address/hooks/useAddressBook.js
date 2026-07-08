@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import addressService from '../services/addressService';
+import { unwrapApiList, unwrapApiObject } from '../../../api/apiResponse';
 
 /**
  * Custom hook for AddressBook logic
@@ -39,7 +40,7 @@ const useAddressBook = () => {
     try {
       setLoading(true);
       const response = await addressService.listUserAddresses();
-      setAddresses(response.data || []);
+      setAddresses(unwrapApiList(response, []));
     } catch (error) {
       console.error('Failed to fetch addresses:', error);
     } finally {
@@ -51,7 +52,7 @@ const useAddressBook = () => {
   const fetchCountries = useCallback(async () => {
     try {
       const response = await addressService.getCountries();
-      const entries = Object.entries(response.data || {}).map(([code, name]) => ({ code, name }));
+      const entries = Object.entries(unwrapApiObject(response, {})).map(([code, name]) => ({ code, name }));
       setCountries(entries);
     } catch (error) {
       console.error('Failed to fetch countries:', error);
@@ -63,7 +64,7 @@ const useAddressBook = () => {
     if (!code) return;
     try {
       const response = await addressService.getStates(code);
-      const entries = Object.entries(response.data || {}).map(([id, name]) => ({ id, name }));
+      const entries = Object.entries(unwrapApiObject(response, {})).map(([id, name]) => ({ id, name }));
       setStates(entries);
     } catch (error) {
       console.error('Failed to fetch states:', error);
@@ -75,7 +76,7 @@ const useAddressBook = () => {
     if (!country || !state) return;
     try {
       const response = await addressService.getRegions(country, state);
-      const entries = Object.entries(response.data || {}).map(([id, name]) => ({ id, name }));
+      const entries = Object.entries(unwrapApiObject(response, {})).map(([id, name]) => ({ id, name }));
       setCities(entries);
     } catch (error) {
       console.error('Failed to fetch cities:', error);
@@ -87,7 +88,7 @@ const useAddressBook = () => {
     if (!country || !state || !city) return;
     try {
       const response = await addressService.getSubRegions(country, state, city);
-      const entries = Object.entries(response.data || {}).map(([id, name]) => ({ id, name }));
+      const entries = Object.entries(unwrapApiObject(response, {})).map(([id, name]) => ({ id, name }));
       setWards(entries);
     } catch (error) {
       console.error('Failed to fetch wards:', error);

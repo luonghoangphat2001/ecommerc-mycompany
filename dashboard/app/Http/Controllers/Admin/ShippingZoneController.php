@@ -15,7 +15,7 @@ class ShippingZoneController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Shipping Zones';
+        return 'admin.settings.manage_shipping_zones';
     }
 
     protected function routePrefix(): string

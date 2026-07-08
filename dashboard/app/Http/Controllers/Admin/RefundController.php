@@ -14,7 +14,7 @@ class RefundController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Refunds';
+        return 'admin.sidebar.refunds';
     }
 
     protected function routePrefix(): string

@@ -18,7 +18,7 @@ class LanguageLineController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Langs';
+        return 'admin.sidebar.language_lines';
     }
 
     protected function routePrefix(): string
