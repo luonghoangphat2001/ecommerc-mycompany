@@ -19,7 +19,8 @@ admin_filamentphp/.phpunit.result.cache
 admin_filamentphp/docker-compose.override.yml
 admin_filamentphp/Homestead.json
 admin_filamentphp/Homestead.yaml
-
+admin_filamentphp/.playwright-cli
+admin_filamentphp/output
 # Frontend (website_reactjs)
 website_reactjs/node_modules/
 website_reactjs/.pnp
