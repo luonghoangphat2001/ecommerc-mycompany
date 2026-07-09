@@ -65,7 +65,7 @@ class PostCategoryController extends BaseCrudController
     {
         $query = PostCategory::query()->with(['children.children']);
 
-        return view('admin.categories.tree', [
+        return view('admin.crud.tree', [
             'title' => 'Post Categories',
             'items' => $query->latest('id')->get(),
             'routePrefix' => $this->routePrefix(),

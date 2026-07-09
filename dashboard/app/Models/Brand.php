@@ -50,6 +50,7 @@ class Brand extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'sort',
+        'order_column',
     ];
 
     protected $casts = [

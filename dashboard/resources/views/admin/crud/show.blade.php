@@ -87,7 +87,7 @@
                                     <tr>
                                         <th>{{ $field['label'] ?? $name }}</th>
                                         <td>
-                                            @include('admin.crud.show_field', ['type' => $type, 'value' => $value])
+                                            @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
                                         </td>
                                     </tr>
                                 @endforeach
@@ -118,7 +118,7 @@
                                     </tr>
                                     <tr>
                                         <td style="display: block; padding-top: 0;">
-                                            @include('admin.crud.show_field', ['type' => $type, 'value' => $value])
+                                            @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
                                         </td>
                                     </tr>
                                 @endforeach

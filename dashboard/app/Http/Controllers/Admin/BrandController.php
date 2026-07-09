@@ -4,9 +4,25 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\Brand;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BrandController extends BaseCrudController
 {
+    public function index(Request $request): View
+    {
+        $query = Brand::query();
+
+        return view('admin.crud.tree', [
+            'title' => 'Thương hiệu',
+            'items' => $query->latest('id')->get(),
+            'routePrefix' => $this->routePrefix(),
+            'canCreate' => true,
+            'canEdit' => true,
+            'canDelete' => true,
+            'maxDepth' => 1,
+        ]);
+    }
     protected function modelClass(): string
     {
         return Brand::class;
