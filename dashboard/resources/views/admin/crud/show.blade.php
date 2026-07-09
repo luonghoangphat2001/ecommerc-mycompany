@@ -5,7 +5,7 @@
         .show-layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr);
-            gap: 20px;
+            gap: 24px;
         }
         @media (min-width: 1024px) {
             .show-layout {
@@ -13,44 +13,73 @@
                 align-items: start;
             }
         }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
         .card-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--fi-border);
+            padding: 16px 24px;
+            border-bottom: 1px solid #e2e8f0;
             background: #f8fafc;
-            border-radius: 12px 12px 0 0;
         }
         .card-title {
             margin: 0;
             font-size: 16px;
-            font-weight: 700;
-            color: var(--fi-text);
+            font-weight: 600;
+            color: #0f172a;
         }
-        .card.mb-4 { margin-bottom: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .details-table { width: 100%; border-collapse: collapse; }
-        .details-table th { width: 30%; background: #fdfdfd; font-weight: 600; color: #475569; }
-        .details-table th, .details-table td {
-            padding: 12px 20px;
-            border-bottom: 1px solid var(--fi-border);
-            text-align: left;
-            vertical-align: top;
+        
+        .field-list {
+            display: flex;
+            flex-direction: column;
         }
-        .details-table tr:last-child th, .details-table tr:last-child td { border-bottom: none; }
-        .preview-img { max-height: 160px; border-radius: 8px; object-fit: contain; background: #f1f5f9; padding: 4px; border: 1px solid var(--fi-border); max-width: 100%; }
-        .val-empty { color: var(--fi-muted); font-style: italic; }
-        .val-html { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--fi-border); overflow-x: auto; }
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-        .bg-green { background: #dcfce7; color: #166534; }
-        .bg-red { background: #fee2e2; color: #991b1b; }
+        .field-group {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .field-group:last-child {
+            border-bottom: none;
+        }
+        .field-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .field-value {
+            font-size: 15px;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+        
+        .preview-img { max-height: 160px; border-radius: 8px; object-fit: contain; background: #f8fafc; padding: 4px; border: 1px solid #e2e8f0; max-width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .val-empty { color: #94a3b8; font-style: italic; font-size: 14px; }
+        .val-html { background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto; margin-top: 8px; font-size: 14px; }
+        .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
+        .bg-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .bg-red { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .page-title { margin: 0; font-size: 24px; font-weight: 700; color: #0f172a; }
     </style>
 
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">{{ $title }}</h1>
-        </div>
-        <div class="actions">
-            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">{{ __('admin.actions.back') }}</a>
+    <div class="actions-bar">
+        <h1 class="page-title">{{ $title }}</h1>
+        <div class="actions" style="display: flex; gap: 12px;">
+            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}" style="background: #fff; border: 1px solid #cbd5e1; color: #475569;">{{ __('admin.actions.back') }}</a>
             @if ($canEdit ?? true)
-                <a class="btn" href="{{ route($routePrefix . '.edit', $record->id) }}">{{ __('admin.actions.edit') }}</a>
+                <a class="btn btn-primary" href="{{ route($routePrefix . '.edit', $record->id) }}" style="background: #3b82f6; color: #fff; border: none;">{{ __('admin.actions.edit') }}</a>
             @endif
         </div>
     </div>
@@ -70,60 +99,50 @@
     <div class="show-layout">
         <div class="show-main">
             @foreach ($mainGroups as $key => $group)
-                <div class="card mb-4">
+                <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">{{ __($group['label']) }}</h3>
                     </div>
-                    <div class="table-wrap" style="border-radius: 0 0 12px 12px;">
-                        <table class="details-table">
-                            <tbody>
-                                @foreach ($group['fields'] as $name)
-                                    @php
-                                        $field = $fields[$name] ?? null;
-                                        if (!$field) continue;
-                                        $type = $field['type'] ?? 'text';
-                                        $value = data_get($record, $name);
-                                    @endphp
-                                    <tr>
-                                        <th>{{ $field['label'] ?? $name }}</th>
-                                        <td>
-                                            @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="field-list">
+                        @foreach ($group['fields'] as $name)
+                            @php
+                                $field = $fields[$name] ?? null;
+                                if (!$field) continue;
+                                $type = $field['type'] ?? 'text';
+                                $value = data_get($record, $name);
+                            @endphp
+                            <div class="field-group">
+                                <div class="field-label">{{ $field['label'] ?? $name }}</div>
+                                <div class="field-value">
+                                    @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             @endforeach
         </div>
         <div class="show-sidebar">
             @foreach ($sideGroups as $key => $group)
-                <div class="card mb-4">
+                <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">{{ __($group['label']) }}</h3>
                     </div>
-                    <div class="table-wrap" style="border-radius: 0 0 12px 12px;">
-                        <table class="details-table" style="table-layout: fixed; width: 100%;">
-                            <tbody>
-                                @foreach ($group['fields'] as $name)
-                                    @php
-                                        $field = $fields[$name] ?? null;
-                                        if (!$field) continue;
-                                        $type = $field['type'] ?? 'text';
-                                        $value = data_get($record, $name);
-                                    @endphp
-                                    <tr>
-                                        <td style="display: block; border-bottom: none; padding-bottom: 4px; font-weight: 600; color: var(--fi-muted);">{{ $field['label'] ?? $name }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="display: block; padding-top: 0;">
-                                            @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="field-list">
+                        @foreach ($group['fields'] as $name)
+                            @php
+                                $field = $fields[$name] ?? null;
+                                if (!$field) continue;
+                                $type = $field['type'] ?? 'text';
+                                $value = data_get($record, $name);
+                            @endphp
+                            <div class="field-group" style="padding: 12px 20px;">
+                                <div class="field-label">{{ $field['label'] ?? $name }}</div>
+                                <div class="field-value">
+                                    @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
+                                </div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             @endforeach
