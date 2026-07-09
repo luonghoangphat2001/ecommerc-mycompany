@@ -34,12 +34,25 @@
         }
         
         .field-list {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 0;
         }
+        @media (min-width: 640px) {
+            .field-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .show-main .field-list {
+            @media (min-width: 1280px) {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
         .field-group {
             padding: 16px 24px;
             border-bottom: 1px solid #f1f5f9;
+            border-right: 1px solid #f1f5f9;
         }
         .field-group:last-child {
             border-bottom: none;
@@ -56,6 +69,7 @@
             font-size: 15px;
             color: #1e293b;
             line-height: 1.5;
+            word-break: break-word;
         }
         
         .preview-img { max-height: 160px; border-radius: 8px; object-fit: contain; background: #f8fafc; padding: 4px; border: 1px solid #e2e8f0; max-width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
@@ -110,8 +124,9 @@
                                 if (!$field) continue;
                                 $type = $field['type'] ?? 'text';
                                 $value = data_get($record, $name);
+                                $isFullWidth = in_array($type, ['editor', 'textarea', 'image']);
                             @endphp
-                            <div class="field-group">
+                            <div class="field-group" style="{{ $isFullWidth ? 'grid-column: 1 / -1; border-right: none;' : '' }}">
                                 <div class="field-label">{{ $field['label'] ?? $name }}</div>
                                 <div class="field-value">
                                     @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
@@ -128,7 +143,7 @@
                     <div class="card-header">
                         <h3 class="card-title">{{ __($group['label']) }}</h3>
                     </div>
-                    <div class="field-list">
+                    <div class="field-list" style="grid-template-columns: 1fr;">
                         @foreach ($group['fields'] as $name)
                             @php
                                 $field = $fields[$name] ?? null;
@@ -136,7 +151,7 @@
                                 $type = $field['type'] ?? 'text';
                                 $value = data_get($record, $name);
                             @endphp
-                            <div class="field-group" style="padding: 12px 20px;">
+                            <div class="field-group" style="grid-column: 1 / -1; border-right: none; padding: 12px 20px;">
                                 <div class="field-label">{{ $field['label'] ?? $name }}</div>
                                 <div class="field-value">
                                     @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
