@@ -215,6 +215,11 @@ class PlaceOrderAction
             -$redeemedPoints,
             "Redeemed for Order #{$order->id}"
         );
+        
+        $order->metas()->createMany([
+            ['key' => 'redeemed_points', 'value' => (string)$redeemedPoints],
+            ['key' => 'loyalty_discount', 'value' => (string)$calcResult->loyaltyDiscountTotal],
+        ]);
     }
 
     /**

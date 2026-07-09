@@ -118,8 +118,10 @@ class OrderController extends BaseCrudController
 
         $checkoutSettings = app(\App\Settings\CheckoutSettings::class);
         $couponSettings = app(\App\Settings\CouponSettings::class);
+        $loyaltySettings = app(\App\Settings\LoyaltySettings::class);
+        $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
 
-        return view('admin.orders.show', compact('order', 'checkoutSettings', 'couponSettings'));
+        return view('admin.orders.show', compact('order', 'checkoutSettings', 'couponSettings', 'loyaltySettings', 'orderService'));
     }
 
     public function updateStatus(Request $request, int $id): RedirectResponse
@@ -186,8 +188,10 @@ class OrderController extends BaseCrudController
 
         $checkoutSettings = app(\App\Settings\CheckoutSettings::class);
         $couponSettings = app(\App\Settings\CouponSettings::class);
+        $loyaltySettings = app(\App\Settings\LoyaltySettings::class);
+        $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
 
-        return view('admin.orders.edit', compact('order', 'checkoutSettings', 'couponSettings'));
+        return view('admin.orders.edit', compact('order', 'checkoutSettings', 'couponSettings', 'loyaltySettings', 'orderService'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -213,43 +217,9 @@ class OrderController extends BaseCrudController
             'billing.address_detail' => ['nullable', 'string'],
         ]);
 
-        // 1. Update items manually (since they are customly edited)
-        if (isset($data['items'])) {
-            foreach ($data['items'] as $itemData) {
-                $item = $order->items()->find($itemData['id']);
-                if ($item) {
-                    $itemTotal = $itemData['qty'] * $itemData['unit_price'];
-                    $item->update([
-                        'qty' => $itemData['qty'],
-                        'unit_price' => $itemData['unit_price'],
-                        'total' => $itemTotal,
-                    ]);
-                }
-            }
-        }
-
-        // 2. Update status
+        // 1. Delegate entirely to OrderService
         $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
-        $orderService->updateStatus($order, \App\Ecommerce\Order\Enums\OrderStatus::from($data['status']));
-
-        // 3. Update internal note
-        if (isset($data['internal_note'])) {
-            \App\Models\OrderMeta::updateOrCreate(
-                ['order_id' => $order->id, 'key' => 'internal_note'],
-                ['value' => $data['internal_note']]
-            );
-        }
-
-        // 4. Update Addresses
-        if ($order->shippingAddress) {
-            $order->shippingAddress->update($data['shipping'] ?? []);
-        }
-        if ($order->billingAddress) {
-            $order->billingAddress->update($data['billing'] ?? []);
-        }
-
-        // 5. DELEGATE TO SERVICE TO RECALCULATE ENTIRE ORDER (Shipping, Tax, Coupons, Totals)
-        $orderService->recalculateTotals($order->fresh());
+        $orderService->updateOrder($order, $data);
 
         return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.messages.updated'));
     }

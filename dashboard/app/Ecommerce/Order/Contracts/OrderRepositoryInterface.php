@@ -61,6 +61,14 @@ interface OrderRepositoryInterface extends BaseRepositoryInterface
     public function getTotalShipping(Order $order): int;
 
     /**
+     * Get total loyalty discount for an order.
+     *
+     * @param Order $order
+     * @return int
+     */
+    public function getLoyaltyDiscountTotal(Order $order): int;
+
+    /**
      * Get distinct order statuses.
      *
      * @return array

@@ -9,6 +9,8 @@
         $shippingTotal = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTotalShipping($order);
         $taxTotal = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTaxTotal($order);
         $discountTotal = $order->coupons->sum('discount_amount');
+        $loyaltyDiscountTotal = $orderService->getLoyaltyDiscountTotal($order);
+        $internalMetas = ['loyalty_discount', 'redeemed_points'];
     @endphp
 
     <style>
@@ -299,6 +301,13 @@
                             <div class="field-value" style="color:#16a34a;">-{{ $money($discountTotal) }}</div>
                         </div>
                         @endif
+
+                        @if($loyaltySettings->enabled && $loyaltyDiscountTotal > 0)
+                        <div class="field-group" style="display: flex; justify-content: space-between;">
+                            <div class="field-label" style="margin:0;">Đổi điểm (Loyalty)</div>
+                            <div class="field-value" style="color:#16a34a;">-{{ $money($loyaltyDiscountTotal) }}</div>
+                        </div>
+                        @endif
                         
                         @if($checkoutSettings->enable_tax)
                         <div class="field-group" style="display: flex; justify-content: space-between;">
@@ -441,14 +450,17 @@
             @endif
 
             <!-- Internal Notes / Meta -->
-            @if($order->metas->count() > 0)
+            @php
+                $displayMetas = $order->metas->filter(fn($m) => !in_array($m->key, $internalMetas));
+            @endphp
+            @if($displayMetas->count() > 0)
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Ghi chú & Metadata</h3>
                 </div>
                 <div class="card-body">
                     <div class="field-list">
-                        @foreach ($order->metas as $meta)
+                        @foreach ($displayMetas as $meta)
                             <div class="field-group">
                                 <div class="field-label">{{ $meta->key }}</div>
                                 <div class="field-value" style="font-size:13px; background:#f8fafc; padding:8px; border-radius:6px; border:1px solid #e2e8f0;">

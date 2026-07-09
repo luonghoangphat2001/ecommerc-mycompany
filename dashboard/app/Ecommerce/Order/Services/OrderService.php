@@ -69,13 +69,49 @@ class OrderService implements OrderServiceInterface
         });
     }
 
-    /**
-     * @inheritDoc
-     */
     public function updateOrder(Order $order, array $data): Order
     {
         return $this->useTransaction(function () use ($order, $data) {
-            $this->orderRepository->update($order->id, $data);
+            // 1. Update basic order data (if any other than status)
+            $orderData = \Illuminate\Support\Arr::except($data, ['items', 'internal_note', 'shipping', 'billing', 'status']);
+            if (!empty($orderData)) {
+                $this->orderRepository->update($order->id, $orderData);
+            }
+
+            // 2. Update status
+            if (isset($data['status'])) {
+                $this->updateStatus($order, OrderStatus::from($data['status']));
+            }
+
+            // 3. Update items
+            if (isset($data['items'])) {
+                foreach ($data['items'] as $itemData) {
+                    $item = $order->items()->find($itemData['id']);
+                    if ($item) {
+                        $item->update([
+                            'qty' => $itemData['qty'],
+                            'unit_price' => $itemData['unit_price'],
+                            'total' => $itemData['qty'] * $itemData['unit_price'],
+                        ]);
+                    }
+                }
+            }
+
+            // 4. Update internal note
+            if (array_key_exists('internal_note', $data)) {
+                $order->metas()->updateOrCreate(
+                    ['key' => 'internal_note'],
+                    ['value' => $data['internal_note']]
+                );
+            }
+
+            // 5. Update addresses
+            if (isset($data['shipping']) && $order->shippingAddress) {
+                $order->shippingAddress->update($data['shipping']);
+            }
+            if (isset($data['billing']) && $order->billingAddress) {
+                $order->billingAddress->update($data['billing']);
+            }
             
             return $this->recalculateTotals($order->fresh());
         });
@@ -126,6 +162,9 @@ class OrderService implements OrderServiceInterface
 
             // Get coupon code from order coupon snapshot
             $couponCode = $order->coupons()->first()?->coupon_code ?? null;
+            
+            // Get redeemed points from order meta if it exists
+            $redeemedPoints = (int) $order->metas()->where('key', 'redeemed_points')->first()?->value ?? 0;
 
             $calcRequest = new CheckoutRequestDTO(
                 items: $itemsForCalc,
@@ -134,6 +173,7 @@ class OrderService implements OrderServiceInterface
                 couponCode: $couponCode,
                 currency: $order->currency ?? 'VND'
             );
+            $calcRequest->redeemPoints = $redeemedPoints;
 
             $calcResult = $this->calculator->calculate($calcRequest);
 
@@ -172,6 +212,16 @@ class OrderService implements OrderServiceInterface
                 $order->coupons()->where('coupon_code', $couponCode)->update([
                     'discount_amount' => $calcResult->discountTotal
                 ]);
+            }
+            
+            // 6.5 Update loyalty discount meta
+            if ($calcResult->loyaltyDiscountTotal > 0) {
+                $order->metas()->updateOrCreate(
+                    ['key' => 'loyalty_discount'],
+                    ['value' => (string) $calcResult->loyaltyDiscountTotal]
+                );
+            } else {
+                $order->metas()->where('key', 'loyalty_discount')->delete();
             }
 
             // 7. Update order totals with all calculations (same as checkout)
@@ -347,6 +397,14 @@ class OrderService implements OrderServiceInterface
     public function getShippingTotalWithTax(Order $order): int
     {
         return $this->orderRepository->getShippingTotalWithTax($order);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getLoyaltyDiscountTotal(Order $order): int
+    {
+        return $this->orderRepository->getLoyaltyDiscountTotal($order);
     }
 
     /**

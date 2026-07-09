@@ -77,6 +77,15 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
     /**
      * @inheritDoc
      */
+    public function getLoyaltyDiscountTotal(Order $order): int
+    {
+        $meta = $order->metas()->where('key', 'loyalty_discount')->first();
+        return $meta ? (int) $meta->value : 0;
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getDistinctStatuses(): array
     {
         return $this->model->select('status')->distinct()->pluck('status')->toArray();

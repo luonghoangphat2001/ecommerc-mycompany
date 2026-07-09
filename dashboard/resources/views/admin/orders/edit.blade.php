@@ -4,6 +4,7 @@
     @php
         $statusValue = $order->status instanceof \BackedEnum ? $order->status->value : (string) $order->status;
         $discountTotal = $order->coupons->sum('discount_amount');
+        $loyaltyDiscountTotal = $orderService->getLoyaltyDiscountTotal($order);
         $internalNote = $order->metas->where('key', 'internal_note')->first()?->value ?? '';
     @endphp
 
@@ -240,6 +241,15 @@
                             <span class="summary-label">Giảm giá (Coupons)</span>
                             <span class="summary-value" style="color: #16a34a;">
                                 -{{ number_format($discountTotal, 0, ',', '.') }}
+                            </span>
+                        </div>
+                        @endif
+                        
+                        @if($loyaltySettings->enabled && $loyaltyDiscountTotal > 0)
+                        <div class="summary-row">
+                            <span class="summary-label">Đổi điểm (Loyalty)</span>
+                            <span class="summary-value" style="color: #16a34a;">
+                                -{{ number_format($loyaltyDiscountTotal, 0, ',', '.') }}
                             </span>
                         </div>
                         @endif
