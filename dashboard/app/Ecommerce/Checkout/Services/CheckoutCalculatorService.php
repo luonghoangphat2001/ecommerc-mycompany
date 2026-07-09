@@ -13,10 +13,21 @@ use App\Ecommerce\Checkout\Services\Pipes\ResolveTaxRatePipe;
 use App\Ecommerce\Checkout\Services\Pipes\ApplyLoyaltyPoints;
 use App\Ecommerce\Checkout\Services\Pipes\ApplyMarketing;
 
+use App\Settings\CheckoutSettings;
+use App\Settings\CouponSettings;
 use Illuminate\Pipeline\Pipeline;
 
 class CheckoutCalculatorService
 {
+    protected CheckoutSettings $checkoutSettings;
+    protected CouponSettings $couponSettings;
+
+    public function __construct(CheckoutSettings $checkoutSettings, CouponSettings $couponSettings)
+    {
+        $this->checkoutSettings = $checkoutSettings;
+        $this->couponSettings = $couponSettings;
+    }
+
     /**
      * Calculate order totals using a pure pipeline.
      *
@@ -26,15 +37,27 @@ class CheckoutCalculatorService
     public function calculate(CheckoutRequestDTO $request): CheckoutResultDTO
     {
         $pipes = [
-            ResolveTaxRatePipe::class,
             CalculateSubtotal::class,
             ApplyExchangeRate::class,
-            ApplyDiscount::class,
             ApplyLoyaltyPoints::class,
             ApplyMarketing::class,
-            CalculateTax::class,
-            ResolveShippingFeePipe::class,
         ];
+
+        // Inject tax pipes conditionally
+        if ($this->checkoutSettings->enable_tax) {
+            array_unshift($pipes, ResolveTaxRatePipe::class);
+            $pipes[] = CalculateTax::class;
+        }
+
+        // Inject discount pipe conditionally
+        if ($this->couponSettings->enable_coupons) {
+            array_splice($pipes, array_search(ApplyExchangeRate::class, $pipes) + 1, 0, ApplyDiscount::class);
+        }
+
+        // Inject shipping pipe conditionally
+        if ($this->checkoutSettings->enable_shipping) {
+            $pipes[] = ResolveShippingFeePipe::class;
+        }
 
         $result = app(Pipeline::class)
             ->send([

@@ -113,9 +113,13 @@ class OrderController extends BaseCrudController
             'billingAddress',
             'user',
             'taxes',
+            'activities',
         ])->findOrFail($id);
 
-        return view('admin.orders.show', compact('order'));
+        $checkoutSettings = app(\App\Settings\CheckoutSettings::class);
+        $couponSettings = app(\App\Settings\CouponSettings::class);
+
+        return view('admin.orders.show', compact('order', 'checkoutSettings', 'couponSettings'));
     }
 
     public function updateStatus(Request $request, int $id): RedirectResponse
@@ -125,7 +129,9 @@ class OrderController extends BaseCrudController
         ]);
 
         $order = Order::findOrFail($id);
-        $order->update(['status' => $data['status']]);
+        
+        $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
+        $orderService->updateStatus($order, \App\Ecommerce\Order\Enums\OrderStatus::from($data['status']));
 
         return redirect()->route('admin.orders.show', $order->id)->with('status', 'Đã cập nhật trạng thái đơn hàng');
     }
@@ -178,7 +184,10 @@ class OrderController extends BaseCrudController
             'taxes',
         ])->findOrFail($id);
 
-        return view('admin.orders.edit', compact('order'));
+        $checkoutSettings = app(\App\Settings\CheckoutSettings::class);
+        $couponSettings = app(\App\Settings\CouponSettings::class);
+
+        return view('admin.orders.edit', compact('order', 'checkoutSettings', 'couponSettings'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -191,8 +200,6 @@ class OrderController extends BaseCrudController
             'items.*.id' => ['required', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'shipping_amount' => ['required', 'numeric', 'min:0'],
-            'tax_amount' => ['required', 'numeric', 'min:0'],
             'internal_note' => ['nullable', 'string'],
             
             'shipping.first_name' => ['nullable', 'string'],
@@ -206,8 +213,7 @@ class OrderController extends BaseCrudController
             'billing.address_detail' => ['nullable', 'string'],
         ]);
 
-        // 1. Update items
-        $subtotal = 0;
+        // 1. Update items manually (since they are customly edited)
         if (isset($data['items'])) {
             foreach ($data['items'] as $itemData) {
                 $item = $order->items()->find($itemData['id']);
@@ -218,34 +224,15 @@ class OrderController extends BaseCrudController
                         'unit_price' => $itemData['unit_price'],
                         'total' => $itemTotal,
                     ]);
-                    $subtotal += $itemTotal;
                 }
             }
-        } else {
-            $subtotal = $order->items()->sum('total');
         }
 
-        // 2. Update shipping
-        if ($order->shipping) {
-            $order->shipping->update(['amount' => $data['shipping_amount']]);
-        }
+        // 2. Update status
+        $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
+        $orderService->updateStatus($order, \App\Ecommerce\Order\Enums\OrderStatus::from($data['status']));
 
-        // 3. Update totals
-        $discountTotal = $order->coupons()->sum('discount_amount');
-        
-        $total = $subtotal + $data['shipping_amount'] + $data['tax_amount'] - $discountTotal;
-        if ($total < 0) {
-            $total = 0;
-        }
-
-        $order->update([
-            'status' => $data['status'],
-            'subtotal' => $subtotal,
-            'tax_amount' => $data['tax_amount'],
-            'total' => $total,
-        ]);
-
-        // 4. Update internal note
+        // 3. Update internal note
         if (isset($data['internal_note'])) {
             \App\Models\OrderMeta::updateOrCreate(
                 ['order_id' => $order->id, 'key' => 'internal_note'],
@@ -253,13 +240,16 @@ class OrderController extends BaseCrudController
             );
         }
 
-        // 5. Update Addresses
+        // 4. Update Addresses
         if ($order->shippingAddress) {
             $order->shippingAddress->update($data['shipping'] ?? []);
         }
         if ($order->billingAddress) {
             $order->billingAddress->update($data['billing'] ?? []);
         }
+
+        // 5. DELEGATE TO SERVICE TO RECALCULATE ENTIRE ORDER (Shipping, Tax, Coupons, Totals)
+        $orderService->recalculateTotals($order->fresh());
 
         return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.messages.updated'));
     }

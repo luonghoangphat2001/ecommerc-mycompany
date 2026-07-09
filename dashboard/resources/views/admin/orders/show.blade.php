@@ -292,18 +292,28 @@
                             <div class="field-label" style="margin:0;">Tạm tính</div>
                             <div class="field-value">{{ $money($subtotal) }}</div>
                         </div>
+                        
+                        @if($couponSettings->enable_coupons)
                         <div class="field-group" style="display: flex; justify-content: space-between;">
                             <div class="field-label" style="margin:0;">Giảm giá</div>
                             <div class="field-value" style="color:#16a34a;">-{{ $money($discountTotal) }}</div>
                         </div>
+                        @endif
+                        
+                        @if($checkoutSettings->enable_tax)
                         <div class="field-group" style="display: flex; justify-content: space-between;">
                             <div class="field-label" style="margin:0;">Thuế (Tax)</div>
                             <div class="field-value">{{ $money($taxTotal) }}</div>
                         </div>
+                        @endif
+                        
+                        @if($checkoutSettings->enable_shipping)
                         <div class="field-group" style="display: flex; justify-content: space-between;">
                             <div class="field-label" style="margin:0;">Phí vận chuyển</div>
                             <div class="field-value">{{ $money($shippingTotal) }}</div>
                         </div>
+                        @endif
+                        
                         <div class="field-group" style="display: flex; justify-content: space-between; border-top: 2px solid #e2e8f0; padding-top: 16px; margin-top: 4px;">
                             <div class="field-label" style="margin:0; font-size: 16px; color:#0f172a;">TỔNG CỘNG</div>
                             <div class="field-value font-bold" style="font-size: 20px; color:#2563eb;">{{ $money($order->total) }}</div>
@@ -337,6 +347,7 @@
             </div>
 
             <!-- Shipping Information -->
+            @if($checkoutSettings->enable_shipping)
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Giao hàng (Shipping)</h3>
@@ -379,6 +390,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             <!-- Billing Information -->
             <div class="card">
@@ -408,7 +420,7 @@
             </div>
 
             <!-- Coupons -->
-            @if($order->coupons->count() > 0)
+            @if($couponSettings->enable_coupons && $order->coupons->count() > 0)
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Coupons / Khuyến mãi</h3>

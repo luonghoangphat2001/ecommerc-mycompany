@@ -221,30 +221,37 @@
                             <span class="summary-value" id="js-subtotal-display">{{ number_format($order->subtotal, 0, ',', '.') }}</span>
                         </div>
                         
-                        <div class="summary-row" style="align-items: center;">
+                        @if($checkoutSettings->enable_shipping)
+                        <div class="summary-row">
                             <span class="summary-label">Phí vận chuyển</span>
-                            <div style="width: 100px;">
-                                <input type="number" name="shipping_amount" id="js-shipping-input" class="form-control text-right" value="{{ $order->shipping?->amount ?? 0 }}" min="0">
-                            </div>
+                            <span class="summary-value">{{ number_format($order->shipping?->amount ?? 0, 0, ',', '.') }}</span>
                         </div>
+                        @endif
                         
-                        <div class="summary-row" style="align-items: center;">
+                        @if($checkoutSettings->enable_tax)
+                        <div class="summary-row">
                             <span class="summary-label">Thuế (Tax)</span>
-                            <div style="width: 100px;">
-                                <input type="number" name="tax_amount" id="js-tax-input" class="form-control text-right" value="{{ $order->tax_amount ?? 0 }}" min="0">
-                            </div>
+                            <span class="summary-value">{{ number_format($order->tax_amount ?? 0, 0, ',', '.') }}</span>
                         </div>
+                        @endif
                         
+                        @if($couponSettings->enable_coupons)
                         <div class="summary-row">
                             <span class="summary-label">Giảm giá (Coupons)</span>
-                            <span class="summary-value" style="color: #16a34a;" id="js-discount-display" data-discount="{{ $discountTotal }}">
+                            <span class="summary-value" style="color: #16a34a;">
                                 -{{ number_format($discountTotal, 0, ',', '.') }}
                             </span>
                         </div>
+                        @endif
                         
-                        <div class="summary-row" style="border-top: 2px solid #e2e8f0; margin-top: 8px; padding-top: 16px;">
-                            <span class="summary-label" style="font-size: 16px; color:#0f172a;">TỔNG CỘNG</span>
-                            <span class="summary-value" id="js-total-display" style="font-size: 20px; color:#2563eb;">{{ number_format($order->total, 0, ',', '.') }}</span>
+                        <div class="summary-row" style="border-top: 2px solid #e2e8f0; margin-top: 8px; padding-top: 16px; flex-direction: column; align-items: flex-end;">
+                            <div style="display: flex; justify-content: space-between; width: 100%;">
+                                <span class="summary-label" style="font-size: 16px; color:#0f172a;">TỔNG CỘNG ĐANG LƯU</span>
+                                <span class="summary-value" style="font-size: 20px; color:#2563eb;">{{ number_format($order->total, 0, ',', '.') }}</span>
+                            </div>
+                            <span style="font-size: 12px; color: #64748b; margin-top: 4px; font-style: italic;">
+                                Tổng tiền sẽ được hệ thống tính toán lại tự động dựa trên cấu hình Settings khi bạn nhấn "Lưu thay đổi".
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -258,7 +265,7 @@
                 return new Intl.NumberFormat('vi-VN').format(amount);
             };
 
-            const calculateTotals = () => {
+            const calculateSubtotals = () => {
                 let subtotal = 0;
                 
                 // Calculate item totals
@@ -272,26 +279,12 @@
                 });
 
                 document.getElementById('js-subtotal-display').innerText = formatMoney(subtotal);
-
-                // Get other fees
-                const shipping = parseFloat(document.getElementById('js-shipping-input').value) || 0;
-                const tax = parseFloat(document.getElementById('js-tax-input').value) || 0;
-                const discount = parseFloat(document.getElementById('js-discount-display').getAttribute('data-discount')) || 0;
-
-                // Calculate final total
-                let total = subtotal + shipping + tax - discount;
-                if (total < 0) total = 0;
-
-                document.getElementById('js-total-display').innerText = formatMoney(total);
             };
 
             // Attach event listeners
             document.querySelectorAll('.js-item-price, .js-item-qty').forEach(el => {
-                el.addEventListener('input', calculateTotals);
+                el.addEventListener('input', calculateSubtotals);
             });
-            
-            document.getElementById('js-shipping-input').addEventListener('input', calculateTotals);
-            document.getElementById('js-tax-input').addEventListener('input', calculateTotals);
         });
     </script>
 @endsection

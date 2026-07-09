@@ -6,6 +6,8 @@ use Spatie\LaravelSettings\Settings;
 
 class CheckoutSettings extends Settings
 {
+    public bool $enable_tax = true;
+    public bool $enable_shipping = true;
     public bool $enable_guest_checkout;
     public string $tax_calculation_address; // 'shipping', 'billing', 'base'
     public bool $prices_include_tax;
