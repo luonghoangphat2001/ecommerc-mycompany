@@ -129,7 +129,7 @@ class OrderService implements OrderServiceInterface
 
             $calcRequest = new CheckoutRequestDTO(
                 items: $itemsForCalc,
-                shippingMethod: $order->shipping?->method,
+                shippingMethod: $order->shipping?->shop_shipping_method_id,
                 shippingAddress: $shippingAddressDTO,
                 couponCode: $couponCode,
                 currency: $order->currency ?? 'VND'
@@ -148,7 +148,7 @@ class OrderService implements OrderServiceInterface
                 ]);
             }
 
-            // 5. Save shipping item
+            // 5. Save shipping item and update OrderShipping
             if ($calcResult->shippingTotal > 0) {
                 $order->items()->create([
                     'type' => 'shipping',
@@ -157,9 +157,24 @@ class OrderService implements OrderServiceInterface
                     'unit_price' => $calcResult->shippingTotal,
                     'total' => $calcResult->shippingTotal,
                 ]);
+                
+                if ($order->shipping) {
+                    $order->shipping->update(['amount' => $calcResult->shippingTotal]);
+                }
+            } else {
+                if ($order->shipping) {
+                    $order->shipping->update(['amount' => 0]);
+                }
             }
 
-            // 6. Update order totals with all calculations (same as checkout)
+            // 6. Update coupons
+            if ($couponCode) {
+                $order->coupons()->where('coupon_code', $couponCode)->update([
+                    'discount_amount' => $calcResult->discountTotal
+                ]);
+            }
+
+            // 7. Update order totals with all calculations (same as checkout)
             $order->update([
                 'subtotal' => $calcResult->subtotal,
                 'tax_amount' => $calcResult->taxTotal,

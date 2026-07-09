@@ -49,7 +49,7 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
      */
     public function getTaxTotal(Order $order): int
     {
-        return (int) $order->taxes()->sum('amount');
+        return (int) $order->tax_amount;
     }
 
     /**
