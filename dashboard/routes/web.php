@@ -56,6 +56,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             $crud = function (string $uri, string $controller, string $name): void {
                 Route::get($uri . '/export', [$controller, 'export'])->name($name . '.export');
                 Route::post($uri . '/import', [$controller, 'import'])->name($name . '.import');
+                Route::post($uri . '/reorder', [$controller, 'reorder'])->name($name . '.reorder');
                 Route::resource($uri, $controller)->names($name);
             };
 
@@ -74,9 +75,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('inventory-records/{inventory_record}/process', [InventoryRecordController::class, 'process'])->name('inventory-records.process');
             $crud('inventory-records', InventoryRecordController::class, 'inventory-records');
             $crud('inventory-movements', InventoryMovementController::class, 'inventory-movements');
-            $crud('upsell-products', UpsellProductController::class, 'upsell-products');
-            $crud('cross-sell-products', CrossSellProductController::class, 'cross-sell-products');
-            $crud('combo-products', ComboProductController::class, 'combo-products');
+            Route::middleware('marketing.module:upsell_enabled')->group(function () use ($crud) {
+                $crud('upsell-products', UpsellProductController::class, 'upsell-products');
+            });
+            Route::middleware('marketing.module:cross_sell_enabled')->group(function () use ($crud) {
+                $crud('cross-sell-products', CrossSellProductController::class, 'cross-sell-products');
+            });
+            Route::middleware('marketing.module:combo_enabled')->group(function () use ($crud) {
+                $crud('combo-products', ComboProductController::class, 'combo-products');
+            });
+            Route::middleware('marketing.module:enable_coupons')->group(function () use ($crud) {
+                $crud('coupons', \App\Http\Controllers\Admin\CouponController::class, 'coupons');
+            });
+            Route::middleware('marketing.module:loyalty_enabled')->group(function () use ($crud) {
+                $crud('loyalty-points', \App\Http\Controllers\Admin\LoyaltyPointController::class, 'loyalty-points');
+            });
 
             $crud('orders', OrderController::class, 'orders');
             Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
@@ -97,8 +110,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
             Route::post('settings/update-group', [SettingController::class, 'updateGroup'])->name('settings.update-group');
             $crud('settings', SettingController::class, 'settings');
-            $crud('webhooks', WebhookController::class, 'webhooks');
-            Route::resource('webhook-logs', WebhookLogController::class)->only(['index', 'show'])->names('webhook-logs');
+            Route::middleware('setting.check:WebhookSettings,enabled')->group(function () use ($crud) {
+                $crud('webhooks', WebhookController::class, 'webhooks');
+                Route::resource('webhook-logs', WebhookLogController::class)->only(['index', 'show'])->names('webhook-logs');
+            });
             Route::resource('mail-logs', MailLogController::class)->only(['index', 'show'])->names('mail-logs');
         });
     });

@@ -42,6 +42,7 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
+            'setting.check:ApiSettings,enabled',
             \App\Http\Middleware\ApiLogMiddleware::class,
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
@@ -75,5 +76,7 @@ class Kernel extends HttpKernel
         // ... other middleware aliases
         'setLocale' => \App\Http\Middleware\SetLocale::class,
         'admin.access' => \App\Http\Middleware\AdminAccess::class,
+        'marketing.module' => \App\Http\Middleware\CheckMarketingModule::class,
+        'setting.check' => \App\Http\Middleware\CheckSettingEnabled::class,
     ];
 }

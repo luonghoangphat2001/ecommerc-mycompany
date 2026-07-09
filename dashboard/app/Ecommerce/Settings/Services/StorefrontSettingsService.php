@@ -74,6 +74,7 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                     'decimal_places' => $general->decimal_places,
                     'logo' => $general->logo ? Storage::url($general->logo) : null,
                     'favicon' => $general->favicon ? Storage::url($general->favicon) : null,
+                    'primary_color' => app(\App\Settings\DBSettings::class)->primary_color,
                 ],
                 'header' => [
                     'site_name' => $general->store_name,

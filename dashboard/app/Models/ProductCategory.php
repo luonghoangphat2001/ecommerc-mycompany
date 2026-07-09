@@ -50,6 +50,7 @@ class ProductCategory extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'type',
+        'order_column',
     ];
 
     /**

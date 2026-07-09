@@ -37,6 +37,7 @@ class Product extends Model implements HasMedia
     use InteractsWithMedia;
     use SoftDeletes;
     use HasWebhooks;
+    use \Spatie\Tags\HasTags;
 
 
     /**

@@ -50,6 +50,14 @@ class SettingController extends BaseCrudController
     public function index(Request $request): View
     {
         $schema = $this->settingsSchema();
+        
+        $ecommerceSettings = app(\App\Settings\DBSettings::class); 
+        // Note: ecommerce settings are actually stored via Setting model, let's fetch it via query to be safe
+        $shippingEnabled = \App\Models\Setting::where('group', 'ecommerce')->where('name', 'shipping_enabled')->value('payload');
+        if (isset($shippingEnabled) && !(bool) $shippingEnabled) {
+            unset($schema['shipping']);
+        }
+
         $activeTab = $request->query('tab');
 
         if (! is_string($activeTab) || ! isset($schema[$activeTab])) {
@@ -154,7 +162,8 @@ class SettingController extends BaseCrudController
             $settingsClass = $this->settingsClassForGroup($group);
 
             if ($settingsClass) {
-                $values[$group] = get_object_vars(app($settingsClass));
+                $settings = app($settingsClass);
+                $values[$group] = method_exists($settings, 'toArray') ? $settings->toArray() : get_object_vars($settings);
                 continue;
             }
 
@@ -214,6 +223,7 @@ class SettingController extends BaseCrudController
                 'fields' => [
                     'logo' => ['label' => 'Logo', 'type' => 'image', 'default' => null],
                     'logo_favicon' => ['label' => 'Favicon', 'type' => 'image', 'default' => null],
+                    'primary_color' => ['label' => 'Màu chủ đạo', 'type' => 'color', 'default' => '#4f46e5'],
                     'name' => ['label' => 'Tên hệ thống', 'default' => 'My E-commerce'],
                     'about' => ['label' => 'Mô tả', 'type' => 'textarea', 'default' => ''],
                     'timezone' => ['label' => 'Timezone', 'default' => 'Asia/Ho_Chi_Minh'],
@@ -223,6 +233,10 @@ class SettingController extends BaseCrudController
                     'new_user_role' => ['label' => 'Role user mới', 'default' => 'User'],
                     'send_welcome_email' => ['label' => 'Gửi welcome email', 'type' => 'boolean', 'default' => false],
                     'exchange_rates' => ['label' => 'Exchange rates JSON', 'type' => 'json', 'default' => ['VND' => 1, 'USD' => 25000]],
+                ],
+                'management_actions' => [
+                    ['label' => 'admin.sidebar.roles', 'route' => 'admin.roles.index'],
+                    ['label' => 'admin.sidebar.permissions', 'route' => 'admin.permissions.index'],
                 ],
             ],
             'ecommerce' => [
@@ -237,6 +251,10 @@ class SettingController extends BaseCrudController
                     'low_stock_threshold' => ['label' => 'Low stock threshold', 'type' => 'number', 'default' => 5],
                     'tax_enabled' => ['label' => 'Bật thuế', 'type' => 'boolean', 'default' => true],
                     'shipping_enabled' => ['label' => 'Bật shipping', 'type' => 'boolean', 'default' => true],
+                ],
+                'management_actions' => [
+                    ['label' => 'admin.sidebar.classes', 'route' => 'admin.tax-classes.index', 'visible_when' => 'tax_enabled'],
+                    ['label' => 'admin.sidebar.rates', 'route' => 'admin.tax-rates.index', 'visible_when' => 'tax_enabled'],
                 ],
             ],
             'general' => [
@@ -305,24 +323,6 @@ class SettingController extends BaseCrudController
                     ['label' => 'admin.settings.view_inventory_movements', 'route' => 'admin.inventory-movements.index'],
                 ],
             ],
-            'coupon' => [
-                'label' => 'admin.sidebar.coupon_settings',
-                'description' => 'admin.settings.coupon_description',
-                'fields' => [
-                    'enable_coupons' => ['label' => 'Bật coupons', 'type' => 'boolean', 'default' => true],
-                    'allow_multiple_coupons' => ['label' => 'Cho nhiều coupon', 'type' => 'boolean', 'default' => false],
-                    'calculate_tax_after_coupon' => ['label' => 'Tính thuế sau coupon', 'type' => 'boolean', 'default' => true],
-                ],
-            ],
-            'loyalty' => [
-                'label' => 'admin.sidebar.loyalty_settings',
-                'description' => 'admin.settings.loyalty_description',
-                'fields' => [
-                    'enabled' => ['label' => 'Bật loyalty', 'type' => 'boolean', 'default' => false],
-                    'points_per_currency' => ['label' => 'Points per currency', 'type' => 'number', 'default' => 1],
-                    'point_conversion_rate' => ['label' => 'Point conversion rate', 'type' => 'number', 'default' => 1000],
-                ],
-            ],
             'marketing' => [
                 'label' => 'admin.sidebar.marketing_settings',
                 'description' => 'admin.settings.marketing_description',
@@ -330,21 +330,19 @@ class SettingController extends BaseCrudController
                     'upsell_enabled' => ['label' => 'Bật upsell', 'type' => 'boolean', 'default' => false],
                     'cross_sell_enabled' => ['label' => 'Bật cross-sell', 'type' => 'boolean', 'default' => false],
                     'combo_enabled' => ['label' => 'Bật combo products', 'type' => 'boolean', 'default' => false],
+                    'loyalty_enabled' => ['label' => 'Bật loyalty', 'type' => 'boolean', 'default' => false],
+                    'points_per_currency' => ['label' => 'Points per currency', 'type' => 'number', 'default' => 1],
+                    'point_conversion_rate' => ['label' => 'Point conversion rate', 'type' => 'number', 'default' => 1000],
+                    'enable_coupons' => ['label' => 'Bật coupons', 'type' => 'boolean', 'default' => true],
+                    'allow_multiple_coupons' => ['label' => 'Cho nhiều coupon', 'type' => 'boolean', 'default' => false],
+                    'calculate_tax_after_coupon' => ['label' => 'Tính thuế sau coupon', 'type' => 'boolean', 'default' => true],
                 ],
                 'management_actions' => [
                     ['label' => 'admin.settings.manage_upsell', 'route' => 'admin.upsell-products.index', 'visible_when' => 'upsell_enabled'],
                     ['label' => 'admin.settings.manage_cross_sell', 'route' => 'admin.cross-sell-products.index', 'visible_when' => 'cross_sell_enabled'],
                     ['label' => 'admin.settings.manage_combo', 'route' => 'admin.combo-products.index', 'visible_when' => 'combo_enabled'],
-                ],
-            ],
-            'emails' => [
-                'label' => 'admin.sidebar.emails_settings',
-                'description' => 'admin.settings.emails_description',
-                'fields' => [
-                    'sender_name' => ['label' => 'Sender name', 'default' => 'Admin'],
-                    'sender_email' => ['label' => 'Sender email', 'type' => 'email', 'default' => 'admin@admin.com'],
-                    'base_color' => ['label' => 'Base color', 'default' => '#4f46e5'],
-                    'notifications' => ['label' => 'Notifications JSON', 'type' => 'json', 'default' => []],
+                    ['label' => 'Quản lý Loyalty', 'route' => 'admin.loyalty-points.index', 'visible_when' => 'loyalty_enabled'],
+                    ['label' => 'Quản lý Coupons', 'route' => 'admin.coupons.index', 'visible_when' => 'enable_coupons'],
                 ],
             ],
             'footer' => [
@@ -367,6 +365,11 @@ class SettingController extends BaseCrudController
                     'email_password' => ['label' => 'SMTP password', 'type' => 'password', 'default' => null],
                     'email_encryption' => ['label' => 'Encryption', 'type' => 'select', 'default' => null, 'options' => ['' => 'None', 'tls' => 'TLS', 'ssl' => 'SSL']],
                     'use_queue_for_emails' => ['label' => 'Queue emails', 'type' => 'boolean', 'default' => false],
+                    'base_color' => ['label' => 'Email Base color', 'type' => 'color', 'default' => '#4f46e5'],
+                    'notifications' => ['label' => 'Notifications JSON', 'type' => 'json', 'default' => []],
+                ],
+                'management_actions' => [
+                    ['label' => 'admin.sidebar.mail_logs', 'route' => 'admin.mail-logs.index'],
                 ],
             ],
             'webhook' => [
@@ -376,6 +379,10 @@ class SettingController extends BaseCrudController
                     'enabled' => ['label' => 'Bật webhooks', 'type' => 'boolean', 'default' => false],
                     'log_retention_days' => ['label' => 'Log retention days', 'type' => 'number', 'default' => 30],
                     'allowed_roles' => ['label' => 'Allowed roles JSON', 'type' => 'json', 'default' => []],
+                ],
+                'management_actions' => [
+                    ['label' => 'Quản lý Webhooks', 'route' => 'admin.webhooks.index', 'visible_when' => 'enabled'],
+                    ['label' => 'Lịch sử Webhooks', 'route' => 'admin.webhook-logs.index', 'visible_when' => 'enabled'],
                 ],
             ],
             'api' => [
@@ -416,10 +423,7 @@ class SettingController extends BaseCrudController
             'products' => ProductSettings::class,
             'checkout' => \App\Settings\CheckoutSettings::class,
             'inventory' => InventorySettings::class,
-            'coupon' => CouponSettings::class,
-            'loyalty' => LoyaltySettings::class,
             'marketing' => MarketingSettings::class,
-            'emails' => EmailSettings::class,
             'footer' => FooterSettings::class,
             'mail' => MailSettings::class,
             'webhook' => WebhookSettings::class,

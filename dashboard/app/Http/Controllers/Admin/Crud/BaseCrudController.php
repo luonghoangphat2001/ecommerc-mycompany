@@ -32,6 +32,11 @@ abstract class BaseCrudController extends Controller
 
     protected function mutateData(array $data, ?Model $record = null): array
     {
+        foreach ($this->visibleFields('form') as $name => $field) {
+            if (($field['type'] ?? '') === 'image' && request()->hasFile($name)) {
+                $data[$name] = request()->file($name)->store('uploads', 'public');
+            }
+        }
         return $data;
     }
 
@@ -104,11 +109,23 @@ abstract class BaseCrudController extends Controller
     {
         $modelClass = $this->modelClass();
         $record = $modelClass::findOrFail($id);
+        
+        $visibleFields = $this->visibleFields('show');
+        $groups = method_exists($this, 'showGroups') ? $this->showGroups() : [];
+        if (empty($groups)) {
+            $groups = [
+                'general' => [
+                    'label' => 'Thông tin chung',
+                    'fields' => array_keys($visibleFields),
+                ]
+            ];
+        }
 
         return view('admin.crud.show', [
             'title' => __('admin.actions.view') . ' - ' . __($this->title()),
             'record' => $record,
-            'fields' => $this->visibleFields('show'),
+            'fields' => $visibleFields,
+            'groups' => $groups,
             'routePrefix' => $this->routePrefix(),
             'canEdit' => $this->canEdit(),
         ]);
@@ -158,6 +175,39 @@ abstract class BaseCrudController extends Controller
         $record->delete();
 
         return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.deleted'));
+    }
+
+    public function reorder(Request $request)
+    {
+        $tree = $request->input('tree', []);
+        if (empty($tree)) {
+            return response()->json(['success' => true]);
+        }
+
+        $modelClass = $this->modelClass();
+        $hasParentId = \Illuminate\Support\Facades\Schema::hasColumn((new $modelClass)->getTable(), 'parent_id');
+        
+        $this->updateTreeOrder($tree, null, $modelClass, $hasParentId);
+
+        return response()->json(['success' => true]);
+    }
+
+    protected function updateTreeOrder(array $tree, ?int $parentId, string $modelClass, bool $hasParentId)
+    {
+        foreach ($tree as $index => $item) {
+            $record = $modelClass::find($item['id']);
+            if ($record) {
+                if ($hasParentId) {
+                    $record->parent_id = $parentId;
+                }
+                $record->order_column = $index;
+                $record->save();
+            }
+
+            if (isset($item['children']) && is_array($item['children'])) {
+                $this->updateTreeOrder($item['children'], $item['id'], $modelClass, $hasParentId);
+            }
+        }
     }
 
     public function export(Request $request): StreamedResponse

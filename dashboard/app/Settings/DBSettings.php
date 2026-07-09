@@ -8,6 +8,7 @@ class DBSettings extends Settings
 {
     public ?string $logo = null;
     public ?string $logo_favicon = null;
+    public ?string $primary_color = '#4f46e5';
     public ?string $name = 'Admin';
     public ?string $about = null;
     public ?string $timezone = 'Asia/Ho_Chi_Minh';
@@ -21,6 +22,7 @@ class DBSettings extends Settings
     protected static array $fillable = [
         'logo',
         'logo_favicon',
+        'primary_color',
         'name',
         'about',
         'timezone',

@@ -65,8 +65,13 @@
                         <tr>
                             <td class="cell-muted">#{{ $item->id }}</td>
                             @foreach ($fields as $name => $field)
-                                @php($value = data_get($item, $name))
-                                <td>{{ \App\Support\AdminValue::format($value, true) }}</td>
+                                @php
+                                    $value = data_get($item, $name);
+                                    $type = $field['type'] ?? 'text';
+                                @endphp
+                                <td>
+                                    @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $item, 'compact' => true])
+                                </td>
                             @endforeach
                             <td>
                                 <div class="actions">

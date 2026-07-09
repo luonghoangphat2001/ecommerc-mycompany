@@ -14,6 +14,8 @@ class MailSettings extends Settings
     public ?string $email_password = null;
     public ?string $email_encryption = null;
     public bool $use_queue_for_emails = false;
+    public ?string $base_color = '#4f46e5';
+    public array $notifications = [];
 
     public static function group(): string
     {

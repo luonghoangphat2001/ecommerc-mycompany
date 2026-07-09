@@ -40,7 +40,9 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
     Route::post('cart/shipping-methods', [\App\Http\Controllers\Api\CartController::class, 'shippingMethods']);
     
     // Coupon API
-    Route::post('coupons/apply', [\App\Http\Controllers\Api\CouponController::class, 'apply']);
+    Route::middleware('marketing.module:enable_coupons')->group(function () {
+        Route::post('coupons/apply', [\App\Http\Controllers\Api\CouponController::class, 'apply']);
+    });
     Route::post('login', [AuthController::class, 'login']);
 
     // Address API
@@ -58,13 +60,22 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
     Route::get('products/by-slug/{slug}', [ProductController::class, 'showBySlug']);
     // Specific routes must come BEFORE the generic {product} route
     Route::get('products/{productId}/inventory', [\App\Http\Controllers\Api\ProductInventoryController::class, 'index']);
-    Route::get('products/{productId}/upsells', [\App\Http\Controllers\Api\UpsellController::class, 'index']);
-    Route::get('products/{productId}/cross-sells', [\App\Http\Controllers\Api\CrossSellController::class, 'index']);
+    
+    Route::middleware('marketing.module:upsell_enabled')->group(function () {
+        Route::get('products/{productId}/upsells', [\App\Http\Controllers\Api\UpsellController::class, 'index']);
+    });
+    
+    Route::middleware('marketing.module:cross_sell_enabled')->group(function () {
+        Route::get('products/{productId}/cross-sells', [\App\Http\Controllers\Api\CrossSellController::class, 'index']);
+    });
+    
     Route::get('products/{product}', [ProductController::class, 'show']);
 
     // Combos
-    Route::get('combos', [\App\Http\Controllers\Api\ComboController::class, 'index']);
-    Route::get('combos/{slug}', [\App\Http\Controllers\Api\ComboController::class, 'show']);
+    Route::middleware('marketing.module:combo_enabled')->group(function () {
+        Route::get('combos', [\App\Http\Controllers\Api\ComboController::class, 'index']);
+        Route::get('combos/{slug}', [\App\Http\Controllers\Api\ComboController::class, 'show']);
+    });
     Route::get('product-categories', [ProductCategoryController::class, 'index']);
     Route::get('brands', [BrandController::class, 'index']);
     Route::get('pages', [PageController::class, 'index']);
@@ -86,8 +97,10 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         Route::delete('user/addresses/{address}', [AddressController::class, 'destroy']);
 
         // Loyalty
-        Route::get('user/loyalty/points', [\App\Http\Controllers\Api\LoyaltyController::class, 'getPoints']);
-        Route::get('user/loyalty/history', [\App\Http\Controllers\Api\LoyaltyController::class, 'getHistory']);
+        Route::middleware('marketing.module:loyalty_enabled')->group(function () {
+            Route::get('user/loyalty/points', [\App\Http\Controllers\Api\LoyaltyController::class, 'getPoints']);
+            Route::get('user/loyalty/history', [\App\Http\Controllers\Api\LoyaltyController::class, 'getHistory']);
+        });
 
         Route::apiResource('orders', OrderController::class)->middleware('throttle:checkout');
     });

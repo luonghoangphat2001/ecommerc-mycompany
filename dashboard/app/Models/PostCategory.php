@@ -39,6 +39,7 @@ class PostCategory extends Model
         'description',
         'type',
         'is_visible',
+        'order_column',
     ];
 
     /**

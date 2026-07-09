@@ -42,32 +42,36 @@
         [
             'label' => 'admin.sidebar.group.settings',
             'items' => [
-                [
-                    'label' => 'admin.sidebar.tax',
-                    'children' => [
-                        ['label' => 'admin.sidebar.classes', 'route' => 'admin.tax-classes.index', 'match' => 'admin.tax-classes.*'],
-                        ['label' => 'admin.sidebar.rates', 'route' => 'admin.tax-rates.index', 'match' => 'admin.tax-rates.*'],
-                    ],
-                ],
-                [
-                    'label' => 'admin.sidebar.permissions',
-                    'children' => [
-                        ['label' => 'admin.sidebar.roles', 'route' => 'admin.roles.index', 'match' => 'admin.roles.*'],
-                        ['label' => 'admin.sidebar.permissions', 'route' => 'admin.permissions.index', 'match' => 'admin.permissions.*'],
-                    ],
-                ],
-                [
-                    'label' => 'admin.sidebar.integrations',
-                    'children' => [
-                        ['label' => 'admin.sidebar.webhooks', 'route' => 'admin.webhooks.index', 'match' => 'admin.webhooks.*'],
-                        ['label' => 'admin.sidebar.webhook_logs', 'route' => 'admin.webhook-logs.index', 'match' => 'admin.webhook-logs.*'],
-                    ],
-                ],
-                ['label' => 'admin.sidebar.mail_logs', 'route' => 'admin.mail-logs.index', 'match' => 'admin.mail-logs.*'],
                 ['label' => 'admin.sidebar.general_settings', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'query' => ['tab' => 'settings']]
             ],
         ],
     ];
+
+    $marketingSettings = app(\App\Settings\MarketingSettings::class);
+    $marketingItems = [];
+    if ($marketingSettings->upsell_enabled) {
+        $marketingItems[] = ['label' => 'Upsell Products', 'route' => 'admin.upsell-products.index', 'match' => 'admin.upsell-products.*'];
+    }
+    if ($marketingSettings->cross_sell_enabled) {
+        $marketingItems[] = ['label' => 'Cross-sell Products', 'route' => 'admin.cross-sell-products.index', 'match' => 'admin.cross-sell-products.*'];
+    }
+    if ($marketingSettings->combo_enabled) {
+        $marketingItems[] = ['label' => 'Combo Products', 'route' => 'admin.combo-products.index', 'match' => 'admin.combo-products.*'];
+    }
+    if ($marketingSettings->loyalty_enabled) {
+        $marketingItems[] = ['label' => 'Điểm Loyalty', 'route' => 'admin.loyalty-points.index', 'match' => 'admin.loyalty-points.*'];
+    }
+    if ($marketingSettings->enable_coupons) {
+        $marketingItems[] = ['label' => 'Coupons', 'route' => 'admin.coupons.index', 'match' => 'admin.coupons.*'];
+    }
+    if (!empty($marketingItems)) {
+        array_splice($navGroups, count($navGroups) - 1, 0, [
+            [
+                'label' => 'Marketing',
+                'items' => $marketingItems,
+            ]
+        ]);
+    }
 
     $navUrl = function (array $item): string {
         return isset($item['query'])
@@ -90,8 +94,8 @@
             --fi-border: #e2e8f0;
             --fi-text: #0f172a;
             --fi-muted: #64748b;
-            --fi-primary: #d97706;
-            --fi-primary-strong: #b45309;
+            --fi-primary: {{ app(\App\Settings\DBSettings::class)->primary_color ?? '#d97706' }};
+            --fi-primary-strong: color-mix(in srgb, var(--fi-primary) 80%, black);
             --fi-danger: #dc2626;
             --fi-success: #047857;
             --fi-ring: 0 0 0 1px rgba(15, 23, 42, .06), 0 12px 28px rgba(15, 23, 42, .08);
@@ -196,9 +200,9 @@
         }
         .nav-link:hover { background: var(--fi-soft); color: var(--fi-text); }
         .nav-link.active {
-            background: #fff7ed;
-            color: #9a3412;
-            box-shadow: inset 0 0 0 1px #fed7aa;
+            background: color-mix(in srgb, var(--fi-primary) 10%, transparent);
+            color: var(--fi-primary-strong);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fi-primary) 30%, transparent);
         }
         .nav-dot {
             width: 7px;
@@ -611,9 +615,9 @@
         }
         .settings-tab:hover { background: var(--fi-soft); }
         .settings-tab.active {
-            background: #fff7ed;
-            color: #9a3412;
-            box-shadow: inset 0 0 0 1px #fed7aa;
+            background: color-mix(in srgb, var(--fi-primary) 10%, transparent);
+            color: var(--fi-primary-strong);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fi-primary) 30%, transparent);
         }
         .settings-panel { padding: 0; overflow: hidden; }
         .settings-heading {
@@ -625,10 +629,10 @@
                 linear-gradient(180deg, #fff 0%, #f8fafc 100%);
         }
         .settings-chip {
-            border: 1px solid #fed7aa;
+            border: 1px solid color-mix(in srgb, var(--fi-primary) 30%, transparent);
             border-radius: 999px;
-            background: #fff7ed;
-            color: #9a3412;
+            background: color-mix(in srgb, var(--fi-primary) 10%, transparent);
+            color: var(--fi-primary-strong);
             padding: 5px 10px;
             font-size: 12px;
             font-weight: 900;
@@ -742,9 +746,9 @@
         }
         .view-toggle:hover { background: var(--fi-soft); }
         .view-toggle.active {
-            border-color: #fed7aa;
-            background: #fff7ed;
-            color: #9a3412;
+            border-color: color-mix(in srgb, var(--fi-primary) 30%, transparent);
+            background: color-mix(in srgb, var(--fi-primary) 10%, transparent);
+            color: var(--fi-primary-strong);
         }
         .media-grid {
             display: grid;
