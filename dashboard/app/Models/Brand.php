@@ -50,12 +50,23 @@ class Brand extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'sort',
+        'parent_id',
         'order_column',
     ];
 
     protected $casts = [
         'is_visible' => 'boolean',
     ];
+
+    public function parent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Brand::class, 'parent_id');
+    }
+
+    public function children(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Brand::class, 'parent_id');
+    }
 
     /** @return MorphToMany<Address> */
     public function addresses(): MorphToMany
