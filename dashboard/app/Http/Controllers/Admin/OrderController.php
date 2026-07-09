@@ -41,6 +41,64 @@ class OrderController extends BaseCrudController
         ];
     }
 
+    public function index(Request $request): View
+    {
+        $query = Order::with(['user', 'shippingAddress', 'payments', 'shipping']);
+        
+        // Search
+        $this->applySearch($query, $request);
+
+        // Filters
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+        if ($paymentStatus = $request->query('payment_status')) {
+            $query->whereHas('payments', function ($q) use ($paymentStatus) {
+                $q->where('status', $paymentStatus);
+            });
+        }
+        if ($customer = $request->query('customer')) {
+            $query->where(function ($q) use ($customer) {
+                $q->whereHas('user', function ($u) use ($customer) {
+                    $u->where('name', 'like', "%{$customer}%")->orWhere('email', 'like', "%{$customer}%");
+                })->orWhereHas('shippingAddress', function ($a) use ($customer) {
+                    $a->where('first_name', 'like', "%{$customer}%")
+                      ->orWhere('last_name', 'like', "%{$customer}%")
+                      ->orWhere('phone', 'like', "%{$customer}%");
+                });
+            });
+        }
+        if ($dateFrom = $request->query('date_from')) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo = $request->query('date_to')) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+        if ($paymentMethod = $request->query('payment_method')) {
+            $query->whereHas('payments', function ($q) use ($paymentMethod) {
+                $q->where('method', $paymentMethod);
+            });
+        }
+        if ($shippingMethod = $request->query('shipping_method')) {
+            $query->whereHas('shipping', function ($q) use ($shippingMethod) {
+                $q->where('method', $shippingMethod);
+            });
+        }
+
+        $items = $query->latest('id')->paginate(15)->withQueryString();
+
+        return view('admin.orders.index', [
+            'title' => __($this->title()),
+            'items' => $items,
+            'routePrefix' => $this->routePrefix(),
+            'canCreate' => $this->canCreate(),
+            'canEdit' => $this->canEdit(),
+            'canDelete' => $this->canDelete(),
+            'canImportExport' => $this->canImportExport(),
+            'headerActions' => $this->headerActions(),
+        ]);
+    }
+
     public function show(int $id): View
     {
         $order = Order::with([
@@ -103,5 +161,106 @@ class OrderController extends BaseCrudController
         OrderRefund::create($data + ['order_id' => $order->id]);
 
         return redirect()->route('admin.orders.show', $order->id)->with('status', 'Đã tạo refund');
+    }
+
+    public function edit(int $id): View
+    {
+        $order = Order::with([
+            'items.product.featuredImage',
+            'payments',
+            'refunds',
+            'metas',
+            'coupons',
+            'shipping',
+            'shippingAddress',
+            'billingAddress',
+            'user',
+            'taxes',
+        ])->findOrFail($id);
+
+        return view('admin.orders.edit', compact('order'));
+    }
+
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $order = Order::findOrFail($id);
+        
+        $data = $request->validate([
+            'status' => ['required', 'string'],
+            'items' => ['array'],
+            'items.*.id' => ['required', 'integer'],
+            'items.*.qty' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'shipping_amount' => ['required', 'numeric', 'min:0'],
+            'tax_amount' => ['required', 'numeric', 'min:0'],
+            'internal_note' => ['nullable', 'string'],
+            
+            'shipping.first_name' => ['nullable', 'string'],
+            'shipping.last_name' => ['nullable', 'string'],
+            'shipping.phone' => ['nullable', 'string'],
+            'shipping.address_detail' => ['nullable', 'string'],
+            
+            'billing.first_name' => ['nullable', 'string'],
+            'billing.last_name' => ['nullable', 'string'],
+            'billing.phone' => ['nullable', 'string'],
+            'billing.address_detail' => ['nullable', 'string'],
+        ]);
+
+        // 1. Update items
+        $subtotal = 0;
+        if (isset($data['items'])) {
+            foreach ($data['items'] as $itemData) {
+                $item = $order->items()->find($itemData['id']);
+                if ($item) {
+                    $itemTotal = $itemData['qty'] * $itemData['unit_price'];
+                    $item->update([
+                        'qty' => $itemData['qty'],
+                        'unit_price' => $itemData['unit_price'],
+                        'total' => $itemTotal,
+                    ]);
+                    $subtotal += $itemTotal;
+                }
+            }
+        } else {
+            $subtotal = $order->items()->sum('total');
+        }
+
+        // 2. Update shipping
+        if ($order->shipping) {
+            $order->shipping->update(['amount' => $data['shipping_amount']]);
+        }
+
+        // 3. Update totals
+        $discountTotal = $order->coupons()->sum('discount_amount');
+        
+        $total = $subtotal + $data['shipping_amount'] + $data['tax_amount'] - $discountTotal;
+        if ($total < 0) {
+            $total = 0;
+        }
+
+        $order->update([
+            'status' => $data['status'],
+            'subtotal' => $subtotal,
+            'tax_amount' => $data['tax_amount'],
+            'total' => $total,
+        ]);
+
+        // 4. Update internal note
+        if (isset($data['internal_note'])) {
+            \App\Models\OrderMeta::updateOrCreate(
+                ['order_id' => $order->id, 'key' => 'internal_note'],
+                ['value' => $data['internal_note']]
+            );
+        }
+
+        // 5. Update Addresses
+        if ($order->shippingAddress) {
+            $order->shippingAddress->update($data['shipping'] ?? []);
+        }
+        if ($order->billingAddress) {
+            $order->billingAddress->update($data['billing'] ?? []);
+        }
+
+        return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.messages.updated'));
     }
 }
