@@ -19,6 +19,19 @@ class DashboardController extends Controller
 {
     public function __construct(private readonly AnalyticsServiceInterface $analytics)
     {
+        $this->middleware(function ($request, $next) {
+            if (auth()->check() && auth()->user()->hasRole('super_admin')) {
+                return $next($request);
+            }
+            try {
+                if (!auth()->user()->hasPermissionTo('view_dashboard')) {
+                    abort(403, 'Unauthorized action. Missing permission: view_dashboard');
+                }
+            } catch (\Exception $e) {
+                abort(403, 'Unauthorized action. Missing permission: view_dashboard');
+            }
+            return $next($request);
+        });
     }
 
     public function __invoke(): View

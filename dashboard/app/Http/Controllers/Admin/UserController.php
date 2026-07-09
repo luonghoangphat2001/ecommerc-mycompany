@@ -75,17 +75,106 @@ class UserController extends BaseCrudController
             'password' => ['nullable', 'string', 'min:6'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['string', 'exists:roles,name'],
+            'addresses' => ['nullable', 'array'],
         ];
     }
 
-    protected function formData(?Model $record = null): array
+    public function edit(int $id): \Illuminate\View\View
     {
-        if (! $record) {
-            return [];
+        $user = User::with(['addresses', 'payments', 'roles', 'orders'])->findOrFail($id);
+        
+        return view('admin.users.edit', [
+            'title' => 'Chỉnh sửa thành viên: ' . $user->name,
+            'user' => $user,
+            'routePrefix' => $this->routePrefix(),
+        ]);
+    }
+
+    public function update(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    {
+        $user = User::findOrFail($id);
+        
+        $data = $request->validate($this->rules($id));
+
+        $customerService = app(\App\Ecommerce\Customer\Contracts\CustomerServiceInterface::class);
+        $addressService = app(\App\Ecommerce\Address\Contracts\AddressBookServiceInterface::class);
+
+        // Extract base user data
+        $userData = [
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+        ];
+
+        if (!empty($data['password'])) {
+            $userData['password'] = Hash::make($data['password']);
         }
 
-        return [
-            'roles' => $record->roles()->pluck('name')->toArray(),
-        ];
+        // Update user base info
+        $customerService->updateCustomer($user, $userData);
+
+        // Sync roles
+        $user->syncRoles((array) $request->input('roles', []));
+
+        // Update/Create addresses
+        if ($request->has('addresses') && is_array($request->input('addresses'))) {
+            $existingAddresses = $user->addresses()->pluck('id')->toArray();
+            $updatedIds = [];
+
+            foreach ($request->input('addresses') as $index => $addrData) {
+                if (empty($addrData['first_name']) && empty($addrData['address_detail'])) {
+                    continue; // Skip empty rows
+                }
+
+                $addressPayload = [
+                    'first_name' => $addrData['first_name'] ?? null,
+                    'last_name' => $addrData['last_name'] ?? null,
+                    'phone' => $addrData['phone'] ?? null,
+                    'email' => $addrData['email'] ?? null,
+                    'address_detail' => $addrData['address_detail'] ?? null,
+                    'address_line_2' => $addrData['address_line_2'] ?? null,
+                    'city' => $addrData['city'] ?? null,
+                    'state' => $addrData['state'] ?? null,
+                    'country' => $addrData['country'] ?? null,
+                    'postal_code' => $addrData['postal_code'] ?? null,
+                    'type' => $addrData['type'] ?? 'shipping',
+                ];
+
+                if (!empty($addrData['id']) && in_array($addrData['id'], $existingAddresses)) {
+                    // Update existing
+                    $addressService->updateAddress($user->id, $addrData['id'], $addressPayload);
+                    $updatedIds[] = $addrData['id'];
+
+                    if (isset($addrData['is_default']) && $addrData['is_default'] == 1) {
+                        $user->update([
+                            $addrData['type'] === 'billing' ? 'default_billing_address_id' : 'default_shipping_address_id' => $addrData['id']
+                        ]);
+                    }
+                } else {
+                    // Create new
+                    $newAddr = $addressService->addAddress($user->id, $addressPayload);
+                    $updatedIds[] = $newAddr->id;
+
+                    if (isset($addrData['is_default']) && $addrData['is_default'] == 1) {
+                        $user->update([
+                            $addrData['type'] === 'billing' ? 'default_billing_address_id' : 'default_shipping_address_id' => $newAddr->id
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return redirect()->route('admin.users.edit', $user->id)->with('status', 'Đã cập nhật thông tin thành viên thành công.');
+    }
+
+    public function show(int $id): \Illuminate\View\View
+    {
+        $user = User::with(['addresses', 'payments', 'roles', 'orders'])->findOrFail($id);
+
+        return view('admin.users.show', [
+            'title' => 'Chi tiết thành viên: ' . $user->name,
+            'user' => $user,
+            'routePrefix' => $this->routePrefix(),
+        ]);
     }
 }

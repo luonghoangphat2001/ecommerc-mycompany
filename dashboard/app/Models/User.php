@@ -93,6 +93,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasManyThrough(\App\Models\Payment::class, \App\Models\Order::class, 'user_id');
     }
 
+    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\Order> */
+    public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Order::class, 'user_id');
+    }
+
     /** @return HasMany<Post> */
     public function posts(): HasMany
     {

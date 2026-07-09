@@ -342,7 +342,7 @@ class PlaceOrderAction
      */
     private function createOrderAddresses(Order $order, OrderDataDTO $dto): void
     {
-        $order->shippingAddress()->create([
+        $shippingData = [
             'type' => 'shipping',
             'first_name' => $dto->shippingAddress['first_name'] ?? '',
             'last_name' => $dto->shippingAddress['last_name'] ?? '',
@@ -353,9 +353,9 @@ class PlaceOrderAction
             'city_id' => $dto->shippingAddress['city'] ?? null,
             'ward_id' => $dto->shippingAddress['region'] ?? null,
             'address_detail' => $dto->shippingAddress['street'] ?? '',
-        ]);
+        ];
 
-        $order->billingAddress()->create([
+        $billingData = [
             'type' => 'billing',
             'first_name' => $dto->billingAddress['first_name'] ?? '',
             'last_name' => $dto->billingAddress['last_name'] ?? '',
@@ -366,7 +366,31 @@ class PlaceOrderAction
             'city_id' => $dto->billingAddress['city'] ?? null,
             'ward_id' => $dto->billingAddress['region'] ?? null,
             'address_detail' => $dto->billingAddress['street'] ?? '',
-        ]);
+        ];
+
+        $order->shippingAddress()->create($shippingData);
+        $order->billingAddress()->create($billingData);
+
+        // Auto save to user's address book if authenticated
+        if ($order->user_id) {
+            $addressBookService = app(\App\Ecommerce\Address\Contracts\AddressBookServiceInterface::class);
+            $userAddresses = $addressBookService->listAddresses($order->user_id);
+            
+            $checkExists = function($data, $type) use ($userAddresses) {
+                return $userAddresses->contains(function($addr) use ($data, $type) {
+                    return $addr->type === $type 
+                        && $addr->phone === $data['phone']
+                        && $addr->address_detail === $data['address_detail'];
+                });
+            };
+
+            if (!$checkExists($shippingData, 'shipping')) {
+                $addressBookService->addAddress($order->user_id, $shippingData);
+            }
+            if (!empty($dto->billingAddress) && !$checkExists($billingData, 'billing')) {
+                $addressBookService->addAddress($order->user_id, $billingData);
+            }
+        }
     }
 
     /**

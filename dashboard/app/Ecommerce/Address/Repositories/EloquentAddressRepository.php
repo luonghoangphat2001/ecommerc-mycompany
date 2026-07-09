@@ -5,7 +5,7 @@ namespace App\Ecommerce\Address\Repositories;
 use App\Ecommerce\Address\Contracts\AddressRepositoryInterface;
 use App\Ecommerce\Core\Repositories\BaseRepository;
 use App\Models\Address;
-use App\Models\Customer;
+use App\Models\User;
 
 class EloquentAddressRepository extends BaseRepository implements AddressRepositoryInterface
 {
@@ -24,11 +24,11 @@ class EloquentAddressRepository extends BaseRepository implements AddressReposit
      */
     public function getByCustomerId(int $customerId)
     {
-        $customer = Customer::find($customerId);
-        if (!$customer) {
+        $user = User::find($customerId);
+        if (!$user) {
             return collect();
         }
-        return $customer->addresses;
+        return $user->addresses;
     }
 
     /**
@@ -36,9 +36,9 @@ class EloquentAddressRepository extends BaseRepository implements AddressReposit
      */
     public function associateWithCustomer(int $addressId, int $customerId)
     {
-        $customer = Customer::find($customerId);
-        if ($customer) {
-            $customer->addresses()->syncWithoutDetaching([$addressId]);
+        $user = User::find($customerId);
+        if ($user) {
+            $user->addresses()->syncWithoutDetaching([$addressId]);
         }
     }
 
@@ -47,9 +47,9 @@ class EloquentAddressRepository extends BaseRepository implements AddressReposit
      */
     public function dissociateFromCustomer(int $addressId, int $customerId)
     {
-        $customer = Customer::find($customerId);
-        if ($customer) {
-            $customer->addresses()->detach($addressId);
+        $user = User::find($customerId);
+        if ($user) {
+            $user->addresses()->detach($addressId);
         }
     }
 }

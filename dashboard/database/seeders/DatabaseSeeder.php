@@ -64,6 +64,7 @@ class DatabaseSeeder extends Seeder
 
         // 6. Call Content/Shop Seeders
         $this->call([
+            PermissionSeeder::class,
             ContentSeeder::class,
             UnifiedShopSeeder::class,
             EngagementSeeder::class,

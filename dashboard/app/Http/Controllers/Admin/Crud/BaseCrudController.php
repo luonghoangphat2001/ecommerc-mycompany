@@ -49,19 +49,77 @@ abstract class BaseCrudController extends Controller
         return [];
     }
 
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            if (auth()->check() && auth()->user()->hasRole('super_admin')) {
+                return $next($request);
+            }
+
+            $module = str_replace('admin.', '', $this->routePrefix());
+            $method = $request->route()->getActionMethod();
+            
+            $actionMap = [
+                'index' => 'view',
+                'show' => 'view',
+                'export' => 'view',
+                'create' => 'create',
+                'store' => 'create',
+                'import' => 'create',
+                'edit' => 'update',
+                'update' => 'update',
+                'reorder' => 'update',
+                'destroy' => 'delete',
+                'process' => 'update',
+                'updateStatus' => 'update',
+                'storePayment' => 'update',
+                'storeRefund' => 'update',
+                'syncFromFiles' => 'update',
+                'updateGroup' => 'update',
+            ];
+            
+            $action = $actionMap[$method] ?? null;
+            if ($action) {
+                $permission = $action . '_' . $module;
+                try {
+                    if (!auth()->user()->hasPermissionTo($permission)) {
+                        abort(403, 'Unauthorized action. Missing permission: ' . $permission);
+                    }
+                } catch (\Exception $e) {
+                    abort(403, 'Unauthorized action. Missing permission: ' . $permission);
+                }
+            }
+
+            return $next($request);
+        });
+    }
+
+    protected function hasPermission(string $action): bool
+    {
+        if (auth()->check() && auth()->user()->hasRole('super_admin')) {
+            return true;
+        }
+        $module = str_replace('admin.', '', $this->routePrefix());
+        try {
+            return auth()->check() && auth()->user()->hasPermissionTo($action . '_' . $module);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
     protected function canCreate(): bool
     {
-        return true;
+        return $this->hasPermission('create');
     }
 
     protected function canEdit(): bool
     {
-        return true;
+        return $this->hasPermission('update');
     }
 
     protected function canDelete(): bool
     {
-        return true;
+        return $this->hasPermission('delete');
     }
 
     protected function headerActions(): array
@@ -71,7 +129,7 @@ abstract class BaseCrudController extends Controller
 
     protected function canImportExport(): bool
     {
-        return true;
+        return $this->hasPermission('create');
     }
 
     public function index(Request $request): View

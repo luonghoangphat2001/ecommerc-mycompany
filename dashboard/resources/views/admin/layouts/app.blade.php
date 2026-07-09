@@ -73,6 +73,42 @@
         ]);
     }
 
+    if (auth()->check() && !auth()->user()->hasRole('super_admin')) {
+        foreach ($navGroups as $groupIndex => &$group) {
+            foreach ($group['items'] as $itemIndex => &$item) {
+                if (isset($item['children'])) {
+                    foreach ($item['children'] as $childIndex => $child) {
+                        $module = str_replace(['admin.', '.*'], '', $child['match']);
+                        try {
+                            if (!auth()->user()->hasPermissionTo("view_{$module}")) {
+                                unset($item['children'][$childIndex]);
+                            }
+                        } catch (\Exception $e) {
+                            unset($item['children'][$childIndex]);
+                        }
+                    }
+                    if (empty($item['children'])) {
+                        unset($group['items'][$itemIndex]);
+                    }
+                } else {
+                    $module = str_replace(['admin.', '.*'], '', $item['match']);
+                    try {
+                        if (!auth()->user()->hasPermissionTo("view_{$module}")) {
+                            unset($group['items'][$itemIndex]);
+                        }
+                    } catch (\Exception $e) {
+                        unset($group['items'][$itemIndex]);
+                    }
+                }
+            }
+            if (empty($group['items'])) {
+                unset($navGroups[$groupIndex]);
+            }
+        }
+        unset($group);
+        unset($item);
+    }
+
     $navUrl = function (array $item): string {
         return isset($item['query'])
             ? route($item['route'], $item['query'])
