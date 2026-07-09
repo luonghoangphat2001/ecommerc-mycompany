@@ -33,17 +33,20 @@ class OrderService implements OrderServiceInterface
     protected $taxService;
     protected $shippingService;
     protected $calculator;
+    protected $refundService;
 
     public function __construct(
         OrderRepositoryInterface $orderRepository,
         TaxServiceInterface $taxService,
         ShippingServiceInterface $shippingService,
-        CheckoutCalculatorService $calculator
+        CheckoutCalculatorService $calculator,
+        \App\Ecommerce\Order\Contracts\RefundServiceInterface $refundService
     ) {
         $this->orderRepository = $orderRepository;
         $this->taxService = $taxService;
         $this->shippingService = $shippingService;
         $this->calculator = $calculator;
+        $this->refundService = $refundService;
     }
 
     /**
@@ -91,16 +94,15 @@ class OrderService implements OrderServiceInterface
                 if ($newStatus->value === 'refunded') {
                     $refundType = $data['refund_type'] ?? 'full';
                     $refundAmount = $refundType === 'full' ? $order->total : (int) ($data['refund_amount'] ?? 0);
+                    $refundReason = $data['refund_reason'] ?? '';
 
                     if ($refundAmount > 0) {
-                        $order->refunds()->create([
-                            'amount' => $refundAmount,
-                            'reason' => $data['refund_reason'] ?? '',
-                            'metadata' => [
-                                'type' => $refundType,
-                                'status' => 'completed', // auto-complete for now
-                            ]
-                        ]);
+                        try {
+                            $this->refundService->processRefund($order, $refundAmount, $refundReason, $refundType);
+                        } catch (\Exception $e) {
+                            \Log::error("Refund process failed during order update: " . $e->getMessage());
+                            throw $e; // Re-throw to rollback transaction
+                        }
                     }
                 }
             }
@@ -172,6 +174,10 @@ class OrderService implements OrderServiceInterface
 
             // 5. Update addresses
             if (isset($data['shipping']) && $order->shippingAddress) {
+                $validation = $this->shippingService->validateAddress($data['shipping']);
+                if (!$validation['is_valid']) {
+                    throw new \Exception("Địa chỉ giao hàng không hợp lệ: " . implode(", ", $validation['errors']));
+                }
                 $order->shippingAddress->update($data['shipping']);
             }
             if (isset($data['billing']) && $order->billingAddress) {
@@ -356,20 +362,12 @@ class OrderService implements OrderServiceInterface
                 'status' => OrderStatus::Refunded,
             ]);
 
-            // Create refund record
-            $order->refunds()->create([
-                'amount' => $order->total,
-                'reason' => $reason
-            ]);
-
-            // Create reversal payment record
-            $order->payments()->create([
-                'method' => $order->payments()->latest()->first()?->method ?? 'other',
-                'amount' => -$order->total,
-                'status' => 'refunded',
-                'currency' => $order->currency ?? 'VND',
-                'reference' => 'Refund for order #' . $order->number
-            ]);
+            try {
+                $this->refundService->processRefund($order, $order->total, $reason, 'full');
+            } catch (\Exception $e) {
+                \Log::error("Refund failed: " . $e->getMessage());
+                throw $e;
+            }
 
             return true;
         });

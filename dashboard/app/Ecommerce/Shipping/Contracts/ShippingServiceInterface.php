@@ -24,4 +24,20 @@ interface ShippingServiceInterface
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function getShippingZoneTableQuery(): Builder;
+
+    /**
+     * Validate shipping address data.
+     *
+     * @param array $addressData
+     * @return array ['is_valid' => bool, 'errors' => array]
+     */
+    public function validateAddress(array $addressData): array;
+
+    /**
+     * Get location info based on postcode/address.
+     *
+     * @param string $postcode
+     * @return array|null
+     */
+    public function getLocationInfo(string $postcode): ?array;
 }

@@ -72,4 +72,38 @@ class ShippingService implements ShippingServiceInterface
     {
         return $this->shippingZoneRepository->query();
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function validateAddress(array $addressData): array
+    {
+        $errors = [];
+        
+        // Basic required fields validation
+        $requiredFields = ['first_name', 'last_name', 'phone', 'address_detail', 'country_code', 'city_id'];
+        foreach ($requiredFields as $field) {
+            if (empty($addressData[$field])) {
+                $errors[$field] = "Trường {$field} là bắt buộc.";
+            }
+        }
+
+        // In the future, this can call an external API (like GHN/Ahamove/ViettelPost)
+        // to verify if the ward/district/city combination is strictly valid.
+
+        return [
+            'is_valid' => empty($errors),
+            'errors' => $errors
+        ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getLocationInfo(string $postcode): ?array
+    {
+        // Placeholder for future API integration (e.g. Google Maps API, or local Postal Code DB)
+        // Currently we don't have a local postcode lookup DB, so we return null or a mock.
+        return null;
+    }
 }

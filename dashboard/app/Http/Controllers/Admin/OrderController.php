@@ -240,9 +240,12 @@ class OrderController extends BaseCrudController
         ]);
 
         // 1. Delegate entirely to OrderService
-        $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
-        $orderService->updateOrder($order, $data);
-
-        return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.messages.updated'));
+        try {
+            $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
+            $orderService->updateOrder($order, $data);
+            return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.messages.updated'));
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 }

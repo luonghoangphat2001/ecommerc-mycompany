@@ -141,6 +141,10 @@ class ServiceServiceProvider extends ServiceProvider
             \App\Ecommerce\Combo\Contracts\ComboServiceInterface::class,
             \App\Ecommerce\Combo\Services\ComboService::class
         );
+        $this->app->bind(
+            \App\Ecommerce\Order\Contracts\RefundServiceInterface::class,
+            \App\Ecommerce\Order\Services\RefundService::class
+        );
     }
 
     /**
