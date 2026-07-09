@@ -52,9 +52,6 @@ class ApplyDiscount
         $result->discountTotal = $discountAmount;
         $result->total -= $discountAmount;
 
-        return $next([
-            'request' => $request,
-            'result' => $result
-        ]);
+        return $next($passable);
     }
 }

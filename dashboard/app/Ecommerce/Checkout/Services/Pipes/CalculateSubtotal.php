@@ -43,9 +43,6 @@ class CalculateSubtotal
         $result->subtotal = $subtotal;
         $result->total = $subtotal;
 
-        return $next([
-            'request' => $request,
-            'result' => $result
-        ]);
+        return $next($passable);
     }
 }

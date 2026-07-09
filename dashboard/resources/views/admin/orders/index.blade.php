@@ -31,41 +31,68 @@
     @endif
 
     <div class="table-panel card">
-        <div class="toolbar-row" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
-            <form method="get" class="searchbar" style="display: flex; flex-wrap: wrap; gap: 10px; width: 100%; align-items: center;">
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __('admin.actions.search') }} mã đơn hàng...">
+        <form method="get" style="background: #f8fafc; border-bottom: 1px solid var(--fi-border); padding: 20px; border-radius: 8px 8px 0 0; margin: -22px -22px 22px -22px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <!-- Search -->
+                <div>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Mã đơn hàng</label>
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="VD: 10001...">
+                </div>
+
+                <!-- Customer -->
+                <div>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Khách hàng</label>
+                    <input type="text" name="customer" value="{{ request('customer') }}" placeholder="Tên / Email / SĐT">
+                </div>
                 
-                <select name="status">
-                    <option value="">-- Trạng thái --</option>
-                    @foreach(['pending', 'new', 'processing', 'delivering', 'completed', 'cancelled', 'refunded'] as $s)
-                        <option value="{{ $s }}" @selected(request('status') === $s)>{{ ucfirst($s) }}</option>
-                    @endforeach
-                </select>
+                <!-- Status -->
+                <div>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Trạng thái đơn</label>
+                    <select name="status">
+                        <option value="">-- Tất cả --</option>
+                        @foreach(['pending', 'new', 'processing', 'delivering', 'completed', 'cancelled', 'refunded'] as $s)
+                            <option value="{{ $s }}" @selected(request('status') === $s)>{{ ucfirst($s) }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                <select name="payment_status">
-                    <option value="">-- Thanh toán --</option>
-                    @foreach(['pending', 'paid', 'failed', 'refunded'] as $ps)
-                        <option value="{{ $ps }}" @selected(request('payment_status') === $ps)>{{ ucfirst($ps) }}</option>
-                    @endforeach
-                </select>
+                <!-- Payment Status -->
+                <div>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Thanh toán</label>
+                    <select name="payment_status">
+                        <option value="">-- Tất cả --</option>
+                        @foreach(['pending', 'paid', 'failed', 'refunded'] as $ps)
+                            <option value="{{ $ps }}" @selected(request('payment_status') === $ps)>{{ ucfirst($ps) }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                <input type="text" name="customer" value="{{ request('customer') }}" placeholder="Tên/Email/SĐT KH">
+                <!-- Date range -->
+                <div>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Từ ngày</label>
+                    <input type="date" name="date_from" value="{{ request('date_from') }}">
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Đến ngày</label>
+                    <input type="date" name="date_to" value="{{ request('date_to') }}">
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                <a href="{{ route($routePrefix . '.index') }}" class="btn btn-secondary" style="padding: 8px 16px; font-weight: 600; min-height: 38px; color: #475569;">Reset</a>
+                <button class="btn btn-primary" type="submit" style="padding: 8px 24px; font-weight: 600; min-height: 38px;">Lọc dữ liệu</button>
+            </div>
+        </form>
 
-                <input type="date" name="date_from" value="{{ request('date_from') }}" placeholder="Từ ngày">
-                <input type="date" name="date_to" value="{{ request('date_to') }}" placeholder="Đến ngày">
-
-                <button class="btn btn-secondary" type="submit">Lọc</button>
-                <a href="{{ route($routePrefix . '.index') }}" class="btn" style="background: transparent; color: var(--text-color); border: 1px solid var(--border-color);">Xóa</a>
+        @if ($canImportExport ?? false)
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+            <form method="post" action="{{ route($routePrefix . '.import') }}" class="import-form" enctype="multipart/form-data">
+                @csrf
+                <input type="file" name="file" accept=".csv,text/csv" style="height: 38px; max-width: 250px;">
+                <button class="btn btn-secondary" type="submit">{{ __('admin.actions.import_csv') }}</button>
             </form>
-
-            @if ($canImportExport ?? false)
-                <form method="post" action="{{ route($routePrefix . '.import') }}" class="import-form" enctype="multipart/form-data" style="margin-left: auto;">
-                    @csrf
-                    <input type="file" name="file" accept=".csv,text/csv">
-                    <button class="btn btn-secondary" type="submit">{{ __('admin.actions.import_csv') }}</button>
-                </form>
-            @endif
         </div>
+        @endif
 
         @error('file')
             <div class="error import-error">{{ $message }}</div>

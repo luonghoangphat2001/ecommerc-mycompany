@@ -190,8 +190,8 @@ class OrderController extends BaseCrudController
         $couponSettings = app(\App\Settings\CouponSettings::class);
         $loyaltySettings = app(\App\Settings\LoyaltySettings::class);
         $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
-
-        return view('admin.orders.edit', compact('order', 'checkoutSettings', 'couponSettings', 'loyaltySettings', 'orderService'));
+        $shippingMethods = \App\Models\ShippingMethod::where('is_enabled', true)->get();
+        return view('admin.orders.edit', compact('order', 'checkoutSettings', 'couponSettings', 'loyaltySettings', 'orderService', 'shippingMethods'));
     }
 
     public function update(Request $request, int $id): RedirectResponse
@@ -205,16 +205,38 @@ class OrderController extends BaseCrudController
             'items.*.qty' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'internal_note' => ['nullable', 'string'],
+            'shipping_method_id' => ['nullable', 'integer', 'exists:shop_shipping_methods,id'],
+            'coupon_code' => ['nullable', 'string', 'exists:shop_coupons,code'],
+            'redeemed_points' => ['nullable', 'integer', 'min:0'],
+            'manual_tax_amount' => ['nullable', 'integer', 'min:0'],
             
+            // Refund Flow Fields
+            'refund_type' => ['nullable', 'string', 'in:full,partial'],
+            'refund_amount' => ['nullable', 'integer', 'min:0'],
+            'refund_reason' => ['nullable', 'string'],
+
             'shipping.first_name' => ['nullable', 'string'],
             'shipping.last_name' => ['nullable', 'string'],
             'shipping.phone' => ['nullable', 'string'],
+            'shipping.email' => ['nullable', 'email'],
             'shipping.address_detail' => ['nullable', 'string'],
-            
+            'shipping.address_line_2' => ['nullable', 'string'],
+            'shipping.city_id' => ['nullable', 'string'],
+            'shipping.state_id' => ['nullable', 'string'],
+            'shipping.country_code' => ['nullable', 'string'],
+            'shipping.postal_code' => ['nullable', 'string'],
             'billing.first_name' => ['nullable', 'string'],
             'billing.last_name' => ['nullable', 'string'],
             'billing.phone' => ['nullable', 'string'],
+            'billing.email' => ['nullable', 'email'],
             'billing.address_detail' => ['nullable', 'string'],
+            'billing.address_line_2' => ['nullable', 'string'],
+            'billing.city_id' => ['nullable', 'string'],
+            'billing.state_id' => ['nullable', 'string'],
+            'billing.country_code' => ['nullable', 'string'],
+            'billing.postal_code' => ['nullable', 'string'],
+        ], [
+            'coupon_code.exists' => 'Mã giảm giá không tồn tại trong hệ thống.',
         ]);
 
         // 1. Delegate entirely to OrderService

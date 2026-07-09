@@ -50,9 +50,6 @@ class CalculateShipping
             // Log error or handle unavailable shipping
         }
 
-        return $next([
-            'request' => $request,
-            'result' => $result
-        ]);
+        return $next($passable);
     }
 }

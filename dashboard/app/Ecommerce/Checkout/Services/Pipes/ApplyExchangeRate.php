@@ -41,9 +41,6 @@ class ApplyExchangeRate
         $result->currency = $targetCurrency;
         $result->exchangeRate = $rate;
 
-        return $next([
-            'request' => $request,
-            'result' => $result
-        ]);
+        return $next($passable);
     }
 }

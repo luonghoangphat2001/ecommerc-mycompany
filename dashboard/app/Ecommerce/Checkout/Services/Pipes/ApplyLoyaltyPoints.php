@@ -42,9 +42,6 @@ class ApplyLoyaltyPoints
         $result->loyaltyDiscountTotal = $discountAmount;
         $result->total = max(0, $result->total - $discountAmount);
 
-        return $next([
-            'request' => $request,
-            'result' => $result
-        ]);
+        return $next($passable);
     }
 }

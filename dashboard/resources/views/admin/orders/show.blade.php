@@ -218,6 +218,8 @@
                     <table>
                         <thead>
                             <tr>
+                                <th>Loại</th>
+                                <th>Trạng thái</th>
                                 <th>Lý do</th>
                                 <th class="text-right">Amount</th>
                                 <th class="text-right">Ngày hoàn</th>
@@ -225,7 +227,25 @@
                         </thead>
                         <tbody>
                             @foreach ($order->refunds as $refund)
+                                @php
+                                    $type = $refund->metadata['type'] ?? 'full';
+                                    $status = $refund->metadata['status'] ?? 'completed';
+                                @endphp
                                 <tr>
+                                    <td>
+                                        @if($type === 'full')
+                                            <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; background:#fee2e2; color:#991b1b; font-weight:500;">Toàn phần</span>
+                                        @else
+                                            <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; background:#fef08a; color:#854d0e; font-weight:500;">Một phần</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($status === 'completed')
+                                            <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; background:#dcfce7; color:#166534; font-weight:500;">Thành công</span>
+                                        @else
+                                            <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; background:#f1f5f9; color:#475569; font-weight:500;">{{ ucfirst($status) }}</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $refund->reason ?: '—' }}</td>
                                     <td class="text-right font-bold" style="color:#991b1b;">-{{ $money($refund->amount) }}</td>
                                     <td class="text-right" style="color:#64748b; font-size:13px;">{{ $refund->created_at?->format('Y-m-d H:i') }}</td>
@@ -388,8 +408,11 @@
                                     @endif
                                     <div style="margin-top:8px; color:#475569;">
                                         {{ $order->shippingAddress->address_detail }}<br>
-                                        {{ $order->shippingAddress->ward_id ? $order->shippingAddress->ward_id . ', ' : '' }}
-                                        {{ $order->shippingAddress->city_id }} {{ $order->shippingAddress->state_id }}
+                                        @if($order->shippingAddress->address_line_2)
+                                            {{ $order->shippingAddress->address_line_2 }}<br>
+                                        @endif
+                                        {{ $order->shippingAddress->city_id }} {{ $order->shippingAddress->state_id }} {{ $order->shippingAddress->postal_code }}<br>
+                                        {{ $order->shippingAddress->country_code }}
                                     </div>
                                 @else
                                     <span style="color:#94a3b8;">Chưa có địa chỉ giao hàng</span>
@@ -414,10 +437,16 @@
                                 @if($order->billingAddress)
                                     <div><strong>{{ $order->billingAddress->first_name }} {{ $order->billingAddress->last_name }}</strong></div>
                                     <div>{{ $order->billingAddress->phone }}</div>
+                                    @if($order->billingAddress->email)
+                                        <div>{{ $order->billingAddress->email }}</div>
+                                    @endif
                                     <div style="margin-top:8px; color:#475569;">
                                         {{ $order->billingAddress->address_detail }}<br>
-                                        {{ $order->billingAddress->ward_id ? $order->billingAddress->ward_id . ', ' : '' }}
-                                        {{ $order->billingAddress->city_id }} {{ $order->billingAddress->state_id }}
+                                        @if($order->billingAddress->address_line_2)
+                                            {{ $order->billingAddress->address_line_2 }}<br>
+                                        @endif
+                                        {{ $order->billingAddress->city_id }} {{ $order->billingAddress->state_id }} {{ $order->billingAddress->postal_code }}<br>
+                                        {{ $order->billingAddress->country_code }}
                                     </div>
                                 @else
                                     <span style="color:#94a3b8;">Giống địa chỉ giao hàng</span>

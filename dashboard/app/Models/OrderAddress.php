@@ -27,6 +27,7 @@ class OrderAddress extends Model
         'email',
         'country_code',
         'address_detail',
+        'address_line_2',
         'city_id',
         'state_id',
         'ward_id',

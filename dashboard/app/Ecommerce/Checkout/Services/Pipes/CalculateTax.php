@@ -73,9 +73,6 @@ class CalculateTax
         $result->taxTotal = $taxTotal;
         $result->total += $taxTotal;
 
-        return $next([
-            'request' => $request,
-            'result' => $result
-        ]);
+        return $next($passable);
     }
 }

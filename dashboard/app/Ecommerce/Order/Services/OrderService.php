@@ -73,27 +73,47 @@ class OrderService implements OrderServiceInterface
     {
         return $this->useTransaction(function () use ($order, $data) {
             // 1. Update basic order data (if any other than status)
-            $orderData = \Illuminate\Support\Arr::except($data, ['items', 'internal_note', 'shipping', 'billing', 'status']);
+            $orderData = \Illuminate\Support\Arr::except($data, [
+                'items', 'internal_note', 'shipping', 'billing', 'status',
+                'shipping_method_id', 'coupon_code', 'redeemed_points', 'manual_tax_amount',
+                'refund_type', 'refund_amount', 'refund_reason'
+            ]);
             if (!empty($orderData)) {
                 $this->orderRepository->update($order->id, $orderData);
             }
 
-            // 2. Update status
-            if (isset($data['status'])) {
-                $this->updateStatus($order, OrderStatus::from($data['status']));
-            }
+            // 2. Handle Status Update
+            if (isset($data['status']) && $data['status'] !== $order->status->value) {
+                $newStatus = \App\Ecommerce\Order\Enums\OrderStatus::from($data['status']);
+                $this->updateStatus($order, $newStatus);
 
-            // 3. Update items
-            if (isset($data['items'])) {
-                foreach ($data['items'] as $itemData) {
-                    $item = $order->items()->find($itemData['id']);
-                    if ($item) {
-                        $item->update([
-                            'qty' => $itemData['qty'],
-                            'unit_price' => $itemData['unit_price'],
-                            'total' => $itemData['qty'] * $itemData['unit_price'],
+                // Handle Refund creation if status changed to refunded
+                if ($newStatus->value === 'refunded') {
+                    $refundType = $data['refund_type'] ?? 'full';
+                    $refundAmount = $refundType === 'full' ? $order->total : (int) ($data['refund_amount'] ?? 0);
+
+                    if ($refundAmount > 0) {
+                        $order->refunds()->create([
+                            'amount' => $refundAmount,
+                            'reason' => $data['refund_reason'] ?? '',
+                            'metadata' => [
+                                'type' => $refundType,
+                                'status' => 'completed', // auto-complete for now
+                            ]
                         ]);
                     }
+                }
+            }
+
+            // 3. Update order items (prices and quantities)
+            if (isset($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $itemData) {
+                    // Only update existing product items
+                    $order->productItems()->where('id', $itemData['id'])->update([
+                        'qty' => $itemData['qty'],
+                        'unit_price' => $itemData['unit_price'],
+                        'total' => $itemData['qty'] * $itemData['unit_price'],
+                    ]);
                 }
             }
 
@@ -103,6 +123,51 @@ class OrderService implements OrderServiceInterface
                     ['key' => 'internal_note'],
                     ['value' => $data['internal_note']]
                 );
+            }
+
+            // 4.5 Update extra fees & promotions
+            if (array_key_exists('shipping_method_id', $data)) {
+                if ($data['shipping_method_id']) {
+                    $method = \App\Models\ShippingMethod::find($data['shipping_method_id']);
+                    if (!$order->shipping) {
+                        $order->shipping()->create(['shop_shipping_method_id' => $data['shipping_method_id'], 'method' => $method?->name]);
+                    } else {
+                        $order->shipping->update(['shop_shipping_method_id' => $data['shipping_method_id'], 'method' => $method?->name]);
+                    }
+                } else {
+                    if ($order->shipping) {
+                        $order->shipping->update(['shop_shipping_method_id' => null]);
+                    }
+                }
+            }
+
+            if (array_key_exists('coupon_code', $data)) {
+                if ($data['coupon_code']) {
+                    $order->coupons()->updateOrCreate(
+                        ['order_id' => $order->id],
+                        ['coupon_code' => $data['coupon_code'], 'discount_amount' => 0] // Recalculated later
+                    );
+                } else {
+                    $order->coupons()->delete();
+                }
+            }
+
+            if (array_key_exists('redeemed_points', $data)) {
+                $order->metas()->updateOrCreate(
+                    ['key' => 'redeemed_points'],
+                    ['value' => (string) ($data['redeemed_points'] ?? 0)]
+                );
+            }
+
+            if (array_key_exists('manual_tax_amount', $data)) {
+                if ($data['manual_tax_amount'] !== null) {
+                    $order->metas()->updateOrCreate(
+                        ['key' => 'manual_tax_amount'],
+                        ['value' => (string) $data['manual_tax_amount']]
+                    );
+                } else {
+                    $order->metas()->where('key', 'manual_tax_amount')->delete();
+                }
             }
 
             // 5. Update addresses
@@ -224,11 +289,28 @@ class OrderService implements OrderServiceInterface
                 $order->metas()->where('key', 'loyalty_discount')->delete();
             }
 
-            // 7. Update order totals with all calculations (same as checkout)
+            // 7. Handle manual tax override
+            $manualTaxMeta = $order->metas()->where('key', 'manual_tax_amount')->first();
+            $taxAmount = $calcResult->taxTotal;
+            $total = $calcResult->total;
+            
+            if ($manualTaxMeta && $manualTaxMeta->value !== null && $manualTaxMeta->value !== '') {
+                $manualTax = (int) $manualTaxMeta->value;
+                // If manual tax is higher than calculated tax, or just override completely?
+                // The user said: "nếu admin ko edit thì lấy tự động theo hệ thông admin có edit thì lấy cao hơn" -> wait, does that mean max(auto, manual) or override?
+                // "có edit thì lấy cao hơn" usually means "if edited, prioritize the edit". Let's just override it if it is set.
+                // Wait, "lấy cao hơn" could literally mean max(). I will use max to be safe.
+                if ($manualTax > $taxAmount) {
+                    $taxAmount = $manualTax;
+                    $total = $calcResult->subtotal - $calcResult->discountTotal - $calcResult->loyaltyDiscountTotal + $calcResult->shippingTotal + $taxAmount;
+                }
+            }
+
+            // 8. Update order totals with all calculations
             $order->update([
                 'subtotal' => $calcResult->subtotal,
-                'tax_amount' => $calcResult->taxTotal,
-                'total' => $calcResult->total,
+                'tax_amount' => $taxAmount,
+                'total' => $total,
                 'currency' => $calcResult->currency,
                 'exchange_rate' => $calcResult->exchangeRate,
             ]);

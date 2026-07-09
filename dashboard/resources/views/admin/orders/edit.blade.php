@@ -104,7 +104,7 @@
                                 </tr>
                             </thead>
                             <tbody id="items-table-body">
-                                @foreach ($order->items as $index => $item)
+                                @foreach ($order->productItems as $index => $item)
                                     <tr class="order-item-row">
                                         <td>
                                             <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item->id }}">
@@ -134,23 +134,53 @@
                     <!-- Shipping -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Địa chỉ nhận hàng</h3>
+                            <h3 class="card-title">Địa chỉ giao hàng (Shipping)</h3>
                         </div>
                         <div class="card-body">
                             <div class="form-row">
                                 <label class="form-label">Họ Tên</label>
                                 <div style="display:flex; gap:8px;">
-                                    <input type="text" class="form-control" name="shipping[first_name]" value="{{ $order->shippingAddress?->first_name }}" placeholder="First Name">
-                                    <input type="text" class="form-control" name="shipping[last_name]" value="{{ $order->shippingAddress?->last_name }}" placeholder="Last Name">
+                                    <input type="text" class="form-control" name="shipping[first_name]" value="{{ $order->shippingAddress?->first_name }}" placeholder="Họ">
+                                    <input type="text" class="form-control" name="shipping[last_name]" value="{{ $order->shippingAddress?->last_name }}" placeholder="Tên">
+                                </div>
+                            </div>
+                            <div class="form-row" style="display:flex; gap:8px;">
+                                <div style="flex:1;">
+                                    <label class="form-label">SĐT</label>
+                                    <input type="text" class="form-control" name="shipping[phone]" value="{{ $order->shippingAddress?->phone }}">
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="shipping[email]" value="{{ $order->shippingAddress?->email }}">
                                 </div>
                             </div>
                             <div class="form-row">
-                                <label class="form-label">SĐT</label>
-                                <input type="text" class="form-control" name="shipping[phone]" value="{{ $order->shippingAddress?->phone }}">
+                                <label class="form-label">Địa chỉ 1 (Address Line 1)</label>
+                                <input type="text" class="form-control" name="shipping[address_detail]" value="{{ $order->shippingAddress?->address_detail }}" placeholder="Số nhà, Tên đường...">
                             </div>
                             <div class="form-row">
-                                <label class="form-label">Địa chỉ chi tiết</label>
-                                <input type="text" class="form-control" name="shipping[address_detail]" value="{{ $order->shippingAddress?->address_detail }}">
+                                <label class="form-label">Địa chỉ 2 (Address Line 2)</label>
+                                <input type="text" class="form-control" name="shipping[address_line_2]" value="{{ $order->shippingAddress?->address_line_2 }}" placeholder="Tòa nhà, Khu phố...">
+                            </div>
+                            <div class="form-row" style="display:flex; gap:8px;">
+                                <div style="flex:1;">
+                                    <label class="form-label">Thành phố (City)</label>
+                                    <input type="text" class="form-control" name="shipping[city_id]" value="{{ $order->shippingAddress?->city_id }}">
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="form-label">Tỉnh / Bang (State)</label>
+                                    <input type="text" class="form-control" name="shipping[state_id]" value="{{ $order->shippingAddress?->state_id }}">
+                                </div>
+                            </div>
+                            <div class="form-row" style="display:flex; gap:8px;">
+                                <div style="flex:1;">
+                                    <label class="form-label">Quốc gia (Country)</label>
+                                    <input type="text" class="form-control" name="shipping[country_code]" value="{{ $order->shippingAddress?->country_code ?? 'VN' }}">
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="form-label">Mã bưu điện (Zip)</label>
+                                    <input type="text" class="form-control" name="shipping[postal_code]" value="{{ $order->shippingAddress?->postal_code }}">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -158,23 +188,53 @@
                     <!-- Billing -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Địa chỉ thanh toán</h3>
+                            <h3 class="card-title">Địa chỉ thanh toán (Billing)</h3>
                         </div>
                         <div class="card-body">
                             <div class="form-row">
                                 <label class="form-label">Họ Tên</label>
                                 <div style="display:flex; gap:8px;">
-                                    <input type="text" class="form-control" name="billing[first_name]" value="{{ $order->billingAddress?->first_name }}" placeholder="First Name">
-                                    <input type="text" class="form-control" name="billing[last_name]" value="{{ $order->billingAddress?->last_name }}" placeholder="Last Name">
+                                    <input type="text" class="form-control" name="billing[first_name]" value="{{ $order->billingAddress?->first_name }}" placeholder="Họ">
+                                    <input type="text" class="form-control" name="billing[last_name]" value="{{ $order->billingAddress?->last_name }}" placeholder="Tên">
+                                </div>
+                            </div>
+                            <div class="form-row" style="display:flex; gap:8px;">
+                                <div style="flex:1;">
+                                    <label class="form-label">SĐT</label>
+                                    <input type="text" class="form-control" name="billing[phone]" value="{{ $order->billingAddress?->phone }}">
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="billing[email]" value="{{ $order->billingAddress?->email }}">
                                 </div>
                             </div>
                             <div class="form-row">
-                                <label class="form-label">SĐT</label>
-                                <input type="text" class="form-control" name="billing[phone]" value="{{ $order->billingAddress?->phone }}">
+                                <label class="form-label">Địa chỉ 1 (Address Line 1)</label>
+                                <input type="text" class="form-control" name="billing[address_detail]" value="{{ $order->billingAddress?->address_detail }}" placeholder="Số nhà, Tên đường...">
                             </div>
                             <div class="form-row">
-                                <label class="form-label">Địa chỉ chi tiết</label>
-                                <input type="text" class="form-control" name="billing[address_detail]" value="{{ $order->billingAddress?->address_detail }}">
+                                <label class="form-label">Địa chỉ 2 (Address Line 2)</label>
+                                <input type="text" class="form-control" name="billing[address_line_2]" value="{{ $order->billingAddress?->address_line_2 }}" placeholder="Tòa nhà, Khu phố...">
+                            </div>
+                            <div class="form-row" style="display:flex; gap:8px;">
+                                <div style="flex:1;">
+                                    <label class="form-label">Thành phố (City)</label>
+                                    <input type="text" class="form-control" name="billing[city_id]" value="{{ $order->billingAddress?->city_id }}">
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="form-label">Tỉnh / Bang (State)</label>
+                                    <input type="text" class="form-control" name="billing[state_id]" value="{{ $order->billingAddress?->state_id }}">
+                                </div>
+                            </div>
+                            <div class="form-row" style="display:flex; gap:8px;">
+                                <div style="flex:1;">
+                                    <label class="form-label">Quốc gia (Country)</label>
+                                    <input type="text" class="form-control" name="billing[country_code]" value="{{ $order->billingAddress?->country_code ?? 'VN' }}">
+                                </div>
+                                <div style="flex:1;">
+                                    <label class="form-label">Mã bưu điện (Zip)</label>
+                                    <input type="text" class="form-control" name="billing[postal_code]" value="{{ $order->billingAddress?->postal_code }}">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -208,6 +268,56 @@
                                 @endforeach
                             </select>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Adjustments -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Phụ phí & Khuyến mãi</h3>
+                    </div>
+                    <div class="card-body">
+                        @if($checkoutSettings->enable_shipping)
+                        <div class="form-row">
+                            <label class="form-label">Phương thức vận chuyển</label>
+                            <select name="shipping_method_id" class="form-control">
+                                <option value="">--- Chọn phương thức ---</option>
+                                @foreach($shippingMethods as $method)
+                                    <option value="{{ $method->id }}" @selected($order->shipping?->shop_shipping_method_id === $method->id)>
+                                        {{ $method->name }} ({{ number_format($method->base_fee ?? 0, 0, ',', '.') }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
+                        
+                        @if($couponSettings->enable_coupons)
+                        <div class="form-row">
+                            <label class="form-label">Mã giảm giá (Coupon Code)</label>
+                            <input type="text" name="coupon_code" class="form-control" value="{{ $order->coupons->first()?->coupon_code }}" placeholder="Nhập mã...">
+                        </div>
+                        @endif
+
+                        @if($loyaltySettings->enabled)
+                        <div class="form-row">
+                            <label class="form-label">Điểm Loyalty cần đổi</label>
+                            @php
+                                $redeemedPoints = (int) ($order->metas->where('key', 'redeemed_points')->first()?->value ?? 0);
+                            @endphp
+                            <input type="number" name="redeemed_points" class="form-control" value="{{ $redeemedPoints }}" min="0" step="1">
+                        </div>
+                        @endif
+                        
+                        @if($checkoutSettings->enable_tax)
+                        <div class="form-row">
+                            <label class="form-label">Ghi đè Thuế (Manual Tax Override)</label>
+                            @php
+                                $manualTaxAmount = $order->metas->where('key', 'manual_tax_amount')->first()?->value;
+                            @endphp
+                            <input type="number" name="manual_tax_amount" class="form-control" value="{{ $manualTaxAmount }}" min="0" step="1" placeholder="Bỏ trống để tự tính...">
+                            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Hệ thống đang tính: {{ number_format($order->tax_amount ?? 0, 0, ',', '.') }}</div>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
@@ -260,14 +370,45 @@
                                 <span class="summary-value" style="font-size: 20px; color:#2563eb;">{{ number_format($order->total, 0, ',', '.') }}</span>
                             </div>
                             <span style="font-size: 12px; color: #64748b; margin-top: 4px; font-style: italic;">
-                                Tổng tiền sẽ được hệ thống tính toán lại tự động dựa trên cấu hình Settings khi bạn nhấn "Lưu thay đổi".
+                                Tổng tiền sẽ được hệ thống tính toán lại tự động dựa trên cấu hình Settings và các giá trị Phụ phí khi bạn nhấn "Lưu thay đổi".
                             </span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        <!-- Refund Modal -->
+        <div id="refund-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+            <div style="background: #fff; border-radius: 12px; width: 400px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px;">Hoàn tiền Đơn hàng</h3>
+                
+                <div class="form-row">
+                    <label class="form-label">Loại Hoàn tiền</label>
+                    <select name="refund_type" id="refund_type" class="form-control" onchange="document.getElementById('refund_amount_container').style.display = this.value === 'partial' ? 'block' : 'none'">
+                        <option value="full">Hoàn tiền Toàn phần</option>
+                        <option value="partial">Hoàn tiền Một phần</option>
+                    </select>
+                </div>
+                
+                <div class="form-row" id="refund_amount_container" style="display: none;">
+                    <label class="form-label">Số tiền hoàn (Nếu là một phần)</label>
+                    <input type="number" name="refund_amount" id="refund_amount" class="form-control" min="0" step="1" placeholder="Nhập số tiền...">
+                </div>
+                
+                <div class="form-row">
+                    <label class="form-label">Lý do hoàn tiền</label>
+                    <textarea name="refund_reason" id="refund_reason" class="form-control" placeholder="Nhập lý do..."></textarea>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeRefundModal()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Đóng</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmRefundModal()" style="padding: 8px 16px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Xác nhận</button>
+                </div>
+            </div>
+        </div>
     </form>
+
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -295,6 +436,27 @@
             document.querySelectorAll('.js-item-price, .js-item-qty').forEach(el => {
                 el.addEventListener('input', calculateSubtotals);
             });
+
+            // Refund Modal Logic
+            const statusSelect = document.querySelector('select[name="status"]');
+            const refundModal = document.getElementById('refund-modal');
+            let originalStatus = statusSelect.value;
+            
+            statusSelect.addEventListener('change', function(e) {
+                if (this.value === 'refunded') {
+                    refundModal.style.display = 'flex';
+                }
+            });
+
+            window.closeRefundModal = function() {
+                refundModal.style.display = 'none';
+                statusSelect.value = originalStatus;
+            };
+
+            window.confirmRefundModal = function() {
+                refundModal.style.display = 'none';
+                originalStatus = 'refunded';
+            };
         });
     </script>
 @endsection
