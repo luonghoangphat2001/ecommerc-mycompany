@@ -74,6 +74,10 @@ class Product extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'product_images',
+        'image',
+        'sale_price',
+        'sale_start_date',
+        'sale_end_date',
     ];
 
     public function taxClass(): BelongsTo
@@ -95,12 +99,37 @@ class Product extends Model implements HasMedia
         'backorder' => 'boolean',
         'requires_shipping' => 'boolean',
         'published_at' => 'date',
+        'sale_start_date' => 'datetime',
+        'sale_end_date' => 'datetime',
         'product_images' => 'array',
     ];
 
     public function featuredImage()
     {
         return $this->belongsTo(Media::class, 'product_images');
+    }
+
+    public function getImageAttribute()
+    {
+        return $this->product_images; // Returns the Media ID so show_field can render it
+    }
+
+    public function setImageAttribute($value)
+    {
+        if (is_numeric($value)) {
+            $this->attributes['product_images'] = $value;
+        } elseif (is_string($value)) {
+            // It's a file path, create Media record
+            $media = \Awcodes\Curator\Models\Media::create([
+                'disk' => 'public',
+                'directory' => 'uploads',
+                'name' => basename($value),
+                'path' => $value,
+                'size' => \Illuminate\Support\Facades\Storage::disk('public')->exists($value) ? \Illuminate\Support\Facades\Storage::disk('public')->size($value) : 0,
+                'visibility' => 'public',
+            ]);
+            $this->attributes['product_images'] = $media->id;
+        }
     }
 
     /**

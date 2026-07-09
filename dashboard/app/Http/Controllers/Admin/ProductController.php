@@ -41,7 +41,7 @@ class ProductController extends BaseCrudController
             ],
             'pricing' => [
                 'label' => 'Giá & Tồn kho',
-                'fields' => ['price', 'old_price', 'cost', 'qty', 'security_stock', 'backorder', 'requires_shipping'],
+                'fields' => ['price', 'old_price', 'sale_price', 'sale_start_date', 'sale_end_date', 'cost', 'qty', 'security_stock', 'backorder', 'requires_shipping'],
             ],
             'content' => [
                 'label' => 'Mô tả',
@@ -80,6 +80,9 @@ class ProductController extends BaseCrudController
 
             'price' => ['label' => 'Giá', 'type' => 'number', 'rules' => ['required', 'numeric', 'min:0']],
             'old_price' => ['label' => 'Giá gốc', 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
+            'sale_price' => ['label' => 'Giá Sale', 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
+            'sale_start_date' => ['label' => 'Ngày bắt đầu Sale', 'type' => 'datetime-local', 'rules' => ['nullable', 'date'], 'hideOnIndex' => true],
+            'sale_end_date' => ['label' => 'Ngày kết thúc Sale', 'type' => 'datetime-local', 'rules' => ['nullable', 'date', 'after_or_equal:sale_start_date'], 'hideOnIndex' => true],
             'cost' => ['label' => 'Cost', 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
             'qty' => ['label' => 'Qty', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']],
 
@@ -132,10 +135,7 @@ class ProductController extends BaseCrudController
     {
         $data = parent::mutateData($data, $record);
         unset($data['categories'], $data['tags']);
-        if (isset($data['image'])) {
-            $data['product_images'] = [$data['image']];
-            unset($data['image']);
-        }
+        // Do not unset image, let Product mutator handle creating Media and assigning product_images
         return $data;
     }
 
@@ -156,6 +156,9 @@ class ProductController extends BaseCrudController
             'shop_brand_id' => ['nullable', 'integer', 'exists:shop_brands,id'],
             'price' => ['required', 'numeric', 'min:0'],
             'old_price' => ['nullable', 'numeric', 'min:0'],
+            'sale_price' => ['nullable', 'numeric', 'min:0'],
+            'sale_start_date' => ['nullable', 'date'],
+            'sale_end_date' => ['nullable', 'date', 'after_or_equal:sale_start_date'],
             'cost' => ['nullable', 'numeric', 'min:0'],
             'qty' => ['nullable', 'integer', 'min:0'],
             'security_stock' => ['nullable', 'integer', 'min:0'],
