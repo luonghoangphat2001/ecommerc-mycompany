@@ -8,7 +8,7 @@ const useAuthStore = create(
   persist(
     (set, get) => ({
       user: null,
-      accessToken: null,
+      access_token: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -24,10 +24,10 @@ const useAuthStore = create(
           const response = await authService.login(email, password);
           const data = unwrapApiObject(response);
           const user = data.user || data;
-          const token = data.accessToken || data.token;
+          const token = data.access_token;
           set({
             user,
-            accessToken: token || null,
+            access_token: token || null,
             isAuthenticated: true,
             isLoading: false
           });
@@ -54,7 +54,7 @@ const useAuthStore = create(
         } finally {
           set({
             user: null,
-            accessToken: null,
+            access_token: null,
             isAuthenticated: false,
             isLoading: false
           });
@@ -77,13 +77,25 @@ const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
+      version: 1,
       storage: createJSONStorage(() => localStorage),
+      migrate: (persistedState) => {
+        const token = persistedState?.state?.access_token ?? persistedState?.state?.accessToken ?? null;
+
+        return {
+          ...persistedState,
+          state: {
+            ...persistedState?.state,
+            access_token: token,
+          },
+        };
+      },
       onRehydrateStorage: () => (state) => {
         state.setHasHydrated(true);
       },
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
+        access_token: state.access_token,
         isAuthenticated: state.isAuthenticated
       }),
     }

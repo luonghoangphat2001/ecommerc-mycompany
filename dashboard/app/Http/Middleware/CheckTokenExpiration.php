@@ -10,6 +10,9 @@ use Carbon\Carbon;
 
 class CheckTokenExpiration
 {
+    private const ACCESS_TOKEN_TTL_SECONDS = 900;
+    private const REFRESH_TOKEN_TTL_SECONDS = 604800;
+
     /**
      * Handle an incoming request.
      *
@@ -30,8 +33,15 @@ class CheckTokenExpiration
         }
 
         $createdAt = Carbon::parse($accessToken->created_at);
-        if ($createdAt->diffInMinutes(Carbon::now()) > 15) {
+        $tokenAgeInSeconds = $createdAt->diffInSeconds(Carbon::now());
+
+        if ($tokenAgeInSeconds > self::REFRESH_TOKEN_TTL_SECONDS) {
             $accessToken->delete();
+
+            return response()->json(['message' => 'Token expired'], 401);
+        }
+
+        if ($tokenAgeInSeconds > self::ACCESS_TOKEN_TTL_SECONDS) {
             return response()->json(['message' => 'Token expired'], 401);
         }
 

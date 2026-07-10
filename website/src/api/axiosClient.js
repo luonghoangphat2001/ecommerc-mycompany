@@ -16,7 +16,7 @@ axiosClient.interceptors.request.use(
   (config) => {
     try {
       const authStorage = JSON.parse(localStorage.getItem('auth-storage'));
-      const token = authStorage?.state?.accessToken;
+      const token = authStorage?.state?.access_token;
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -75,11 +75,11 @@ axiosClient.interceptors.response.use(
         return new Promise(function (resolve, reject) {
           axiosClient.post('auth/refresh-token')
             .then((refreshResponse) => {
-              const accessToken = refreshResponse?.accessToken || refreshResponse?.token;
+              const accessToken = refreshResponse?.access_token;
               try {
                 const authStorage = JSON.parse(localStorage.getItem('auth-storage'));
                 if (authStorage && authStorage.state) {
-                  authStorage.state.accessToken = accessToken;
+                  authStorage.state.access_token = accessToken;
                   localStorage.setItem('auth-storage', JSON.stringify(authStorage));
                 }
               } catch (e) {

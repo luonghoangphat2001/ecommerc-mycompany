@@ -19,16 +19,54 @@ class ModuleLogger
     }
 
     // Static helpers for specific modules
-    public static function order(): self { return new self('order'); }
-    public static function product(): self { return new self('product'); }
-    public static function post(): self { return new self('post'); }
-    public static function user(): self { return new self('user'); }
-    public static function payment(): self { return new self('payment'); }
-    public static function refund(): self { return new self('refund'); }
-    public static function shipping(): self { return new self('shipping'); }
-    public static function webhook(): self { return new self('webhook'); }
-    public static function auth(): self { return new self('auth'); }
-    public static function system(): self { return new self('system'); }
+    public static function order(): self
+    {
+        return new self('order');
+    }
+    
+    public static function product(): self
+    {
+        return new self('product');
+    }
+    public static function post(): self
+    {
+        return new self('post');
+    }
+
+    public static function user(): self
+    {
+        return new self('user');
+    }
+    
+    public static function payment(): self
+    {
+        return new self('payment');
+    }
+
+    public static function refund(): self
+    {
+        return new self('refund');
+    }
+
+    public static function shipping(): self
+    {
+        return new self('shipping');
+    }
+
+    public static function webhook(): self
+    {
+        return new self('webhook');
+    }
+
+    public static function auth(): self
+    {
+        return new self('auth');
+    }
+
+    public static function system(): self
+    {
+        return new self('system');
+    }
 
     public function log(string $level, string $action, string $message, array $context = []): void
     {
@@ -36,8 +74,8 @@ class ModuleLogger
         $context['action'] = $action;
 
         // Ensure the channel exists, fallback to daily if not
-        $channel = in_array($this->module, array_keys(config('logging.channels'))) 
-            ? $this->module 
+        $channel = in_array($this->module, array_keys(config('logging.channels')))
+            ? $this->module
             : 'daily';
 
         Log::channel($channel)->log($level, $message, $context);

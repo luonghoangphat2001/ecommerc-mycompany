@@ -58,6 +58,7 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         // Auth (Public)
         Route::prefix('auth')->group(function () {
             Route::post('login', [AuthController::class, 'login']);
+            Route::post('refresh-token', [AuthController::class, 'refreshToken']);
         });
 
         // Address Metadata (Countries/States)

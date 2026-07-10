@@ -80,6 +80,38 @@ class AuthController extends BaseApiController
     }
 
     #[ApiPost(
+        path: '/auth/refresh-token',
+        summary: 'Refresh Access Token',
+        tags: 'Storefront - Authentication',
+        requiresAuth: false,
+        requestBody: new OAT\RequestBody(
+            required: false
+        ),
+        responseData: [
+            new OAT\Property(property: 'access_token', type: 'string', example: '1|xyz...'),
+            new OAT\Property(property: 'token_type', type: 'string', example: 'Bearer'),
+            new OAT\Property(property: 'expires_in', type: 'integer', example: 900),
+            new OAT\Property(property: 'user', type: 'object')
+        ]
+    )]
+    public function refreshToken(Request $request)
+    {
+        $bearerToken = $request->bearerToken();
+
+        if (!$bearerToken) {
+            return $this->unauthorized('Token not found');
+        }
+
+        $authData = $this->authService->refreshToken($bearerToken);
+
+        if (!$authData) {
+            return $this->unauthorized('Token expired');
+        }
+
+        return response()->json($authData, 200);
+    }
+
+    #[ApiPost(
         path: '/auth/logout',
         summary: 'Logout',
         tags: 'Storefront - Authentication',
