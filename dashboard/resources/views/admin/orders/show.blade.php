@@ -411,7 +411,7 @@
                                         @if($order->shippingAddress->address_line_2)
                                             {{ $order->shippingAddress->address_line_2 }}<br>
                                         @endif
-                                        {{ $order->shippingAddress->city_id }} {{ $order->shippingAddress->state_id }} {{ $order->shippingAddress->postal_code }}<br>
+                                        {{ $order->shippingAddress->ward_id }} {{ $order->shippingAddress->city_id }} {{ $order->shippingAddress->state_id }} {{ $order->shippingAddress->postal_code }}<br>
                                         {{ $order->shippingAddress->country_code }}
                                     </div>
                                 @else
@@ -445,7 +445,7 @@
                                         @if($order->billingAddress->address_line_2)
                                             {{ $order->billingAddress->address_line_2 }}<br>
                                         @endif
-                                        {{ $order->billingAddress->city_id }} {{ $order->billingAddress->state_id }} {{ $order->billingAddress->postal_code }}<br>
+                                        {{ $order->billingAddress->ward_id }} {{ $order->billingAddress->city_id }} {{ $order->billingAddress->state_id }} {{ $order->billingAddress->postal_code }}<br>
                                         {{ $order->billingAddress->country_code }}
                                     </div>
                                 @else

@@ -67,7 +67,7 @@ class PlaceOrderAction
             $this->createOrderAddresses($order, $dto);
 
             // 7. Finalize order
-            return $this->finalizeOrder($order);
+            return $this->finalizeOrder($order, $dto);
         });
     }
 
@@ -146,7 +146,7 @@ class PlaceOrderAction
             state_id: $dto->shippingAddress['state'] ?? null,
             city_id: $dto->shippingAddress['city'] ?? null,
             ward_id: $dto->shippingAddress['region'] ?? null,
-            address_detail: $dto->shippingAddress['street'] ?? '',
+            address_detail: trim(($dto->shippingAddress['street'] ?? '') . (isset($dto->shippingAddress['address_line_2']) && $dto->shippingAddress['address_line_2'] ? ', ' . $dto->shippingAddress['address_line_2'] : '')),
         );
 
         $calcRequest = new CheckoutRequestDTO(
@@ -363,7 +363,7 @@ class PlaceOrderAction
             'state_id' => $dto->shippingAddress['state'] ?? null,
             'city_id' => $dto->shippingAddress['city'] ?? null,
             'ward_id' => $dto->shippingAddress['region'] ?? null,
-            'address_detail' => $dto->shippingAddress['street'] ?? '',
+            'address_detail' => trim(($dto->shippingAddress['street'] ?? '') . (isset($dto->shippingAddress['address_line_2']) && $dto->shippingAddress['address_line_2'] ? ', ' . $dto->shippingAddress['address_line_2'] : '')),
         ];
 
         $billingData = [
@@ -376,7 +376,7 @@ class PlaceOrderAction
             'state_id' => $dto->billingAddress['state'] ?? null,
             'city_id' => $dto->billingAddress['city'] ?? null,
             'ward_id' => $dto->billingAddress['region'] ?? null,
-            'address_detail' => $dto->billingAddress['street'] ?? '',
+            'address_detail' => trim(($dto->billingAddress['street'] ?? '') . (isset($dto->billingAddress['address_line_2']) && $dto->billingAddress['address_line_2'] ? ', ' . $dto->billingAddress['address_line_2'] : '')),
         ];
 
         $order->shippingAddress()->create($shippingData);
@@ -407,9 +407,16 @@ class PlaceOrderAction
     /**
      * Finalize order: load relations, dispatch event, log activity.
      */
-    private function finalizeOrder(Order $order): Order
+    private function finalizeOrder(Order $order, OrderDataDTO $dto): Order
     {
         $order->load('shippingAddress', 'billingAddress');
+
+        if ($dto->notes) {
+            $order->metas()->create([
+                'key' => 'customer_notes',
+                'value' => $dto->notes
+            ]);
+        }
 
         event(new OrderCreated($order));
 

@@ -8,7 +8,7 @@ import { unwrapApiObject } from '../../../api/apiResponse';
 
 const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
   const navigate = useNavigate();
-  const { items, clearCart } = useCartStore();
+  const { items, summary, clearCart } = useCartStore();
   const translate = useSettingsStore((state) => state.translate);
   const { getShippingFormData, getBillingFormData } = useUserAddress();
 
@@ -128,6 +128,8 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
           state: formData.state,
           region: formData.region,
           sub_region: formData.subRegion,
+          address_line_2: formData.subRegion,
+          email: formData.email,
         },
         billing_address: formData.billingSameAsShipping ? undefined : {
           first_name: formData.billingFirstName,
@@ -140,6 +142,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
           state: formData.billingState,
           region: formData.billingRegion,
           sub_region: formData.billingSubRegion,
+          address_line_2: formData.billingSubRegion,
         },
         items: items.map(item => ({
           product_id: item.id,
@@ -148,7 +151,8 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
         })),
         shipping_method: formData.shippingMethod || 'flat_rate',
         payment_method: formData.paymentMethod || 'cod',
-        notes: formData.note
+        notes: formData.note,
+        coupon_code: summary?.coupon?.code || summary?.coupon_code || undefined
       };
 
       const response = await orderService.create(orderData);
