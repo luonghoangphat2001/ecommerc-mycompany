@@ -3,12 +3,12 @@ import { Link } from "react-router-dom"
 import { Mail, Phone, MapPin } from "lucide-react"
 import useSettingsStore from "../../store/useSettingsStore"
 import { useMenu } from "../../features/menu/hooks/useMenu"
-import { useFormatters } from "../../utils/useFormatters"
+
 
 const Footer = () => {
     const { settings, translate } = useSettingsStore()
     const { menuItems: footerMenuItems } = useMenu('footer-menu')
-    const { formatCurrency } = useFormatters()
+    
 
     const { general, footer } = settings || {}
     const currentYear = new Date().getFullYear()
@@ -19,7 +19,7 @@ const Footer = () => {
     const storePhone = general?.store_phone || "1900 1234"
     const storeCountry = general?.store_country || "Vietnam"
     const copyright = footer?.copyright || `© ${currentYear} ${storeName}. All rights reserved.`
-    const footerLinks = footer?.links || []
+    
 
     return (
         <footer className="w-full bg-slate-900 text-slate-300 z-10">
@@ -107,10 +107,10 @@ const Footer = () => {
                     <div className="space-y-4">
                         <h4 className="text-white font-semibold">{translate?.("footer.follow_us") || "Theo dõi chúng tôi"}</h4>
                         <div className="flex gap-3">
-                            <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-blue-600 transition-colors text-white text-sm font-bold">f</a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-pink-600 transition-colors text-white text-sm font-bold">IG</a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-sky-500 transition-colors text-white text-sm font-bold">X</a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-600 transition-colors text-white text-sm font-bold">YT</a>
+                            <a href="#!" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-blue-600 transition-colors text-white text-sm font-bold">f</a>
+                            <a href="#!" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-pink-600 transition-colors text-white text-sm font-bold">IG</a>
+                            <a href="#!" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-sky-500 transition-colors text-white text-sm font-bold">X</a>
+                            <a href="#!" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-red-600 transition-colors text-white text-sm font-bold">YT</a>
                         </div>
                         
                         {/* Payment Methods */}

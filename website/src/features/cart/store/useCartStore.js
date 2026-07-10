@@ -14,44 +14,49 @@ const useCartStore = create(
       closeCart: () => set({ isCartOpen: false }),
       openCart: () => set({ isCartOpen: true }),
 
-        addToCart: (product, quantity = 1) => {
-            const currentById = get().itemsById || {};
-            const existingItem = currentById[product.id];
-            
-            let updatedById;
-            if (existingItem) {
-                updatedById = {
-                    ...currentById,
-                    [product.id]: { ...existingItem, quantity: existingItem.quantity + quantity }
-                };
-            } else {
-                updatedById = {
-                    ...currentById,
-                    [product.id]: { 
-                        ...product, 
-                        quantity,
-                        selectedWarehouse: product.selectedWarehouse || null
-                    }
-                };
-            }
-            
-            set({
-                itemsById: updatedById,
-                items: Object.values(updatedById)
-            });
-        },
+      addToCart: async (product, quantity = 1) => {
+        const currentById = get().itemsById || {};
+        const existingItem = currentById[product.id];
 
-      removeFromCart: (productId) => {
+        let updatedById;
+        if (existingItem) {
+          updatedById = {
+            ...currentById,
+            [product.id]: { ...existingItem, quantity: existingItem.quantity + quantity }
+          };
+        } else {
+          updatedById = {
+            ...currentById,
+            [product.id]: {
+              ...product,
+              quantity,
+              selectedWarehouse: product.selectedWarehouse || null
+            }
+          };
+        }
+
+        set({
+          itemsById: updatedById,
+          items: Object.values(updatedById)
+        });
+
+        await get().syncWithBackend(Object.values(updatedById));
+      },
+
+      removeFromCart: async (productId) => {
         const currentById = { ...get().itemsById };
         delete currentById[productId];
+        const newItems = Object.values(currentById);
 
         set({
           itemsById: currentById,
-          items: Object.values(currentById)
+          items: newItems
         });
+
+        await get().syncWithBackend(newItems);
       },
 
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: async (productId, quantity) => {
         if (quantity <= 0) {
           get().removeFromCart(productId);
           return;
@@ -62,13 +67,44 @@ const useCartStore = create(
           currentById[productId] = { ...currentById[productId], quantity };
         }
 
+        const newItems = Object.values(currentById);
+
         set({
           itemsById: currentById,
-          items: Object.values(currentById)
+          items: newItems
         });
+
+        await get().syncWithBackend(newItems);
       },
 
-      clearCart: () => set({ items: [], itemsById: {}, summary: null, notifications: [] }),
+      clearCart: async () => {
+        set({ items: [], itemsById: {}, summary: null, notifications: [] });
+        await get().syncWithBackend([]);
+      },
+
+      syncWithBackend: async (items) => {
+        try {
+          const { default: cartApi } = await import('../services/cartApi');
+          // Map local items to the format expected by the API
+          const payload = items.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity,
+            variant_id: item.variant_id || null
+          }));
+
+          const response = await cartApi.syncCart(payload);
+          // Assuming response structure has { summary: {...}, items: [...] }
+          if (response && response.data) {
+            const data = response.data;
+            // We can optionally update local items from backend if backend returns enriched items
+            set({ summary: data.summary || data });
+          }
+        } catch (error) {
+          console.error("Cart sync failed", error);
+          const { default: toast } = await import('react-hot-toast');
+          toast.error("Không thể đồng bộ giỏ hàng với máy chủ.");
+        }
+      },
 
       // Set full cart data from API (items + summary + notifications)
       setCart: (data) => set({

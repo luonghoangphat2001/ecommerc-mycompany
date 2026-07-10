@@ -1,5 +1,5 @@
+import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 const PostPagination = ({ currentPage, totalPages, onPageChange }) => {
   const { translate } = useTranslation('common');

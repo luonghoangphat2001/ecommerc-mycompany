@@ -1,5 +1,5 @@
+import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 const ProductInventoryStatus = ({ inventoryStatus }) => {
   const { translate } = useTranslation('product');

@@ -1,7 +1,7 @@
 import React from "react"
 import { ChevronDown } from "lucide-react"
 
-const SELECT_BASE = "w-full px-4 py-3.5 bg-white/50 border border-slate-200 rounded-2xl " + "focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 " + "transition-all appearance-none pr-10"
+const SELECT_BASE = "w-full px-4 py-3.5 bg-white/50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none pr-10"
 
 const FormSelect = ({ label, name, value, onChange, options = [], placeholder = "", required = false, className = "" }) => {
     return (

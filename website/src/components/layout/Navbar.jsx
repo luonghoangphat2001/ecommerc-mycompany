@@ -39,7 +39,7 @@ const MenuItem = ({ item, translate }) => {
 }
 
 const Navbar = ({ translate }) => {
-    const { menuItems, isLoading } = useMenu('main-menu')
+    const { menuItems } = useMenu('main-menu')
 
     // Fallback menu items if API fails or loading
     const fallbackItems = [

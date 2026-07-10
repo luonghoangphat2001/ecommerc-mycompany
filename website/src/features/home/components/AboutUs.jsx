@@ -1,5 +1,5 @@
+import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 const AboutUs = ({ content }) => {
   const { translate } = useTranslation('about');
@@ -12,8 +12,8 @@ const AboutUs = ({ content }) => {
 
   return (
     <div className={containerClass}>
-      <h2 className={titleClass}>{content.title || t('title')}</h2>
-      <p className={descriptionClass}>{content.description || t('description')}</p>
+      <h2 className={titleClass}>{content.title || translate('title')}</h2>
+      <p className={descriptionClass}>{content.description || translate('description')}</p>
     </div>
   );
 };

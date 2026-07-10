@@ -1,6 +1,6 @@
 import React from "react"
 
-const BASE = "flex items-center gap-4 p-5 border-2 border-slate-200 rounded-2xl " + "cursor-pointer transition-all hover:border-slate-300"
+const BASE = "flex items-center gap-4 p-5 border-2 border-slate-200 rounded-2xl cursor-pointer transition-all hover:border-slate-300"
 
 const FormCheckbox = ({ label, name, checked, onChange, className = "" }) => {
     return (

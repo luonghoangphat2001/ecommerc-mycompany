@@ -1,10 +1,10 @@
+import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { formatDate } from '../../../utils/date';
 
 const PostDetail = ({ post }) => {
-  const { translate } = useTranslation('post');
+  const translate = useSettingsStore(state => state.translate);
 
   const containerClass = "max-w-4xl mx-auto py-8 px-4";
   const headerClass = "mb-8";

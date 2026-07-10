@@ -1,5 +1,5 @@
 import React from "react"
-import { Trash2, Plus, Minus, AlertCircle, CheckCircle2, MapPin } from "lucide-react"
+import { Trash2, Plus, Minus, AlertCircle, MapPin } from "lucide-react"
 import { useFormatters } from "../../../utils/useFormatters"
 
 const CartItem = ({ item, onUpdateQuantity, onRemove, notification }) => {

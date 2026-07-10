@@ -10,13 +10,16 @@ import OrderTracking from "../features/order/components/OrderTracking"
 import OrderDetail from "../features/order/components/OrderDetail"
 import orderService from "../features/order/services/orderService"
 import { unwrapApiList, unwrapApiObject } from "../api/apiResponse"
+import useSettingsStore from "../store/useSettingsStore"
+import { AccountDashboard, PaymentHistory, RefundHistory, CouponHistory, LoyaltyPoints } from "../features/account/components/AccountPlaceholders"
 
 const MyAccountPage = () => {
+    const translate = useSettingsStore((state) => state.translate)
     const { user, logout } = useAuthStore()
-    const [activeTab, setActiveTab] = useState("orders")
+    const [activeTab, setActiveTab] = useState("dashboard")
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [orders, setOrders] = useState([])
-    const [loading, setLoading] = useState(false)
+    
 
     useEffect(() => {
         if (activeTab === "orders") {
@@ -26,7 +29,6 @@ const MyAccountPage = () => {
 
     const fetchOrders = async () => {
         try {
-            setLoading(true)
             const response = await orderService.getAll()
             // API returns { success: true, data: [], meta: {...} }
             const ordersData = unwrapApiList(response, [])
@@ -35,8 +37,6 @@ const MyAccountPage = () => {
         } catch (error) {
             console.error("Failed to fetch orders:", error)
             setOrders([])
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -64,12 +64,17 @@ const MyAccountPage = () => {
                 />
 
                 <main className="flex-1">
+                    {activeTab === "dashboard" && <AccountDashboard user={user} translate={translate} />}
                     {activeTab === "orders" && <OrderHistory orders={orders} onViewOrder={handleViewOrder} />}
                     {activeTab === "profile" && <ProfileDetails user={user} />}
                     {activeTab === "address" && <AddressBook />}
                     {activeTab === "password" && <ChangePassword />}
                     {activeTab === "tracking" && <OrderTracking />}
                     {activeTab === "order-detail" && <OrderDetail order={selectedOrder} onBack={() => setActiveTab("orders")} />}
+                    {activeTab === "payments" && <PaymentHistory translate={translate} />}
+                    {activeTab === "refunds" && <RefundHistory translate={translate} />}
+                    {activeTab === "coupons" && <CouponHistory translate={translate} />}
+                    {activeTab === "loyalty" && <LoyaltyPoints translate={translate} />}
                 </main>
             </div>
         </div>

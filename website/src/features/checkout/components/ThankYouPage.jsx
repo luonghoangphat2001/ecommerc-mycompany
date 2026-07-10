@@ -1,5 +1,5 @@
+import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { formatOrderDate } from '../../../utils/date';
 import { formatCurrency } from '../../../utils/formatters';

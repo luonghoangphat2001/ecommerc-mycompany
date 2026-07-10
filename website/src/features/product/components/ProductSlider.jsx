@@ -1,5 +1,5 @@
+import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import ProductCard from './ProductCard';
 
 const ProductSlider = ({ products, title, loading }) => {

@@ -1,5 +1,5 @@
+import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 const HeroBanner = ({ content }) => {
   const { translate } = useTranslation('home');
@@ -15,8 +15,8 @@ const HeroBanner = ({ content }) => {
   return (
     <div className={containerClass}>
       <div className={contentClass}>
-        <h1 className={titleClass}>{content.title || t('hero_title')}</h1>
-        <p className={subtitleClass}>{content.subtitle || t('hero_subtitle')}</p>
+        <h1 className={titleClass}>{content.title || translate('hero_title')}</h1>
+        <p className={subtitleClass}>{content.subtitle || translate('hero_subtitle')}</p>
         <button className={buttonClass}>{translate('shop_now')}</button>
       </div>
     </div>

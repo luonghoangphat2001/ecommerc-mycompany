@@ -13,7 +13,7 @@ export const useMenu = (slug = 'main-menu') => {
         const response = await menuApi.getMenuBySlug(slug);
         return unwrapApiObject(response);
       } catch (error) {
-        console.error('Failed to fetch menu:', error);
+        // Silently fallback if menu not found
         return { menu_items: [] };
       }
     },
@@ -40,7 +40,7 @@ export const useAllMenus = () => {
         const response = await menuApi.getAllMenus();
         return unwrapApiList(response, []);
       } catch (error) {
-        console.error('Failed to fetch menus:', error);
+        // Silently fallback
         return [];
       }
     },

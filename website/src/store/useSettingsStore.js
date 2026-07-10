@@ -15,7 +15,7 @@ const useSettingsStore = create((set, get) => ({
   fetchSettings: async () => {
     set({ loading: true });
     try {
-      const response = await axiosClient.get('storefront-settings');
+      const response = await axiosClient.get('settings');
       const data = unwrapApiObject(response);
 
       set({
@@ -28,6 +28,21 @@ const useSettingsStore = create((set, get) => ({
         translations: data.translations || {},
         loading: false
       });
+
+      // Apply theme CSS variables if available
+      const root = document.documentElement;
+      if (data.theme) {
+        if (data.theme.primary_color) {
+          root.style.setProperty('--color-primary', data.theme.primary_color);
+        }
+        if (data.theme.secondary_color) {
+          root.style.setProperty('--color-secondary', data.theme.secondary_color);
+        }
+        if (data.theme.font_family) {
+          root.style.setProperty('--font-primary', data.theme.font_family);
+        }
+      }
+
     } catch (error) {
       console.error('Failed to fetch settings:', error);
       set({ loading: false });

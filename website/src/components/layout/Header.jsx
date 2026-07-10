@@ -11,7 +11,7 @@ import LanguageSwitcher from "./LanguageSwitcher"
 import Navbar from "./Navbar"
 
 const Header = () => {
-    const { user, _hasHydrated, cartCount, settings, language, currency, isMobileMenuOpen, isCartOpen, setLanguage, setCurrency, translate, handleLogout, toggleMobileMenu, closeMobileMenu, toggleCart, closeCart } = useHeader()
+    const { user, _hasHydrated, cartCount, settings, language, currency, isMobileMenuOpen, setLanguage, setCurrency, translate, handleLogout, toggleMobileMenu, closeMobileMenu, toggleCart } = useHeader()
 
     return (
         <header className="h-20 bg-white/60 backdrop-blur-xl border-b border-white/40 shadow-[0_4px_30px_rgba(0,0,0,0.05)] sticky top-0 z-50 px-4 sm:px-6 lg:px-8">

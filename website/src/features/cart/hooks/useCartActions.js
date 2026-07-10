@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import cartApi from '../services/cartApi';
 import useCartStore from '../store/useCartStore';
 
@@ -7,7 +7,7 @@ export const useCartActions = () => {
   const { setCart, clearCart: clearLocalCart } = useCartStore();
 
   const addToCartMutation = useMutation({
-    mutationFn: ({ productId, variantId, quantity }) => 
+    mutationFn: ({ productId, variantId, quantity }) =>
       cartApi.addToCart(productId, variantId, quantity),
     onSuccess: (data) => {
       setCart(data.data);
@@ -16,7 +16,7 @@ export const useCartActions = () => {
   });
 
   const updateCartItemMutation = useMutation({
-    mutationFn: ({ itemId, quantity }) => 
+    mutationFn: ({ itemId, quantity }) =>
       cartApi.updateCartItem(itemId, quantity),
     onSuccess: (data) => {
       setCart(data.data);
@@ -72,8 +72,8 @@ export const useCartActions = () => {
     clearCart: clearCartMutation.mutate,
     applyCoupon: applyCouponMutation.mutate,
     removeCoupon: removeCouponMutation.mutate,
-    isLoading: addToCartMutation.isLoading || 
-                updateCartItemMutation.isLoading || 
-                removeCartItemMutation.isLoading,
+    isLoading: addToCartMutation.isLoading ||
+      updateCartItemMutation.isLoading ||
+      removeCartItemMutation.isLoading,
   };
 };

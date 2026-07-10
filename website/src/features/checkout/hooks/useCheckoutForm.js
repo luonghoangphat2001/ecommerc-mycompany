@@ -8,7 +8,7 @@ import { unwrapApiObject } from '../../../api/apiResponse';
 
 const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
   const navigate = useNavigate();
-  const { items, clearCart, getCartTotal } = useCartStore();
+  const { items, clearCart } = useCartStore();
   const translate = useSettingsStore((state) => state.translate);
   const { getShippingFormData, getBillingFormData } = useUserAddress();
 
@@ -44,7 +44,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
     if (initialUser) {
       const shipping = getShippingFormData();
       const billing = getBillingFormData();
-      
+
       setFormData(prev => ({
         ...prev,
         firstName: shipping.firstName || prev.firstName,
@@ -72,6 +72,35 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
     }
   }, [initialUser, getShippingFormData, getBillingFormData]);
 
+  // Fetch shipping methods when address changes
+  useEffect(() => {
+    const fetchShipping = async () => {
+      try {
+        const { default: cartApi } = await import('../../cart/services/cartApi');
+        await cartApi.getShippingMethods(items, formData.country, formData.state);
+        // Dispatch to a store or handle locally if needed, for now just sync cart to get updated totals
+        if (formData.shippingMethod) {
+          const payload = items.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity,
+            variant_id: item.variant_id || null
+          }));
+          const syncRes = await cartApi.syncCart({ items: payload, shipping_method: formData.shippingMethod, country: formData.country, state: formData.state });
+          if (syncRes && syncRes.data) {
+            useCartStore.getState().setCart({ summary: syncRes.data.summary || syncRes.data });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch shipping/sync", err);
+      }
+    };
+
+    if (items.length > 0 && formData.country) {
+      const timeoutId = setTimeout(fetchShipping, 800); // debounce
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData.country, formData.state, formData.city, formData.shippingMethod, items]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -84,7 +113,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
 
     setIsSubmitting(true);
     setError(null);
-    
+
     try {
       const orderData = {
         email: formData.email,
@@ -124,7 +153,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
 
       const response = await orderService.create(orderData);
       const order = unwrapApiObject(response);
-      
+
       clearCart();
       // Redirect to professional success page with order data
       navigate('/checkout/success', { state: { order } });

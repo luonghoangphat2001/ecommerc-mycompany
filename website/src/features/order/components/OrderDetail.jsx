@@ -39,8 +39,8 @@ const OrderDetail = ({ order, onBack }) => {
                         </Card.Header>
                         <Card.Body>
                             <div className="space-y-6">
-                {items.map((item) => (
-                    <div key={item.id} className="flex gap-6 pb-6 border-b border-slate-100 last:border-0 last:pb-0">
+                                {items.map((item) => (
+                                    <div key={item.id} className="flex gap-6 pb-6 border-b border-slate-100 last:border-0 last:pb-0">
                                         <div className="w-20 h-20 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0">
                                             <img src={item.product?.image?.url || item.product?.image || "https://via.placeholder.com/200"} alt={item.product?.name || "Product"} className="w-full h-full object-cover" />
                                         </div>
@@ -48,12 +48,14 @@ const OrderDetail = ({ order, onBack }) => {
                                             <h4 className="font-bold text-slate-900">{item.product?.name || "Sản phẩm"}</h4>
                                             <p className="text-sm text-slate-500">Số lượng: {item.qty}</p>
                                             <p className="text-blue-600 font-black mt-1">{formatCurrency(item.unit_price)}</p>
-                                            
+
                                             {/* Warehouse Info */}
                                             {item.warehouse && (
                                                 <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
                                                     <MapPin size={12} />
-                                                    <span>{item.warehouse.name} - {item.warehouse.location}</span>
+                                                    <span>
+                                                        {item.warehouse.name} - {item.warehouse.location}
+                                                    </span>
                                                 </div>
                                             )}
                                         </div>
@@ -147,6 +149,32 @@ const OrderDetail = ({ order, onBack }) => {
                             </div>
                         </Card.Body>
                     </Card>
+
+                    {order.refunds && order.refunds.length > 0 && (
+                        <Card className="shadow-sm border-slate-100 mt-8">
+                            <Card.Header className="p-6 border-b border-slate-50">
+                                <div className="flex items-center gap-3 text-red-600 font-bold">
+                                    <Package size={18} />
+                                    Thông tin hoàn tiền
+                                </div>
+                            </Card.Header>
+                            <Card.Body className="p-6 space-y-4">
+                                {order.refunds.map((refund, idx) => (
+                                    <div key={idx} className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="font-bold text-slate-900">{refund.type === "full" ? "Hoàn toàn bộ" : "Hoàn 1 phần"}</span>
+                                            <span className={`px-2 py-1 text-xs font-bold rounded-full ${refund.status === "completed" ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"}`}>{refund.status === "completed" ? "Thành công" : "Đang xử lý"}</span>
+                                        </div>
+                                        <p className="text-sm text-slate-500 mb-1">
+                                            Số tiền: <span className="font-bold text-slate-900">{formatCurrency(refund.amount)}</span>
+                                        </p>
+                                        {refund.reason && <p className="text-sm text-slate-500 mb-1">Lý do: {refund.reason}</p>}
+                                        <p className="text-xs text-slate-400 mt-2">{new Date(refund.created_at).toLocaleDateString("vi-VN")}</p>
+                                    </div>
+                                ))}
+                            </Card.Body>
+                        </Card>
+                    )}
                 </div>
             </div>
         </div>

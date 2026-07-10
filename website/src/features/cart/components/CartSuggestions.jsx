@@ -1,5 +1,5 @@
+import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { useCartSuggestions } from '../hooks/useCartSuggestions';
 import ProductCard from '../../product/components/ProductCard';
 

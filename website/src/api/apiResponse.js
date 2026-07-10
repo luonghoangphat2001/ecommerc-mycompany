@@ -53,7 +53,7 @@ export class ApiService {
       ...config,
     });
 
-    return unwrapApiData(response);
+    return response;
   }
 
   get(url, config = {}) {

@@ -1,5 +1,5 @@
+import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { X, ShoppingBag, Truck, MapPin } from 'lucide-react';
 import { formatCurrency } from '../../../utils/formatters';
@@ -7,7 +7,7 @@ import useCartStore from '../store/useCartStore';
 import { useCartActions } from '../hooks/useCartActions';
 
 const MiniCart = ({ isOpen, onClose }) => {
-  const { t: translate } = useTranslation('cart');
+  const translate = useSettingsStore(state => state.translate);
   const { items, summary, getCartCount } = useCartStore();
   const { removeCartItem, updateCartItem } = useCartActions();
   

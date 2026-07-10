@@ -1,15 +1,23 @@
 import React from "react"
-import { User, Package, LogOut, ChevronRight, Lock, Truck, MapPin } from "lucide-react"
+import { User, Package, LogOut, ChevronRight, Lock, MapPin } from "lucide-react"
 import useSettingsStore from "../../../store/useSettingsStore"
 
 const AccountSidebar = ({ user, onLogout, activeTab, setActiveTab }) => {
     const translate = useSettingsStore((state) => state.translate)
+    const { getSetting } = useSettingsStore()
+    const couponsEnabled = getSetting("marketing.enable_coupons")
+    const loyaltyEnabled = getSetting("marketing.enable_loyalty")
+
     const menuItems = [
-        { id: "orders", label: translate("account.orders_title"), icon: Package },
+        { id: "dashboard", label: translate("account.dashboard_title") || "Dashboard", icon: User },
         { id: "profile", label: translate("account.profile_title"), icon: User },
         { id: "address", label: translate("account.addresses_title"), icon: MapPin },
+        { id: "orders", label: translate("account.orders_title"), icon: Package },
+        { id: "payments", label: translate("account.payments_title") || "Payments", icon: Lock }, // we can use CreditCard but not imported
+        { id: "refunds", label: translate("account.refunds_title") || "Refunds", icon: Package },
+        ...(couponsEnabled ? [{ id: "coupons", label: translate("account.coupons_title") || "Coupons", icon: Package }] : []),
+        ...(loyaltyEnabled ? [{ id: "loyalty", label: translate("account.loyalty_title") || "Loyalty Points", icon: Package }] : []),
         { id: "password", label: translate("account.password_title"), icon: Lock },
-        { id: "tracking", label: translate("account.tracking_title"), icon: Truck },
     ]
 
     return (
