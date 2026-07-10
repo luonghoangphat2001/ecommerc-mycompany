@@ -27,7 +27,7 @@ class AuthController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/auth/login',
+        path: '/login',
         summary: 'Storefront Login',
         tags: 'Storefront - Authentication',
         requiresAuth: false,
@@ -76,7 +76,7 @@ class AuthController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/auth/logout',
+        path: '/logout',
         summary: 'Logout',
         tags: 'Storefront - Authentication',
         requiresAuth: true
@@ -93,7 +93,7 @@ class AuthController extends Controller
     }
 
     #[ApiUpdate(
-        path: '/api/storefront/auth/profile',
+        path: '/profile',
         summary: 'Update Profile',
         tags: 'Storefront - Authentication',
         requiresAuth: true,

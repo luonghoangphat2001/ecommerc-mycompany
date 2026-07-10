@@ -27,7 +27,7 @@ class BrandController extends Controller
     ) {}
 
     #[ApiList(
-        path: '/api/storefront/v1/brands',
+        path: '/brands',
         summary: 'List of Brands',
         tags: 'Storefront - Brands',
         requiresAuth: false,
@@ -41,7 +41,7 @@ class BrandController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/v1/brands',
+        path: '/brands',
         summary: 'Create Brand',
         tags: 'Storefront - Brands',
         requestBody: new OAT\RequestBody(
@@ -67,7 +67,7 @@ class BrandController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/brands/{brand}',
+        path: '/brands/{brand}',
         summary: 'Brand Details',
         tags: 'Storefront - Brands',
         requiresAuth: false,
@@ -82,7 +82,7 @@ class BrandController extends Controller
     }
 
     #[ApiUpdate(
-        path: '/api/storefront/v1/brands/{brand}',
+        path: '/brands/{brand}',
         summary: 'Update Brand',
         tags: 'Storefront - Brands',
         parameters: [
@@ -110,7 +110,7 @@ class BrandController extends Controller
     }
 
     #[ApiDelete(
-        path: '/api/storefront/v1/brands/{brand}',
+        path: '/brands/{brand}',
         summary: 'Delete Brand',
         tags: 'Storefront - Brands',
         parameters: [

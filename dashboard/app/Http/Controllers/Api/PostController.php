@@ -27,7 +27,7 @@ class PostController extends Controller
     ) {}
 
     #[ApiList(
-        path: '/api/storefront/v1/posts',
+        path: '/posts',
         summary: 'List of Posts',
         tags: 'Storefront - Posts',
         requiresAuth: false
@@ -41,7 +41,7 @@ class PostController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/v1/posts',
+        path: '/posts',
         summary: 'Create Post',
         tags: 'Storefront - Posts',
         requestBody: new OAT\RequestBody(
@@ -66,7 +66,7 @@ class PostController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/posts/{post}',
+        path: '/posts/{post}',
         summary: 'Post Details',
         tags: 'Storefront - Posts',
         requiresAuth: false,
@@ -80,7 +80,7 @@ class PostController extends Controller
     }
 
     #[ApiUpdate(
-        path: '/api/storefront/v1/posts/{post}',
+        path: '/posts/{post}',
         summary: 'Update Post',
         tags: 'Storefront - Posts',
         parameters: [
@@ -105,7 +105,7 @@ class PostController extends Controller
     }
 
     #[ApiDelete(
-        path: '/api/storefront/v1/posts/{post}',
+        path: '/posts/{post}',
         summary: 'Delete Post',
         tags: 'Storefront - Posts',
         parameters: [

@@ -12,13 +12,13 @@
         }
     ],
     "paths": {
-        "/api/storefront/v1/countries": {
+        "/api/v1countries": {
             "get": {
                 "tags": [
                     "Storefront - Address"
                 ],
                 "summary": "List of Countries",
-                "operationId": "71c9611f4ed6d71f050b81285009a821",
+                "operationId": "f6185302c34be72712a69e8bd403801a",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -87,13 +87,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/countries/{countryCode}/states": {
+        "/api/v1countries/{countryCode}/states": {
             "get": {
                 "tags": [
                     "Storefront - Address"
                 ],
                 "summary": "List of States by Country",
-                "operationId": "0c66e9697a02f3b64025e8f8b81400f6",
+                "operationId": "3b1daab770f50380ad4aa50b1a2e5a14",
                 "parameters": [
                     {
                         "name": "countryCode",
@@ -174,13 +174,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/countries/{countryCode}/states/{stateId}/regions": {
+        "/api/v1countries/{countryCode}/states/{stateId}/regions": {
             "get": {
                 "tags": [
                     "Storefront - Address"
                 ],
                 "summary": "List of Regions by State",
-                "operationId": "8e17e367bc2084f7d7d1943ceb682379",
+                "operationId": "015e3b401656871cb6d0a22eb1d92d1e",
                 "parameters": [
                     {
                         "name": "countryCode",
@@ -271,13 +271,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions": {
+        "/api/v1countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions": {
             "get": {
                 "tags": [
                     "Storefront - Address"
                 ],
                 "summary": "List of Sub-Regions by Region",
-                "operationId": "9f3369a80c6fb3b9873df9d9be0e0607",
+                "operationId": "17eeb52dc99526d09b0185472d8531af",
                 "parameters": [
                     {
                         "name": "countryCode",
@@ -378,13 +378,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/user/addresses": {
+        "/api/v1user/addresses": {
             "get": {
                 "tags": [
                     "Storefront - User Address"
                 ],
                 "summary": "List of User Addresses",
-                "operationId": "326fdf24936dea8b282560854f864a76",
+                "operationId": "bc864c11e5da715dc529520e43eff6dc",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -481,7 +481,7 @@
                     "Storefront - User Address"
                 ],
                 "summary": "Add New Address",
-                "operationId": "81c7f1576ba1bba1a139e2d0bec339b1",
+                "operationId": "fa407d48e66c33e378d71e66057186ed",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -662,13 +662,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/user/addresses/{address}": {
+        "/api/v1user/addresses/{address}": {
             "put": {
                 "tags": [
                     "Storefront - User Address"
                 ],
                 "summary": "Update Address",
-                "operationId": "ad9acfe9055f150546a248e1899e3ec1",
+                "operationId": "8436a9dd309f6910917745dbabc28742",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -846,7 +846,7 @@
                     "Storefront - User Address"
                 ],
                 "summary": "Delete Address",
-                "operationId": "59109dd6a97088ac91a9c78d7ec4aef9",
+                "operationId": "eb8d771f13f618547013345d38c78983",
                 "parameters": [
                     {
                         "name": "address",
@@ -930,13 +930,13 @@
                 ]
             }
         },
-        "/api/storefront/auth/login": {
+        "/api/v1login": {
             "post": {
                 "tags": [
                     "Storefront - Authentication"
                 ],
                 "summary": "Storefront Login",
-                "operationId": "c9ac90415e1dd39a1ddff7f4bc29d67e",
+                "operationId": "ed11fa9530a57eba02c2b614b035d5a3",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1067,13 +1067,13 @@
                 "security": []
             }
         },
-        "/api/storefront/auth/logout": {
+        "/api/v1logout": {
             "post": {
                 "tags": [
                     "Storefront - Authentication"
                 ],
                 "summary": "Logout",
-                "operationId": "bffea5a9704c88ddc4d873e4c509df0a",
+                "operationId": "39ef77b45c2626aaf1751e0099e29f2f",
                 "responses": {
                     "201": {
                         "description": "Created successfully",
@@ -1146,13 +1146,13 @@
                 ]
             }
         },
-        "/api/storefront/auth/profile": {
+        "/api/v1profile": {
             "put": {
                 "tags": [
                     "Storefront - Authentication"
                 ],
                 "summary": "Update Profile",
-                "operationId": "cd188a5bcd52a19beef34a4bfa693f12",
+                "operationId": "0c9a4552017dc73feb4292a6a4e3fde3",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1284,13 +1284,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/brands": {
+        "/api/v1brands": {
             "get": {
                 "tags": [
                     "Storefront - Brands"
                 ],
                 "summary": "List of Brands",
-                "operationId": "6f820417baa4e8a107378c32dbd3e66f",
+                "operationId": "a1a542b7758ed1c9cbb80215a4b1ef5a",
                 "parameters": [
                     {
                         "name": "page",
@@ -1374,7 +1374,7 @@
                     "Storefront - Brands"
                 ],
                 "summary": "Create Brand",
-                "operationId": "789e9854599a3e40d95bb93e43b1f92e",
+                "operationId": "83a98391393d733fbac665b81549f1c0",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1480,13 +1480,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/brands/{brand}": {
+        "/api/v1brands/{brand}": {
             "get": {
                 "tags": [
                     "Storefront - Brands"
                 ],
                 "summary": "Brand Details",
-                "operationId": "e263463ca249741a10e9820492a35859",
+                "operationId": "bf5e55e05cfefc3c0276705116ca70b8",
                 "parameters": [
                     {
                         "name": "brand",
@@ -1561,7 +1561,7 @@
                     "Storefront - Brands"
                 ],
                 "summary": "Update Brand",
-                "operationId": "d0c35eeb99dcd1b26e1e20e7b13186ba",
+                "operationId": "581119ccff277178f9e21a6989781965",
                 "parameters": [
                     {
                         "name": "brand",
@@ -1679,7 +1679,7 @@
                     "Storefront - Brands"
                 ],
                 "summary": "Delete Brand",
-                "operationId": "1f74a456d930dbba2dc01c4cc0f489f9",
+                "operationId": "ae343de190e0831a9273f8a9815a6fe2",
                 "parameters": [
                     {
                         "name": "brand",
@@ -1757,13 +1757,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/cart": {
+        "/api/v1cart": {
             "post": {
                 "tags": [
                     "Storefront - Cart"
                 ],
                 "summary": "Get Cart Information",
-                "operationId": "e01997307371080bbaa04c004be7d1a2",
+                "operationId": "9f57fabad21f8eee6f99426353bc3a87",
                 "requestBody": {
                     "required": false,
                     "content": {
@@ -1901,7 +1901,7 @@
                     "Storefront - Cart"
                 ],
                 "summary": "Clear Cart",
-                "operationId": "b92a2ac9b5bd75f26629c78b21465833",
+                "operationId": "653306036fc5d2569c8ceb95f7f4b844",
                 "responses": {
                     "200": {
                         "description": "Deleted successfully",
@@ -1969,13 +1969,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/cart/sync": {
+        "/api/v1cart/sync": {
             "post": {
                 "tags": [
                     "Storefront - Cart"
                 ],
                 "summary": "Sync Cart",
-                "operationId": "7ab70427e07d4701268d109b8b5c87f6",
+                "operationId": "7d65218ac8381897f69a2f9b0346866f",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2109,13 +2109,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/cart/items": {
+        "/api/v1cart/items": {
             "post": {
                 "tags": [
                     "Storefront - Cart"
                 ],
                 "summary": "Add Item to Cart",
-                "operationId": "e648c0f3bec71098ac34ce777290ff30",
+                "operationId": "117c788dccf0c15889e8d1495376c488",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2236,13 +2236,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/cart/items/{itemId}": {
+        "/api/v1cart/items/{itemId}": {
             "put": {
                 "tags": [
                     "Storefront - Cart"
                 ],
                 "summary": "Update Item Quantity",
-                "operationId": "5f85466e48e56d07fd3093fcfc4eef43",
+                "operationId": "7613c999aec2b422859d120bce214f1f",
                 "parameters": [
                     {
                         "name": "itemId",
@@ -2360,7 +2360,7 @@
                     "Storefront - Cart"
                 ],
                 "summary": "Remove Item from Cart",
-                "operationId": "2043dbeb6f60c06601d8002360c7a5ab",
+                "operationId": "bcc3d6060bc2c1f50d6c2cba96f4de02",
                 "parameters": [
                     {
                         "name": "itemId",
@@ -2440,13 +2440,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/cart/shipping-methods": {
+        "/api/v1cart/shipping-methods": {
             "post": {
                 "tags": [
                     "Storefront - Cart"
                 ],
                 "summary": "Get Shipping Methods",
-                "operationId": "91cf988e76457eee7f6e6c149e684d79",
+                "operationId": "25b1cef341d5191a791b5f96f556e06f",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2564,13 +2564,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/combos": {
+        "/api/v1combos": {
             "get": {
                 "tags": [
                     "Storefront - Combos"
                 ],
                 "summary": "List of Combos",
-                "operationId": "79ca72c809387a002d80840a732529b8",
+                "operationId": "bded2f1938b78f681c51bf7a935dcadc",
                 "parameters": [
                     {
                         "name": "page",
@@ -2650,13 +2650,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/combos/{slug}": {
+        "/api/v1combos/{slug}": {
             "get": {
                 "tags": [
                     "Storefront - Combos"
                 ],
                 "summary": "Combo Details",
-                "operationId": "6152ddff2fd40b7d2901a63645ac81a8",
+                "operationId": "d882b91c6dc0013e41b0c8138f92df73",
                 "parameters": [
                     {
                         "name": "slug",
@@ -2727,13 +2727,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/coupons/apply": {
+        "/api/v1coupons/apply": {
             "post": {
                 "tags": [
                     "Storefront - Coupons"
                 ],
                 "summary": "Apply Coupon",
-                "operationId": "d640144e436631428fb606f9699c4c3d",
+                "operationId": "244032a77fe962a9120ff5c547cef9a3",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2853,13 +2853,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/products/{productId}/cross-sells": {
+        "/api/v1products/{productId}/cross-sells": {
             "get": {
                 "tags": [
                     "Storefront - Cross-sells"
                 ],
                 "summary": "List Cross-sells for Product",
-                "operationId": "9e4f28e3260885802a65001f12915898",
+                "operationId": "b9622cbb455347ce6175a9c307bbbd01",
                 "parameters": [
                     {
                         "name": "page",
@@ -2949,13 +2949,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/user/loyalty/points": {
+        "/api/v1user/loyalty/points": {
             "get": {
                 "tags": [
                     "Storefront - Loyalty"
                 ],
                 "summary": "Get User Loyalty Points",
-                "operationId": "5c59dd670fb00fd63aa45333616d54b2",
+                "operationId": "8d92ab9a41637c4061b495ff600b52a8",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -3041,13 +3041,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/user/loyalty/history": {
+        "/api/v1user/loyalty/history": {
             "get": {
                 "tags": [
                     "Storefront - Loyalty"
                 ],
                 "summary": "Loyalty Points History",
-                "operationId": "c55e9b7f991dac91ecd476bdf4044a8d",
+                "operationId": "61c5d77e92841a40abca9a03de584860",
                 "parameters": [
                     {
                         "name": "page",
@@ -3159,13 +3159,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/menus": {
+        "/api/v1menus": {
             "get": {
                 "tags": [
                     "Storefront - Menus"
                 ],
                 "summary": "List of Menus",
-                "operationId": "6b9b16a5f9971e1da844756ef62f81d6",
+                "operationId": "ca0d3ba0b1874fb7a1d9baafe081445e",
                 "parameters": [
                     {
                         "name": "page",
@@ -3245,13 +3245,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/menus/{slug}": {
+        "/api/v1menus/{slug}": {
             "get": {
                 "tags": [
                     "Storefront - Menus"
                 ],
                 "summary": "Menu Details (by Slug)",
-                "operationId": "46261052cb8405ac6370e0981f54c68a",
+                "operationId": "a8233af6d9236ef24971d0242be13a88",
                 "parameters": [
                     {
                         "name": "slug",
@@ -3322,13 +3322,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/orders": {
+        "/api/v1orders": {
             "get": {
                 "tags": [
                     "Storefront - Orders"
                 ],
                 "summary": "List of User Orders",
-                "operationId": "49acd9f7506ca90c24671c70cd22d78e",
+                "operationId": "7e91eb677e6580b8826187ff1a5d320f",
                 "parameters": [
                     {
                         "name": "page",
@@ -3416,7 +3416,7 @@
                     "Storefront - Orders"
                 ],
                 "summary": "Create New Order",
-                "operationId": "1e93785d59a68956b588fc95fc2a1ddd",
+                "operationId": "0e3eda3a3d72f9d02773dede626bbd2f",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -3565,13 +3565,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/orders/{order}": {
+        "/api/v1orders/{order}": {
             "get": {
                 "tags": [
                     "Storefront - Orders"
                 ],
                 "summary": "Order Details",
-                "operationId": "8e0cce5c8d888b8a5ca9137f619e819c",
+                "operationId": "eeb08a1ecbd7d964b2cf785dc0a2fcd2",
                 "parameters": [
                     {
                         "name": "order",
@@ -3650,7 +3650,7 @@
                     "Storefront - Orders"
                 ],
                 "summary": "Update Order Status/Notes",
-                "operationId": "52262419fae06c7c488e6b098a701808",
+                "operationId": "dc4ac1b5c4ef7f6959c00d8af1950074",
                 "parameters": [
                     {
                         "name": "order",
@@ -3759,7 +3759,7 @@
                     "Storefront - Orders"
                 ],
                 "summary": "Delete Order (Cancel)",
-                "operationId": "5b0013f8e3e94ee9fe6418b2dcede8f2",
+                "operationId": "38e8072d0f167b6653538e7775aef2a7",
                 "parameters": [
                     {
                         "name": "order",
@@ -3837,13 +3837,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/pages": {
+        "/api/v1pages": {
             "get": {
                 "tags": [
                     "Storefront - Pages"
                 ],
                 "summary": "List of Pages",
-                "operationId": "9ef7d74342ac064ef3b19a8cd5598059",
+                "operationId": "aed1f89b9d1707cdd3fc59b41b42c024",
                 "parameters": [
                     {
                         "name": "page",
@@ -3927,7 +3927,7 @@
                     "Storefront - Pages"
                 ],
                 "summary": "Create Page",
-                "operationId": "5ad7094bc096c7e13d6987d4f436ad42",
+                "operationId": "bf4d78910c046099ee5c66d7662a279d",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -4033,13 +4033,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/pages/{page}": {
+        "/api/v1pages/{page}": {
             "get": {
                 "tags": [
                     "Storefront - Pages"
                 ],
                 "summary": "Page Details",
-                "operationId": "b5f3c00b97514b9951d25982f54236f4",
+                "operationId": "6536d7a1df5c1820e3843ce6f81d0814",
                 "parameters": [
                     {
                         "name": "page",
@@ -4114,7 +4114,7 @@
                     "Storefront - Pages"
                 ],
                 "summary": "Update Page",
-                "operationId": "f594b5ad17613071314caeb1f417f75c",
+                "operationId": "b62d00fbcea30feeaaf4f0e6c7e26c7e",
                 "parameters": [
                     {
                         "name": "page",
@@ -4219,7 +4219,7 @@
                     "Storefront - Pages"
                 ],
                 "summary": "Delete Page",
-                "operationId": "117ff83362ba5d7a1eab1bad49738fd7",
+                "operationId": "e9cdc5203d1c4a8b94abce55b7080cc0",
                 "parameters": [
                     {
                         "name": "page",
@@ -4297,13 +4297,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/post-categories": {
+        "/api/v1post-categories": {
             "get": {
                 "tags": [
                     "Storefront - Post Categories"
                 ],
                 "summary": "List of Post Categories",
-                "operationId": "5094840395c9709d6f35dbfb29d8c2e5",
+                "operationId": "515225363785b0641600c17a6f69b7a2",
                 "parameters": [
                     {
                         "name": "page",
@@ -4387,7 +4387,7 @@
                     "Storefront - Post Categories"
                 ],
                 "summary": "Create Post Category",
-                "operationId": "24e2c39a5c443660f6048406e16a1820",
+                "operationId": "904cb4dc9fabbfe4f34a9e30d15a5be0",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -4488,13 +4488,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/post-categories/{postCategory}": {
+        "/api/v1post-categories/{postCategory}": {
             "get": {
                 "tags": [
                     "Storefront - Post Categories"
                 ],
                 "summary": "Post Category Details",
-                "operationId": "e2912248cc5aaa82a7eb6d3f36f41632",
+                "operationId": "59a1716f0e5784ddd33a54536f879ba7",
                 "parameters": [
                     {
                         "name": "postCategory",
@@ -4569,7 +4569,7 @@
                     "Storefront - Post Categories"
                 ],
                 "summary": "Update Post Category",
-                "operationId": "e162cca7bf004806f28f47180f3e9038",
+                "operationId": "b62008213968a506ad5ce20dc8258981",
                 "parameters": [
                     {
                         "name": "postCategory",
@@ -4674,7 +4674,7 @@
                     "Storefront - Post Categories"
                 ],
                 "summary": "Delete Post Category",
-                "operationId": "bba732a691ede8181afa53263a25008b",
+                "operationId": "e56db552f7aaea2968d1f9ab7179f28f",
                 "parameters": [
                     {
                         "name": "postCategory",
@@ -4752,13 +4752,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/post-categories/{postCategory}/posts": {
+        "/api/v1post-categories/{postCategory}/posts": {
             "get": {
                 "tags": [
                     "Storefront - Post Categories"
                 ],
                 "summary": "List of Posts in Category",
-                "operationId": "34e0f063c8aa98887f984f39b946c19f",
+                "operationId": "7ef0b8bfb8a652ad126a5c04c80eb696",
                 "parameters": [
                     {
                         "name": "page",
@@ -4848,13 +4848,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/posts": {
+        "/api/v1posts": {
             "get": {
                 "tags": [
                     "Storefront - Posts"
                 ],
                 "summary": "List of Posts",
-                "operationId": "743fb431ae1377b112c772238105e1b0",
+                "operationId": "86e862e12dccec9985ca4ad457a090eb",
                 "parameters": [
                     {
                         "name": "page",
@@ -4938,7 +4938,7 @@
                     "Storefront - Posts"
                 ],
                 "summary": "Create Post",
-                "operationId": "4d9d23683e8caaa9b51474dac5c4f00d",
+                "operationId": "041e31217951d370e6f4056b7d432ec9",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -5044,13 +5044,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/posts/{post}": {
+        "/api/v1posts/{post}": {
             "get": {
                 "tags": [
                     "Storefront - Posts"
                 ],
                 "summary": "Post Details",
-                "operationId": "33411633c7a0abb6a7df3f91e34dd5ef",
+                "operationId": "b3fc8cdf94617375dbb4f4ad8a3dcd3e",
                 "parameters": [
                     {
                         "name": "post",
@@ -5125,7 +5125,7 @@
                     "Storefront - Posts"
                 ],
                 "summary": "Update Post",
-                "operationId": "94e7b8a57df1c76dc82d59bfce1d1705",
+                "operationId": "e7b990458bb4573ac42a406e1749e9c0",
                 "parameters": [
                     {
                         "name": "post",
@@ -5234,7 +5234,7 @@
                     "Storefront - Posts"
                 ],
                 "summary": "Delete Post",
-                "operationId": "d233ce7a0a2de4bfc61efe60680abfa3",
+                "operationId": "a61f9e2396d8f3d52de6fce94301a167",
                 "parameters": [
                     {
                         "name": "post",
@@ -5312,13 +5312,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/product-categories": {
+        "/api/v1product-categories": {
             "get": {
                 "tags": [
                     "Storefront - Product Categories"
                 ],
                 "summary": "List of Product Categories",
-                "operationId": "c5fed02bd4f820719f4c1c2fa6511b7e",
+                "operationId": "d3cd5bb3986ce1e38867e7f1072ff59f",
                 "parameters": [
                     {
                         "name": "page",
@@ -5402,7 +5402,7 @@
                     "Storefront - Product Categories"
                 ],
                 "summary": "Create Product Category",
-                "operationId": "029e361b7b4d2ac17ff53fefc44bf069",
+                "operationId": "18c2993b469f89a0fe4226294a80e5aa",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -5508,13 +5508,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/product-categories/{productCategory}": {
+        "/api/v1product-categories/{productCategory}": {
             "get": {
                 "tags": [
                     "Storefront - Product Categories"
                 ],
                 "summary": "Product Category Details",
-                "operationId": "0a804f606c5d7b76373098347d0100d8",
+                "operationId": "32b6180a7bcf734422f587e6cf0b4aad",
                 "parameters": [
                     {
                         "name": "productCategory",
@@ -5589,7 +5589,7 @@
                     "Storefront - Product Categories"
                 ],
                 "summary": "Update Product Category",
-                "operationId": "9fa9d255fc87e8ffbc95f635f49e21e6",
+                "operationId": "ac39448482d2fb06072305b4f861e217",
                 "parameters": [
                     {
                         "name": "productCategory",
@@ -5707,7 +5707,7 @@
                     "Storefront - Product Categories"
                 ],
                 "summary": "Delete Product Category",
-                "operationId": "0b077165bba0e60007fb18fe818a7ec6",
+                "operationId": "a7e6affce8ae53395913f9a0edac2091",
                 "parameters": [
                     {
                         "name": "productCategory",
@@ -5785,13 +5785,13 @@
                 ]
             }
         },
-        "/api/storefront/v1/products": {
+        "/api/v1products": {
             "get": {
                 "tags": [
                     "Storefront - Products"
                 ],
                 "summary": "List of Products",
-                "operationId": "05f61f1c2ecccc55f402b4768dcfa0e8",
+                "operationId": "87c000ad1c81e3c6b3cc07e1b205b9a4",
                 "parameters": [
                     {
                         "name": "page",
@@ -5911,13 +5911,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/products/by-slug/{slug}": {
+        "/api/v1products/by-slug/{slug}": {
             "get": {
                 "tags": [
                     "Storefront - Products"
                 ],
                 "summary": "Product Details (by Slug)",
-                "operationId": "72528c00b136c5b0b8f45a15a8ed0638",
+                "operationId": "51d9171bc616e9d651893240436908b2",
                 "parameters": [
                     {
                         "name": "slug",
@@ -5988,13 +5988,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/products/{product}": {
+        "/api/v1products/{product}": {
             "get": {
                 "tags": [
                     "Storefront - Products"
                 ],
                 "summary": "Product Details (by ID)",
-                "operationId": "b3d8dba9498662e91c3cdd9ffbe345bf",
+                "operationId": "d7e0caf0fac57793d1950eb126212d9b",
                 "parameters": [
                     {
                         "name": "product",
@@ -6065,13 +6065,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/settings": {
+        "/api/v1settings": {
             "get": {
                 "tags": [
                     "Storefront - Settings"
                 ],
                 "summary": "Get Storefront Settings",
-                "operationId": "758151b17200dac60763c5a6c6622380",
+                "operationId": "0ae5ba3dcc06c3c0a50f13c5ffeff65b",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -6141,13 +6141,13 @@
                 "security": []
             }
         },
-        "/api/storefront/v1/products/{productId}/upsells": {
+        "/api/v1products/{productId}/upsells": {
             "get": {
                 "tags": [
                     "Storefront - Upsells"
                 ],
                 "summary": "List Upsells for Product",
-                "operationId": "f3fd3237c5e5ddf3e5cd343bf738e23e",
+                "operationId": "14c66374c95762e25131573dee6a4634",
                 "parameters": [
                     {
                         "name": "page",

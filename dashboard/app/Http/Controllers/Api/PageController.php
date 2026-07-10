@@ -26,7 +26,7 @@ class PageController extends Controller
     ) {}
 
     #[ApiList(
-        path: '/api/storefront/v1/pages',
+        path: '/pages',
         summary: 'List of Pages',
         tags: 'Storefront - Pages',
         requiresAuth: false
@@ -39,7 +39,7 @@ class PageController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/v1/pages',
+        path: '/pages',
         summary: 'Create Page',
         tags: 'Storefront - Pages',
         requestBody: new OAT\RequestBody(
@@ -64,7 +64,7 @@ class PageController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/pages/{page}',
+        path: '/pages/{page}',
         summary: 'Page Details',
         tags: 'Storefront - Pages',
         requiresAuth: false,
@@ -86,7 +86,7 @@ class PageController extends Controller
     }
 
     #[ApiUpdate(
-        path: '/api/storefront/v1/pages/{page}',
+        path: '/pages/{page}',
         summary: 'Update Page',
         tags: 'Storefront - Pages',
         parameters: [
@@ -110,7 +110,7 @@ class PageController extends Controller
     }
 
     #[ApiDelete(
-        path: '/api/storefront/v1/pages/{page}',
+        path: '/pages/{page}',
         summary: 'Delete Page',
         tags: 'Storefront - Pages',
         parameters: [

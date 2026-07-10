@@ -22,7 +22,7 @@ class CrossSellController extends Controller
     }
 
     #[ApiList(
-        path: '/api/storefront/v1/products/{productId}/cross-sells',
+        path: '/products/{productId}/cross-sells',
         summary: 'List Cross-sells for Product',
         tags: 'Storefront - Cross-sells',
         requiresAuth: false,

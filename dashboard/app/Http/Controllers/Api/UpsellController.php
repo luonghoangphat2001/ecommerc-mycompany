@@ -22,7 +22,7 @@ class UpsellController extends Controller
     }
 
     #[ApiList(
-        path: '/api/storefront/v1/products/{productId}/upsells',
+        path: '/products/{productId}/upsells',
         summary: 'List Upsells for Product',
         tags: 'Storefront - Upsells',
         requiresAuth: false,

@@ -20,7 +20,7 @@ class ProductController extends Controller
     ) {}
 
     #[ApiList(
-        path: '/api/storefront/v1/products',
+        path: '/products',
         summary: 'List of Products',
         tags: 'Storefront - Products',
         requiresAuth: false,
@@ -43,7 +43,7 @@ class ProductController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/products/by-slug/{slug}',
+        path: '/products/by-slug/{slug}',
         summary: 'Product Details (by Slug)',
         tags: 'Storefront - Products',
         requiresAuth: false,
@@ -67,7 +67,7 @@ class ProductController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/products/{product}',
+        path: '/products/{product}',
         summary: 'Product Details (by ID)',
         tags: 'Storefront - Products',
         requiresAuth: false,

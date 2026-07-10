@@ -15,6 +15,10 @@ class ApiList extends OAT\Get
         $parameters = null,
         string|array $responseData = null
     ) {
+        if (!str_starts_with($path, '/api/v1')) {
+            $path = '/api/v1' . (str_starts_with($path, '/') ? '' : '/') . ltrim($path, '/');
+        }
+
         $security = $requiresAuth ? [['bearerAuth' => []]] : [];
 
         // Add default pagination parameters

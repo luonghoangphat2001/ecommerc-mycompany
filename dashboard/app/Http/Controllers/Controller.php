@@ -15,7 +15,7 @@ use OpenApi\Attributes as OAT;
                  "## Authentication Guide\n\n" .
                  "This API uses **Bearer Token Authentication** (Laravel Sanctum).\n\n" .
                  "### Authentication Flow\n" .
-                 "1. **Login**: Send a `POST` request to `/api/storefront/auth/login` with your `email`, `password`, and `device_name`.\n" .
+                 "1. **Login**: Send a `POST` request to `/api/v1/login` with your `email`, `password`, and `device_name`.\n" .
                  "2. **Receive Token**: On success, the API returns a response containing the token.\n" .
                  "3. **Use Token**: Add the token to the `Authorization` header for subsequent requests (`Authorization: Bearer <your_token>`).\n\n" .
                  "### Example Login Response\n" .
@@ -45,7 +45,7 @@ use OpenApi\Attributes as OAT;
                  "- **Public APIs**: Endpoints without the lock icon can be accessed freely.\n" .
                  "- **Roles & Permissions**: Access to specific APIs depends on the roles and permissions assigned to your user account (e.g., Customer, Admin). Accessing an unauthorized endpoint will result in a `403 Forbidden` response.\n\n" .
                  "### Logout & Token Revocation\n" .
-                 "To revoke your current token, send a `POST` request to `/api/storefront/auth/logout`. This will invalidate the token.",
+                 "To revoke your current token, send a `POST` request to `/api/v1/logout`. This will invalidate the token.",
     title: "HP Platform API Documentation",
     contact: new OAT\Contact(email: "admin@example.com")
 )]

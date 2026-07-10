@@ -20,7 +20,7 @@ class MenuController extends Controller
     }
 
     #[ApiList(
-        path: '/api/storefront/v1/menus',
+        path: '/menus',
         summary: 'List of Menus',
         tags: 'Storefront - Menus',
         requiresAuth: false,
@@ -41,7 +41,7 @@ class MenuController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/menus/{slug}',
+        path: '/menus/{slug}',
         summary: 'Menu Details (by Slug)',
         tags: 'Storefront - Menus',
         requiresAuth: false,

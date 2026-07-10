@@ -16,6 +16,10 @@ class ApiGet extends OAT\Get
         $responses = null,
         string|array $responseData = null
     ) {
+        if (!str_starts_with($path, '/api/v1')) {
+            $path = '/api/v1' . (str_starts_with($path, '/') ? '' : '/') . ltrim($path, '/');
+        }
+
         $security = $requiresAuth ? [['bearerAuth' => []]] : [];
 
         $dataProperty = null;

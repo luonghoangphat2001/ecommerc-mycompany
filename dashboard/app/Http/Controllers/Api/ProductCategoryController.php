@@ -30,7 +30,7 @@ class ProductCategoryController extends Controller
     }
 
     #[ApiList(
-        path: '/api/storefront/v1/product-categories',
+        path: '/product-categories',
         summary: 'List of Product Categories',
         tags: 'Storefront - Product Categories',
         requiresAuth: false,
@@ -45,7 +45,7 @@ class ProductCategoryController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/v1/product-categories',
+        path: '/product-categories',
         summary: 'Create Product Category',
         tags: 'Storefront - Product Categories',
         requestBody: new OAT\RequestBody(
@@ -71,7 +71,7 @@ class ProductCategoryController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/product-categories/{productCategory}',
+        path: '/product-categories/{productCategory}',
         summary: 'Product Category Details',
         tags: 'Storefront - Product Categories',
         requiresAuth: false,
@@ -86,7 +86,7 @@ class ProductCategoryController extends Controller
     }
 
     #[ApiUpdate(
-        path: '/api/storefront/v1/product-categories/{productCategory}',
+        path: '/product-categories/{productCategory}',
         summary: 'Update Product Category',
         tags: 'Storefront - Product Categories',
         parameters: [
@@ -114,7 +114,7 @@ class ProductCategoryController extends Controller
     }
 
     #[ApiDelete(
-        path: '/api/storefront/v1/product-categories/{productCategory}',
+        path: '/product-categories/{productCategory}',
         summary: 'Delete Product Category',
         tags: 'Storefront - Product Categories',
         parameters: [

@@ -20,7 +20,7 @@ class CouponController extends Controller
     ) {}
 
     #[ApiPost(
-        path: '/api/storefront/v1/coupons/apply',
+        path: '/coupons/apply',
         summary: 'Apply Coupon',
         tags: 'Storefront - Coupons',
         requiresAuth: true,

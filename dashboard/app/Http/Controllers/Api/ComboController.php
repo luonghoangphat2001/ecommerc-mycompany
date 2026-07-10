@@ -24,7 +24,7 @@ class ComboController extends Controller
     }
 
     #[ApiList(
-        path: '/api/storefront/v1/combos',
+        path: '/combos',
         summary: 'List of Combos',
         tags: 'Storefront - Combos',
         requiresAuth: false,
@@ -43,7 +43,7 @@ class ComboController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/combos/{slug}',
+        path: '/combos/{slug}',
         summary: 'Combo Details',
         tags: 'Storefront - Combos',
         requiresAuth: false,

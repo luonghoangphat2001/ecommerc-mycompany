@@ -31,7 +31,7 @@ class PostCategoryController extends Controller
     }
 
     #[ApiList(
-        path: '/api/storefront/v1/post-categories',
+        path: '/post-categories',
         summary: 'List of Post Categories',
         tags: 'Storefront - Post Categories',
         requiresAuth: false
@@ -44,7 +44,7 @@ class PostCategoryController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/v1/post-categories',
+        path: '/post-categories',
         summary: 'Create Post Category',
         tags: 'Storefront - Post Categories',
         requestBody: new OAT\RequestBody(
@@ -68,7 +68,7 @@ class PostCategoryController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/post-categories/{postCategory}',
+        path: '/post-categories/{postCategory}',
         summary: 'Post Category Details',
         tags: 'Storefront - Post Categories',
         requiresAuth: false,
@@ -82,7 +82,7 @@ class PostCategoryController extends Controller
     }
 
     #[ApiUpdate(
-        path: '/api/storefront/v1/post-categories/{postCategory}',
+        path: '/post-categories/{postCategory}',
         summary: 'Update Post Category',
         tags: 'Storefront - Post Categories',
         parameters: [
@@ -106,7 +106,7 @@ class PostCategoryController extends Controller
     }
 
     #[ApiDelete(
-        path: '/api/storefront/v1/post-categories/{postCategory}',
+        path: '/post-categories/{postCategory}',
         summary: 'Delete Post Category',
         tags: 'Storefront - Post Categories',
         parameters: [
@@ -120,7 +120,7 @@ class PostCategoryController extends Controller
     }
 
     #[ApiList(
-        path: '/api/storefront/v1/post-categories/{postCategory}/posts',
+        path: '/post-categories/{postCategory}/posts',
         summary: 'List of Posts in Category',
         tags: 'Storefront - Post Categories',
         requiresAuth: false,

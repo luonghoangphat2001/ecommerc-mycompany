@@ -28,7 +28,7 @@ class CartController extends Controller
     ) {}
 
     #[ApiPost(
-        path: '/api/storefront/v1/cart',
+        path: '/cart',
         summary: 'Get Cart Information',
         tags: 'Storefront - Cart',
         requiresAuth: false,
@@ -72,7 +72,7 @@ class CartController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/v1/cart/sync',
+        path: '/cart/sync',
         summary: 'Sync Cart',
         tags: 'Storefront - Cart',
         requiresAuth: false,
@@ -116,7 +116,7 @@ class CartController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/v1/cart/items',
+        path: '/cart/items',
         summary: 'Add Item to Cart',
         tags: 'Storefront - Cart',
         requiresAuth: false,
@@ -163,7 +163,7 @@ class CartController extends Controller
     }
 
     #[ApiUpdate(
-        path: '/api/storefront/v1/cart/items/{itemId}',
+        path: '/cart/items/{itemId}',
         summary: 'Update Item Quantity',
         tags: 'Storefront - Cart',
         requiresAuth: false,
@@ -209,7 +209,7 @@ class CartController extends Controller
     }
 
     #[ApiDelete(
-        path: '/api/storefront/v1/cart/items/{itemId}',
+        path: '/cart/items/{itemId}',
         summary: 'Remove Item from Cart',
         tags: 'Storefront - Cart',
         requiresAuth: false,
@@ -226,7 +226,7 @@ class CartController extends Controller
     }
 
     #[ApiDelete(
-        path: '/api/storefront/v1/cart',
+        path: '/cart',
         summary: 'Clear Cart',
         tags: 'Storefront - Cart',
         requiresAuth: false,
@@ -240,7 +240,7 @@ class CartController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/v1/cart/shipping-methods',
+        path: '/cart/shipping-methods',
         summary: 'Get Shipping Methods',
         tags: 'Storefront - Cart',
         requiresAuth: false,

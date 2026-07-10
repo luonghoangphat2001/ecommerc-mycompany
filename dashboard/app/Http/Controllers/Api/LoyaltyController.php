@@ -16,7 +16,7 @@ class LoyaltyController extends Controller
     use ApiResponse;
 
     #[ApiGet(
-        path: '/api/storefront/v1/user/loyalty/points',
+        path: '/user/loyalty/points',
         summary: 'Get User Loyalty Points',
         tags: 'Storefront - Loyalty',
         requiresAuth: true,
@@ -54,7 +54,7 @@ class LoyaltyController extends Controller
     }
 
     #[ApiList(
-        path: '/api/storefront/v1/user/loyalty/history',
+        path: '/user/loyalty/history',
         summary: 'Loyalty Points History',
         tags: 'Storefront - Loyalty',
         requiresAuth: true,

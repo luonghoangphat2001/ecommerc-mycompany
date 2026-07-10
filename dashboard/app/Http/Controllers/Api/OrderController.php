@@ -33,7 +33,7 @@ class OrderController extends Controller
     ) {}
 
     #[ApiList(
-        path: '/api/storefront/v1/orders',
+        path: '/orders',
         summary: 'List of User Orders',
         tags: 'Storefront - Orders',
         responseData: '#/components/schemas/OrderResource'
@@ -57,7 +57,7 @@ class OrderController extends Controller
     }
 
     #[ApiPost(
-        path: '/api/storefront/v1/orders',
+        path: '/orders',
         summary: 'Create New Order',
         tags: 'Storefront - Orders',
         requestBody: new OAT\RequestBody(
@@ -104,7 +104,7 @@ class OrderController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/orders/{order}',
+        path: '/orders/{order}',
         summary: 'Order Details',
         tags: 'Storefront - Orders',
         parameters: [
@@ -126,7 +126,7 @@ class OrderController extends Controller
     }
 
     #[ApiUpdate(
-        path: '/api/storefront/v1/orders/{order}',
+        path: '/orders/{order}',
         summary: 'Update Order Status/Notes',
         tags: 'Storefront - Orders',
         parameters: [
@@ -159,7 +159,7 @@ class OrderController extends Controller
     }
 
     #[ApiDelete(
-        path: '/api/storefront/v1/orders/{order}',
+        path: '/orders/{order}',
         summary: 'Delete Order (Cancel)',
         tags: 'Storefront - Orders',
         parameters: [

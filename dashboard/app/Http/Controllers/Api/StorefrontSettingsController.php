@@ -21,7 +21,7 @@ class StorefrontSettingsController extends Controller
     }
 
     #[ApiGet(
-        path: '/api/storefront/v1/settings',
+        path: '/settings',
         summary: 'Get Storefront Settings',
         tags: 'Storefront - Settings',
         requiresAuth: false,
