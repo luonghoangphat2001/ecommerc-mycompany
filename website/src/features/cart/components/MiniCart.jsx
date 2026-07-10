@@ -32,7 +32,7 @@ const MiniCart = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-3">
             <ShoppingBag className="w-6 h-6 text-blue-600" />
             <h2 className="text-xl font-bold text-slate-900">
-              {translate('title')} 
+              {translate('cart.title')} 
               <span className="ml-2 text-sm font-normal text-slate-500">({count} sản phẩm)</span>
             </h2>
           </div>
@@ -49,13 +49,13 @@ const MiniCart = ({ isOpen, onClose }) => {
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <ShoppingBag size={64} className="text-slate-200 mb-4" />
-              <p className="text-slate-500 mb-4">{translate('empty')}</p>
+              <p className="text-slate-500 mb-4">{translate('cart.empty')}</p>
               <Link 
                 to="/shop" 
                 onClick={onClose}
                 className="text-blue-600 font-medium hover:underline"
               >
-                {translate('continue_shopping')}
+                {translate('cart.continue_shopping')}
               </Link>
             </div>
           ) : (
@@ -123,7 +123,7 @@ const MiniCart = ({ isOpen, onClose }) => {
             {/* Summary */}
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-slate-500 font-medium">
-                <span>{translate('subtotal')}</span>
+                <span>{translate('cart.subtotal')}</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               {summary?.shipping?.amount > 0 && (
@@ -155,13 +155,13 @@ const MiniCart = ({ isOpen, onClose }) => {
               onClick={onClose}
               className="block w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-center hover:bg-blue-700 transition-colors mb-3"
             >
-              {translate('checkout')}
+              {translate('cart.checkout_button')}
             </Link>
             <button 
               onClick={onClose}
               className="block w-full text-slate-500 py-3 font-medium hover:text-slate-700 transition-colors"
             >
-              {translate('continue_shopping')}
+              {translate('cart.continue_shopping')}
             </button>
           </div>
         )}

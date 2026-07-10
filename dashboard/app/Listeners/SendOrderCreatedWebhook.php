@@ -16,6 +16,6 @@ class SendOrderCreatedWebhook implements ShouldQueue
         $order = $event->order;
 
         // Dispatch webhook payload to internal integrations or logging
-        Log::info('OrderCreated Webhook dispatched successfully for order #' . $order->id);
+        \App\Services\Logging\ModuleLogger::webhook()->info('order_created_webhook_dispatched', 'OrderCreated Webhook dispatched successfully for order #' . $order->id, ['order_id' => $order->id]);
     }
 }

@@ -100,7 +100,7 @@ class OrderService implements OrderServiceInterface
                         try {
                             $this->refundService->processRefund($order, $refundAmount, $refundReason, $refundType);
                         } catch (\Exception $e) {
-                            \Log::error("Refund process failed during order update: " . $e->getMessage());
+                            \App\Services\Logging\ModuleLogger::order()->error('update_order_refund_failed', "Refund process failed during order update: " . $e->getMessage(), ['order_id' => $order->id, 'refund_amount' => $refundAmount]);
                             throw $e; // Re-throw to rollback transaction
                         }
                     }
@@ -365,7 +365,7 @@ class OrderService implements OrderServiceInterface
             try {
                 $this->refundService->processRefund($order, $order->total, $reason, 'full');
             } catch (\Exception $e) {
-                \Log::error("Refund failed: " . $e->getMessage());
+                \App\Services\Logging\ModuleLogger::order()->error('refund_failed', "Refund failed: " . $e->getMessage(), ['order_id' => $order->id]);
                 throw $e;
             }
 

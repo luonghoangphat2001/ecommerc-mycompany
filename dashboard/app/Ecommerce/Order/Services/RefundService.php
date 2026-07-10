@@ -72,9 +72,9 @@ class RefundService implements RefundServiceInterface
                 // For manual/cod methods, there might be no driver, which is fine, we just record it locally.
                 // We only log if it's an actual API failure.
                 if (str_contains($e->getMessage(), 'not supported') || str_contains($e->getMessage(), 'not found')) {
-                    Log::info("No payment driver for {$paymentMethod}. Proceeding with local DB refund record.");
+                    \App\Services\Logging\ModuleLogger::refund()->info('refund_local_record', "No payment driver for {$paymentMethod}. Proceeding with local DB refund record.", ['order_id' => $order->id, 'payment_method' => $paymentMethod]);
                 } else {
-                    Log::error("PaymentGateway Refund Error: " . $e->getMessage());
+                    \App\Services\Logging\ModuleLogger::refund()->error('refund_gateway_error', "PaymentGateway Refund Error: " . $e->getMessage(), ['order_id' => $order->id, 'transaction_id' => $transactionId]);
                     throw $e;
                 }
             }

@@ -40,7 +40,7 @@ class SendOrderMails implements ShouldQueue
             }
         } catch (\Exception $e) {
             // Log error but don't fail the order creation
-            Log::error('Failed to send order email: ' . $e->getMessage());
+            \App\Services\Logging\ModuleLogger::order()->error('send_email_failed', 'Failed to send order email: ' . $e->getMessage(), ['order_id' => $order->id]);
         }
     }
 }

@@ -50,48 +50,40 @@ class Handler extends ExceptionHandler
     private function handleApiExceptions(Throwable $e)
     {
         $code = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
-        
-        if ($e instanceof \Illuminate\Validation\ValidationException) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation Error',
-                'data' => $e->errors()
-            ], 422);
-        }
+        $requestId = request()->attributes->get('request_id');
 
-        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Resource not found',
-                'data' => null
-            ], 404);
-        }
-
-        if ($e instanceof \Illuminate\Auth\AuthenticationException) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated',
-                'data' => null
-            ], 401);
-        }
-
-        if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Route not found',
-                'data' => null
-            ], 404);
-        }
-
-        return response()->json([
+        $response = [
             'success' => false,
-            'message' => $e->getMessage() ?: 'Server Error',
-            'data' => config('app.debug') ? [
-                'exception' => get_class($e),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => array_slice($e->getTrace(), 0, 5) // Limit trace for readability
-            ] : null
-        ], $code);
+            'message' => 'Server Error',
+            'data' => null,
+            'request_id' => $requestId,
+        ];
+
+        if ($e instanceof \Illuminate\Validation\ValidationException) {
+            $response['message'] = 'Validation Error';
+            $response['data'] = $e->errors();
+            $code = 422;
+        } elseif ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+            $response['message'] = 'Resource not found';
+            $code = 404;
+        } elseif ($e instanceof \Illuminate\Auth\AuthenticationException) {
+            $response['message'] = 'Unauthenticated';
+            $code = 401;
+        } elseif ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+            $response['message'] = 'Route not found';
+            $code = 404;
+        } else {
+            $response['message'] = $e->getMessage() ?: 'Server Error';
+            if (config('app.debug')) {
+                $response['data'] = [
+                    'exception' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => array_slice($e->getTrace(), 0, 5)
+                ];
+            }
+        }
+
+        return response()->json($response, $code);
     }
 }

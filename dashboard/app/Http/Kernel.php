@@ -23,6 +23,7 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \App\Http\Middleware\AddCorsHeaders::class,
+        \App\Http\Middleware\AssignRequestId::class,
     ];
 
     /**
@@ -43,7 +44,6 @@ class Kernel extends HttpKernel
 
         'api' => [
             'setting.check:ApiSettings,enabled',
-            \App\Http\Middleware\ApiLogMiddleware::class,
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,

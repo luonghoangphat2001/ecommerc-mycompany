@@ -65,6 +65,12 @@ class AuthController extends BaseApiController
             $request->device_name
         );
 
+        \App\Services\Logging\ModuleLogger::auth()->info('login_success', 'User logged in successfully', [
+            'user_id' => $authData['user']['id'],
+            'email' => $request->email,
+            'device_name' => $request->device_name,
+        ]);
+
         return $this->ok([
             'access_token' => $authData['access_token'],
             'token_type' => $authData['token_type'],
@@ -85,7 +91,12 @@ class AuthController extends BaseApiController
             return $this->notFound('User not found');
         }
 
-        $this->authService->logout($request->user());
+        $user = $request->user();
+        $this->authService->logout($user);
+
+        \App\Services\Logging\ModuleLogger::auth()->info('logout_success', 'User logged out successfully', [
+            'user_id' => $user->id,
+        ]);
 
         return $this->ok(null, 'Logged out successfully');
     }
@@ -129,7 +140,14 @@ class AuthController extends BaseApiController
             'default_billing_address_id' => 'sometimes|nullable|exists:addresses,id',
         ]);
 
+        $oldData = $user->only(['name', 'phone', 'default_shipping_address_id', 'default_billing_address_id']);
         $user->update($validated);
+
+        \App\Services\Logging\ModuleLogger::user()->info('profile_updated', 'User profile updated successfully', [
+            'user_id' => $user->id,
+            'old_data' => $oldData,
+            'new_data' => $validated,
+        ]);
 
         return $this->ok($user->fresh(['defaultShippingAddress', 'defaultBillingAddress']), 'Profile updated successfully');
     }

@@ -104,7 +104,7 @@ class PlaceOrderAction
     private function validateProductPrice(array $item, $product): void
     {
         if (isset($item['price']) && (float)$item['price'] !== (float)$product->price) {
-            Log::warning("Price mismatch for product #{$product->id}: Client sent {$item['price']}, DB has {$product->price}");
+            \App\Services\Logging\ModuleLogger::order()->warning('price_mismatch', "Price mismatch for product #{$product->id}: Client sent {$item['price']}, DB has {$product->price}", ['product_id' => $product->id, 'client_price' => $item['price'], 'db_price' => $product->price]);
             throw new \Exception(__('admin.api.price_mismatch'));
         }
     }

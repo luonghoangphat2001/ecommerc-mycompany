@@ -35,7 +35,7 @@ class LogSentMessage
                 'updated_at' => now(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to log email: ' . $e->getMessage());
+            \App\Services\Logging\ModuleLogger::system()->error('log_email_failed', 'Failed to log email: ' . $e->getMessage(), ['exception' => $e->getMessage()]);
         }
     }
 

@@ -109,7 +109,7 @@ class DispatchWebhookJob implements ShouldQueue
             $duration = (int) ((microtime(true) - $startTime) * 1000);
             $this->logDelivery($webhook, $payload, ['error' => $e->getMessage()], 'failed', $duration);
             
-            Log::error("Webhook delivery failed to {$webhook->url}: " . $e->getMessage());
+            \App\Services\Logging\ModuleLogger::webhook()->error('webhook_delivery_failed', "Webhook delivery failed to {$webhook->url}: " . $e->getMessage(), ['webhook_id' => $webhook->id, 'url' => $webhook->url, 'event' => $this->event]);
             
             throw $e; // Re-throw to trigger retry
         }
@@ -127,22 +127,13 @@ class DispatchWebhookJob implements ShouldQueue
             'created_at' => now(),
         ]);
 
-        // Also log to file as requested
-        $logMessage = sprintf(
-            "[%s] Event: %s | URL: %s | Status: %s | Duration: %dms\nPayload: %s\nResponse: %s\n",
-            now()->toDateTimeString(),
-            $this->event,
-            $webhook->url,
-            $status,
-            $duration,
-            json_encode($payload),
-            json_encode($response)
-        );
-
-        $logPath = storage_path('logs/custom/webhooks-delivery-' . now()->format('Y-m-d') . '.log');
-        if (!file_exists(dirname($logPath))) {
-            mkdir(dirname($logPath), 0755, true);
-        }
-        file_put_contents($logPath, $logMessage, FILE_APPEND);
+        \App\Services\Logging\ModuleLogger::webhook()->info('webhook_delivered', "Webhook {$status} to {$webhook->url}", [
+            'webhook_id' => $webhook->id,
+            'event' => $this->event,
+            'url' => $webhook->url,
+            'status' => $status,
+            'duration' => $duration,
+            'response' => $response,
+        ]);
     }
 }
