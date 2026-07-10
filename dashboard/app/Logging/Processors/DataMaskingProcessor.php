@@ -26,10 +26,14 @@ class DataMaskingProcessor
         'address',
     ];
 
-    public function __invoke(LogRecord $record): LogRecord
+    public function __invoke(\Illuminate\Log\Logger $logger)
     {
-        $context = $this->maskData($record->context);
-        return $record->with(context: $context);
+        foreach ($logger->getHandlers() as $handler) {
+            $handler->pushProcessor(function (LogRecord $record) {
+                $context = $this->maskData($record->context);
+                return $record->with(context: $context);
+            });
+        }
     }
 
     protected function maskData(array $data): array
@@ -42,7 +46,7 @@ class DataMaskingProcessor
 
             if (is_string($key)) {
                 $lowerKey = strtolower($key);
-                
+
                 // Full mask for sensitive fields
                 foreach ($this->sensitiveFields as $field) {
                     if (str_contains($lowerKey, $field)) {
