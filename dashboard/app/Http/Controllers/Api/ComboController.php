@@ -2,19 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\Api\ComboResource;
 use App\Ecommerce\Combo\Contracts\ComboServiceInterface;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiGet;
 use App\Swagger\Attributes\ApiList;
 
-class ComboController extends Controller
+class ComboController extends BaseApiController
 {
-    use ApiResponse;
 
     protected ComboServiceInterface $comboService;
 

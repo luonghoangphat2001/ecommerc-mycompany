@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\API\ProductCategory\StoreProductCategoryRequest;
 use App\Http\Requests\API\ProductCategory\UpdateProductCategoryRequest;
 use App\Http\Resources\Api\ProductCategoryResource;
 use App\Models\ProductCategory;
 use App\Ecommerce\Product\Contracts\ProductCategoryServiceInterface;
 use App\Ecommerce\Product\DTOs\ProductCategory\ProductCategoryDTO;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiGet;
@@ -18,9 +17,8 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use App\Swagger\Attributes\ApiDelete;
 
-class ProductCategoryController extends Controller
+class ProductCategoryController extends BaseApiController
 {
-    use ApiResponse;
 
     protected $categoryService;
 

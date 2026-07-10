@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Settings\LoyaltySettings;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiGet;
 use App\Swagger\Attributes\ApiList;
 
-class LoyaltyController extends Controller
+class LoyaltyController extends BaseApiController
 {
-    use ApiResponse;
 
     #[ApiGet(
         path: '/user/loyalty/points',

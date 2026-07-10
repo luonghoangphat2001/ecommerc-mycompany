@@ -2,17 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\Api\UpsellResource;
 use App\Ecommerce\Upsell\Contracts\UpsellServiceInterface;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiList;
 
-class UpsellController extends Controller
+class UpsellController extends BaseApiController
 {
-    use ApiResponse;
 
     protected UpsellServiceInterface $upsellService;
 

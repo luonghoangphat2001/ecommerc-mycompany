@@ -6,11 +6,10 @@ use App\Ecommerce\Checkout\Actions\PlaceOrderAction;
 use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 use App\Ecommerce\Order\DTOs\Order\OrderDataDTO;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\API\StoreOrderRequest;
 use App\Http\Resources\Api\OrderResource;
 use App\Models\Order;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -22,9 +21,8 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use App\Swagger\Attributes\ApiDelete;
 
-class OrderController extends Controller
+class OrderController extends BaseApiController
 {
-    use ApiResponse;
 
     public function __construct(
         protected PlaceOrderAction $placeOrderAction,

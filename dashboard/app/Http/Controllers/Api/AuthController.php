@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Models\User;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -15,9 +14,8 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use OpenApi\Attributes as OAT;
 
-class AuthController extends Controller
+class AuthController extends BaseApiController
 {
-    use ApiResponse;
 
     protected $authService;
 
@@ -27,7 +25,7 @@ class AuthController extends Controller
     }
 
     #[ApiPost(
-        path: '/login',
+        path: '/auth/login',
         summary: 'Storefront Login',
         tags: 'Storefront - Authentication',
         requiresAuth: false,
@@ -76,7 +74,7 @@ class AuthController extends Controller
     }
 
     #[ApiPost(
-        path: '/logout',
+        path: '/auth/logout',
         summary: 'Logout',
         tags: 'Storefront - Authentication',
         requiresAuth: true

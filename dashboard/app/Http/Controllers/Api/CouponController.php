@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Ecommerce\Coupon\Contracts\CouponServiceInterface;
 use App\Exceptions\CouponValidationException;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiPost;
 
-class CouponController extends Controller
+class CouponController extends BaseApiController
 {
-    use ApiResponse;
 
     public function __construct(
         protected CouponServiceInterface $couponService

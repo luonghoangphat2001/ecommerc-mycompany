@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Ecommerce\Address\Services\Contracts\AddressServiceInterface;
 use App\Ecommerce\Address\Contracts\AddressBookServiceInterface;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +14,7 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use App\Swagger\Attributes\ApiDelete;
 
-class AddressController extends Controller
+class AddressController extends BaseApiController
 {
     protected AddressServiceInterface $addressService;
     protected AddressBookServiceInterface $addressBookService;
@@ -28,7 +28,7 @@ class AddressController extends Controller
     }
 
     #[ApiGet(
-        path: '/countries',
+        path: '/addresses/countries',
         summary: 'List of Countries',
         tags: 'Storefront - Address',
         requiresAuth: false,
@@ -48,7 +48,7 @@ class AddressController extends Controller
     }
 
     #[ApiGet(
-        path: '/countries/{countryCode}/states',
+        path: '/addresses/countries/{countryCode}/states',
         summary: 'List of States by Country',
         tags: 'Storefront - Address',
         requiresAuth: false,
@@ -71,7 +71,7 @@ class AddressController extends Controller
     }
 
     #[ApiGet(
-        path: '/countries/{countryCode}/states/{stateId}/regions',
+        path: '/addresses/countries/{countryCode}/states/{stateId}/regions',
         summary: 'List of Regions by State',
         tags: 'Storefront - Address',
         requiresAuth: false,
@@ -95,7 +95,7 @@ class AddressController extends Controller
     }
 
     #[ApiGet(
-        path: '/countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions',
+        path: '/addresses/countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions',
         summary: 'List of Sub-Regions by Region',
         tags: 'Storefront - Address',
         requiresAuth: false,
@@ -120,7 +120,7 @@ class AddressController extends Controller
     }
 
     #[ApiGet(
-        path: '/user/addresses',
+        path: '/user-addresses',
         summary: 'List of User Addresses',
         tags: 'Storefront - User Address',
         responseData: [
@@ -145,7 +145,7 @@ class AddressController extends Controller
     }
 
     #[ApiPost(
-        path: '/user/addresses',
+        path: '/user-addresses',
         summary: 'Add New Address',
         tags: 'Storefront - User Address',
         requestBody: new OAT\RequestBody(
@@ -206,7 +206,7 @@ class AddressController extends Controller
     }
 
     #[ApiUpdate(
-        path: '/user/addresses/{address}',
+        path: '/user-addresses/{address}',
         summary: 'Update Address',
         tags: 'Storefront - User Address',
         requestBody: new OAT\RequestBody(
@@ -272,7 +272,7 @@ class AddressController extends Controller
     }
 
     #[ApiDelete(
-        path: '/user/addresses/{address}',
+        path: '/user-addresses/{address}',
         summary: 'Delete Address',
         tags: 'Storefront - User Address',
         parameters: [

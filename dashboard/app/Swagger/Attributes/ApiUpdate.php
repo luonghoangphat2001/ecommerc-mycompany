@@ -17,8 +17,8 @@ class ApiUpdate extends OAT\Put
         $responses = null,
         string|array $responseData = null
     ) {
-        if (!str_starts_with($path, '/api/v1')) {
-            $path = '/api/v1/' . ltrim($path, '/');
+        if (!str_starts_with($path, '/api/v1/storefront')) {
+            $path = '/api/v1/storefront/' . ltrim(str_replace('/api/v1/', '', $path), '/');
         }
 
         $security = $requiresAuth ? [['bearerAuth' => []]] : [];

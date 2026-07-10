@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
-class ProductInventoryController extends Controller
+class ProductInventoryController extends BaseApiController
 {
     /**
      * Get inventory for a product across all warehouses

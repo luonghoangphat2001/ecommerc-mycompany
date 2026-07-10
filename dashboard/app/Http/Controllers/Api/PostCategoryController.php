@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\API\PostCategory\StorePostCategoryRequest;
 use App\Http\Requests\API\PostCategory\UpdatePostCategoryRequest;
 use App\Http\Resources\Api\PostCategoryResource;
@@ -10,7 +10,6 @@ use App\Http\Resources\Api\PostResource;
 use App\Models\PostCategory;
 use App\Ecommerce\Post\Contracts\PostCategoryServiceInterface;
 use App\Ecommerce\Post\DTOs\PostCategory\PostCategoryDTO;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiGet;
@@ -19,9 +18,8 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use App\Swagger\Attributes\ApiDelete;
 
-class PostCategoryController extends Controller
+class PostCategoryController extends BaseApiController
 {
-    use ApiResponse;
 
     protected $postCategoryService;
 

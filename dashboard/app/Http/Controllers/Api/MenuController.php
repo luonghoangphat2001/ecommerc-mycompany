@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use Illuminate\Http\Request;
 use App\Http\Resources\Api\MenuResource;
 use App\Ecommerce\Menu\Services\MenuService;
@@ -10,7 +10,7 @@ use App\Swagger\Attributes\ApiList;
 use App\Swagger\Attributes\ApiGet;
 use OpenApi\Attributes as OAT;
 
-class MenuController extends Controller
+class MenuController extends BaseApiController
 {
     protected $menuService;
 

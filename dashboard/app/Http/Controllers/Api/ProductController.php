@@ -3,17 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Ecommerce\Product\Contracts\ProductServiceInterface;
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\Api\ProductResource;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiGet;
 use App\Swagger\Attributes\ApiList;
 
-class ProductController extends Controller
+class ProductController extends BaseApiController
 {
-    use ApiResponse;
 
     public function __construct(
         protected ProductServiceInterface $productService

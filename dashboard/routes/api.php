@@ -25,83 +25,115 @@ use App\Http\Middleware\CheckTokenExpiration;
 */
 
 Route::middleware(['api'])->prefix('v1')->group(function () {
-    Route::get('storefront-settings', [\App\Http\Controllers\Api\StorefrontSettingsController::class, 'index']);
-    Route::get('menus', [\App\Http\Controllers\Api\MenuController::class, 'index']);
-    Route::get('menus/{handle}', [\App\Http\Controllers\Api\MenuController::class, 'show']);
     
-    // Cart API
-    Route::post('cart', [\App\Http\Controllers\Api\CartController::class, 'index']);
-    Route::post('cart/sync', [\App\Http\Controllers\Api\CartController::class, 'sync']);
-    Route::post('cart/items', [\App\Http\Controllers\Api\CartController::class, 'addItem']);
-    Route::put('cart/items/{itemId}', [\App\Http\Controllers\Api\CartController::class, 'updateItem']);
-    Route::delete('cart/items/{itemId}', [\App\Http\Controllers\Api\CartController::class, 'removeItem']);
-    Route::delete('cart', [\App\Http\Controllers\Api\CartController::class, 'clear']);
-    Route::post('cart/suggestions', [\App\Http\Controllers\Api\CartController::class, 'suggestions']);
-    Route::post('cart/shipping-methods', [\App\Http\Controllers\Api\CartController::class, 'shippingMethods']);
-    
-    // Coupon API
-    Route::middleware('marketing.module:enable_coupons')->group(function () {
-        Route::post('coupons/apply', [\App\Http\Controllers\Api\CouponController::class, 'apply']);
-    });
-    Route::post('login', [AuthController::class, 'login']);
-
-    // Address API
-    Route::get('countries', [AddressController::class, 'countries']);
-    Route::get('countries/{countryCode}/states', [AddressController::class, 'states']);
-    Route::get('countries/{countryCode}/states/{stateId}/regions', [AddressController::class, 'regions']);
-    Route::get('countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions', [AddressController::class, 'subRegions']);
-
-    Route::get('posts', [PostController::class, 'index']);
-    Route::get('posts/{post}', [PostController::class, 'show']);
-    Route::get('post-categories', [PostCategoryController::class, 'index']);
-    Route::get('post-categories/{post_category}/posts', [PostCategoryController::class, 'posts']);
-
-    Route::get('products', [ProductController::class, 'index']);
-    Route::get('products/by-slug/{slug}', [ProductController::class, 'showBySlug']);
-    // Specific routes must come BEFORE the generic {product} route
-    Route::get('products/{productId}/inventory', [\App\Http\Controllers\Api\ProductInventoryController::class, 'index']);
-    
-    Route::middleware('marketing.module:upsell_enabled')->group(function () {
-        Route::get('products/{productId}/upsells', [\App\Http\Controllers\Api\UpsellController::class, 'index']);
-    });
-    
-    Route::middleware('marketing.module:cross_sell_enabled')->group(function () {
-        Route::get('products/{productId}/cross-sells', [\App\Http\Controllers\Api\CrossSellController::class, 'index']);
-    });
-    
-    Route::get('products/{product}', [ProductController::class, 'show']);
-
-    // Combos
-    Route::middleware('marketing.module:combo_enabled')->group(function () {
-        Route::get('combos', [\App\Http\Controllers\Api\ComboController::class, 'index']);
-        Route::get('combos/{slug}', [\App\Http\Controllers\Api\ComboController::class, 'show']);
-    });
-    Route::get('product-categories', [ProductCategoryController::class, 'index']);
-    Route::get('brands', [BrandController::class, 'index']);
-    Route::get('pages', [PageController::class, 'index']);
-    Route::get('pages/{page}', [PageController::class, 'show']);
-
-    Route::middleware([
-        'auth:sanctum',
-        \App\Http\Middleware\CheckTokenExpiration::class,
-        \App\Http\Middleware\HandleIdempotency::class
-    ])->group(function () {
-        Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('user', fn(Request $request) => $request->user()->load(['defaultShippingAddress', 'defaultBillingAddress']));
-        Route::put('user', [AuthController::class, 'updateProfile']);
-        Route::put('user/profile', [AuthController::class, 'updateProfile']);
+    // Storefront API Group
+    Route::prefix('storefront')->name('storefront.')->group(function () {
         
-        Route::get('user/addresses', [AddressController::class, 'index']);
-        Route::post('user/addresses', [AddressController::class, 'store']);
-        Route::put('user/addresses/{address}', [AddressController::class, 'update']);
-        Route::delete('user/addresses/{address}', [AddressController::class, 'destroy']);
-
-        // Loyalty
-        Route::middleware('marketing.module:loyalty_enabled')->group(function () {
-            Route::get('user/loyalty/points', [\App\Http\Controllers\Api\LoyaltyController::class, 'getPoints']);
-            Route::get('user/loyalty/history', [\App\Http\Controllers\Api\LoyaltyController::class, 'getHistory']);
+        // Settings
+        Route::get('settings', [\App\Http\Controllers\Api\StorefrontSettingsController::class, 'index']);
+        
+        // Menus
+        Route::prefix('menus')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\MenuController::class, 'index']);
+            Route::get('{handle}', [\App\Http\Controllers\Api\MenuController::class, 'show']);
+        });
+        
+        // Cart API
+        Route::prefix('cart')->group(function () {
+            Route::post('/', [\App\Http\Controllers\Api\CartController::class, 'index']);
+            Route::delete('/', [\App\Http\Controllers\Api\CartController::class, 'clear']);
+            Route::post('sync', [\App\Http\Controllers\Api\CartController::class, 'sync']);
+            Route::post('items', [\App\Http\Controllers\Api\CartController::class, 'addItem']);
+            Route::put('items/{itemId}', [\App\Http\Controllers\Api\CartController::class, 'updateItem']);
+            Route::delete('items/{itemId}', [\App\Http\Controllers\Api\CartController::class, 'removeItem']);
+            Route::post('suggestions', [\App\Http\Controllers\Api\CartController::class, 'suggestions']);
+            Route::post('shipping-methods', [\App\Http\Controllers\Api\CartController::class, 'shippingMethods']);
+        });
+        
+        // Coupon API
+        Route::middleware('marketing.module:enable_coupons')->prefix('coupons')->group(function () {
+            Route::post('apply', [\App\Http\Controllers\Api\CouponController::class, 'apply']);
+        });
+        
+        // Auth (Public)
+        Route::prefix('auth')->group(function () {
+            Route::post('login', [AuthController::class, 'login']);
         });
 
-        Route::apiResource('orders', OrderController::class)->middleware('throttle:checkout');
+        // Address Metadata (Countries/States)
+        Route::prefix('addresses')->group(function () {
+            Route::get('countries', [AddressController::class, 'countries']);
+            Route::get('countries/{countryCode}/states', [AddressController::class, 'states']);
+            Route::get('countries/{countryCode}/states/{stateId}/regions', [AddressController::class, 'regions']);
+            Route::get('countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions', [AddressController::class, 'subRegions']);
+        });
+
+        // Posts
+        Route::prefix('posts')->group(function () {
+            Route::get('/', [PostController::class, 'index']);
+            Route::get('{post}', [PostController::class, 'show']);
+        });
+        Route::prefix('post-categories')->group(function () {
+            Route::get('/', [PostCategoryController::class, 'index']);
+            Route::get('{post_category}/posts', [PostCategoryController::class, 'posts']);
+        });
+
+        // Products
+        Route::prefix('products')->group(function () {
+            Route::get('/', [ProductController::class, 'index']);
+            Route::get('by-slug/{slug}', [ProductController::class, 'showBySlug']);
+            Route::get('{productId}/inventory', [\App\Http\Controllers\Api\ProductInventoryController::class, 'index']);
+            
+            Route::middleware('marketing.module:upsell_enabled')->get('{productId}/upsells', [\App\Http\Controllers\Api\UpsellController::class, 'index']);
+            Route::middleware('marketing.module:cross_sell_enabled')->get('{productId}/cross-sells', [\App\Http\Controllers\Api\CrossSellController::class, 'index']);
+            
+            Route::get('{product}', [ProductController::class, 'show']);
+        });
+        
+        Route::get('product-categories', [ProductCategoryController::class, 'index']);
+        Route::get('brands', [BrandController::class, 'index']);
+
+        // Combos
+        Route::middleware('marketing.module:combo_enabled')->prefix('combos')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Api\ComboController::class, 'index']);
+            Route::get('{slug}', [\App\Http\Controllers\Api\ComboController::class, 'show']);
+        });
+        
+        // Pages
+        Route::prefix('pages')->group(function () {
+            Route::get('/', [PageController::class, 'index']);
+            Route::get('{page}', [PageController::class, 'show']);
+        });
+
+        // Authenticated Routes
+        Route::middleware([
+            'auth:sanctum',
+            \App\Http\Middleware\CheckTokenExpiration::class,
+            \App\Http\Middleware\HandleIdempotency::class
+        ])->group(function () {
+            // Auth (Protected)
+            Route::prefix('auth')->group(function () {
+                Route::post('logout', [AuthController::class, 'logout']);
+                Route::get('profile', fn(Request $request) => $request->user()->load(['defaultShippingAddress', 'defaultBillingAddress']));
+                Route::put('profile', [AuthController::class, 'updateProfile']);
+            });
+            
+            // User Addresses
+            Route::prefix('user-addresses')->group(function () {
+                Route::get('/', [AddressController::class, 'index']);
+                Route::post('/', [AddressController::class, 'store']);
+                Route::put('{address}', [AddressController::class, 'update']);
+                Route::delete('{address}', [AddressController::class, 'destroy']);
+            });
+
+            // Loyalty
+            Route::middleware('marketing.module:loyalty_enabled')->prefix('loyalty')->group(function () {
+                Route::get('points', [\App\Http\Controllers\Api\LoyaltyController::class, 'getPoints']);
+                Route::get('history', [\App\Http\Controllers\Api\LoyaltyController::class, 'getHistory']);
+            });
+
+            // Orders
+            Route::apiResource('orders', OrderController::class)->middleware('throttle:checkout');
+        });
     });
 });

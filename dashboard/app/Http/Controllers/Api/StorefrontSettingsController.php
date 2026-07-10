@@ -2,16 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use Illuminate\Http\JsonResponse;
 use App\Ecommerce\Settings\Contracts\StorefrontSettingsServiceInterface;
-use App\Traits\ApiResponse;
 use App\Swagger\Attributes\ApiGet;
 use OpenApi\Attributes as OAT;
 
-class StorefrontSettingsController extends Controller
+class StorefrontSettingsController extends BaseApiController
 {
-    use ApiResponse;
 
     protected StorefrontSettingsServiceInterface $settingsService;
 

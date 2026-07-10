@@ -2,17 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\Api\CrossSellResource;
 use App\Ecommerce\CrossSell\Contracts\CrossSellServiceInterface;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiList;
 
-class CrossSellController extends Controller
+class CrossSellController extends BaseApiController
 {
-    use ApiResponse;
 
     protected CrossSellServiceInterface $crossSellService;
 

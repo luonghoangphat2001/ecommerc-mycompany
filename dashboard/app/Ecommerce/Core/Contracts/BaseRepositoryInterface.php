@@ -96,4 +96,16 @@ interface BaseRepositoryInterface
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function query(): \Illuminate\Database\Eloquent\Builder;
+
+    /**
+     * Tự động áp dụng filter, search, và sort từ query parameters.
+     * 
+     * @param array $filters
+     * @param string|null $search
+     * @param array $searchFields
+     * @param string|null $sortBy
+     * @param string $sortDirection
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function filterAndSort(array $filters = [], ?string $search = null, array $searchFields = [], ?string $sortBy = null, string $sortDirection = 'desc'): \Illuminate\Database\Eloquent\Builder;
 }

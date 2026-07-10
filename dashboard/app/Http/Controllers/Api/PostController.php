@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\API\Post\StorePostRequest;
 use App\Http\Requests\API\Post\UpdatePostRequest;
 use App\Http\Resources\Api\PostResource;
 use App\Models\Post;
 use App\Ecommerce\Post\Contracts\PostServiceInterface;
 use App\Ecommerce\Post\DTOs\Post\PostDTO;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiGet;
@@ -18,9 +17,8 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use App\Swagger\Attributes\ApiDelete;
 
-class PostController extends Controller
+class PostController extends BaseApiController
 {
-    use ApiResponse;
 
     public function __construct(
         protected PostServiceInterface $postService

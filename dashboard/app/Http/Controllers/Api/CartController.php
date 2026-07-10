@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Ecommerce\Cart\Contracts\CartServiceInterface;
 use App\Ecommerce\Cart\Contracts\CartCalculationServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Models\Product;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
@@ -17,9 +16,8 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use App\Swagger\Attributes\ApiDelete;
 
-class CartController extends Controller
+class CartController extends BaseApiController
 {
-    use ApiResponse;
 
     public function __construct(
         protected CartServiceInterface $cartService,

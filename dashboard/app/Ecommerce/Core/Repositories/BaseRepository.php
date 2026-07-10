@@ -111,4 +111,44 @@ abstract class BaseRepository implements BaseRepositoryInterface
     {
         return $this->model->newQuery();
     }
+
+    /**
+     * Tự động áp dụng filter, search, và sort từ query parameters.
+     * 
+     * @param array $filters (e.g. ['status' => 'active'])
+     * @param string|null $search (e.g. 'keyword')
+     * @param array $searchFields (e.g. ['name', 'description'])
+     * @param string|null $sortBy (e.g. 'created_at')
+     * @param string $sortDirection (e.g. 'desc')
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function filterAndSort(array $filters = [], ?string $search = null, array $searchFields = [], ?string $sortBy = null, string $sortDirection = 'desc'): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = $this->query();
+
+        // Apply filters
+        foreach ($filters as $field => $value) {
+            if ($value !== null && $value !== '') {
+                $query->where($field, $value);
+            }
+        }
+
+        // Apply search
+        if (!empty($search) && !empty($searchFields)) {
+            $query->where(function ($q) use ($search, $searchFields) {
+                foreach ($searchFields as $field) {
+                    $q->orWhere($field, 'LIKE', "%{$search}%");
+                }
+            });
+        }
+
+        // Apply sort
+        if (!empty($sortBy)) {
+            $query->orderBy($sortBy, $sortDirection);
+        } else {
+            $query->orderBy($this->model->getKeyName(), 'desc');
+        }
+
+        return $query;
+    }
 }

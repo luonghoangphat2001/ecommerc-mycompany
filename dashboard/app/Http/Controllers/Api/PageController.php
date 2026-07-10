@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\API\Page\StorePageRequest;
 use App\Http\Requests\API\Page\UpdatePageRequest;
 use App\Http\Resources\Api\PageResource;
 use App\Ecommerce\Page\Contracts\PageServiceInterface;
 use App\Ecommerce\Page\DTOs\Page\PageDTO;
-use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiGet;
@@ -17,9 +16,8 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use App\Swagger\Attributes\ApiDelete;
 
-class PageController extends Controller
+class PageController extends BaseApiController
 {
-    use ApiResponse;
 
     public function __construct(
         protected PageServiceInterface $pageService
