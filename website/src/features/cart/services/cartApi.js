@@ -7,8 +7,8 @@ const cartApi = {
   },
 
   // Sync and validate cart
-  syncCart: (items = []) => {
-    return apiService.post('cart/sync', { items });
+  syncCart: (data = {}) => {
+    return apiService.post('cart/sync', data);
   },
 
   // Add item to cart

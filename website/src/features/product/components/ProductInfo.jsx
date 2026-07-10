@@ -12,7 +12,14 @@ const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAdd
 
             <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tight">{product.name}</h1>
 
-            <div className="text-3xl font-black text-blue-600 mb-6">{formatCurrency(product.price)}</div>
+            <div className="text-3xl font-black text-blue-600 mb-6 flex items-end gap-3">
+                {formatCurrency(product.effective_price || product.price)}
+                {product.is_on_sale && (
+                    <span className="text-xl text-slate-400 line-through font-medium mb-1">
+                        {formatCurrency(product.price)}
+                    </span>
+                )}
+            </div>
 
             <div className="prose prose-slate text-slate-600 mb-8 leading-relaxed">
                 <p>{product.description || translate("product.no_description")}</p>

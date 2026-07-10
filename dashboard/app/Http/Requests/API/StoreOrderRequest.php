@@ -55,6 +55,10 @@ class StoreOrderRequest extends FormRequest
             'currency' => 'nullable|string|size:3',
             'notes' => 'nullable|string',
             'coupon_code' => 'nullable|string',
+            'shipping_fee' => 'nullable|numeric',
+            'tax_amount' => 'nullable|numeric',
+            'discount_amount' => 'nullable|numeric',
+            'grand_total' => 'required|numeric',
         ];
     }
 }

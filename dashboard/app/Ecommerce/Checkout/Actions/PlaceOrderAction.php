@@ -51,6 +51,9 @@ class PlaceOrderAction
             // 2. Calculate totals
             $calcResult = $this->calculateOrderTotals($dto, $itemsForCalc);
 
+            // Validate totals match
+            $this->validateOrderTotals($dto, $calcResult);
+
             // 3. Create Order
             $order = $this->createOrder($dto, $calcResult);
 
@@ -87,12 +90,21 @@ class PlaceOrderAction
             $this->validateProductPrice($item, $product);
             $this->validateProductStock($product, $item['qty']);
 
+            $effectivePrice = $product->effective_price;
+            $discountAmount = 0;
+            if ($product->is_on_sale) {
+                $discountAmount = ($product->price - $effectivePrice) * $item['qty'];
+            }
+
             $itemsForCalc[] = [
                 'product_id' => $product->id,
                 'qty' => $item['qty'],
-                'unit_price' => $product->price,
-                'total' => $product->price * $item['qty'],
-                'tax_class_id' => $product->tax_class_id,
+                'unit_price' => $effectivePrice,
+                'total' => $effectivePrice * $item['qty'],
+                'tax_class_id' => $product->apply_tax ? $product->tax_class_id : null,
+                'original_price' => $product->price,
+                'sale_price' => $product->is_on_sale ? $product->sale_price : null,
+                'discount_amount' => $discountAmount,
             ];
         }
 
@@ -104,8 +116,8 @@ class PlaceOrderAction
      */
     private function validateProductPrice(array $item, $product): void
     {
-        if (isset($item['price']) && (float)$item['price'] !== (float)$product->price) {
-            \App\Services\Logging\ModuleLogger::order()->warning('price_mismatch', "Price mismatch for product #{$product->id}: Client sent {$item['price']}, DB has {$product->price}", ['product_id' => $product->id, 'client_price' => $item['price'], 'db_price' => $product->price]);
+        if (isset($item['price']) && (float)$item['price'] !== (float)$product->effective_price) {
+            \App\Services\Logging\ModuleLogger::order()->warning('price_mismatch', "Price mismatch for product #{$product->id}: Client sent {$item['price']}, DB has {$product->effective_price}", ['product_id' => $product->id, 'client_price' => $item['price'], 'db_price' => $product->effective_price]);
             throw ValidationException::withMessages([
                 'order' => [__('messages.price_mismatch')],
             ]);
@@ -158,6 +170,20 @@ class PlaceOrderAction
         );
 
         return $this->calculator->calculate($calcRequest);
+    }
+
+    /**
+     * Validate order totals from client against backend calculation
+     */
+    private function validateOrderTotals(OrderDataDTO $dto, CheckoutResultDTO $calcResult): void
+    {
+        // Allow up to 2 units (e.g. 2 VND) difference for rounding issues
+        if (abs($calcResult->total - $dto->grandTotal) > 2) {
+            \App\Services\Logging\ModuleLogger::order()->warning('total_mismatch', "Total mismatch for customer: Client sent {$dto->grandTotal}, Backend calculated {$calcResult->total}", ['client_total' => $dto->grandTotal, 'backend_total' => $calcResult->total]);
+            throw ValidationException::withMessages([
+                'order' => ['Tổng tiền không khớp, vui lòng tải lại trang và thử lại.'],
+            ]);
+        }
     }
 
     /**
@@ -260,6 +286,9 @@ class PlaceOrderAction
                 'shop_product_id' => $item['product_id'],
                 'qty' => $item['qty'],
                 'unit_price' => $item['unit_price'],
+                'original_price' => $item['original_price'] ?? $item['unit_price'],
+                'sale_price' => $item['sale_price'] ?? null,
+                'discount_amount' => $item['discount_amount'] ?? 0,
                 'total' => $item['total'],
                 'metadata' => $itemMetadata,
             ]);
@@ -276,6 +305,11 @@ class PlaceOrderAction
 
         if (!$product) {
             return $itemMetadata;
+        }
+
+        $imageUrl = $this->extractProductImage($product);
+        if ($imageUrl) {
+            $itemMetadata['image_url'] = $imageUrl;
         }
 
         if ($this->inventorySettings->multi_warehouse_enabled) {
@@ -297,6 +331,45 @@ class PlaceOrderAction
         }
 
         return $itemMetadata;
+    }
+
+    /**
+     * Extract product image for snapshot.
+     */
+    private function extractProductImage($product): ?string
+    {
+        $imageUrl = null;
+        
+        if (!$product->relationLoaded('featuredImage')) {
+            $product->load('featuredImage');
+        }
+        if ($product->featuredImage) {
+            $imageUrl = $product->featuredImage->url;
+        }
+        
+        if (!$imageUrl) {
+            if (!$product->relationLoaded('media')) {
+                $product->load('media');
+            }
+            $imageUrl = $product->getFirstMediaUrl('images');
+        }
+        
+        if (!$imageUrl && $product->product_images) {
+            $mediaId = is_array($product->product_images) ? ($product->product_images[0] ?? null) : (int)$product->product_images;
+            if ($mediaId) {
+                $media = \Awcodes\Curator\Models\Media::find($mediaId);
+                if ($media) {
+                    $imageUrl = $media->url;
+                } else {
+                    $spatieMedia = \Spatie\MediaLibrary\MediaCollections\Models\Media::find($mediaId);
+                    if ($spatieMedia) {
+                        $imageUrl = $spatieMedia->getUrl();
+                    }
+                }
+            }
+        }
+        
+        return $imageUrl ?: null;
     }
 
     /**

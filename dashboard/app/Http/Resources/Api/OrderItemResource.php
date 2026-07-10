@@ -33,7 +33,9 @@ class OrderItemResource extends BaseResource
         $product = $this->product;
         $imageUrl = null;
         
-        if ($product) {
+        if (!empty($this->metadata['image_url'])) {
+            $imageUrl = $this->metadata['image_url'];
+        } elseif ($product) {
             // Try Curator Media (Awcodes) first - used by this project
             if (!$product->relationLoaded('featuredImage')) {
                 $product->load('featuredImage');

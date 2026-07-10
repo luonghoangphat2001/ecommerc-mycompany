@@ -77,18 +77,26 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
     const fetchShipping = async () => {
       try {
         const { default: cartApi } = await import('../../cart/services/cartApi');
+        // Still fetch shipping methods to populate the UI (managed in useCheckoutAddress or similar if they use same endpoint)
         await cartApi.getShippingMethods(items, formData.country, formData.state);
-        // Dispatch to a store or handle locally if needed, for now just sync cart to get updated totals
-        if (formData.shippingMethod) {
-          const payload = items.map(item => ({
-            product_id: item.id,
-            quantity: item.quantity,
-            variant_id: item.variant_id || null
-          }));
-          const syncRes = await cartApi.syncCart({ items: payload, shipping_method: formData.shippingMethod, country: formData.country, state: formData.state });
-          if (syncRes && syncRes.data) {
-            useCartStore.getState().setCart({ summary: syncRes.data.summary || syncRes.data });
-          }
+
+        // Sync cart to get updated totals including shipping and tax
+        const payload = items.map(item => ({
+          product_id: item.id,
+          quantity: item.quantity,
+          variant_id: item.variant_id || null
+        }));
+
+        const syncRes = await cartApi.syncCart({
+          items: payload,
+          shipping_method: formData.shippingMethod,
+          country: formData.country,
+          state: formData.state,
+          coupon_code: summary?.coupon?.code || summary?.coupon_code || undefined
+        });
+
+        if (syncRes && syncRes.data) {
+          useCartStore.getState().setCart({ summary: syncRes.data.summary || syncRes.data });
         }
       } catch (err) {
         console.error("Failed to fetch shipping/sync", err);
@@ -99,7 +107,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
       const timeoutId = setTimeout(fetchShipping, 800); // debounce
       return () => clearTimeout(timeoutId);
     }
-  }, [formData.country, formData.state, formData.city, formData.shippingMethod, items]);
+  }, [formData.country, formData.state, formData.city, formData.shippingMethod, items, summary?.coupon?.code, summary?.coupon_code]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -124,7 +132,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
           phone: formData.phone,
           country: formData.country || 'VN',
           street: formData.address,
-          city: formData.city,
+          city: formData.country?.toLowerCase() === 'vn' ? (formData.state || formData.city || 'Vietnam') : formData.city,
           state: formData.state,
           region: formData.region,
           sub_region: formData.subRegion,
@@ -138,7 +146,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
           email: formData.billingEmail,
           country: formData.billingCountry || 'VN',
           street: formData.billingAddress,
-          city: formData.billingCity,
+          city: formData.billingCountry?.toLowerCase() === 'vn' ? (formData.billingState || formData.billingCity || 'Vietnam') : formData.billingCity,
           state: formData.billingState,
           region: formData.billingRegion,
           sub_region: formData.billingSubRegion,
@@ -152,7 +160,11 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
         shipping_method: formData.shippingMethod || 'flat_rate',
         payment_method: formData.paymentMethod || 'cod',
         notes: formData.note,
-        coupon_code: summary?.coupon?.code || summary?.coupon_code || undefined
+        coupon_code: summary?.coupon?.code || summary?.coupon_code || undefined,
+        shipping_fee: summary?.shipping?.amount || summary?.shipping_cost || 0,
+        tax_amount: summary?.tax?.amount || summary?.tax_amount || 0,
+        discount_amount: summary?.discount?.amount || summary?.discount_amount || 0,
+        grand_total: summary?.total || 0,
       };
 
       const response = await orderService.create(orderData);

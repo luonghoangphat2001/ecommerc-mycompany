@@ -1,13 +1,18 @@
-import React, { useMemo } from "react"
+import React from "react"
 import { ShoppingBag } from "lucide-react"
 import { Card, Button } from "../../../components/common"
 import useSettingsStore from "../../../store/useSettingsStore"
 import { useFormatters } from "../../../utils/useFormatters"
 
-const OrderSummary = React.memo(({ items, total, shippingCost = 0, isSubmitting }) => {
+const OrderSummary = React.memo(({ items, summary = {}, isSubmitting }) => {
     const translate = useSettingsStore((state) => state.translate)
     const { formatCurrency } = useFormatters()
-    const grandTotal = useMemo(() => total + shippingCost, [total, shippingCost])
+    
+    const subtotal = summary.subtotal || 0;
+    const shippingCost = summary.shipping?.amount || 0;
+    const taxAmount = summary.tax?.amount || 0;
+    const discountAmount = summary.discount?.amount || 0;
+    const grandTotal = summary.total || 0;
 
     return (
         <div className="lg:col-span-1">
@@ -43,13 +48,29 @@ const OrderSummary = React.memo(({ items, total, shippingCost = 0, isSubmitting 
                     {/* Summary */}
                     <div className="space-y-4 pt-6 border-t border-slate-100">
                         <div className="flex justify-between text-slate-500 font-medium">
-                            <span>{translate("cart.subtotal")}</span>
-                            <span>{formatCurrency(total)}</span>
+                            <span>{translate("cart.subtotal") || "Tạm tính"}</span>
+                            <span>{formatCurrency(subtotal)}</span>
                         </div>
+                        
+                        {discountAmount > 0 && (
+                            <div className="flex justify-between text-green-600 font-medium">
+                                <span>{translate("cart.discount") || "Giảm giá"}</span>
+                                <span>-{formatCurrency(discountAmount)}</span>
+                            </div>
+                        )}
+                        
                         <div className="flex justify-between text-slate-500 font-medium">
                             <span>{translate("cart.shipping")}</span>
                             <span className={shippingCost === 0 ? "text-green-600" : ""}>{shippingCost > 0 ? formatCurrency(shippingCost) : translate("cart.free")}</span>
                         </div>
+                        
+                        {taxAmount > 0 && (
+                            <div className="flex justify-between text-slate-500 font-medium">
+                                <span>{translate("cart.tax") || "Thuế"}</span>
+                                <span>{formatCurrency(taxAmount)}</span>
+                            </div>
+                        )}
+                        
                         <div className="flex justify-between pt-4 border-t border-slate-100 items-center">
                             <span className="text-lg font-bold text-slate-900">{translate("cart.total")}</span>
                             <span className="text-2xl font-black text-blue-600">{formatCurrency(grandTotal)}</span>

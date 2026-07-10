@@ -79,6 +79,7 @@ class Product extends Model implements HasMedia
         'sale_price',
         'sale_start_date',
         'sale_end_date',
+        'apply_tax',
     ];
 
     public function taxClass(): BelongsTo
@@ -103,6 +104,7 @@ class Product extends Model implements HasMedia
         'sale_start_date' => 'datetime',
         'sale_end_date' => 'datetime',
         'product_images' => 'array',
+        'apply_tax' => 'boolean',
     ];
 
     public function featuredImage()
@@ -218,5 +220,42 @@ class Product extends Model implements HasMedia
     public function comboItems(): HasMany
     {
         return $this->hasMany(ComboProductItem::class, 'shop_product_id');
+    }
+
+    public function getEffectivePriceAttribute(): int
+    {
+        if (
+            is_null($this->sale_price) || 
+            $this->sale_price < 0 || 
+            $this->sale_price >= $this->price
+        ) {
+            return (int) $this->price;
+        }
+
+        $now = now();
+
+        if ($this->sale_start_date && $this->sale_end_date) {
+            if ($now->between($this->sale_start_date, $this->sale_end_date)) {
+                return (int) $this->sale_price;
+            }
+        } elseif ($this->sale_start_date) {
+            if ($now->greaterThanOrEqualTo($this->sale_start_date)) {
+                return (int) $this->sale_price;
+            }
+        } elseif ($this->sale_end_date) {
+            if ($now->lessThanOrEqualTo($this->sale_end_date)) {
+                return (int) $this->sale_price;
+            }
+        } else {
+            // No dates set, but sale_price is valid
+            return (int) $this->sale_price;
+        }
+
+        return (int) $this->price;
+    }
+
+    public function getIsOnSaleAttribute(): bool
+    {
+        return $this->effective_price < $this->price;
     }
 }

@@ -50,29 +50,59 @@ const OrderHistory = ({ orders, onViewOrder }) => {
 
             <Card.Body className="px-0 pb-0">
                 <div className="space-y-4">
-                    {filteredOrders.map((order) => (
-                        <div key={order.id} onClick={() => onViewOrder(order)} className="group p-6 border border-slate-100 rounded-3xl hover:border-blue-200 hover:bg-blue-50/20 transition-all cursor-pointer flex items-center justify-between">
-                            <div className="flex items-center gap-6">
-                                <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-slate-400 group-hover:text-blue-500 transition-colors">
-                                    <Package size={24} />
+                    {filteredOrders.map((order) => {
+                        const firstItem = order.items && order.items.length > 0 ? order.items[0] : null
+                        const extraItemsCount = order.items ? order.items.length - 1 : 0
+                        const statusColors = {
+                            pending: "bg-yellow-100 text-yellow-700",
+                            processing: "bg-blue-100 text-blue-700",
+                            shipping: "bg-indigo-100 text-indigo-700",
+                            completed: "bg-green-100 text-green-700",
+                            cancelled: "bg-red-100 text-red-700",
+                            refunded: "bg-purple-100 text-purple-700",
+                        }
+                        const paymentStatusColors = {
+                            pending: "bg-yellow-100 text-yellow-700",
+                            paid: "bg-green-100 text-green-700",
+                            failed: "bg-red-100 text-red-700",
+                        }
+                        return (
+                            <div key={order.id} onClick={() => onViewOrder(order)} className="group p-6 border border-slate-100 rounded-3xl hover:border-blue-200 hover:bg-blue-50/20 transition-all cursor-pointer flex flex-col md:flex-row justify-between md:items-center gap-4">
+                                <div className="flex items-start md:items-center gap-4 md:gap-6 flex-1">
+                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-100 rounded-2xl overflow-hidden shadow-sm flex-shrink-0 flex items-center justify-center text-slate-400">{firstItem?.product?.image?.url ? <img src={firstItem.product.image.url} alt={firstItem.product.name} className="w-full h-full object-cover" /> : <Package size={24} />}</div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className="font-bold text-slate-900">Mã đơn: {order.number || order.id}</p>
+                                            <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${statusColors[order.status] || "bg-slate-100 text-slate-600"}`}>{order.status}</span>
+                                            {order.payment_status && <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${paymentStatusColors[order.payment_status] || "bg-slate-100 text-slate-600"}`}>{order.payment_status}</span>}
+                                        </div>
+                                        <p className="text-xs text-slate-500 mb-2">Ngày đặt: {new Date(order.created_at).toLocaleDateString("vi-VN")}</p>
+                                        {firstItem && (
+                                            <p className="text-sm font-medium text-slate-800 line-clamp-1">
+                                                {firstItem.product?.name || "Sản phẩm"} (x{firstItem.qty}){extraItemsCount > 0 && <span className="text-slate-500 ml-1">+ {extraItemsCount} sản phẩm khác</span>}
+                                            </p>
+                                        )}
+                                        {order.payment_method && <p className="text-xs text-slate-500 mt-1 uppercase">Thanh toán qua: {order.payment_method}</p>}
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-bold text-slate-900">{order.number || order.id}</p>
-                                    <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleDateString("vi-VN")}</p>
-                                </div>
-                            </div>
 
-                            <div className="text-right">
-                                <p className="font-bold text-slate-900">{formatCurrency(order.total)}</p>
-                                <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${order.status === "completed" ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"}`}>{order.status}</span>
+                                <div className="text-left md:text-right flex flex-row md:flex-col justify-between items-center md:items-end">
+                                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Tổng tiền</p>
+                                    <p className="font-black text-blue-600 text-lg md:text-xl">{formatCurrency(order.total)}</p>
+                                    <button className="mt-2 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">Xem chi tiết</button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
 
                 {filteredOrders.length === 0 && (
-                    <div className="py-20 text-center">
-                        <p className="text-slate-500">Bạn chưa có đơn hàng nào phù hợp.</p>
+                    <div className="py-20 flex flex-col items-center justify-center text-center">
+                        <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-4">
+                            <Package size={32} />
+                        </div>
+                        <p className="text-slate-900 font-bold mb-1">Bạn chưa có đơn hàng nào phù hợp</p>
+                        <p className="text-slate-500 text-sm">Hãy thử thay đổi bộ lọc hoặc tiếp tục mua sắm.</p>
                     </div>
                 )}
             </Card.Body>

@@ -19,7 +19,6 @@ const MyAccountPage = () => {
     const [activeTab, setActiveTab] = useState("dashboard")
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [orders, setOrders] = useState([])
-    
 
     useEffect(() => {
         if (activeTab === "orders") {
@@ -29,7 +28,7 @@ const MyAccountPage = () => {
 
     const fetchOrders = async () => {
         try {
-            const response = await orderService.getAll()
+            const response = await orderService.getAll({ include: "items,payments" })
             // API returns { success: true, data: [], meta: {...} }
             const ordersData = unwrapApiList(response, [])
             setOrders(ordersData)

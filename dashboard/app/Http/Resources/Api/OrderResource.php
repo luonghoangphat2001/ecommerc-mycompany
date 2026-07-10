@@ -27,6 +27,12 @@ use OpenApi\Attributes as OAT;
                 new OAT\Property(property: 'time', type: 'string', format: 'date-time')
             ]
         )),
+        new OAT\Property(property: 'payment_method', type: 'string', nullable: true),
+        new OAT\Property(property: 'payment_status', type: 'string', nullable: true),
+        new OAT\Property(property: 'shipping_method', type: 'string', nullable: true),
+        new OAT\Property(property: 'discount_total', type: 'number', format: 'float', example: 50000),
+        new OAT\Property(property: 'loyalty_discount', type: 'number', format: 'float', example: 10000),
+        new OAT\Property(property: 'customer_notes', type: 'string', nullable: true),
         new OAT\Property(property: 'created_at', type: 'string', format: 'date-time'),
         new OAT\Property(property: 'updated_at', type: 'string', format: 'date-time'),
     ]
@@ -55,6 +61,14 @@ class OrderResource extends BaseResource
                 : [
                     ['status' => $this->status, 'time' => $this->created_at->toDateTimeString()]
                 ],
+            'shipping_method' => $this->relationLoaded('shipping') && $this->shipping ? $this->shipping->method : null,
+            'payment_method' => $this->relationLoaded('payments') && $this->payments->count() > 0 ? $this->payments->sortByDesc('id')->first()->method : null,
+            'payment_status' => $this->relationLoaded('payments') && $this->payments->count() > 0 ? $this->payments->sortByDesc('id')->first()->status : null,
+            'customer_notes' => $this->relationLoaded('metas') && $this->metas ? $this->metas->where('key', 'customer_notes')->first()?->value : null,
+            'loyalty_discount' => $this->relationLoaded('metas') && $this->metas ? (int) ($this->metas->where('key', 'loyalty_discount')->first()?->value ?? 0) : 0,
+            'discount_total' => $this->relationLoaded('coupons') && $this->coupons ? $this->coupons->sum('discount_amount') : 0,
+            'coupons' => $this->relationLoaded('coupons') ? $this->coupons->map(fn($c) => ['code' => $c->coupon_code, 'discount' => $c->discount_amount]) : [],
+            'refunds' => $this->relationLoaded('refunds') ? $this->refunds->map(fn($r) => ['amount' => $r->amount, 'reason' => $r->reason, 'type' => $r->metadata['type'] ?? 'full', 'status' => $r->metadata['status'] ?? 'completed', 'date' => $r->created_at->toDateTimeString()]) : [],
         ], $this->getTimestamps());
     }
 }

@@ -9,10 +9,11 @@ interface CartCalculationServiceInterface
      *
      * @param array $items
      * @param string|null $country
-     * @param string|null $state
+     * @param string|null $shippingMethodId
+     * @param string|null $couponCode
      * @return array
      */
-    public function calculate(array $items, ?string $country = 'VN', ?string $state = null): array;
+    public function calculate(array $items, ?string $country = 'VN', ?string $state = null, ?string $shippingMethodId = null, ?string $couponCode = null): array;
 
     /**
      * Get available shipping methods

@@ -208,12 +208,18 @@ class OrderService implements OrderServiceInterface
             // 2. Build items for checkout calculation
             $itemsForCalc = [];
             foreach ($order->productItems as $item) {
+                // Determine tax_class_id based on product apply_tax setting
+                $taxClassId = null;
+                if ($item->product) {
+                    $taxClassId = $item->product->apply_tax ? $item->product->tax_class_id : null;
+                }
+
                 $itemsForCalc[] = [
                     'product_id' => $item->shop_product_id,
                     'qty' => $item->qty,
                     'unit_price' => $item->unit_price,
                     'total' => $item->unit_price * $item->qty,
-                    'tax_class_id' => $item->product?->tax_class_id,
+                    'tax_class_id' => $taxClassId,
                 ];
             }
 

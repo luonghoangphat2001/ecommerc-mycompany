@@ -50,7 +50,7 @@ class CartValidationAction
             }
 
             // Validate price
-            if (round($clientPrice, 2) != round($product->price, 2)) {
+            if (round($clientPrice, 2) != round($product->effective_price, 2)) {
                 $notifications[] = [
                     'type' => 'price_change',
                     'message' => "Giá của {$product->name} đã thay đổi.",
@@ -58,13 +58,13 @@ class CartValidationAction
                 ];
             }
 
-            $itemSubtotal = $product->price * $finalQty;
+            $itemSubtotal = $product->effective_price * $finalQty;
             $subtotal += $itemSubtotal;
 
             $validatedItems[] = [
                 'id' => $product->id,
                 'name' => $product->name,
-                'price' => (float)$product->price,
+                'price' => (float)$product->effective_price,
                 'quantity' => $finalQty,
                 'subtotal' => (float)$itemSubtotal,
                 'image' => $product->featuredImage ? \Illuminate\Support\Facades\Storage::url($product->featuredImage->path) : null,

@@ -25,8 +25,8 @@ const ProductCard = ({ product }) => {
     }
 
     const imageSrc = product.image?.url || product.image || product.image_url
-    const hasDiscount = product.old_price && product.old_price > product.price
-    const discountPercent = hasDiscount ? Math.round((1 - product.price / product.old_price) * 100) : 0
+    const hasDiscount = product.is_on_sale
+    const discountPercent = hasDiscount && product.price > 0 ? Math.round((1 - product.effective_price / product.price) * 100) : 0
 
     return (
         <Link to={`/products/${product.slug || product.id}`} className={`group flex flex-col rounded-2xl overflow-hidden transition-all duration-300 bg-white/40 backdrop-blur-md border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] ${!isAvailable ? "opacity-75" : ""}`}>
@@ -86,8 +86,8 @@ const ProductCard = ({ product }) => {
                 {/* Price & Add to Cart */}
                 <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-100">
                     <div className="flex flex-col">
-                        <span className="font-bold text-slate-900">{formatCurrency(product.price)}</span>
-                        {hasDiscount && <span className="text-xs text-slate-400 line-through">{formatCurrency(product.old_price)}</span>}
+                        <span className="font-bold text-slate-900">{formatCurrency(product.effective_price || product.price)}</span>
+                        {hasDiscount && <span className="text-xs text-slate-400 line-through">{formatCurrency(product.price)}</span>}
                     </div>
 
                     <button onClick={handleAddToCart} disabled={!isAvailable} title={isAvailable ? translate("product.add_to_cart") : "Hết hàng"} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-sm ${isAvailable ? "bg-slate-50 text-slate-600 hover:bg-blue-600 hover:text-white hover:shadow-md" : "bg-slate-100 text-slate-400 cursor-not-allowed"}`}>

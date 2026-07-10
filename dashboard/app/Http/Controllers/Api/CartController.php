@@ -59,7 +59,9 @@ class CartController extends BaseApiController
         $summary = $this->calculationService->calculate(
             $validated['items'] ?? [],
             $request->input('country', 'VN'),
-            $request->input('state')
+            $request->input('state'),
+            $request->input('shipping_method'),
+            $request->input('coupon_code')
         );
 
         return $this->success([
@@ -103,7 +105,9 @@ class CartController extends BaseApiController
         $summary = $this->calculationService->calculate(
             $validated['items'] ?? [],
             $request->input('country', 'VN'),
-            $request->input('state')
+            $request->input('state'),
+            $request->input('shipping_method'),
+            $request->input('coupon_code')
         );
 
         return $this->success([

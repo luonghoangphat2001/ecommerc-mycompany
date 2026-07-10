@@ -7,12 +7,18 @@ use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Settings\CheckoutSettings;
 
+use App\Ecommerce\Checkout\Services\CheckoutCalculatorService;
+use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
+use App\Ecommerce\Address\DTOs\Address\AddressDTO;
+use App\Models\Product;
+
 class CartCalculationService implements CartCalculationServiceInterface
 {
     public function __construct(
         protected TaxServiceInterface $taxService,
         protected ShippingServiceInterface $shippingService,
-        protected CheckoutSettings $checkoutSettings
+        protected CheckoutSettings $checkoutSettings,
+        protected CheckoutCalculatorService $calculator
     ) {}
 
     /**
@@ -21,25 +27,60 @@ class CartCalculationService implements CartCalculationServiceInterface
      * @param array $items Validated cart items
      * @param string|null $country Shipping country
      * @param string|null $state Shipping state
+     * @param string|null $shippingMethodId
+     * @param string|null $couponCode
      * @return array
      */
-    public function calculate(array $items, ?string $country = 'VN', ?string $state = null): array
+    public function calculate(array $items, ?string $country = 'VN', ?string $state = null, ?string $shippingMethodId = null, ?string $couponCode = null): array
     {
-        $subtotal = $this->calculateSubtotal($items);
-        
-        // Get shipping using ShippingService
-        $shipping = $this->calculateShipping($subtotal, $country, $state);
-        
-        // Get tax using TaxService
-        $tax = $this->calculateTax($subtotal, $country);
-        
-        $total = $subtotal + $shipping['amount'] + $tax['amount'];
-        
+        $itemsForCalc = [];
+        foreach ($items as $item) {
+            $product = Product::find($item['product_id'] ?? $item['id'] ?? null);
+            if ($product) {
+                $itemsForCalc[] = [
+                    'product_id' => $product->id,
+                    'qty' => $item['quantity'] ?? 1,
+                    'unit_price' => $item['price'] ?? $product->effective_price,
+                    'total' => ($item['price'] ?? $product->effective_price) * ($item['quantity'] ?? 1),
+                    'tax_class_id' => $product->apply_tax ? $product->tax_class_id : null,
+                ];
+            }
+        }
+
+        $shippingAddress = new AddressDTO(
+            first_name: 'Guest',
+            last_name: 'User',
+            phone: '',
+            email: '',
+            country_code: $country ?? 'VN',
+            state_id: $state,
+            city_id: null,
+            ward_id: null,
+            address_detail: 'Dummy Address'
+        );
+
+        $request = new CheckoutRequestDTO(
+            items: $itemsForCalc,
+            shippingMethod: $shippingMethodId,
+            shippingAddress: $shippingAddress,
+            couponCode: $couponCode,
+            currency: 'VND'
+        );
+
+        $calcResult = $this->calculator->calculate($request);
+
         return [
-            'subtotal' => $subtotal,
-            'shipping' => $shipping,
-            'tax' => $tax,
-            'total' => $total,
+            'subtotal' => $calcResult->subtotal,
+            'shipping' => [
+                'amount' => $calcResult->shippingTotal,
+            ],
+            'tax' => [
+                'amount' => $calcResult->taxTotal,
+            ],
+            'discount' => [
+                'amount' => $calcResult->discountTotal + $calcResult->loyaltyDiscountTotal,
+            ],
+            'total' => $calcResult->total,
             'items_count' => collect($items)->sum('quantity'),
         ];
     }

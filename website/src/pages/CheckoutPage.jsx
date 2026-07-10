@@ -13,8 +13,7 @@ const CheckoutPage = () => {
 
     const { formData, isSubmitting, handleSubmit, handleInputChange, handlePaymentChange, handleShippingChange, handleBillingToggle } = useCheckoutForm(user, clearCart)
 
-    const shippingCost = summary?.shipping?.amount || 0
-    const cartTotal = summary?.total || 0
+    const summaryData = summary || {};
 
     return (
         <div className="w-full max-w-6xl mx-auto">
@@ -23,7 +22,7 @@ const CheckoutPage = () => {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 <CheckoutForm formData={formData} onInputChange={handleInputChange} onPaymentChange={handlePaymentChange} onShippingChange={handleShippingChange} onBillingToggle={handleBillingToggle} isSubmitting={isSubmitting} />
 
-                <OrderSummary items={items} total={cartTotal} shippingCost={shippingCost} isSubmitting={isSubmitting} />
+                <OrderSummary items={items} summary={summaryData} isSubmitting={isSubmitting} />
             </form>
         </div>
     )

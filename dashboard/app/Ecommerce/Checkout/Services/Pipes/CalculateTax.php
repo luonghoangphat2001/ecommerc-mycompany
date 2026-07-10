@@ -71,7 +71,9 @@ class CalculateTax
         }
 
         $result->taxTotal = $taxTotal;
-        $result->total += $taxTotal;
+        if (!$includeTax) {
+            $result->total += $taxTotal;
+        }
 
         return $next($passable);
     }

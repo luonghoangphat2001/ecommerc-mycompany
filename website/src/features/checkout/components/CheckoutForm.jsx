@@ -19,9 +19,10 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                     <FormInput label={translate("checkout.last_name") || "Tên"} name="lastName" required value={formData.lastName} onChange={onInputChange} />
                     <FormInput label={translate("checkout.email") || "Email"} name="email" type="email" required value={formData.email} onChange={onInputChange} />
                     <FormInput label={translate("checkout.phone") || "Số điện thoại"} name="phone" type="tel" required value={formData.phone} onChange={onInputChange} />
-                    <FormInput label={translate("checkout.address") || "Địa chỉ"} name="address" required value={formData.address} onChange={onInputChange} className="md:col-span-2" />
-                    <FormInput label={translate("checkout.city") || "Thành phố"} name="city" required value={formData.city} onChange={onInputChange} />
                     <FormSelect label={translate("checkout.country") || "Quốc gia"} name="country" required value={formData.country} onChange={onInputChange} options={Object.entries(countries)} placeholder={translate("checkout.select_country") || "Chọn quốc gia"} />
+                    {formData.country !== "vn" && formData.country !== "VN" && (
+                        <FormInput label={translate("checkout.city") || "Thành phố"} name="city" required value={formData.city} onChange={onInputChange} />
+                    )}
 
                     {formData.country === "vn" && (
                         <>
@@ -30,6 +31,7 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                             {formData.region && <FormSelect label={translate("checkout.sub_region") || "Phường/Xã"} name="subRegion" value={formData.subRegion} onChange={onInputChange} options={Object.entries(subRegions)} placeholder={translate("checkout.select_sub_region") || "Chọn phường/xã"} />}
                         </>
                     )}
+                    <FormInput label={translate("checkout.address") || "Địa chỉ"} name="address" required value={formData.address} onChange={onInputChange} className="md:col-span-2" />
 
                     <FormInput label={translate("checkout.note") || "Ghi chú"} name="note" value={formData.note} onChange={onInputChange} className="md:col-span-2" />
                 </div>
@@ -44,9 +46,10 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                         <FormInput label={translate("checkout.last_name") || "Tên"} name="billingLastName" required value={formData.billingLastName} onChange={onInputChange} />
                         <FormInput label={translate("checkout.email") || "Email"} name="billingEmail" type="email" required value={formData.billingEmail} onChange={onInputChange} />
                         <FormInput label={translate("checkout.phone") || "Số điện thoại"} name="billingPhone" type="tel" required value={formData.billingPhone} onChange={onInputChange} />
-                        <FormInput label={translate("checkout.address") || "Địa chỉ"} name="billingAddress" required value={formData.billingAddress} onChange={onInputChange} className="md:col-span-2" />
-                        <FormInput label={translate("checkout.city") || "Thành phố"} name="billingCity" required value={formData.billingCity} onChange={onInputChange} />
                         <FormSelect label={translate("checkout.country") || "Quốc gia"} name="billingCountry" required value={formData.billingCountry} onChange={onInputChange} options={Object.entries(countries)} placeholder={translate("checkout.select_country") || "Chọn quốc gia"} />
+                        {formData.billingCountry !== "vn" && formData.billingCountry !== "VN" && (
+                            <FormInput label={translate("checkout.city") || "Thành phố"} name="billingCity" required value={formData.billingCity} onChange={onInputChange} />
+                        )}
 
                         {formData.billingCountry === "vn" && (
                             <>
@@ -55,6 +58,7 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                                 {formData.billingRegion && <FormSelect label={translate("checkout.sub_region") || "Phường/Xã"} name="billingSubRegion" value={formData.billingSubRegion} onChange={onInputChange} options={Object.entries(subRegions)} placeholder={translate("checkout.select_sub_region") || "Chọn phường/xã"} />}
                             </>
                         )}
+                        <FormInput label={translate("checkout.address") || "Địa chỉ"} name="billingAddress" required value={formData.billingAddress} onChange={onInputChange} className="md:col-span-2" />
                     </div>
                 )}
             </FormSection>

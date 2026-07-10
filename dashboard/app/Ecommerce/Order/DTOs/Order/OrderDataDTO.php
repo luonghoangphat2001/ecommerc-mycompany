@@ -16,6 +16,10 @@ class OrderDataDTO
         public ?string $couponCode = null,
         public string $currency = 'VND',
         public ?string $notes = null,
+        public float $shippingFee = 0,
+        public float $taxAmount = 0,
+        public float $discountAmount = 0,
+        public float $grandTotal = 0,
     ) {}
 
     /**
@@ -35,6 +39,10 @@ class OrderDataDTO
             couponCode: $data['coupon_code'] ?? null,
             currency: $data['currency'] ?? 'VND',
             notes: $data['notes'] ?? null,
+            shippingFee: (float) ($data['shipping_fee'] ?? 0),
+            taxAmount: (float) ($data['tax_amount'] ?? 0),
+            discountAmount: (float) ($data['discount_amount'] ?? 0),
+            grandTotal: (float) ($data['grand_total'] ?? 0),
         );
     }
 }

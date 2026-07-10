@@ -37,7 +37,7 @@ class ProductController extends BaseCrudController
         return [
             'general' => [
                 'label' => 'Thông tin chung',
-                'fields' => ['name', 'sku', 'slug', 'shop_brand_id', 'type', 'is_visible', 'featured', 'published_at'],
+                'fields' => ['name', 'sku', 'slug', 'shop_brand_id', 'type', 'is_visible', 'featured', 'published_at', 'apply_tax'],
             ],
             'pricing' => [
                 'label' => 'Giá & Tồn kho',
@@ -102,6 +102,7 @@ class ProductController extends BaseCrudController
 
             'featured' => ['label' => 'Featured', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không'], 'hideOnIndex' => true],
             'is_visible' => ['label' => 'Hiển thị', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
+            'apply_tax' => ['label' => 'Apply Tax', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
             'backorder' => ['label' => 'Backorder', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không'], 'hideOnIndex' => true],
             'requires_shipping' => ['label' => 'Requires Shipping', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không'], 'hideOnIndex' => true],
 
@@ -165,6 +166,7 @@ class ProductController extends BaseCrudController
             'type' => ['required', 'string', 'max:50'],
             'featured' => ['nullable', 'boolean'],
             'is_visible' => ['nullable', 'boolean'],
+            'apply_tax' => ['nullable', 'boolean'],
             'backorder' => ['nullable', 'boolean'],
             'requires_shipping' => ['nullable', 'boolean'],
             'published_at' => ['nullable', 'date'],

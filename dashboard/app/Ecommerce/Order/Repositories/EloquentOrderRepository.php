@@ -40,7 +40,7 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
      */
     public function getFullOrder(int|string $id): ?Order
     {
-        return $this->model->with(['items.product.media', 'shippingAddress', 'billingAddress', 'payments', 'customer'])
+        return $this->model->with(['items.product.media', 'shippingAddress', 'billingAddress', 'payments', 'customer', 'metas', 'coupons', 'refunds', 'shipping', 'activities'])
             ->find($id);
     }
 
@@ -117,7 +117,7 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
                 'number',
             ])
             ->allowedSorts(['created_at', 'total'])
-            ->allowedIncludes(['items', 'shippingAddress', 'billingAddress'])
+            ->allowedIncludes(['items', 'shippingAddress', 'billingAddress', 'payments', 'shipping'])
             ->defaultSort('-created_at')
             ->paginate($perPage);
     }
