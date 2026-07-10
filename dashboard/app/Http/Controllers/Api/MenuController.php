@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Resources\Api\MenuResource;
 use App\Ecommerce\Menu\Services\MenuService;
+use App\Swagger\Attributes\ApiList;
+use App\Swagger\Attributes\ApiGet;
+use OpenApi\Attributes as OAT;
 
 class MenuController extends Controller
 {
@@ -16,9 +19,13 @@ class MenuController extends Controller
         $this->menuService = $menuService;
     }
 
-    /**
-     * Display a listing of the resource.
-     */
+    #[ApiList(
+        path: '/api/storefront/v1/menus',
+        summary: 'List of Menus',
+        tags: 'Storefront - Menus',
+        requiresAuth: false,
+        responseData: '#/components/schemas/MenuResource'
+    )]
     public function index()
     {
         $menus = $this->menuService->getAllMenus();
@@ -33,9 +40,16 @@ class MenuController extends Controller
         //
     }
 
-    /**
-     * Display the specified resource.
-     */
+    #[ApiGet(
+        path: '/api/storefront/v1/menus/{slug}',
+        summary: 'Menu Details (by Slug)',
+        tags: 'Storefront - Menus',
+        requiresAuth: false,
+        parameters: [
+            new OAT\Parameter(name: 'slug', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'main-menu'), description: 'Menu Slug')
+        ],
+        responseData: '#/components/schemas/MenuResource'
+    )]
     public function show($slug)
     {
         $menu = $this->menuService->getMenuBySlug($slug);

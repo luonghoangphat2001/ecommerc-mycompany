@@ -7,12 +7,9 @@ use App\Http\Resources\Api\UpsellResource;
 use App\Ecommerce\Upsell\Contracts\UpsellServiceInterface;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use OpenApi\Attributes as OAT;
+use App\Swagger\Attributes\ApiList;
 
-/**
- * @group Marketing
- *
- * APIs for managing upsell products
- */
 class UpsellController extends Controller
 {
     use ApiResponse;
@@ -24,32 +21,16 @@ class UpsellController extends Controller
         $this->upsellService = $upsellService;
     }
 
-    /**
-     * Get upsell products for a product.
-     *
-     * Returns a list of upsell product relationships for the given product ID.
-     *
-     * @urlParam productId integer required The ID of the product. Example: 1
-     *
-     * @response 200 {
-     *   "data": [
-     *     {
-     *       "id": 1,
-     *       "sort_order": 0,
-     *       "is_active": true,
-     *       "product": {
-     *         "id": 2,
-     *         "name": "Premium Product",
-     *         "price": 500000,
-     *         "stock": 10
-     *       }
-     *     }
-     *   ]
-     * }
-     * @response 404 {
-     *   "message": "Product not found."
-     * }
-     */
+    #[ApiList(
+        path: '/api/storefront/v1/products/{productId}/upsells',
+        summary: 'List Upsells for Product',
+        tags: 'Storefront - Upsells',
+        requiresAuth: false,
+        parameters: [
+            new OAT\Parameter(name: 'productId', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Original Product ID')
+        ],
+        responseData: '#/components/schemas/UpsellResource'
+    )]
     public function index(int $productId): JsonResponse
     {
         $upsells = $this->upsellService->getUpsellsForProduct($productId);

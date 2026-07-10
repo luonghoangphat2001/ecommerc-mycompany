@@ -10,6 +10,12 @@ use App\Models\Product;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OAT;
+use App\Swagger\Attributes\ApiGet;
+use App\Swagger\Attributes\ApiList;
+use App\Swagger\Attributes\ApiPost;
+use App\Swagger\Attributes\ApiUpdate;
+use App\Swagger\Attributes\ApiDelete;
 
 class CartController extends Controller
 {
@@ -21,15 +27,37 @@ class CartController extends Controller
         protected ShippingServiceInterface $shippingService
     ) {}
 
-    /**
-     * Get cart items with validation (POST vì FE gửi items từ localStorage)
-     */
+    #[ApiPost(
+        path: '/api/storefront/v1/cart',
+        summary: 'Get Cart Information',
+        tags: 'Storefront - Cart',
+        requiresAuth: false,
+        requestBody: new OAT\RequestBody(
+            required: false,
+            content: new OAT\JsonContent(
+                properties: [
+                    new OAT\Property(property: 'items', type: 'array', items: new OAT\Items(type: 'object')),
+                    new OAT\Property(property: 'country', type: 'string', example: 'VN'),
+                    new OAT\Property(property: 'state', type: 'string', nullable: true)
+                ]
+            )
+        ),
+        responseData: [
+            new OAT\Property(property: 'items', type: 'array', items: new OAT\Items(type: 'object')),
+            new OAT\Property(property: 'summary', type: 'object', properties: [
+                new OAT\Property(property: 'subtotal', type: 'number', format: 'float', example: 1000000),
+                new OAT\Property(property: 'tax_amount', type: 'number', format: 'float', example: 100000),
+                new OAT\Property(property: 'shipping_cost', type: 'number', format: 'float', example: 30000),
+                new OAT\Property(property: 'total', type: 'number', format: 'float', example: 1130000),
+            ]),
+            new OAT\Property(property: 'notifications', type: 'array', items: new OAT\Items(type: 'string'))
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $items = $request->input('items', []);
         $validated = $this->cartService->syncAndValidate($items);
         
-        // Calculate totals using CartCalculationService
         $summary = $this->calculationService->calculate(
             $validated['items'] ?? [],
             $request->input('country', 'VN'),
@@ -43,15 +71,37 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Sync and validate cart items
-     */
+    #[ApiPost(
+        path: '/api/storefront/v1/cart/sync',
+        summary: 'Sync Cart',
+        tags: 'Storefront - Cart',
+        requiresAuth: false,
+        requestBody: new OAT\RequestBody(
+            required: true,
+            content: new OAT\JsonContent(
+                properties: [
+                    new OAT\Property(property: 'items', type: 'array', items: new OAT\Items(type: 'object')),
+                    new OAT\Property(property: 'country', type: 'string', example: 'VN'),
+                    new OAT\Property(property: 'state', type: 'string', nullable: true)
+                ]
+            )
+        ),
+        responseData: [
+            new OAT\Property(property: 'items', type: 'array', items: new OAT\Items(type: 'object')),
+            new OAT\Property(property: 'summary', type: 'object', properties: [
+                new OAT\Property(property: 'subtotal', type: 'number', format: 'float', example: 1000000),
+                new OAT\Property(property: 'tax_amount', type: 'number', format: 'float', example: 100000),
+                new OAT\Property(property: 'shipping_cost', type: 'number', format: 'float', example: 30000),
+                new OAT\Property(property: 'total', type: 'number', format: 'float', example: 1130000),
+            ]),
+            new OAT\Property(property: 'notifications', type: 'array', items: new OAT\Items(type: 'string'))
+        ]
+    )]
     public function sync(Request $request): JsonResponse
     {
         $items = $request->input('items', []);
         $validated = $this->cartService->syncAndValidate($items);
         
-        // Calculate with totals
         $summary = $this->calculationService->calculate(
             $validated['items'] ?? [],
             $request->input('country', 'VN'),
@@ -65,9 +115,30 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Add item to cart (validation)
-     */
+    #[ApiPost(
+        path: '/api/storefront/v1/cart/items',
+        summary: 'Add Item to Cart',
+        tags: 'Storefront - Cart',
+        requiresAuth: false,
+        requestBody: new OAT\RequestBody(
+            required: true,
+            content: new OAT\JsonContent(
+                required: ['product_id', 'quantity'],
+                properties: [
+                    new OAT\Property(property: 'product_id', type: 'integer', example: 1),
+                    new OAT\Property(property: 'quantity', type: 'integer', example: 2)
+                ]
+            )
+        ),
+        responseData: [
+            new OAT\Property(property: 'product_id', type: 'integer', example: 1),
+            new OAT\Property(property: 'name', type: 'string', example: 'Sản phẩm 1'),
+            new OAT\Property(property: 'price', type: 'number', format: 'float', example: 500000),
+            new OAT\Property(property: 'quantity', type: 'integer', example: 2),
+            new OAT\Property(property: 'subtotal', type: 'number', format: 'float', example: 1000000),
+            new OAT\Property(property: 'available', type: 'boolean', example: true),
+        ]
+    )]
     public function addItem(Request $request): JsonResponse
     {
         $request->validate([
@@ -91,9 +162,29 @@ class CartController extends Controller
         ], 'Thêm vào giỏ hàng thành công');
     }
 
-    /**
-     * Update cart item (validation)
-     */
+    #[ApiUpdate(
+        path: '/api/storefront/v1/cart/items/{itemId}',
+        summary: 'Update Item Quantity',
+        tags: 'Storefront - Cart',
+        requiresAuth: false,
+        parameters: [
+            new OAT\Parameter(name: 'itemId', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Product ID')
+        ],
+        requestBody: new OAT\RequestBody(
+            required: true,
+            content: new OAT\JsonContent(
+                required: ['quantity'],
+                properties: [
+                    new OAT\Property(property: 'quantity', type: 'integer', example: 3)
+                ]
+            )
+        ),
+        responseData: [
+            new OAT\Property(property: 'product_id', type: 'integer', example: 1),
+            new OAT\Property(property: 'quantity', type: 'integer', example: 3),
+            new OAT\Property(property: 'available', type: 'boolean', example: true),
+        ]
+    )]
     public function updateItem(Request $request, $itemId): JsonResponse
     {
         $request->validate([
@@ -117,25 +208,62 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Remove item from cart
-     */
+    #[ApiDelete(
+        path: '/api/storefront/v1/cart/items/{itemId}',
+        summary: 'Remove Item from Cart',
+        tags: 'Storefront - Cart',
+        requiresAuth: false,
+        parameters: [
+            new OAT\Parameter(name: 'itemId', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Product ID')
+        ],
+        responseData: [
+            new OAT\Property(property: 'removed', type: 'boolean', example: true)
+        ]
+    )]
     public function removeItem($itemId): JsonResponse
     {
         return $this->success(['removed' => true], 'Đã xóa sản phẩm khỏi giỏ hàng');
     }
 
-    /**
-     * Clear cart
-     */
+    #[ApiDelete(
+        path: '/api/storefront/v1/cart',
+        summary: 'Clear Cart',
+        tags: 'Storefront - Cart',
+        requiresAuth: false,
+        responseData: [
+            new OAT\Property(property: 'cleared', type: 'boolean', example: true)
+        ]
+    )]
     public function clear(): JsonResponse
     {
         return $this->success(['cleared' => true], 'Đã xóa toàn bộ giỏ hàng');
     }
 
-    /**
-     * Get available shipping methods for cart
-     */
+    #[ApiPost(
+        path: '/api/storefront/v1/cart/shipping-methods',
+        summary: 'Get Shipping Methods',
+        tags: 'Storefront - Cart',
+        requiresAuth: false,
+        requestBody: new OAT\RequestBody(
+            required: true,
+            content: new OAT\JsonContent(
+                properties: [
+                    new OAT\Property(property: 'items', type: 'array', items: new OAT\Items(type: 'object')),
+                    new OAT\Property(property: 'country', type: 'string', example: 'VN'),
+                    new OAT\Property(property: 'state', type: 'string', nullable: true)
+                ]
+            )
+        ),
+        responseData: [
+            new OAT\Property(property: 'methods', type: 'array', items: new OAT\Items(
+                properties: [
+                    new OAT\Property(property: 'id', type: 'integer', example: 1),
+                    new OAT\Property(property: 'name', type: 'string', example: 'Giao hàng tiêu chuẩn'),
+                    new OAT\Property(property: 'cost', type: 'number', format: 'float', example: 30000),
+                ]
+            ))
+        ]
+    )]
     public function shippingMethods(Request $request): JsonResponse
     {
         $items = $request->input('items', []);

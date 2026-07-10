@@ -26,7 +26,7 @@ class ProductInventoryController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => 'Thành công',
+                'message' => 'Success',
                 'data' => $inventories->map(function ($inventory) {
                     return [
                         'warehouse_id' => $inventory->id,

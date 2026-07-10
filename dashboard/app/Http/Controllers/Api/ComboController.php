@@ -8,12 +8,10 @@ use App\Ecommerce\Combo\Contracts\ComboServiceInterface;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OAT;
+use App\Swagger\Attributes\ApiGet;
+use App\Swagger\Attributes\ApiList;
 
-/**
- * @group Marketing
- *
- * APIs for managing combo products
- */
 class ComboController extends Controller
 {
     use ApiResponse;
@@ -25,29 +23,13 @@ class ComboController extends Controller
         $this->comboService = $comboService;
     }
 
-    /**
-     * Get all active combo products.
-     *
-     * Returns a paginated list of active combo products.
-     *
-     * @queryParam per_page integer Number of items per page. Example: 15
-     * @queryParam page integer Page number. Example: 1
-     *
-     * @response 200 {
-     *   "data": [
-     *     {
-     *       "id": 1,
-     *       "name": "Summer Combo",
-     *       "slug": "summer-combo",
-     *       "combo_price": 800000,
-     *       "original_price": 1200000,
-     *       "discount_percent": 33
-     *     }
-     *   ],
-     *   "links": {},
-     *   "meta": {}
-     * }
-     */
+    #[ApiList(
+        path: '/api/storefront/v1/combos',
+        summary: 'List of Combos',
+        tags: 'Storefront - Combos',
+        requiresAuth: false,
+        responseData: '#/components/schemas/ComboResource'
+    )]
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -60,34 +42,16 @@ class ComboController extends Controller
         return $this->ok(ComboResource::collection($combos->paginate($validated['per_page'] ?? 15)));
     }
 
-    /**
-     * Get combo product detail by slug.
-     *
-     * Returns detailed information about a specific combo product.
-     *
-     * @urlParam slug string required The slug of the combo. Example: summer-combo
-     *
-     * @response 200 {
-     *   "data": {
-     *     "id": 1,
-     *     "name": "Summer Combo",
-     *     "slug": "summer-combo",
-     *     "combo_price": 800000,
-     *     "original_price": 1200000,
-     *     "discount_percent": 33,
-     *     "items": [
-     *       {
-     *         "id": 1,
-     *         "product": {},
-     *         "quantity": 2
-     *       }
-     *     ]
-     *   }
-     * }
-     * @response 404 {
-     *   "message": "Combo product not found."
-     * }
-     */
+    #[ApiGet(
+        path: '/api/storefront/v1/combos/{slug}',
+        summary: 'Combo Details',
+        tags: 'Storefront - Combos',
+        requiresAuth: false,
+        parameters: [
+            new OAT\Parameter(name: 'slug', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'summer-combo'), description: 'Combo Slug')
+        ],
+        responseData: '#/components/schemas/ComboResource'
+    )]
     public function show(string $slug): JsonResponse
     {
         $combo = $this->comboService->getComboBySlug($slug);

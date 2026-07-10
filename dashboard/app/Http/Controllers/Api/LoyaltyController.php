@@ -7,30 +7,27 @@ use App\Settings\LoyaltySettings;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OAT;
+use App\Swagger\Attributes\ApiGet;
+use App\Swagger\Attributes\ApiList;
 
-/**
- * @group Loyalty
- *
- * APIs for managing user loyalty points
- */
 class LoyaltyController extends Controller
 {
     use ApiResponse;
 
-    /**
-     * Get current user's loyalty points and summary.
-     *
-     * @authenticated
-     *
-     * @response 200 {
-     *   "data": {
-     *     "current_points": 1000,
-     *     "lifetime_points": 5000,
-     *     "conversion_rate": 1000,
-     *     "enabled": true
-     *   }
-     * }
-     */
+    #[ApiGet(
+        path: '/api/storefront/v1/user/loyalty/points',
+        summary: 'Get User Loyalty Points',
+        tags: 'Storefront - Loyalty',
+        requiresAuth: true,
+        responseData: [
+            new OAT\Property(property: 'enabled', type: 'boolean', example: true),
+            new OAT\Property(property: 'current_points', type: 'integer', example: 100),
+            new OAT\Property(property: 'lifetime_points', type: 'integer', example: 500),
+            new OAT\Property(property: 'points_per_currency', type: 'integer', example: 1),
+            new OAT\Property(property: 'point_conversion_rate', type: 'number', format: 'float', example: 1000)
+        ]
+    )]
     public function getPoints(Request $request): JsonResponse
     {
         $settings = app(LoyaltySettings::class);
@@ -56,28 +53,20 @@ class LoyaltyController extends Controller
         ]);
     }
 
-    /**
-     * Get current user's loyalty points history.
-     *
-     * @authenticated
-     *
-     * @queryParam per_page integer Number of items per page. Example: 15
-     * @queryParam page integer Page number. Example: 1
-     *
-     * @response 200 {
-     *   "data": [
-     *     {
-     *       "id": 1,
-     *       "type": "earn",
-     *       "points": 100,
-     *       "description": "Order #123",
-     *       "created_at": "2026-04-29 10:00:00"
-     *     }
-     *   ],
-     *   "links": {},
-     *   "meta": {}
-     * }
-     */
+    #[ApiList(
+        path: '/api/storefront/v1/user/loyalty/history',
+        summary: 'Loyalty Points History',
+        tags: 'Storefront - Loyalty',
+        requiresAuth: true,
+        responseData: [
+            new OAT\Property(property: 'id', type: 'integer', example: 1),
+            new OAT\Property(property: 'action_type', type: 'string', example: 'earn'),
+            new OAT\Property(property: 'points_changed', type: 'integer', example: 10),
+            new OAT\Property(property: 'order_id', type: 'integer', nullable: true, example: 123),
+            new OAT\Property(property: 'expired_at', type: 'string', format: 'date-time', nullable: true),
+            new OAT\Property(property: 'created_at', type: 'string', format: 'date-time')
+        ]
+    )]
     public function getHistory(Request $request): JsonResponse
     {
         $settings = app(LoyaltySettings::class);

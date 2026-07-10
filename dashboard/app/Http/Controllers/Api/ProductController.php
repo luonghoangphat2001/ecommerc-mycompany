@@ -7,12 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\ProductResource;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OAT;
+use App\Swagger\Attributes\ApiGet;
+use App\Swagger\Attributes\ApiList;
 
-/**
- * @group Shop
- *
- * APIs for managing products (Tours, Rooms, etc.)
- */
 class ProductController extends Controller
 {
     use ApiResponse;
@@ -21,14 +19,19 @@ class ProductController extends Controller
         protected ProductServiceInterface $productService
     ) {}
 
-    /**
-     * Get list of products.
-     *
-     * @queryParam category_id int Filter by category ID. Example: 1
-     * @queryParam brand_id int Filter by brand ID. Example: 2
-     * @queryParam type string Filter by product type (tour, room). Example: tour
-     * @queryParam search string Search by product name. Example: Beach
-     */
+    #[ApiList(
+        path: '/api/storefront/v1/products',
+        summary: 'List of Products',
+        tags: 'Storefront - Products',
+        requiresAuth: false,
+        parameters: [
+            new OAT\Parameter(name: 'category_id', in: 'query', required: false, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Filter by Category ID'),
+            new OAT\Parameter(name: 'brand_id', in: 'query', required: false, schema: new OAT\Schema(type: 'integer', example: 2), description: 'Filter by Brand ID'),
+            new OAT\Parameter(name: 'type', in: 'query', required: false, schema: new OAT\Schema(type: 'string', example: 'tour'), description: 'Filter by Product Type'),
+            new OAT\Parameter(name: 'search', in: 'query', required: false, schema: new OAT\Schema(type: 'string', example: 'Beach'), description: 'Search by Name')
+        ],
+        responseData: '#/components/schemas/ProductResource'
+    )]
     public function index(Request $request)
     {
         $products = $this->productService->paginate(
@@ -39,9 +42,16 @@ class ProductController extends Controller
         return $this->ok(ProductResource::collection($products));
     }
 
-    /**
-     * Get product details by slug.
-     */
+    #[ApiGet(
+        path: '/api/storefront/v1/products/by-slug/{slug}',
+        summary: 'Product Details (by Slug)',
+        tags: 'Storefront - Products',
+        requiresAuth: false,
+        parameters: [
+            new OAT\Parameter(name: 'slug', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'san-pham-1'), description: 'Product Slug')
+        ],
+        responseData: '#/components/schemas/ProductResource'
+    )]
     public function showBySlug($slug)
     {
         $product = $this->productService->findBySlug(
@@ -56,11 +66,16 @@ class ProductController extends Controller
         return $this->ok(new ProductResource($product));
     }
 
-    /**
-     * Get product details.
-     *
-     * @urlParam id int required The ID of the product. Example: 1
-     */
+    #[ApiGet(
+        path: '/api/storefront/v1/products/{product}',
+        summary: 'Product Details (by ID)',
+        tags: 'Storefront - Products',
+        requiresAuth: false,
+        parameters: [
+            new OAT\Parameter(name: 'product', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Product ID')
+        ],
+        responseData: '#/components/schemas/ProductResource'
+    )]
     public function show($id)
     {
         $product = $this->productService->findOrFail(

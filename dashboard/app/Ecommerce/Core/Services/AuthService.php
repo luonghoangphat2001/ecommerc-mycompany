@@ -44,11 +44,13 @@ class AuthService
         }
 
         $user->tokens()->delete();
-        $token = $user->createToken($deviceName, ['*'], now()->addMinutes(15));
+        $expiresIn = 3600;
+        $token = $user->createToken($deviceName, ['*'], now()->addSeconds($expiresIn));
 
         return [
-            'token' => $token->plainTextToken,
-            'expires_at' => $token->accessToken->expires_at,
+            'access_token' => $token->plainTextToken,
+            'token_type' => 'Bearer',
+            'expires_in' => $expiresIn,
             'user' => $user->load(['defaultShippingAddress', 'defaultBillingAddress'])
         ];
     }

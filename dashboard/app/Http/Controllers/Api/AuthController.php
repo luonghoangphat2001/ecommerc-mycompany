@@ -11,6 +11,10 @@ use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use App\Ecommerce\Core\Services\AuthService;
 
+use App\Swagger\Attributes\ApiPost;
+use App\Swagger\Attributes\ApiUpdate;
+use OpenApi\Attributes as OAT;
+
 class AuthController extends Controller
 {
     use ApiResponse;
@@ -21,13 +25,34 @@ class AuthController extends Controller
     {
         $this->authService = $authService;
     }
-    /**
-     * User Login
-     * 
-     * Authenticate a user with email and password to receive a Bearer token.
-     * 
-     * @unauthenticated
-     */
+
+    #[ApiPost(
+        path: '/api/storefront/auth/login',
+        summary: 'Storefront Login',
+        tags: 'Storefront - Authentication',
+        requiresAuth: false,
+        requestBody: new OAT\RequestBody(
+            required: true,
+            content: new OAT\JsonContent(
+                required: ['email', 'password', 'device_name'],
+                properties: [
+                    new OAT\Property(property: 'email', type: 'string', format: 'email', example: 'customer@example.com'),
+                    new OAT\Property(property: 'password', type: 'string', format: 'password', example: 'password123'),
+                    new OAT\Property(property: 'device_name', type: 'string', example: 'web')
+                ]
+            )
+        ),
+        responseData: [
+            new OAT\Property(property: 'access_token', type: 'string', example: '1|xyz...'),
+            new OAT\Property(property: 'token_type', type: 'string', example: 'Bearer'),
+            new OAT\Property(property: 'expires_in', type: 'integer', example: 3600),
+            new OAT\Property(property: 'user', type: 'object', properties: [
+                new OAT\Property(property: 'id', type: 'integer', example: 1),
+                new OAT\Property(property: 'name', type: 'string', example: 'John Doe'),
+                new OAT\Property(property: 'email', type: 'string', example: 'customer@example.com'),
+            ])
+        ]
+    )]
     public function login(Request $request)
     {
         $request->validate([
@@ -43,19 +68,19 @@ class AuthController extends Controller
         );
 
         return $this->ok([
-            'token' => $authData['token'],
-            'expires_at' => Carbon::parse($authData['expires_at'])->toDateTimeString(),
+            'access_token' => $authData['access_token'],
+            'token_type' => $authData['token_type'],
+            'expires_in' => $authData['expires_in'],
             'user' => $authData['user']
-        ]);
+        ], 'Login successful.');
     }
 
-
-
-    /**
-     * User Logout
-     * 
-     * Revoke the current access token.
-     */
+    #[ApiPost(
+        path: '/api/storefront/auth/logout',
+        summary: 'Logout',
+        tags: 'Storefront - Authentication',
+        requiresAuth: true
+    )]
     public function logout(Request $request)
     {
         if (!$request->user()) {
@@ -67,9 +92,31 @@ class AuthController extends Controller
         return $this->ok(null, 'Logged out successfully');
     }
 
-    /**
-     * Update user profile
-     */
+    #[ApiUpdate(
+        path: '/api/storefront/auth/profile',
+        summary: 'Update Profile',
+        tags: 'Storefront - Authentication',
+        requiresAuth: true,
+        requestBody: new OAT\RequestBody(
+            required: true,
+            content: new OAT\JsonContent(
+                properties: [
+                    new OAT\Property(property: 'name', type: 'string', example: 'Nguyen Van A'),
+                    new OAT\Property(property: 'phone', type: 'string', example: '0123456789'),
+                    new OAT\Property(property: 'default_shipping_address_id', type: 'integer', nullable: true, example: 1),
+                    new OAT\Property(property: 'default_billing_address_id', type: 'integer', nullable: true, example: 2)
+                ]
+            )
+        ),
+        responseData: [
+            new OAT\Property(property: 'id', type: 'integer', example: 1),
+            new OAT\Property(property: 'name', type: 'string', example: 'John Doe'),
+            new OAT\Property(property: 'email', type: 'string', example: 'customer@example.com'),
+            new OAT\Property(property: 'phone', type: 'string', nullable: true, example: '0123456789'),
+            new OAT\Property(property: 'default_shipping_address_id', type: 'integer', nullable: true, example: 1),
+            new OAT\Property(property: 'default_billing_address_id', type: 'integer', nullable: true, example: 2),
+        ]
+    )]
     public function updateProfile(Request $request)
     {
         $user = $request->user();

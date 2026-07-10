@@ -7,12 +7,9 @@ use App\Http\Resources\Api\CrossSellResource;
 use App\Ecommerce\CrossSell\Contracts\CrossSellServiceInterface;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use OpenApi\Attributes as OAT;
+use App\Swagger\Attributes\ApiList;
 
-/**
- * @group Marketing
- *
- * APIs for managing cross-sell products
- */
 class CrossSellController extends Controller
 {
     use ApiResponse;
@@ -24,32 +21,16 @@ class CrossSellController extends Controller
         $this->crossSellService = $crossSellService;
     }
 
-    /**
-     * Get cross-sell products for a product.
-     *
-     * Returns a list of cross-sell product relationships for the given product ID.
-     *
-     * @urlParam productId integer required The ID of the product. Example: 1
-     *
-     * @response 200 {
-     *   "data": [
-     *     {
-     *       "id": 1,
-     *       "sort_order": 0,
-     *       "is_active": true,
-     *       "product": {
-     *         "id": 3,
-     *         "name": "Related Product",
-     *         "price": 300000,
-     *         "stock": 5
-     *       }
-     *     }
-     *   ]
-     * }
-     * @response 404 {
-     *   "message": "Product not found."
-     * }
-     */
+    #[ApiList(
+        path: '/api/storefront/v1/products/{productId}/cross-sells',
+        summary: 'List Cross-sells for Product',
+        tags: 'Storefront - Cross-sells',
+        requiresAuth: false,
+        parameters: [
+            new OAT\Parameter(name: 'productId', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Original Product ID')
+        ],
+        responseData: '#/components/schemas/CrossSellResource'
+    )]
     public function index(int $productId): JsonResponse
     {
         $crossSells = $this->crossSellService->getCrossSellsForProduct($productId);
