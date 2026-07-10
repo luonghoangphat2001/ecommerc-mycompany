@@ -19,6 +19,7 @@ use App\Ecommerce\Loyalty\Services\LoyaltyService;
 use App\Ecommerce\Inventory\Actions\DeductStockAction;
 use App\Ecommerce\Inventory\Actions\CheckStockAction;
 use App\Settings\InventorySettings;
+use Illuminate\Validation\ValidationException;
 
 class PlaceOrderAction
 {
@@ -105,7 +106,9 @@ class PlaceOrderAction
     {
         if (isset($item['price']) && (float)$item['price'] !== (float)$product->price) {
             \App\Services\Logging\ModuleLogger::order()->warning('price_mismatch', "Price mismatch for product #{$product->id}: Client sent {$item['price']}, DB has {$product->price}", ['product_id' => $product->id, 'client_price' => $item['price'], 'db_price' => $product->price]);
-            throw new \Exception(__('admin.api.price_mismatch'));
+            throw ValidationException::withMessages([
+                'order' => [__('messages.price_mismatch')],
+            ]);
         }
     }
 
@@ -116,11 +119,15 @@ class PlaceOrderAction
     {
         if ($this->inventorySettings->multi_warehouse_enabled) {
             if (!$this->checkStockAction->execute($product->sku, $qty)) {
-                throw new \Exception(__('messages.insufficient_stock'));
+                throw ValidationException::withMessages([
+                    'order' => [__('messages.insufficient_stock')],
+                ]);
             }
         } else {
-            if ($product->total_stock < $qty) {
-                throw new \Exception(__('messages.insufficient_stock'));
+            if ($product->available_stock < $qty) {
+                throw ValidationException::withMessages([
+                    'order' => [__('messages.insufficient_stock')],
+                ]);
             }
         }
     }
@@ -195,7 +202,9 @@ class PlaceOrderAction
                 'discount_amount' => $calcResult->discountTotal,
             ]);
         } catch (\App\Exceptions\CouponValidationException $e) {
-            throw new \Exception($e->getMessage());
+            throw ValidationException::withMessages([
+                'order' => [$e->getMessage()],
+            ]);
         }
     }
 
@@ -275,11 +284,13 @@ class PlaceOrderAction
                 $itemMetadata['inventory_id'] = $inventory->id;
                 $itemMetadata['inventory_name'] = $inventory->name;
             } else {
+                $product->decrement('qty', $item['qty']);
                 $product->decrement('total_stock', $item['qty']);
                 $itemMetadata['inventory_id'] = null;
                 $itemMetadata['inventory_name'] = 'Default Stock';
             }
         } else {
+            $product->decrement('qty', $item['qty']);
             $product->decrement('total_stock', $item['qty']);
             $itemMetadata['inventory_id'] = null;
             $itemMetadata['inventory_name'] = 'Default Stock';

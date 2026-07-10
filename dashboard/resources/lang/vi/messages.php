@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'price_mismatch' => 'Giá sản phẩm đã thay đổi. Vui lòng kiểm tra lại giỏ hàng.',
+    'insufficient_stock' => 'Không đủ tồn kho cho một hoặc nhiều sản phẩm trong đơn hàng.',
+    'concurrency_collision' => 'Tồn kho đã được cập nhật bởi yêu cầu khác. Vui lòng thử lại.',
+
     /* API Success & Error Messages */
     'api' => [
         'label' => 'REST API',
@@ -25,7 +29,6 @@ return [
         'forbidden' => 'Bị cấm truy cập',
         'not_found' => 'Không tìm thấy tài nguyên',
         'validation_error' => 'Lỗi xác thực dữ liệu',
-        'price_mismatch' => 'Giá sản phẩm đã thay đổi. Vui lòng kiểm tra lại giỏ hàng.',
     ],
 
     /* System Logs Messaging */

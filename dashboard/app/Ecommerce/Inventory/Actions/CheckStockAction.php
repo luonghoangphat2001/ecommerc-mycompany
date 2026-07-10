@@ -22,8 +22,8 @@ class CheckStockAction
             return false;
         }
 
-        // Total overall available volume
-        if ($product->total_stock < $quantity) {
+        // Prefer real stock from inventories; fall back to product qty when inventory rows are absent.
+        if ($product->available_stock < $quantity) {
             return false;
         }
 

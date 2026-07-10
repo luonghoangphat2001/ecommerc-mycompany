@@ -63,6 +63,9 @@ class Handler extends ExceptionHandler
             $response['message'] = 'Validation Error';
             $response['data'] = $e->errors();
             $code = 422;
+        } elseif ($e instanceof \App\Exceptions\CouponValidationException) {
+            $response['message'] = $e->getMessage() ?: 'Validation Error';
+            $code = 422;
         } elseif ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
             $response['message'] = 'Resource not found';
             $code = 404;

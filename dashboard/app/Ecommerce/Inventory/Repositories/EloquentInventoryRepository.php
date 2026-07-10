@@ -5,6 +5,7 @@ namespace App\Ecommerce\Inventory\Repositories;
 use App\Ecommerce\Inventory\Contracts\InventoryRepositoryInterface;
 use App\Ecommerce\Core\Repositories\BaseRepository;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class EloquentInventoryRepository extends BaseRepository implements InventoryRepositoryInterface
 {
@@ -54,7 +55,9 @@ class EloquentInventoryRepository extends BaseRepository implements InventoryRep
         $currentStock = $this->getStock($productId, $warehouseId);
 
         if ($currentStock < $quantity) {
-            throw new \Exception(__('messages.insufficient_stock'));
+            throw ValidationException::withMessages([
+                'order' => [__('messages.insufficient_stock')],
+            ]);
         }
 
         DB::table('shop_product_inventory_stocks')

@@ -5,6 +5,7 @@ namespace App\Ecommerce\Inventory\Actions;
 use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use Exception;
+use Illuminate\Validation\ValidationException;
 
 class RevertStockAction
 {
@@ -39,7 +40,9 @@ class RevertStockAction
                     ]);
 
                 if ($updated === 0) {
-                    throw new Exception(__('messages.concurrency_collision'));
+                    throw ValidationException::withMessages([
+                        'order' => [__('messages.concurrency_collision')],
+                    ]);
                 }
             }
 

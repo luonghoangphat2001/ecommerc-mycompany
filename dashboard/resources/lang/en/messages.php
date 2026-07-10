@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'price_mismatch' => 'Product price has changed. Please refresh your cart.',
+    'insufficient_stock' => 'Insufficient stock for one or more products in the order.',
+    'concurrency_collision' => 'Stock was updated by another request. Please try again.',
+
     /* API Success & Error Messages */
     'api' => [
         'label' => 'REST API',
@@ -25,7 +29,6 @@ return [
         'forbidden' => 'Forbidden',
         'not_found' => 'Resource not found',
         'validation_error' => 'Data validation error',
-        'price_mismatch' => 'Product price has changed. Please refresh your cart.',
     ],
 
     /* System Logs Messaging */

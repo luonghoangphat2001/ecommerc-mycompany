@@ -29,9 +29,10 @@ class CartValidationAction
             }
 
             // Validate stock
+            $availableStock = $product->available_stock;
             $finalQty = $qty;
-            if ($product->qty < $qty) {
-                $finalQty = $product->qty;
+            if ($availableStock < $qty) {
+                $finalQty = $availableStock;
                 if ($finalQty <= 0) {
                     $notifications[] = [
                         'type' => 'out_of_stock',

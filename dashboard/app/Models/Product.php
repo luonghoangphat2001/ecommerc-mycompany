@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Translatable\HasTranslations;
@@ -166,6 +167,25 @@ class Product extends Model implements HasMedia
     public function scopeType($query, $type)
     {
         return $query->where('type', $type);
+    }
+
+    public function getAvailableStockAttribute(): int
+    {
+        $hasInventoryRows = DB::table('shop_product_inventory_stocks')
+            ->where('shop_product_id', $this->id)
+            ->exists();
+
+        if ($hasInventoryRows) {
+            return (int) DB::table('shop_product_inventory_stocks')
+                ->where('shop_product_id', $this->id)
+                ->sum('stock_quantity');
+        }
+
+        if ((int) $this->qty > 0) {
+            return (int) $this->qty;
+        }
+
+        return (int) $this->total_stock;
     }
 
     public function registerMediaConversions(SpatieMedia $media = null): void

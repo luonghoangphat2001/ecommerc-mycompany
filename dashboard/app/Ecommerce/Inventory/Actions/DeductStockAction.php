@@ -5,6 +5,7 @@ namespace App\Ecommerce\Inventory\Actions;
 use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use Exception;
+use Illuminate\Validation\ValidationException;
 
 class DeductStockAction
 {
@@ -28,7 +29,9 @@ class DeductStockAction
                 ->decrement('stock_quantity', $quantity);
 
             if ($affected === 0) {
-                throw new Exception(__('messages.insufficient_stock'));
+                throw ValidationException::withMessages([
+                    'order' => [__('messages.insufficient_stock')],
+                ]);
             }
 
             // 2. Optimistic Lock update on overall product denormalized stocks
@@ -44,7 +47,9 @@ class DeductStockAction
                     ]);
 
                 if ($updated === 0) {
-                    throw new Exception(__('messages.concurrency_collision'));
+                    throw ValidationException::withMessages([
+                        'order' => [__('messages.concurrency_collision')],
+                    ]);
                 }
             }
 
