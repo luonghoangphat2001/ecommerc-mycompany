@@ -14,7 +14,7 @@ class LoyaltyPointController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'Điểm Loyalty';
+        return __('admin.loyalty.label');
     }
 
     protected function routePrefix(): string
@@ -25,9 +25,9 @@ class LoyaltyPointController extends BaseCrudController
     protected function fields(): array
     {
         return [
-            'user_id' => ['label' => 'Khách hàng', 'type' => 'select', 'rules' => ['required', 'exists:users,id'], 'options' => \App\Models\User::pluck('name', 'id')->toArray()],
-            'current_points' => ['label' => 'Điểm hiện tại', 'type' => 'number', 'rules' => ['required', 'integer', 'min:0']],
-            'lifetime_points' => ['label' => 'Tổng điểm tích lũy', 'type' => 'number', 'rules' => ['required', 'integer', 'min:0']],
+            'user_id' => ['label' => __('admin.loyalty.customer'), 'type' => 'select', 'rules' => ['required', 'exists:users,id'], 'options' => \App\Models\User::pluck('name', 'id')->toArray()],
+            'current_points' => ['label' => __('admin.loyalty.current_points'), 'type' => 'number', 'rules' => ['required', 'integer', 'min:0']],
+            'lifetime_points' => ['label' => __('admin.loyalty.lifetime_points'), 'type' => 'number', 'rules' => ['required', 'integer', 'min:0']],
         ];
     }
 }

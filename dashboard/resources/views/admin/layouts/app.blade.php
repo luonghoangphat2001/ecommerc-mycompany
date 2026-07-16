@@ -1004,8 +1004,8 @@
                         <div class="topbar-meta">{{ auth()->user()->email }}</div>
                     </div>
                     <div class="actions">
-                        <a class="btn btn-secondary" href="{{ request()->fullUrlWithQuery(['lang' => 'vi']) }}">VI</a>
-                        <a class="btn btn-secondary" href="{{ request()->fullUrlWithQuery(['lang' => 'en']) }}">EN</a>
+                        <a class="btn {{ app()->getLocale() === 'vi' ? '' : 'btn-secondary' }}" href="{{ request()->fullUrlWithQuery(['lang' => 'vi']) }}">VI</a>
+                        <a class="btn {{ app()->getLocale() === 'en' ? '' : 'btn-secondary' }}" href="{{ request()->fullUrlWithQuery(['lang' => 'en']) }}">EN</a>
                         <form action="{{ route('admin.logout') }}" method="post">
                             @csrf
                             <button class="btn btn-secondary" type="submit">{{ __('admin.auth.logout') }}</button>

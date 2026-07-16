@@ -37,23 +37,23 @@ class PostController extends BaseCrudController
     {
         return [
             'general' => [
-                'label' => 'Thông tin chung',
+                'label' => __('admin.post.groups.general'),
                 'fields' => ['title', 'slug', 'post_type', 'is_visible', 'published_at'],
             ],
             'content' => [
-                'label' => 'Nội dung',
+                'label' => __('admin.post.groups.content'),
                 'fields' => ['content'],
             ],
             'media' => [
-                'label' => 'Media',
+                'label' => __('admin.post.groups.media'),
                 'fields' => ['image'],
             ],
             'taxonomy' => [
-                'label' => 'Phân loại',
+                'label' => __('admin.post.groups.taxonomy'),
                 'fields' => ['categories', 'tags'],
             ],
             'seo' => [
-                'label' => 'SEO Metadata',
+                'label' => __('admin.post.groups.seo'),
                 'fields' => ['seo_title', 'seo_description'],
             ],
         ];
@@ -63,23 +63,23 @@ class PostController extends BaseCrudController
     {
         return [
             'author_id' => [
-                'label' => 'Author',
+                'label' => __('admin.post.fields.author_id'),
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:users,id'],
                 'options' => ['' => '-- None --'] + User::orderBy('name')->pluck('name', 'id')->toArray(),
                 'hideOnIndex' => true,
             ],
-            'image' => ['label' => 'Image', 'type' => 'image', 'rules' => ['nullable', 'image', 'max:5120']],
-            'title' => ['label' => 'Tiêu đề', 'rules' => ['required']],
-            'slug' => ['label' => 'Slug', 'rules' => ['required', 'string', 'max:255'], 'hideOnIndex' => true],
-            'content' => ['label' => 'Nội dung', 'type' => 'editor', 'rules' => ['nullable', 'string'], 'hideOnIndex' => true],
-            'post_type' => ['label' => 'Type', 'type' => 'select', 'rules' => ['required', 'string', 'max:50'], 'options' => ['blog' => 'blog', 'news' => 'news', 'page' => 'page']],
-            'published_at' => ['label' => 'Published At', 'type' => 'date', 'rules' => ['nullable', 'date']],
-            'is_visible' => ['label' => 'Hiển thị', 'type' => 'select', 'rules' => ['required', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
-            'seo_title' => ['label' => 'SEO Title', 'rules' => ['nullable', 'string', 'max:255'], 'colspan' => 'full', 'hideOnIndex' => true],
-            'seo_description' => ['label' => 'SEO Description', 'type' => 'textarea', 'rules' => ['nullable', 'string', 'max:255'], 'hideOnIndex' => true],
+            'image' => ['label' => __('admin.post.fields.image'), 'type' => 'image', 'rules' => ['nullable', 'image', 'max:5120']],
+            'title' => ['label' => __('admin.post.fields.title'), 'rules' => ['required']],
+            'slug' => ['label' => __('admin.post.fields.slug'), 'rules' => ['required', 'string', 'max:255'], 'hideOnIndex' => true],
+            'content' => ['label' => __('admin.post.fields.content'), 'type' => 'editor', 'rules' => ['nullable', 'string'], 'hideOnIndex' => true],
+            'post_type' => ['label' => __('admin.post.fields.post_type'), 'type' => 'select', 'rules' => ['required', 'string', 'max:50'], 'options' => ['blog' => 'blog', 'news' => 'news', 'page' => 'page']],
+            'published_at' => ['label' => __('admin.post.fields.published_at'), 'type' => 'date', 'rules' => ['nullable', 'date']],
+            'is_visible' => ['label' => __('admin.post.fields.is_visible'), 'type' => 'select', 'rules' => ['required', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
+            'seo_title' => ['label' => __('admin.post.fields.seo_title'), 'rules' => ['nullable', 'string', 'max:255'], 'colspan' => 'full', 'hideOnIndex' => true],
+            'seo_description' => ['label' => __('admin.post.fields.seo_description'), 'type' => 'textarea', 'rules' => ['nullable', 'string', 'max:255'], 'hideOnIndex' => true],
             'categories' => [
-                'label' => 'Categories',
+                'label' => __('admin.post.fields.categories'),
                 'type' => 'tree-select',
                 'colspan' => 1,
                 'rules' => ['nullable', 'array'],
@@ -87,7 +87,7 @@ class PostController extends BaseCrudController
                 'hideOnIndex' => true,
             ],
             'tags' => [
-                'label' => 'Tags',
+                'label' => __('admin.post.fields.tags'),
                 'type' => 'tags-checkboxes',
                 'colspan' => 1,
                 'rules' => ['nullable', 'array'],

@@ -12,18 +12,18 @@
         echo '<strong>' . e($item->name ?? $item->title ?? 'Item #' . $item->id) . '</strong>';
         echo '<span class="cell-muted" style="margin-left: 10px;">#' . e($item->id) . '</span>';
         if (isset($item->is_visible)) {
-            echo '<span class="settings-chip" style="margin-left: 10px;">' . ($item->is_visible ? 'Hiện' : 'Ẩn') . '</span>';
+            echo '<span class="settings-chip" style="margin-left: 10px;">' . ($item->is_visible ? __('admin.categories.visible') : __('admin.categories.hidden')) . '</span>';
         }
         echo '</div>';
         echo '<div class="item-actions">';
-        echo '<a href="' . e(route($routePrefix . '.edit', $item->id)) . '" onclick="event.stopPropagation();">Sửa</a>';
+        echo '<a href="' . e(route($routePrefix . '.edit', $item->id)) . '" onclick="event.stopPropagation();">' . __('admin.actions.edit') . '</a>';
         if ($maxDepth > 1) {
-            echo '<a href="' . e(route($routePrefix . '.create', ['parent_id' => $item->id])) . '" onclick="event.stopPropagation();">+ Con</a>';
+            echo '<a href="' . e(route($routePrefix . '.create', ['parent_id' => $item->id])) . '" onclick="event.stopPropagation();">+ ' . __('admin.categories.add_child') . '</a>';
         }
         echo '<form method="post" action="' . e(route($routePrefix . '.destroy', $item->id)) . '" style="display:inline;" onclick="event.stopPropagation();">';
         echo csrf_field();
         echo method_field('delete');
-        echo '<button type="submit" onclick="return confirm(\'Xác nhận xoá?\')">Xoá</button>';
+        echo '<button type="submit" onclick="return confirm(\'' . __('admin.messages.confirm_delete') . '\')">' . __('admin.actions.delete') . '</button>';
         echo '</form>';
         echo '</div>';
         echo '</div>';
@@ -45,10 +45,10 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">{{ $title }}</h1>
-            <p class="page-description">Kéo thả để sắp xếp vị trí và thứ bậc.</p>
+            <p class="page-description">{{ __('admin.categories.drag_drop') }}</p>
         </div>
         <div class="actions">
-            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">Tải lại</a>
+            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">{{ __('admin.categories.refresh') }}</a>
             @if ($canCreate ?? true)
                 <a class="btn" href="{{ route($routePrefix . '.create') }}">{{ __('admin.actions.create') }}</a>
             @endif
@@ -76,7 +76,7 @@
             </div>
             
             <div style="margin-top: 20px;">
-                <button id="save-tree-btn" class="btn btn-primary" style="display: none;">Lưu cấu trúc & thứ tự</button>
+                <button id="save-tree-btn" class="btn btn-primary" style="display: none;">{{ __('admin.categories.save_order') }}</button>
             </div>
         @endif
     </div>
@@ -121,7 +121,7 @@
             $saveBtn.on('click', function() {
                 var data = $tree.nestable('serialize');
                 var btn = $(this);
-                btn.text('Đang lưu...').prop('disabled', true);
+                btn.text('{{ __('admin.categories.saving') }}').prop('disabled', true);
                 
                 $.ajax({
                     url: '{{ route($routePrefix . '.reorder') }}',
@@ -131,15 +131,15 @@
                     },
                     data: { tree: data },
                     success: function() {
-                        btn.text('Đã lưu thành công!').css('background-color', '#10b981').css('border-color', '#10b981');
+                        btn.text('{{ __('admin.categories.saved_success') }}').css('background-color', '#10b981').css('border-color', '#10b981');
                         setTimeout(() => {
-                            btn.text('Lưu cấu trúc & thứ tự').css('background-color', '').css('border-color', '').hide();
+                            btn.text('{{ __('admin.categories.save_order') }}').css('background-color', '').css('border-color', '').hide();
                             btn.prop('disabled', false);
                         }, 2000);
                     },
                     error: function() {
-                        alert('Có lỗi xảy ra khi lưu thứ tự.');
-                        btn.text('Lưu cấu trúc & thứ tự').prop('disabled', false);
+                        alert('{{ __('admin.categories.save_error') }}');
+                        btn.text('{{ __('admin.categories.save_order') }}').prop('disabled', false);
                     }
                 });
             });
