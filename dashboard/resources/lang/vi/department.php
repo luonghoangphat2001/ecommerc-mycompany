@@ -1,0 +1,62 @@
+<?php
+
+return [
+    'sidebar' => [
+        'title' => 'Quản trị Phòng ban',
+        'departments_agents' => 'Phòng ban & Agents',
+        'audit_logs' => 'Nhật ký (Audit Logs)',
+    ],
+    'index' => [
+        'title' => 'Quản lý Phòng ban',
+        'description' => 'Quản lý các phòng ban và mức độ rủi ro.',
+        'create_btn' => 'Tạo phòng ban',
+    ],
+    'form' => [
+        'create_title' => 'Tạo phòng ban',
+        'edit_title' => 'Sửa phòng ban: :name',
+        'description' => 'Cấu hình chi tiết phòng ban và mức độ rủi ro.',
+        'code' => 'Mã (Duy nhất)',
+        'name' => 'Tên',
+        'description_field' => 'Mô tả',
+        'risk_level_threshold' => 'Hạn mức rủi ro',
+        'is_active' => 'Hoạt động',
+        'save' => 'Lưu',
+    ],
+    'show' => [
+        'title' => 'Phòng ban: :name',
+        'description' => 'Các Domain Agent thuộc phòng ban này.',
+        'tokens_regenerated' => 'Đã tạo lại Token!',
+        'tokens_regenerated_desc' => 'Vui lòng lưu lại ngay, thông tin này sẽ không hiển thị lại.',
+        'regenerate_tokens' => 'Tạo lại Token',
+        'confirm_regenerate' => 'Bạn có chắc chắn muốn tạo lại Token? Các token cũ sẽ bị vô hiệu hóa ngay lập tức.',
+    ],
+    'audit' => [
+        'title' => 'Nhật ký hoạt động (Audit Logs)',
+        'description' => 'Theo dõi các hành động được thực hiện bởi các domain agent.',
+        'system' => 'Hệ thống',
+        'view_json' => 'Xem JSON',
+    ],
+    'table' => [
+        'code' => 'Mã',
+        'name' => 'Tên',
+        'risk_level' => 'Mức rủi ro',
+        'agents_count' => 'Số lượng Agent',
+        'status' => 'Trạng thái',
+        'actions' => 'Thao tác',
+        'agent_code' => 'Mã Agent',
+        'last_active' => 'Hoạt động cuối',
+        'time' => 'Thời gian',
+        'department_agent' => 'Phòng ban / Agent',
+        'event_id' => 'Mã Event',
+        'action' => 'Hành động',
+        'payload' => 'Dữ liệu (Payload)',
+        'active' => 'Hoạt động',
+        'inactive' => 'Ngừng hoạt động',
+    ],
+    'risk' => [
+        'low' => 'Thấp',
+        'medium' => 'Trung bình',
+        'high' => 'Cao',
+        'critical' => 'Nghiêm trọng',
+    ],
+];

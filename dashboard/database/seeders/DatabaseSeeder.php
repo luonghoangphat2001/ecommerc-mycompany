@@ -69,6 +69,7 @@ class DatabaseSeeder extends Seeder
             UnifiedShopSeeder::class,
             EngagementSeeder::class,
             SystemSeeder::class,
+            DepartmentSeeder::class,
         ]);
     }
 

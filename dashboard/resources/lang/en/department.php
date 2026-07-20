@@ -1,0 +1,62 @@
+<?php
+
+return [
+    'sidebar' => [
+        'title' => 'Department Management',
+        'departments_agents' => 'Departments & Agents',
+        'audit_logs' => 'Audit Logs',
+    ],
+    'index' => [
+        'title' => 'Departments Management',
+        'description' => 'Manage departments and their risk thresholds.',
+        'create_btn' => 'Create Department',
+    ],
+    'form' => [
+        'create_title' => 'Create Department',
+        'edit_title' => 'Edit Department: :name',
+        'description' => 'Configure the department\'s details and risk thresholds.',
+        'code' => 'Code (Unique)',
+        'name' => 'Name',
+        'description_field' => 'Description',
+        'risk_level_threshold' => 'Risk Level Threshold',
+        'is_active' => 'Is Active',
+        'save' => 'Save',
+    ],
+    'show' => [
+        'title' => 'Department: :name',
+        'description' => 'Domain Agents under this department.',
+        'tokens_regenerated' => 'Tokens Regenerated!',
+        'tokens_regenerated_desc' => 'Please save these immediately, they will not be shown again.',
+        'regenerate_tokens' => 'Regenerate Tokens',
+        'confirm_regenerate' => 'Are you sure you want to regenerate tokens? The old tokens will be invalid immediately.',
+    ],
+    'audit' => [
+        'title' => 'Department Audit Logs',
+        'description' => 'Trace actions performed by domain agents.',
+        'system' => 'System',
+        'view_json' => 'View JSON',
+    ],
+    'table' => [
+        'code' => 'Code',
+        'name' => 'Name',
+        'risk_level' => 'Risk Level',
+        'agents_count' => 'Agents Count',
+        'status' => 'Status',
+        'actions' => 'Actions',
+        'agent_code' => 'Agent Code',
+        'last_active' => 'Last Active',
+        'time' => 'Time',
+        'department_agent' => 'Department / Agent',
+        'event_id' => 'Event ID',
+        'action' => 'Action',
+        'payload' => 'Payload',
+        'active' => 'Active',
+        'inactive' => 'Inactive',
+    ],
+    'risk' => [
+        'low' => 'Low',
+        'medium' => 'Medium',
+        'high' => 'High',
+        'critical' => 'Critical',
+    ],
+];

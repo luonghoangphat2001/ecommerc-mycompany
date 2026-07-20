@@ -14,6 +14,10 @@ class WebhookLog extends Model
 
     protected $fillable = [
         'webhook_id',
+        'department_id',
+        'department_agent_id',
+        'event_id',
+        'action',
         'event',
         'payload',
         'response',
@@ -32,6 +36,16 @@ class WebhookLog extends Model
     public function webhook(): BelongsTo
     {
         return $this->belongsTo(Webhook::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(DepartmentAgent::class, 'department_agent_id');
     }
 
     public function scopeStatus($query, $status)

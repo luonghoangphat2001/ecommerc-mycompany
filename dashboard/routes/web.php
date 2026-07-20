@@ -33,6 +33,9 @@ use App\Http\Controllers\Admin\WebhookLogController;
 use App\Http\Controllers\Admin\UpsellProductController;
 use App\Http\Controllers\Admin\CrossSellProductController;
 use App\Http\Controllers\Admin\ComboProductController;
+use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\DepartmentAgentController;
+use App\Http\Controllers\Admin\DepartmentAuditLogController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/admin/login');
@@ -115,6 +118,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::resource('webhook-logs', WebhookLogController::class)->only(['index', 'show'])->names('webhook-logs');
             });
             Route::resource('mail-logs', MailLogController::class)->only(['index', 'show'])->names('mail-logs');
+
+            $crud('departments', DepartmentController::class, 'departments');
+            Route::post('departments/{department}/agents', [DepartmentAgentController::class, 'store'])->name('departments.agents.store');
+            Route::delete('departments/{department}/agents/{agent}', [DepartmentAgentController::class, 'destroy'])->name('departments.agents.destroy');
+            Route::post('departments/{department}/agents/{agent}/regenerate', [DepartmentAgentController::class, 'regenerateTokens'])->name('departments.agents.regenerate');
+            Route::resource('department-audit-logs', DepartmentAuditLogController::class)->only(['index', 'show'])->names('department-audit-logs');
         });
     });
 });

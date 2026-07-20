@@ -23,11 +23,15 @@ return new class extends Migration
 
         Schema::create('webhook_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('webhook_id')->constrained()->onDelete('cascade');
+            $table->foreignId('webhook_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('department_agent_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('event_id')->nullable();
+            $table->string('action')->nullable();
             $table->string('event');
             $table->json('payload');
             $table->json('response')->nullable();
-            $table->enum('status', ['pending', 'processing', 'delivered', 'failed'])->default('pending');
+            $table->string('status')->default('pending');
             $table->integer('duration')->nullable(); // in milliseconds
             $table->timestamp('created_at')->nullable();
         });

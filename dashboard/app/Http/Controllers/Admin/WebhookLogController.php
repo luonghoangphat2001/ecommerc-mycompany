@@ -54,16 +54,22 @@ class WebhookLogController extends BaseCrudController
 
     protected function indexQuery(Builder $query, Request $request): Builder
     {
-        return $query->with('webhook');
+        return $query->with(['webhook', 'department', 'agent']);
     }
 
     protected function fields(): array
     {
         return [
-            'webhook_id' => ['label' => 'Webhook', 'type' => 'select', 'rules' => ['required', 'integer'], 'options' => Webhook::orderBy('id')->pluck('name', 'id')->toArray()],
-            'event' => ['label' => 'Event', 'rules' => ['required', 'string', 'max:100']],
-            'status' => ['label' => 'Status', 'rules' => ['required', 'in:pending,processing,delivered,failed']],
+            'created_at' => ['label' => 'Time'],
+            'webhook_id' => ['label' => 'Webhook', 'type' => 'select', 'rules' => ['nullable', 'integer'], 'options' => Webhook::orderBy('id')->pluck('name', 'id')->toArray()],
+            'department.name' => ['label' => 'Department'],
+            'agent.agent_code' => ['label' => 'Agent'],
+            'event_id' => ['label' => 'Event ID'],
+            'action' => ['label' => 'Action'],
+            'event' => ['label' => 'Event Type', 'rules' => ['required', 'string', 'max:100']],
+            'status' => ['label' => 'Status', 'rules' => ['required', 'string']],
             'duration' => ['label' => 'Duration (ms)', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']],
+            'payload' => ['label' => 'Payload', 'type' => 'textarea', 'hide_index' => true],
         ];
     }
 

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Middleware\CheckTokenExpiration;
+use App\Http\Middleware\VerifyAgentToken;
 
 /*
 |--------------------------------------------------------------------------
@@ -135,6 +136,12 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
 
             // Orders
             Route::apiResource('orders', OrderController::class)->middleware('throttle:checkout');
+        });
+
+        // Agent API
+        Route::middleware([VerifyAgentToken::class])->prefix('agents')->name('agents.')->group(function () {
+            // Agent endpoints can be added here
+            // e.g., Route::post('sync-inventory', [AgentInventoryController::class, 'sync']);
         });
     });
 });

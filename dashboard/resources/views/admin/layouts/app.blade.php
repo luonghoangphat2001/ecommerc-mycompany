@@ -40,6 +40,12 @@
             ],
         ],
         [
+            'label' => 'department.sidebar.title',
+            'items' => [
+                ['label' => 'department.sidebar.departments_agents', 'route' => 'admin.departments.index', 'match' => 'admin.departments.*'],
+            ],
+        ],
+        [
             'label' => 'admin.sidebar.group.settings',
             'items' => [
                 ['label' => 'admin.sidebar.general_settings', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'query' => ['tab' => 'settings']]
