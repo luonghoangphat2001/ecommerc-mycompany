@@ -53,6 +53,10 @@ class ServiceServiceProvider extends ServiceProvider
             \App\Ecommerce\Menu\Services\MenuService::class
         );
         $this->app->bind(
+            \App\Ecommerce\User\Contracts\AdminUserServiceInterface::class,
+            \App\Ecommerce\User\Services\AdminUserService::class
+        );
+        $this->app->bind(
             \App\Ecommerce\Product\Contracts\BrandServiceInterface::class,
             \App\Ecommerce\Product\Services\BrandService::class
         );
