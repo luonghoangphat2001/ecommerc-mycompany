@@ -44,7 +44,7 @@ class PostCategoryController extends BaseCrudController
                 'label' => 'Parent',
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:categories,id'],
-                'options' => ['' => '-- Root --'] + PostCategory::orderBy('id')->pluck('slug', 'id')->toArray(),
+                'options' => ['' => '-- Root --'] + PostCategory::orderBy('id')->get()->pluck('name', 'id')->toArray(),
             ],
             'description' => ['label' => 'Description', 'type' => 'textarea', 'rules' => ['nullable', 'string']],
             'type' => ['label' => 'Type', 'rules' => ['nullable', 'string', 'max:50']],
@@ -66,26 +66,20 @@ class PostCategoryController extends BaseCrudController
         $query = PostCategory::query()->with(['children.children']);
 
         return view('admin.crud.tree', [
-            'title' => 'Post Categories',
+            'title' => __($this->title()),
             'items' => $query->latest('id')->get(),
             'routePrefix' => $this->routePrefix(),
             'entityLabel' => 'category',
             'entityPlural' => 'categories',
-            'createLabel' => 'Thêm category',
+            'createLabel' => __('admin.actions.create'),
         ]);
     }
 
-    public function create(): View
+    protected function formData(?\Illuminate\Database\Eloquent\Model $record = null): array
     {
-        return view('admin.crud.form', [
-            'title' => 'Tạo mới - ' . $this->title(),
-            'record' => null,
-            'fields' => $this->visibleFields('form'),
-            'routePrefix' => $this->routePrefix(),
-            'formData' => [
-                'parent_id' => request()->integer('parent_id') ?: null,
-                'type' => 'post',
-            ],
-        ]);
+        return [
+            'parent_id' => request()->integer('parent_id') ?: null,
+            'type' => 'post',
+        ];
     }
 }

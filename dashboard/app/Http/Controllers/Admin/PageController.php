@@ -41,9 +41,10 @@ class PageController extends BaseCrudController
             ],
             'blocks' => [
                 'label' => 'Blocks JSON',
-                'type' => 'textarea',
+                'type' => 'blocks',
                 'rules' => ['nullable', 'string'],
-                'hint' => 'Hỗ trợ block dạng media, text, textarea, gallery, code-editor, number.',
+                'hint' => 'Hỗ trợ kéo thả block dạng media, text, textarea, gallery, code-editor, number.',
+                'isWide' => true,
             ],
         ];
     }

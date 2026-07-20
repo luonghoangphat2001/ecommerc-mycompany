@@ -15,12 +15,12 @@
             echo '<span class="settings-chip" style="margin-left: 10px;">' . ($item->is_visible ? __('admin.categories.visible') : __('admin.categories.hidden')) . '</span>';
         }
         echo '</div>';
-        echo '<div class="item-actions">';
-        echo '<a href="' . e(route($routePrefix . '.edit', $item->id)) . '" onclick="event.stopPropagation();">' . __('admin.actions.edit') . '</a>';
+        echo '<div class="item-actions dd-nodrag">';
+        echo '<a href="' . e(route($routePrefix . '.edit', $item->id)) . '">' . __('admin.actions.edit') . '</a>';
         if ($maxDepth > 1) {
-            echo '<a href="' . e(route($routePrefix . '.create', ['parent_id' => $item->id])) . '" onclick="event.stopPropagation();">+ ' . __('admin.categories.add_child') . '</a>';
+            echo '<a href="' . e(route($routePrefix . '.create', ['parent_id' => $item->id])) . '">+ ' . __('admin.categories.add_child') . '</a>';
         }
-        echo '<form method="post" action="' . e(route($routePrefix . '.destroy', $item->id)) . '" style="display:inline;" onclick="event.stopPropagation();">';
+        echo '<form method="post" action="' . e(route($routePrefix . '.destroy', $item->id)) . '" style="display:inline;">';
         echo csrf_field();
         echo method_field('delete');
         echo '<button type="submit" onclick="return confirm(\'' . __('admin.messages.confirm_delete') . '\')">' . __('admin.actions.delete') . '</button>';
