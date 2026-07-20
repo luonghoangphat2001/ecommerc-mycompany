@@ -94,6 +94,119 @@
                                     @endforeach
                                 </div>
                             </div>
+                        @elseif ($type === 'blocks')
+                            @php($blocksData = old($name, $displayValue))
+                            @php
+                                if (is_string($blocksData)) {
+                                    $blocksData = json_decode($blocksData, true);
+                                    if (json_last_error() !== JSON_ERROR_NONE) $blocksData = [];
+                                }
+                            @endphp
+                            <div x-data="blockManager({{ json_encode($blocksData ?: []) }})" class="blocks-editor-wrapper mt-2">
+                                <input type="hidden" name="{{ $name }}" :value="JSON.stringify(blocks)">
+                                
+                                <div id="sortable-{{ $name }}" class="blocks-container" style="display: flex; flex-direction: column; gap: 16px;">
+                                    <template x-for="(block, index) in blocks" :key="block._key || index">
+                                        <div class="block-item" style="border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                            
+                                            <!-- Block Header (Filament Style) -->
+                                            <div style="background: #f8fafc; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                                                <div style="display: flex; align-items: center; gap: 12px;">
+                                                    <div class="drag-handle cursor-move" style="cursor: grab; color: #94a3b8; user-select: none; display: flex; align-items: center;" title="Kéo để di chuyển">
+                                                        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
+                                                    </div>
+                                                    <span style="font-weight: 600; font-size: 14px; color: #334155;" x-text="getBlockLabel(block.type)"></span>
+                                                </div>
+                                                <button type="button" @click="removeBlock(index)" style="color: #64748b; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px;" onmouseover="this.style.color='#ef4444'; this.style.backgroundColor='#fee2e2'" onmouseout="this.style.color='#64748b'; this.style.backgroundColor='transparent'" title="Xóa Block">
+                                                    <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                </button>
+                                            </div>
+
+                                            <!-- Block Body -->
+                                            <div class="block-content" style="padding: 16px;">
+                                                
+                                                <!-- Chung cho tất cả các block -->
+                                                <div style="margin-bottom: 16px;">
+                                                    <label style="display:block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Caption / Chú thích (Tùy chọn)</label>
+                                                    <input type="text" x-model="block.caption" placeholder="Nhập chú thích..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                                </div>
+
+                                                <!-- Text Block -->
+                                                <template x-if="block.type === 'text'">
+                                                    <div>
+                                                        <label style="display:block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Nội dung Text</label>
+                                                        <input type="text" x-model="block.value" placeholder="Nhập tiêu đề hoặc văn bản ngắn..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                                    </div>
+                                                </template>
+
+                                                <!-- Textarea Block -->
+                                                <template x-if="block.type === 'textarea'">
+                                                    <div>
+                                                        <label style="display:block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">Đoạn văn (Textarea)</label>
+                                                        <textarea x-model="block.value" rows="4" placeholder="Nhập nội dung dài..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);"></textarea>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Code Editor Block -->
+                                                <template x-if="block.type === 'code-editor'">
+                                                    <div>
+                                                        <label style="display:block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">HTML / Script Code</label>
+                                                        <textarea x-model="block.value" rows="6" placeholder="<script>...</script>" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #1e293b; color: #e2e8f0; font-family: monospace;"></textarea>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Media Block -->
+                                                <template x-if="block.type === 'media'">
+                                                    <div>
+                                                        <label style="display:block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;">URL Hình ảnh / Video</label>
+                                                        <div style="display: flex; gap: 10px;">
+                                                            <input type="text" x-model="block.value" placeholder="https://..." style="flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                                            <button type="button" @click="alert('Tính năng chọn ảnh từ thư viện sẽ được gọi ở đây')" style="padding: 8px 16px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; color: #475569; cursor: pointer;">
+                                                                Duyệt
+                                                            </button>
+                                                        </div>
+                                                        <template x-if="block.value">
+                                                            <div style="margin-top: 10px; border: 1px solid #e2e8f0; padding: 4px; border-radius: 6px; display: inline-block; background: #f8fafc;">
+                                                                <img :src="block.value" style="max-height: 150px; border-radius: 4px; object-fit: cover;" x-on:error="$event.target.style.display='none'">
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                
+                                                <!-- Others... -->
+                                                <template x-if="block.type !== 'text' && block.type !== 'textarea' && block.type !== 'code-editor' && block.type !== 'media'">
+                                                    <div>
+                                                        <label style="display:block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;" x-text="'Giá trị (' + block.type + ')'"></label>
+                                                        <input type="text" x-model="block.value" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                                    </div>
+                                                </template>
+
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                
+                                <!-- Add Block Button (Filament Style) -->
+                                <div style="margin-top: 24px; text-align: center; position: relative;">
+                                    <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e2e8f0; z-index: 1;"></div>
+                                    
+                                    <div style="position: relative; z-index: 2; display: inline-block;" @click.away="showBlockMenu = false">
+                                        <button type="button" @click="showBlockMenu = !showBlockMenu" style="background: #fff; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 99px; font-weight: 600; color: #0f172a; font-size: 13px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#fff'">
+                                            <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                            Thêm Block
+                                        </button>
+                                        
+                                        <!-- Dropdown Menu -->
+                                        <div x-show="showBlockMenu" style="display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); width: 220px; text-align: left; overflow: hidden;">
+                                            <template x-for="type in blockTypes" :key="type.value">
+                                                <button type="button" @click="addBlock(type.value); showBlockMenu = false" style="display: block; width: 100%; text-align: left; padding: 10px 16px; border: none; background: none; cursor: pointer; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='none'">
+                                                    <span x-text="type.label"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         @elseif ($type === 'tags')
                         @else
                             <input id="{{ $name }}" type="{{ $type }}" name="{{ $name }}" value="{{ old($name, $displayValue) }}">
@@ -153,6 +266,58 @@
 @endsection
 
 @push('scripts')
+<!-- Nhúng AlpineJS và SortableJS cho Block Builder -->
+<script defer src="{{ asset('vendor/alpinejs/alpine.min.js') }}"></script>
+<script src="{{ asset('vendor/sortablejs/sortable.min.js') }}"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('blockManager', (initialBlocks) => ({
+            blocks: Array.isArray(initialBlocks) ? initialBlocks.map(b => ({...b, _key: Math.random().toString(36).substr(2, 9)})) : [],
+            showBlockMenu: false,
+            blockTypes: [
+                { value: 'text', label: 'Văn bản ngắn (Text)' },
+                { value: 'textarea', label: 'Đoạn văn bản (Textarea)' },
+                { value: 'media', label: 'Hình ảnh / Video (Media)' },
+                { value: 'gallery', label: 'Thư viện ảnh (Gallery)' },
+                { value: 'code-editor', label: 'Mã nhúng (Code Editor)' },
+            ],
+            init() {
+                this.$nextTick(() => {
+                    const containers = this.$el.querySelectorAll('.blocks-container');
+                    containers.forEach(el => {
+                        Sortable.create(el, {
+                            handle: '.drag-handle',
+                            animation: 150,
+                            ghostClass: 'opacity-50',
+                            onEnd: (evt) => {
+                                const movedItem = this.blocks.splice(evt.oldIndex, 1)[0];
+                                this.blocks.splice(evt.newIndex, 0, movedItem);
+                            }
+                        });
+                    });
+                });
+            },
+            getBlockLabel(typeValue) {
+                const type = this.blockTypes.find(t => t.value === typeValue);
+                return type ? type.label : typeValue;
+            },
+            addBlock(type = 'text') {
+                this.blocks.push({
+                    _key: Math.random().toString(36).substr(2, 9),
+                    type: type,
+                    value: '',
+                    caption: ''
+                });
+            },
+            removeBlock(index) {
+                if (confirm('Bạn có chắc muốn xóa block này?')) {
+                    this.blocks.splice(index, 1);
+                }
+            }
+        }));
+    });
+</script>
+
 <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
