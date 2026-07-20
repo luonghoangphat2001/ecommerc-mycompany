@@ -49,16 +49,28 @@
                             <label style="display: block; font-weight: 500; margin-bottom: 6px;">Đổi mật khẩu mới</label>
                             <input type="password" name="password" class="input" placeholder="Để trống nếu không đổi" style="width: 100%;">
                         </div>
+                        <div style="grid-column: span 2;">
+                            <label style="display: block; font-weight: 500; margin-bottom: 6px;">Phòng ban</label>
+                            <select name="department_id" class="input" style="width: 100%;">
+                                <option value="">-- Không có --</option>
+                                @foreach(\App\Models\Department::orderBy('name')->pluck('name', 'id') as $departmentId => $departmentName)
+                                    <option value="{{ $departmentId }}" @selected((string) old('department_id', $user->department_id) === (string) $departmentId)>{{ $departmentName }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                     
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; font-weight: 500; margin-bottom: 6px;">Roles</label>
-                        <select name="roles[]" multiple class="input" style="width: 100%; height: 80px;">
-                            @php $userRoles = old('roles', $user->roles->pluck('name')->toArray()); @endphp
+                        @php $userRoles = old('roles', $user->roles->pluck('name')->toArray()); @endphp
+                        <div class="user-role-grid">
                             @foreach(\Spatie\Permission\Models\Role::orderBy('name')->pluck('name', 'name') as $role)
-                                <option value="{{ $role }}" @selected(in_array($role, $userRoles))>{{ $role }}</option>
+                                <label class="shield-permission-pill">
+                                    <input type="checkbox" name="roles[]" value="{{ $role }}" @checked(in_array($role, $userRoles, true))>
+                                    <span>{{ \App\Support\AdminLabel::role($role) }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
                     </div>
                 </div>
             </div>

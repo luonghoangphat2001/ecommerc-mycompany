@@ -71,18 +71,18 @@
                                 <input id="{{ $resourceId }}" type="checkbox" data-resource-toggle>
                                 <span>{{ $resource }}</span>
                             </label>
-                            <span>{{ count($resourcePermissions) }} permissions</span>
+                            <span>{{ count($resourcePermissions) }} quyền</span>
                         </header>
 
                         <div class="shield-action-grid">
                             @foreach ($actions as $action => $permissions)
                                 <div class="shield-action-cell">
-                                    <div class="shield-action-name">{{ str_replace('_', ' ', $action) }}</div>
+                                    <div class="shield-action-name">{{ \App\Support\AdminLabel::action($action) }}</div>
                                     @foreach ($permissions as $permission)
                                         @php($isChecked = in_array($permission, old('permissions', $selectedPermissions), true))
                                         <label class="shield-permission-pill">
                                             <input type="checkbox" name="permissions[]" value="{{ $permission }}" @checked($isChecked)>
-                                            <span>{{ $permission }}</span>
+                                            <span>{{ \App\Support\AdminLabel::permission($permission) }}</span>
                                         </label>
                                     @endforeach
                                 </div>

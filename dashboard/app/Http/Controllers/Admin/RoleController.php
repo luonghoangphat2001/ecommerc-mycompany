@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Support\AdminLabel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -124,16 +125,16 @@ class RoleController extends BaseCrudController
 
         foreach ($actions as $action) {
             if (str_starts_with($normalized, $action . '_')) {
-                return [str($normalized)->after($action . '_')->replace('_', ' ')->headline()->toString(), $action];
+                return [AdminLabel::resource(str($normalized)->after($action . '_')->replace('_', '-')->toString()), $action];
             }
 
             if (str_ends_with($normalized, '_' . $action)) {
-                return [str($normalized)->beforeLast('_' . $action)->replace('_', ' ')->headline()->toString(), $action];
+                return [AdminLabel::resource(str($normalized)->beforeLast('_' . $action)->replace('_', '-')->toString()), $action];
             }
         }
 
         $parts = explode('_', $normalized, 2);
 
-        return [str($parts[0] ?: 'Other')->replace('_', ' ')->headline()->toString(), $parts[1] ?? 'other'];
+        return [AdminLabel::resource($parts[0] ?: 'Other'), $parts[1] ?? 'other'];
     }
 }

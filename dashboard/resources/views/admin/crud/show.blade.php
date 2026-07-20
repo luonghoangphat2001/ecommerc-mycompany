@@ -129,7 +129,7 @@
                             <div class="field-group" style="{{ $isFullWidth ? 'grid-column: 1 / -1; border-right: none;' : '' }}">
                                 <div class="field-label">{{ $field['label'] ?? $name }}</div>
                                 <div class="field-value">
-                                    @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
+                                    @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record, 'field' => $field])
                                 </div>
                             </div>
                         @endforeach
@@ -154,7 +154,7 @@
                             <div class="field-group" style="grid-column: 1 / -1; border-right: none; padding: 12px 20px;">
                                 <div class="field-label">{{ $field['label'] ?? $name }}</div>
                                 <div class="field-value">
-                                    @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record])
+                                    @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record, 'field' => $field])
                                 </div>
                             </div>
                         @endforeach

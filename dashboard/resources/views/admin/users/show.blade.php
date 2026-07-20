@@ -137,10 +137,22 @@
                         <div class="field-value">{{ $user->phone ?: 'Chưa cập nhật' }}</div>
                     </div>
                     <div class="field-group" style="grid-column: span 2;">
+                        <div class="field-label">Phòng ban (Department)</div>
+                        <div class="field-value">
+                            @if($user->department)
+                                <span class="badge" style="background: #e0e7ff; color: #4f46e5; border: 1px solid #c7d2fe;">
+                                    {{ $user->department->name }}
+                                </span>
+                            @else
+                                <span style="color: #94a3b8; font-style: italic; font-size: 13px;">Chưa gán phòng ban</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="field-group" style="grid-column: span 2;">
                         <div class="field-label">Vai trò (Roles)</div>
                         <div class="field-value" style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px;">
                             @forelse($user->roles as $role)
-                                <span class="badge bg-blue">{{ $role->name }}</span>
+                                <span class="badge bg-blue">{{ \App\Support\AdminLabel::role($role->name) }}</span>
                             @empty
                                 <span style="color: #94a3b8; font-style: italic; font-size: 13px;">Chưa gán vai trò</span>
                             @endforelse
@@ -148,12 +160,37 @@
                     </div>
                     <div class="field-group" style="grid-column: span 2;">
                         <div class="field-label">Quyền hạn (Permissions)</div>
-                        <div class="field-value" style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px;">
-                            @forelse($user->getAllPermissions() as $permission)
-                                <span class="badge bg-gray" style="font-size: 11px; padding: 2px 8px;">{{ $permission->name }}</span>
-                            @empty
+                        <div class="field-value" style="padding-top: 8px;">
+                            @php
+                                $permissions = $user->getAllPermissions();
+                                $groupedPermissions = [];
+                                foreach ($permissions as $permission) {
+                                    [$action, $resource] = \App\Support\AdminLabel::splitPermission($permission->name);
+                                    $group = \App\Support\AdminLabel::resource($resource ?: 'general');
+                                    $groupedPermissions[$group][] = $permission->name;
+                                }
+                                ksort($groupedPermissions);
+                            @endphp
+
+                            @if($permissions->isEmpty())
                                 <span style="color: #94a3b8; font-style: italic; font-size: 13px;">Không có quyền hạn</span>
-                            @endforelse
+                            @else
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+                                    @foreach($groupedPermissions as $group => $perms)
+                                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                                            <div style="font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">{{ $group }}</div>
+                                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                                @foreach($perms as $perm)
+                                                    <span style="font-size: 12px; color: #334155; display: flex; align-items: center; gap: 6px;">
+                                                        <span style="width: 4px; height: 4px; border-radius: 50%; background: #94a3b8;"></span>
+                                                        {{ \App\Support\AdminLabel::permission($perm) }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

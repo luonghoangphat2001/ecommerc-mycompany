@@ -1,4 +1,4 @@
-@extends('admin.layouts.app', ['title' => 'Chỉnh sửa đơn hàng #' . $order->number])
+@extends('admin.layouts.app', ['title' => __('admin.order.edit_title', ['number' => $order->number])])
 
 @section('content')
     @php
@@ -67,11 +67,11 @@
 
         <div class="actions-bar">
             <div>
-                <h1 class="page-title">Chỉnh sửa Đơn hàng #{{ $order->number }}</h1>
+                <h1 class="page-title">{{ __('admin.order.edit_title', ['number' => $order->number]) }}</h1>
             </div>
             <div class="actions" style="display: flex; gap: 12px;">
-                <a class="btn btn-secondary" href="{{ route('admin.orders.show', $order->id) }}" style="background: #fff; border: 1px solid #cbd5e1; color: #475569;">Hủy</a>
-                <button type="submit" class="btn btn-primary" style="background: #3b82f6; color: #fff; border: none;">Lưu thay đổi</button>
+                <a class="btn btn-secondary" href="{{ route('admin.orders.show', $order->id) }}" style="background: #fff; border: 1px solid #cbd5e1; color: #475569;">{{ __('admin.order.cancel_edit') }}</a>
+                <button type="submit" class="btn btn-primary" style="background: #3b82f6; color: #fff; border: none;">{{ __('admin.order.save_changes') }}</button>
             </div>
         </div>
 
@@ -91,16 +91,16 @@
                 <!-- Order Items -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Sản phẩm trong đơn hàng</h3>
+                        <h3 class="card-title">{{ __('admin.order.order_items') }}</h3>
                     </div>
                     <div class="table-wrap">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Sản phẩm</th>
-                                    <th>Đơn giá</th>
-                                    <th>Số lượng</th>
-                                    <th class="text-right">Thành tiền</th>
+                                    <th>{{ __('admin.order.product') }}</th>
+                                    <th>{{ __('admin.order.unit_price') }}</th>
+                                    <th>{{ __('admin.order.quantity') }}</th>
+                                    <th class="text-right">{{ __('admin.order.line_total') }}</th>
                                 </tr>
                             </thead>
                             <tbody id="items-table-body">
@@ -110,7 +110,7 @@
                                             <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item->id }}">
                                             <div style="font-weight: 500;">{{ $item->name ?? ('Item #' . $item->id) }}</div>
                                             @if ($item->product)
-                                                <div style="color: #64748b; font-size: 13px;">SKU: {{ $item->product->sku ?? 'N/A' }}</div>
+                                                <div style="color: #64748b; font-size: 13px;">{{ __('admin.order.sku') }}: {{ $item->product->sku ?? __('admin.order.not_available') }}</div>
                                             @endif
                                         </td>
                                         <td>
@@ -134,51 +134,51 @@
                     <!-- Shipping -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Địa chỉ giao hàng (Shipping)</h3>
+                            <h3 class="card-title">{{ __('admin.order.shipping_address') }}</h3>
                         </div>
                         <div class="card-body">
                             <div class="form-row">
-                                <label class="form-label">Họ Tên</label>
+                                <label class="form-label">{{ __('admin.order.full_name') }}</label>
                                 <div style="display:flex; gap:8px;">
-                                    <input type="text" class="form-control" name="shipping[first_name]" value="{{ $order->shippingAddress?->first_name }}" placeholder="Họ">
-                                    <input type="text" class="form-control" name="shipping[last_name]" value="{{ $order->shippingAddress?->last_name }}" placeholder="Tên">
+                                    <input type="text" class="form-control" name="shipping[first_name]" value="{{ $order->shippingAddress?->first_name }}">
+                                    <input type="text" class="form-control" name="shipping[last_name]" value="{{ $order->shippingAddress?->last_name }}">
                                 </div>
                             </div>
                             <div class="form-row" style="display:flex; gap:8px;">
                                 <div style="flex:1;">
-                                    <label class="form-label">SĐT</label>
+                                    <label class="form-label">{{ __('admin.order.phone') }}</label>
                                     <input type="text" class="form-control" name="shipping[phone]" value="{{ $order->shippingAddress?->phone }}">
                                 </div>
                                 <div style="flex:1;">
-                                    <label class="form-label">Email</label>
+                                    <label class="form-label">{{ __('admin.order.email') }}</label>
                                     <input type="email" class="form-control" name="shipping[email]" value="{{ $order->shippingAddress?->email }}">
                                 </div>
                             </div>
                             <div class="form-row">
-                                <label class="form-label">Địa chỉ 1 (Address Line 1)</label>
-                                <input type="text" class="form-control" name="shipping[address_detail]" value="{{ $order->shippingAddress?->address_detail }}" placeholder="Số nhà, Tên đường...">
+                                <label class="form-label">{{ __('admin.order.address_line_1') }}</label>
+                                <input type="text" class="form-control" name="shipping[address_detail]" value="{{ $order->shippingAddress?->address_detail }}">
                             </div>
                             <div class="form-row">
-                                <label class="form-label">Địa chỉ 2 (Address Line 2)</label>
-                                <input type="text" class="form-control" name="shipping[address_line_2]" value="{{ $order->shippingAddress?->address_line_2 }}" placeholder="Tòa nhà, Khu phố...">
+                                <label class="form-label">{{ __('admin.order.address_line_2') }}</label>
+                                <input type="text" class="form-control" name="shipping[address_line_2]" value="{{ $order->shippingAddress?->address_line_2 }}">
                             </div>
                             <div class="form-row" style="display:flex; gap:8px;">
                                 <div style="flex:1;">
-                                    <label class="form-label">Thành phố (City)</label>
+                                    <label class="form-label">{{ __('admin.order.city') }}</label>
                                     <input type="text" class="form-control" name="shipping[city_id]" value="{{ $order->shippingAddress?->city_id }}">
                                 </div>
                                 <div style="flex:1;">
-                                    <label class="form-label">Tỉnh / Bang (State)</label>
+                                    <label class="form-label">{{ __('admin.order.state') }}</label>
                                     <input type="text" class="form-control" name="shipping[state_id]" value="{{ $order->shippingAddress?->state_id }}">
                                 </div>
                             </div>
                             <div class="form-row" style="display:flex; gap:8px;">
                                 <div style="flex:1;">
-                                    <label class="form-label">Quốc gia (Country)</label>
+                                    <label class="form-label">{{ __('admin.order.country') }}</label>
                                     <input type="text" class="form-control" name="shipping[country_code]" value="{{ $order->shippingAddress?->country_code ?? 'VN' }}">
                                 </div>
                                 <div style="flex:1;">
-                                    <label class="form-label">Mã bưu điện (Zip)</label>
+                                    <label class="form-label">{{ __('admin.order.postal_code') }}</label>
                                     <input type="text" class="form-control" name="shipping[postal_code]" value="{{ $order->shippingAddress?->postal_code }}">
                                 </div>
                             </div>
@@ -188,51 +188,51 @@
                     <!-- Billing -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Địa chỉ thanh toán (Billing)</h3>
+                            <h3 class="card-title">{{ __('admin.order.billing_address') }}</h3>
                         </div>
                         <div class="card-body">
                             <div class="form-row">
-                                <label class="form-label">Họ Tên</label>
+                                <label class="form-label">{{ __('admin.order.full_name') }}</label>
                                 <div style="display:flex; gap:8px;">
-                                    <input type="text" class="form-control" name="billing[first_name]" value="{{ $order->billingAddress?->first_name }}" placeholder="Họ">
-                                    <input type="text" class="form-control" name="billing[last_name]" value="{{ $order->billingAddress?->last_name }}" placeholder="Tên">
+                                    <input type="text" class="form-control" name="billing[first_name]" value="{{ $order->billingAddress?->first_name }}">
+                                    <input type="text" class="form-control" name="billing[last_name]" value="{{ $order->billingAddress?->last_name }}">
                                 </div>
                             </div>
                             <div class="form-row" style="display:flex; gap:8px;">
                                 <div style="flex:1;">
-                                    <label class="form-label">SĐT</label>
+                                    <label class="form-label">{{ __('admin.order.phone') }}</label>
                                     <input type="text" class="form-control" name="billing[phone]" value="{{ $order->billingAddress?->phone }}">
                                 </div>
                                 <div style="flex:1;">
-                                    <label class="form-label">Email</label>
+                                    <label class="form-label">{{ __('admin.order.email') }}</label>
                                     <input type="email" class="form-control" name="billing[email]" value="{{ $order->billingAddress?->email }}">
                                 </div>
                             </div>
                             <div class="form-row">
-                                <label class="form-label">Địa chỉ 1 (Address Line 1)</label>
-                                <input type="text" class="form-control" name="billing[address_detail]" value="{{ $order->billingAddress?->address_detail }}" placeholder="Số nhà, Tên đường...">
+                                <label class="form-label">{{ __('admin.order.address_line_1') }}</label>
+                                <input type="text" class="form-control" name="billing[address_detail]" value="{{ $order->billingAddress?->address_detail }}">
                             </div>
                             <div class="form-row">
-                                <label class="form-label">Địa chỉ 2 (Address Line 2)</label>
-                                <input type="text" class="form-control" name="billing[address_line_2]" value="{{ $order->billingAddress?->address_line_2 }}" placeholder="Tòa nhà, Khu phố...">
+                                <label class="form-label">{{ __('admin.order.address_line_2') }}</label>
+                                <input type="text" class="form-control" name="billing[address_line_2]" value="{{ $order->billingAddress?->address_line_2 }}">
                             </div>
                             <div class="form-row" style="display:flex; gap:8px;">
                                 <div style="flex:1;">
-                                    <label class="form-label">Thành phố (City)</label>
+                                    <label class="form-label">{{ __('admin.order.city') }}</label>
                                     <input type="text" class="form-control" name="billing[city_id]" value="{{ $order->billingAddress?->city_id }}">
                                 </div>
                                 <div style="flex:1;">
-                                    <label class="form-label">Tỉnh / Bang (State)</label>
+                                    <label class="form-label">{{ __('admin.order.state') }}</label>
                                     <input type="text" class="form-control" name="billing[state_id]" value="{{ $order->billingAddress?->state_id }}">
                                 </div>
                             </div>
                             <div class="form-row" style="display:flex; gap:8px;">
                                 <div style="flex:1;">
-                                    <label class="form-label">Quốc gia (Country)</label>
+                                    <label class="form-label">{{ __('admin.order.country') }}</label>
                                     <input type="text" class="form-control" name="billing[country_code]" value="{{ $order->billingAddress?->country_code ?? 'VN' }}">
                                 </div>
                                 <div style="flex:1;">
-                                    <label class="form-label">Mã bưu điện (Zip)</label>
+                                    <label class="form-label">{{ __('admin.order.postal_code') }}</label>
                                     <input type="text" class="form-control" name="billing[postal_code]" value="{{ $order->billingAddress?->postal_code }}">
                                 </div>
                             </div>
@@ -243,10 +243,10 @@
                 <!-- Internal Note -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Ghi chú nội bộ</h3>
+                        <h3 class="card-title">{{ __('admin.order.internal_note') }}</h3>
                     </div>
                     <div class="card-body">
-                        <textarea class="form-control" name="internal_note" placeholder="Ghi chú dành cho nhân viên (khách hàng không thấy)">{{ $internalNote }}</textarea>
+                        <textarea class="form-control" name="internal_note" placeholder="{{ __('admin.order.internal_note_placeholder') }}">{{ $internalNote }}</textarea>
                     </div>
                 </div>
             </div>
@@ -257,14 +257,14 @@
                 <!-- Status -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Trạng thái</h3>
+                        <h3 class="card-title">{{ __('admin.order.status') }}</h3>
                     </div>
                     <div class="card-body">
                         <div class="form-row">
-                            <label class="form-label">Trạng thái đơn hàng</label>
+                            <label class="form-label">{{ __('admin.order.order_status') }}</label>
                             <select name="status" class="form-control">
                                 @foreach(['pending', 'new', 'processing', 'delivering', 'completed', 'cancelled', 'refunded'] as $s)
-                                    <option value="{{ $s }}" @selected($statusValue === $s)>{{ ucfirst($s) }}</option>
+                                    <option value="{{ $s }}" @selected($statusValue === $s)>{{ \App\Support\AdminLabel::orderStatus($s) }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -274,14 +274,14 @@
                 <!-- Advanced Adjustments -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Phụ phí & Khuyến mãi</h3>
+                        <h3 class="card-title">{{ __('admin.order.adjustments') }}</h3>
                     </div>
                     <div class="card-body">
                         @if($checkoutSettings->enable_shipping)
                         <div class="form-row">
-                            <label class="form-label">Phương thức vận chuyển</label>
+                            <label class="form-label">{{ __('admin.order.shipping_method') }}</label>
                             <select name="shipping_method_id" class="form-control">
-                                <option value="">--- Chọn phương thức ---</option>
+                                <option value="">{{ __('admin.order.choose_shipping_method') }}</option>
                                 @foreach($shippingMethods as $method)
                                     <option value="{{ $method->id }}" @selected($order->shipping?->shop_shipping_method_id === $method->id)>
                                         {{ $method->name }} ({{ number_format($method->base_fee ?? 0, 0, ',', '.') }})
@@ -293,14 +293,14 @@
                         
                         @if($couponSettings->enable_coupons)
                         <div class="form-row">
-                            <label class="form-label">Mã giảm giá (Coupon Code)</label>
-                            <input type="text" name="coupon_code" class="form-control" value="{{ $order->coupons->first()?->coupon_code }}" placeholder="Nhập mã...">
+                            <label class="form-label">{{ __('admin.order.coupon_code') }}</label>
+                            <input type="text" name="coupon_code" class="form-control" value="{{ $order->coupons->first()?->coupon_code }}" placeholder="{{ __('admin.order.coupon_code_placeholder') }}">
                         </div>
                         @endif
 
                         @if($loyaltySettings->enabled)
                         <div class="form-row">
-                            <label class="form-label">Điểm Loyalty cần đổi</label>
+                            <label class="form-label">{{ __('admin.order.redeemed_points') }}</label>
                             @php
                                 $redeemedPoints = (int) ($order->metas->where('key', 'redeemed_points')->first()?->value ?? 0);
                             @endphp
@@ -310,12 +310,12 @@
                         
                         @if($checkoutSettings->enable_tax)
                         <div class="form-row">
-                            <label class="form-label">Ghi đè Thuế (Manual Tax Override)</label>
+                            <label class="form-label">{{ __('admin.order.manual_tax_override') }}</label>
                             @php
                                 $manualTaxAmount = $order->metas->where('key', 'manual_tax_amount')->first()?->value;
                             @endphp
-                            <input type="number" name="manual_tax_amount" class="form-control" value="{{ $manualTaxAmount }}" min="0" step="1" placeholder="Bỏ trống để tự tính...">
-                            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Hệ thống đang tính: {{ number_format($order->tax_amount ?? 0, 0, ',', '.') }}</div>
+                            <input type="number" name="manual_tax_amount" class="form-control" value="{{ $manualTaxAmount }}" min="0" step="1" placeholder="{{ __('admin.order.manual_tax_placeholder') }}">
+                            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">{{ __('admin.order.current_system_tax', ['amount' => number_format($order->tax_amount ?? 0, 0, ',', '.')]) }}</div>
                         </div>
                         @endif
                     </div>
@@ -324,31 +324,31 @@
                 <!-- Order Calculation -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Tính toán chi phí</h3>
+                        <h3 class="card-title">{{ __('admin.order.cost_calculation') }}</h3>
                     </div>
                     <div class="card-body">
                         <div class="summary-row">
-                            <span class="summary-label">Tạm tính (Subtotal)</span>
+                            <span class="summary-label">{{ __('admin.order.subtotal') }}</span>
                             <span class="summary-value" id="js-subtotal-display">{{ number_format($order->subtotal, 0, ',', '.') }}</span>
                         </div>
                         
                         @if($checkoutSettings->enable_shipping)
                         <div class="summary-row">
-                            <span class="summary-label">Phí vận chuyển</span>
+                            <span class="summary-label">{{ __('admin.order.shipping_price') }}</span>
                             <span class="summary-value">{{ number_format($order->shipping?->amount ?? 0, 0, ',', '.') }}</span>
                         </div>
                         @endif
                         
                         @if($checkoutSettings->enable_tax)
                         <div class="summary-row">
-                            <span class="summary-label">Thuế (Tax)</span>
+                            <span class="summary-label">{{ __('admin.order.tax') }}</span>
                             <span class="summary-value">{{ number_format($order->tax_amount ?? 0, 0, ',', '.') }}</span>
                         </div>
                         @endif
                         
                         @if($couponSettings->enable_coupons)
                         <div class="summary-row">
-                            <span class="summary-label">Giảm giá (Coupons)</span>
+                            <span class="summary-label">{{ __('admin.order.discount') }}</span>
                             <span class="summary-value" style="color: #16a34a;">
                                 -{{ number_format($discountTotal, 0, ',', '.') }}
                             </span>
@@ -357,7 +357,7 @@
                         
                         @if($loyaltySettings->enabled && $loyaltyDiscountTotal > 0)
                         <div class="summary-row">
-                            <span class="summary-label">Đổi điểm (Loyalty)</span>
+                            <span class="summary-label">{{ __('admin.order.redeemed_points') }}</span>
                             <span class="summary-value" style="color: #16a34a;">
                                 -{{ number_format($loyaltyDiscountTotal, 0, ',', '.') }}
                             </span>
@@ -366,11 +366,11 @@
                         
                         <div class="summary-row" style="border-top: 2px solid #e2e8f0; margin-top: 8px; padding-top: 16px; flex-direction: column; align-items: flex-end;">
                             <div style="display: flex; justify-content: space-between; width: 100%;">
-                                <span class="summary-label" style="font-size: 16px; color:#0f172a;">TỔNG CỘNG ĐANG LƯU</span>
+                                <span class="summary-label" style="font-size: 16px; color:#0f172a;">{{ __('admin.order.saved_total') }}</span>
                                 <span class="summary-value" style="font-size: 20px; color:#2563eb;">{{ number_format($order->total, 0, ',', '.') }}</span>
                             </div>
                             <span style="font-size: 12px; color: #64748b; margin-top: 4px; font-style: italic;">
-                                Tổng tiền sẽ được hệ thống tính toán lại tự động dựa trên cấu hình Settings và các giá trị Phụ phí khi bạn nhấn "Lưu thay đổi".
+                                {{ __('admin.order.recalculate_note', ['action' => __('admin.order.save_changes')]) }}
                             </span>
                         </div>
                     </div>
@@ -380,29 +380,30 @@
         <!-- Refund Modal -->
         <div id="refund-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
             <div style="background: #fff; border-radius: 12px; width: 400px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px;">Hoàn tiền Đơn hàng</h3>
+                <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px;">{{ __('admin.order.refund_order_title') }}</h3>
                 
                 <div class="form-row">
-                    <label class="form-label">Loại Hoàn tiền</label>
+                    <label class="form-label">{{ __('admin.order.refund_type') }}</label>
                     <select name="refund_type" id="refund_type" class="form-control" onchange="document.getElementById('refund_amount_container').style.display = this.value === 'partial' ? 'block' : 'none'">
-                        <option value="full">Hoàn tiền Toàn phần</option>
-                        <option value="partial">Hoàn tiền Một phần</option>
+                        <option value="full">{{ \App\Support\AdminLabel::refundType('full') }}</option>
+                        <option value="partial">{{ \App\Support\AdminLabel::refundType('partial') }}</option>
                     </select>
                 </div>
                 
                 <div class="form-row" id="refund_amount_container" style="display: none;">
-                    <label class="form-label">Số tiền hoàn (Nếu là một phần)</label>
-                    <input type="number" name="refund_amount" id="refund_amount" class="form-control" min="0" step="1" placeholder="Nhập số tiền...">
+                    <label class="form-label">{{ __('admin.order.refund_amount') }}</label>
+                    <input type="number" name="refund_amount" id="refund_amount" class="form-control" min="0" step="1" placeholder="{{ __('admin.order.refund_amount_placeholder') }}">
+                    <div style="font-size: 12px; color: #64748b; margin-top: 4px;">{{ __('admin.order.refund_amount_hint') }}</div>
                 </div>
                 
                 <div class="form-row">
-                    <label class="form-label">Lý do hoàn tiền</label>
-                    <textarea name="refund_reason" id="refund_reason" class="form-control" placeholder="Nhập lý do..."></textarea>
+                    <label class="form-label">{{ __('admin.order.refund_reason') }}</label>
+                    <textarea name="refund_reason" id="refund_reason" class="form-control" placeholder="{{ __('admin.order.refund_reason_placeholder') }}"></textarea>
                 </div>
                 
                 <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
-                    <button type="button" class="btn btn-secondary" onclick="closeRefundModal()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Đóng</button>
-                    <button type="button" class="btn btn-primary" onclick="confirmRefundModal()" style="padding: 8px 16px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Xác nhận</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeRefundModal()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">{{ __('admin.order.close') }}</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmRefundModal()" style="padding: 8px 16px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer;">{{ __('admin.order.confirm') }}</button>
                 </div>
             </div>
         </div>

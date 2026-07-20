@@ -48,7 +48,17 @@ class PermissionSeeder extends Seeder
             'language-lines',
             'media',
             'settings',
-            'webhooks'
+            'webhooks',
+            'webhook-logs',
+            'departments',
+            'department-agents',
+            'department-audit-logs',
+            'financial-proposals',
+            'payrolls',
+            'purchase-orders',
+            'incidents',
+            'customer-reviews',
+            'employee-contracts'
         ];
 
         $actions = ['view', 'create', 'update', 'delete'];

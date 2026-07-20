@@ -44,6 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'meta_data',
         'default_shipping_address_id',
         'default_billing_address_id',
+        'department_id',
     ];
 
     /**
@@ -138,5 +139,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function loyaltyLogs(): HasMany
     {
         return $this->hasMany(LoyaltyLog::class, 'user_id');
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\App\Models\Department, self> */
+    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 }

@@ -31,19 +31,45 @@
     @endif
 
     <div class="table-panel card">
-        <div class="toolbar-row">
-            <form method="get" class="searchbar">
-                <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __('admin.actions.search') }}...">
-            </form>
+        <form method="get" class="list-filter-panel">
+            <div class="list-filter-grid">
+                <div>
+                    <label>{{ __('admin.actions.search') }}</label>
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __('admin.actions.search') }}...">
+                </div>
 
-            @if ($canImportExport ?? false)
+                @foreach (($filters ?? []) as $name => $filter)
+                    <div>
+                        <label>{{ $filter['label'] ?? $name }}</label>
+                        @if (($filter['type'] ?? 'select') === 'date')
+                            <input type="date" name="{{ $name }}" value="{{ request($name) }}">
+                        @else
+                            <select name="{{ $name }}">
+                                <option value="">{{ $filter['placeholder'] ?? '-- Tất cả --' }}</option>
+                                @foreach (($filter['options'] ?? []) as $value => $label)
+                                    <option value="{{ $value }}" @selected((string) request($name) === (string) $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="list-filter-actions">
+                <a href="{{ route($routePrefix . '.index') }}" class="btn btn-secondary">{{ __('admin.actions.reset') }}</a>
+                <button class="btn btn-primary" type="submit">{{ __('admin.actions.filter_data') }}</button>
+            </div>
+        </form>
+
+        @if ($canImportExport ?? false)
+            <div class="crud-import-row">
                 <form method="post" action="{{ route($routePrefix . '.import') }}" class="import-form" enctype="multipart/form-data">
                     @csrf
                     <input type="file" name="file" accept=".csv,text/csv">
                     <button class="btn btn-secondary" type="submit">{{ __('admin.actions.import_csv') }}</button>
                 </form>
-            @endif
-        </div>
+            </div>
+        @endif
 
         @error('file')
             <div class="error import-error">{{ $message }}</div>

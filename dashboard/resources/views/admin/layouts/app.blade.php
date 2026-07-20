@@ -41,9 +41,19 @@
         ],
         [
             'label' => 'department.sidebar.title',
-            'items' => [
-                ['label' => 'department.sidebar.departments_agents', 'route' => 'admin.departments.index', 'match' => 'admin.departments.*'],
-            ],
+            'items' => \Illuminate\Support\Facades\Cache::remember('workspace_sidebar_items', 3600, function () {
+                $items = [];
+                $departments = \App\Models\Department::where('is_active', true)->get();
+                foreach ($departments as $dept) {
+                    $items[] = [
+                        'label' => __("workspace.sidebar.{$dept->code}") === "workspace.sidebar.{$dept->code}" ? $dept->name : "workspace.sidebar.{$dept->code}",
+                        'route' => 'admin.workspace.show',
+                        'query' => ['code' => $dept->code],
+                        'match' => 'admin.workspace.show',
+                    ];
+                }
+                return $items;
+            }),
         ],
         [
             'label' => 'admin.sidebar.group.settings',
@@ -120,6 +130,16 @@
             ? route($item['route'], $item['query'])
             : route($item['route']);
     };
+
+    $isItemActive = function (array $item): bool {
+        if (!request()->routeIs($item['match'])) return false;
+        if (isset($item['query'])) {
+            foreach ($item['query'] as $k => $v) {
+                if (request()->route($k) !== $v && request()->query($k) !== $v) return false;
+            }
+        }
+        return true;
+    };
 @endphp
 
 <!doctype html>
@@ -128,6 +148,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? __('admin.brand.title') }}</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         :root {
             --fi-bg: #f8fafc;
@@ -348,6 +369,55 @@
             margin-bottom: 14px;
         }
         .toolbar-row .searchbar { margin: 0; }
+        .list-filter-panel {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--fi-border);
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            margin: -22px -22px 22px -22px;
+        }
+        .list-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .list-filter-grid label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--fi-muted);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+        .list-filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            align-items: center;
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+        }
+        .list-filter-actions .btn {
+            min-height: 38px;
+            padding: 8px 24px;
+            font-weight: 600;
+        }
+        .list-filter-actions .btn-secondary {
+            padding-left: 16px;
+            padding-right: 16px;
+            color: #475569;
+        }
+        .crud-import-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 16px;
+        }
+        .workspace-filter-card {
+            padding-bottom: 0;
+            margin-bottom: 16px;
+        }
         .import-form {
             display: flex;
             gap: 8px;
@@ -360,6 +430,16 @@
             min-height: 36px;
             padding: 6px 8px;
             color: var(--fi-muted);
+        }
+        .workspace-import-card {
+            margin-bottom: 16px;
+            padding: 14px;
+        }
+        .workspace-import-card .import-form {
+            justify-content: flex-start;
+        }
+        .workspace-import-card select {
+            width: min(100%, 240px);
         }
         .import-error { margin: 0 0 12px; }
         .searchbar input { padding-left: 38px; }
@@ -614,6 +694,15 @@
             border-color: #fed7aa;
             background: #fff7ed;
             color: #9a3412;
+        }
+        .user-role-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid var(--fi-border);
+            border-radius: 8px;
+            background: #f8fafc;
         }
         .sticky-footer {
             position: sticky;
@@ -929,7 +1018,9 @@
             .form-grid { grid-template-columns: 1fr; }
             .shield-layout, .settings-shell, .settings-field-grid, .compact-grid { grid-template-columns: 1fr; }
             .settings-tabs { position: static; }
-            .toolbar-row { grid-template-columns: 1fr; }
+            .toolbar-row, .list-filter-grid { grid-template-columns: 1fr; }
+            .list-filter-actions, .crud-import-row { justify-content: stretch; }
+            .list-filter-actions .btn { flex: 1; justify-content: center; }
             .import-form { justify-content: stretch; }
             .import-form .btn { width: 100%; }
             .dashboard-grid { grid-template-columns: 1fr; }
@@ -954,19 +1045,19 @@
                     <nav class="nav-group" aria-label="{{ __($section['label']) }}">
                         @if ($section['label'] === 'admin.sidebar.group.dashboard' || count($section['items']) === 1 && !isset($section['items'][0]['children']))
                             @foreach ($section['items'] as $item)
-                                <a class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}" href="{{ $navUrl($item) }}">
+                                <a class="nav-link {{ $isItemActive($item) ? 'active' : '' }}" href="{{ $navUrl($item) }}">
                                     <span>{{ __($item['label']) }}</span>
                                     <span class="nav-dot"></span>
                                 </a>
                             @endforeach
                         @else
                             @php
-                                $sectionActive = collect($section['items'])->contains(function ($item) {
+                                $sectionActive = collect($section['items'])->contains(function ($item) use ($isItemActive) {
                                     if (isset($item['children'])) {
-                                        return collect($item['children'])->contains(fn ($child) => request()->routeIs($child['match']));
+                                        return collect($item['children'])->contains(fn ($child) => $isItemActive($child));
                                     }
 
-                                    return request()->routeIs($item['match']);
+                                    return $isItemActive($item);
                                 });
                             @endphp
                             <details class="nav-section" {{ $sectionActive ? 'open' : '' }}>
@@ -977,12 +1068,12 @@
                                 <div class="nav-subitems">
                                     @foreach ($section['items'] as $item)
                                         @if (isset($item['children']))
-                                            @php($childActive = collect($item['children'])->contains(fn ($child) => request()->routeIs($child['match'])))
+                                            @php($childActive = collect($item['children'])->contains(fn ($child) => $isItemActive($child)))
                                             <div class="nav-subgroup {{ $childActive ? 'active' : '' }}">
                                                 <div class="nav-subheading">{{ __($item['label']) }}</div>
                                                 <div class="nav-subitems">
                                                     @foreach ($item['children'] as $child)
-                                                        <a class="nav-link nav-link-child {{ request()->routeIs($child['match']) ? 'active' : '' }}" href="{{ isset($child['query']) ? route($child['route'], $child['query']) : route($child['route']) }}">
+                                                        <a class="nav-link nav-link-child {{ $isItemActive($child) ? 'active' : '' }}" href="{{ $navUrl($child) }}">
                                                             <span>{{ __($child['label']) }}</span>
                                                             <span class="nav-dot"></span>
                                                         </a>
@@ -990,7 +1081,7 @@
                                                 </div>
                                             </div>
                                         @else
-                                            <a class="nav-link {{ request()->routeIs($item['match']) ? 'active' : '' }}" href="{{ $navUrl($item) }}">
+                                            <a class="nav-link {{ $isItemActive($item) ? 'active' : '' }}" href="{{ $navUrl($item) }}">
                                                 <span>{{ __($item['label']) }}</span>
                                                 <span class="nav-dot"></span>
                                             </a>

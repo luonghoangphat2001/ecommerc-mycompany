@@ -127,6 +127,11 @@ abstract class BaseCrudController extends Controller
         return [];
     }
 
+    protected function filters(): array
+    {
+        return [];
+    }
+
     protected function canImportExport(): bool
     {
         return $this->hasPermission('create');
@@ -149,6 +154,7 @@ abstract class BaseCrudController extends Controller
             'canDelete' => $this->canDelete(),
             'canImportExport' => $this->canImportExport(),
             'headerActions' => $this->headerActions(),
+            'filters' => $this->filters(),
         ]);
     }
 

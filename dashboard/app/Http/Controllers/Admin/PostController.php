@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\PostCategory;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Spatie\Tags\Tag;
@@ -31,6 +32,60 @@ class PostController extends BaseCrudController
     protected function searchable(): array
     {
         return ['title', 'slug', 'post_type'];
+    }
+
+    protected function filters(): array
+    {
+        return [
+            'post_type' => [
+                'label' => 'Loại bài viết',
+                'placeholder' => 'Tất cả loại',
+                'options' => ['blog' => 'Blog', 'news' => 'News', 'page' => 'Page'],
+            ],
+            'is_visible' => [
+                'label' => 'Hiển thị',
+                'placeholder' => 'Tất cả trạng thái',
+                'options' => ['1' => 'Có', '0' => 'Không'],
+            ],
+            'category_id' => [
+                'label' => 'Danh mục',
+                'placeholder' => 'Tất cả danh mục',
+                'options' => PostCategory::orderBy('name')->pluck('name', 'id')->toArray(),
+            ],
+            'published_from' => [
+                'label' => 'Đăng từ ngày',
+                'type' => 'date',
+            ],
+            'published_to' => [
+                'label' => 'Đến ngày',
+                'type' => 'date',
+            ],
+        ];
+    }
+
+    protected function indexQuery(Builder $query, Request $request): Builder
+    {
+        if ($request->filled('post_type')) {
+            $query->where('post_type', $request->query('post_type'));
+        }
+
+        if ($request->filled('is_visible')) {
+            $query->where('is_visible', $request->boolean('is_visible'));
+        }
+
+        if ($request->filled('category_id')) {
+            $query->whereHas('categories', fn (Builder $categoryQuery) => $categoryQuery->whereKey($request->query('category_id')));
+        }
+
+        if ($request->filled('published_from')) {
+            $query->whereDate('published_at', '>=', $request->query('published_from'));
+        }
+
+        if ($request->filled('published_to')) {
+            $query->whereDate('published_at', '<=', $request->query('published_to'));
+        }
+
+        return $query;
     }
 
     protected function showGroups(): array

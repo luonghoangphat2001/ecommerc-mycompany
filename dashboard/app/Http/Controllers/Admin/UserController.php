@@ -10,8 +10,48 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 
+use Illuminate\Database\Eloquent\Builder;
+
 class UserController extends BaseCrudController
 {
+    public function index(Request $request): \Illuminate\View\View
+    {
+        $modelClass = $this->modelClass();
+        $query = $modelClass::query();
+        $query = $this->indexQuery($query, $request);
+        $this->applySearch($query, $request);
+
+        return view('admin.users.index', [
+            'title' => __($this->title()),
+            'items' => $query->latest('id')->paginate(15)->withQueryString(),
+            'fields' => $this->visibleFields('index'),
+            'routePrefix' => $this->routePrefix(),
+            'canCreate' => $this->canCreate(),
+            'canEdit' => $this->canEdit(),
+            'canDelete' => $this->canDelete(),
+            'canImportExport' => $this->canImportExport(),
+            'headerActions' => $this->headerActions(),
+        ]);
+    }
+
+    protected function indexQuery(Builder $query, Request $request): Builder
+    {
+        if ($role = $request->query('role')) {
+            $query->whereHas('roles', function($q) use ($role) {
+                $q->where('name', $role);
+            });
+        }
+
+        if ($date = $request->query('date')) {
+            $query->whereDate('created_at', $date);
+        }
+
+        if ($departmentId = $request->query('department_id')) {
+            $query->where('department_id', $departmentId);
+        }
+
+        return $query;
+    }
     protected function modelClass(): string
     {
         return User::class;
@@ -39,6 +79,12 @@ class UserController extends BaseCrudController
             'email' => ['label' => 'Email', 'type' => 'email'],
             'phone' => ['label' => 'SĐT', 'rules' => ['nullable', 'string', 'max:50']],
             'password' => ['label' => 'Mật khẩu', 'type' => 'password', 'rules' => ['nullable', 'string', 'min:6'], 'formOnly' => true],
+            'department_id' => [
+                'label' => 'Phòng ban',
+                'type' => 'select',
+                'rules' => ['nullable', 'exists:departments,id'],
+                'options' => ['' => '-- Không có --'] + \App\Models\Department::pluck('name', 'id')->toArray(),
+            ],
             'roles' => [
                 'label' => 'Roles',
                 'type' => 'multiselect',
@@ -73,6 +119,7 @@ class UserController extends BaseCrudController
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($id)],
             'phone' => ['nullable', 'string', 'max:50'],
             'password' => ['nullable', 'string', 'min:6'],
+            'department_id' => ['nullable', 'exists:departments,id'],
             'roles' => ['nullable', 'array'],
             'roles.*' => ['string', 'exists:roles,name'],
             'addresses' => ['nullable', 'array'],
@@ -104,6 +151,7 @@ class UserController extends BaseCrudController
             'name' => $data['name'],
             'email' => $data['email'],
             'phone' => $data['phone'] ?? null,
+            'department_id' => $data['department_id'] ?? null,
         ];
 
         if (!empty($data['password'])) {

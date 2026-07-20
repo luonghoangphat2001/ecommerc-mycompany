@@ -45,6 +45,12 @@ class DepartmentSeeder extends Seeder
                 'description' => 'Phản hồi khách hàng, ghi nhận khiếu nại',
                 'risk_level_threshold' => RiskLevelThreshold::LOW,
             ],
+            [
+                'code' => 'hr',
+                'name' => 'Phòng Nhân sự',
+                'description' => 'Quản lý hợp đồng lao động, nhân sự',
+                'risk_level_threshold' => RiskLevelThreshold::MEDIUM,
+            ],
         ];
 
         foreach ($departments as $data) {

@@ -31,7 +31,9 @@
         </div>
     @endif
 @elseif ($type === 'boolean' || $type === 'select')
-    @if (is_bool($value) || $value === '1' || $value === '0')
+    @if (isset($field['options']) && array_key_exists($value, $field['options']))
+        {{ $field['options'][$value] }}
+    @elseif (is_bool($value) || $value === '1' || $value === '0')
         <span class="badge {{ $value ? 'bg-green' : 'bg-red' }}">
             {{ $value ? 'Có' : 'Không' }}
         </span>

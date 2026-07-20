@@ -239,6 +239,14 @@ class SettingController extends BaseCrudController
                     ['label' => 'admin.sidebar.permissions', 'route' => 'admin.permissions.index'],
                 ],
             ],
+            'departments' => [
+                'label' => 'department.sidebar.title',
+                'description' => 'department.sidebar.departments_agents',
+                'fields' => [],
+                'management_actions' => [
+                    ['label' => 'department.sidebar.departments_agents', 'route' => 'admin.departments.index'],
+                ],
+            ],
             'ecommerce' => [
                 'label' => 'admin.sidebar.ecommerce_settings',
                 'description' => 'admin.settings.ecommerce_description',

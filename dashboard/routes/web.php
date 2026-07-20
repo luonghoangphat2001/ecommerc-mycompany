@@ -36,6 +36,12 @@ use App\Http\Controllers\Admin\ComboProductController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentAgentController;
 use App\Http\Controllers\Admin\DepartmentAuditLogController;
+use App\Http\Controllers\Admin\DepartmentFinancialProposalController;
+use App\Http\Controllers\Admin\DepartmentPayrollController;
+use App\Http\Controllers\Admin\DepartmentPurchaseOrderController;
+use App\Http\Controllers\Admin\DepartmentIncidentController;
+use App\Http\Controllers\Admin\DepartmentCustomerReviewController;
+use App\Http\Controllers\Admin\DepartmentEmployeeContractController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/admin/login');
@@ -107,6 +113,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
             $crud('pages', PageController::class, 'pages');
             $crud('menus', MenuController::class, 'menus');
             $crud('menu-items', MenuItemController::class, 'menu-items');
+            $crud('departments', DepartmentController::class, 'departments');
+            $crud('department-agents', DepartmentAgentController::class, 'department-agents');
+            $crud('webhook-logs', WebhookLogController::class, 'webhook-logs');
+            $crud('department-audit-logs', DepartmentAuditLogController::class, 'department-audit-logs');
+            $crud('financial-proposals', DepartmentFinancialProposalController::class, 'financial-proposals');
+            $crud('payrolls', DepartmentPayrollController::class, 'payrolls');
+            $crud('purchase-orders', DepartmentPurchaseOrderController::class, 'purchase-orders');
+            $crud('incidents', DepartmentIncidentController::class, 'incidents');
+            $crud('customer-reviews', DepartmentCustomerReviewController::class, 'customer-reviews');
+            $crud('employee-contracts', DepartmentEmployeeContractController::class, 'employee-contracts');
+
+            Route::prefix('workspace')->name('workspace.')->group(function () {
+                Route::get('{code}/export', [\App\Http\Controllers\Admin\DepartmentWorkspaceController::class, 'export'])->name('export');
+                Route::post('{code}/import', [\App\Http\Controllers\Admin\DepartmentWorkspaceController::class, 'import'])->name('import');
+                Route::get('{code}', [\App\Http\Controllers\Admin\DepartmentWorkspaceController::class, 'show'])->name('show');
+            });
             Route::post('language-lines/sync', [LanguageLineController::class, 'syncFromFiles'])->name('language-lines.sync');
             $crud('language-lines', LanguageLineController::class, 'language-lines');
             $crud('media', MediaController::class, 'media');

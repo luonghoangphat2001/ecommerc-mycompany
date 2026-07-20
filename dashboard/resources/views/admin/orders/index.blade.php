@@ -35,52 +35,52 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                 <!-- Search -->
                 <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Mã đơn hàng</label>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.number') }}</label>
                     <input type="text" name="q" value="{{ request('q') }}" placeholder="VD: 10001...">
                 </div>
 
                 <!-- Customer -->
                 <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Khách hàng</label>
-                    <input type="text" name="customer" value="{{ request('customer') }}" placeholder="Tên / Email / SĐT">
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.customer') }}</label>
+                    <input type="text" name="customer" value="{{ request('customer') }}" placeholder="{{ __('admin.order.customer_search_placeholder') }}">
                 </div>
                 
                 <!-- Status -->
                 <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Trạng thái đơn</label>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.order_status') }}</label>
                     <select name="status">
-                        <option value="">-- Tất cả --</option>
+                        <option value="">{{ __('admin.order.all') }}</option>
                         @foreach(['pending', 'new', 'processing', 'delivering', 'completed', 'cancelled', 'refunded'] as $s)
-                            <option value="{{ $s }}" @selected(request('status') === $s)>{{ ucfirst($s) }}</option>
+                            <option value="{{ $s }}" @selected(request('status') === $s)>{{ \App\Support\AdminLabel::orderStatus($s) }}</option>
                         @endforeach
                     </select>
                 </div>
 
                 <!-- Payment Status -->
                 <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Thanh toán</label>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.payment') }}</label>
                     <select name="payment_status">
-                        <option value="">-- Tất cả --</option>
+                        <option value="">{{ __('admin.order.all') }}</option>
                         @foreach(['pending', 'paid', 'failed', 'refunded'] as $ps)
-                            <option value="{{ $ps }}" @selected(request('payment_status') === $ps)>{{ ucfirst($ps) }}</option>
+                            <option value="{{ $ps }}" @selected(request('payment_status') === $ps)>{{ \App\Support\AdminLabel::paymentStatus($ps) }}</option>
                         @endforeach
                     </select>
                 </div>
 
                 <!-- Date range -->
                 <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Từ ngày</label>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.date_from') }}</label>
                     <input type="date" name="date_from" value="{{ request('date_from') }}">
                 </div>
                 <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">Đến ngày</label>
+                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.date_to') }}</label>
                     <input type="date" name="date_to" value="{{ request('date_to') }}">
                 </div>
             </div>
             
             <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 16px;">
-                <a href="{{ route($routePrefix . '.index') }}" class="btn btn-secondary" style="padding: 8px 16px; font-weight: 600; min-height: 38px; color: #475569;">Reset</a>
-                <button class="btn btn-primary" type="submit" style="padding: 8px 24px; font-weight: 600; min-height: 38px;">Lọc dữ liệu</button>
+                <a href="{{ route($routePrefix . '.index') }}" class="btn btn-secondary" style="padding: 8px 16px; font-weight: 600; min-height: 38px; color: #475569;">{{ __('admin.actions.reset') }}</a>
+                <button class="btn btn-primary" type="submit" style="padding: 8px 24px; font-weight: 600; min-height: 38px;">{{ __('admin.actions.filter_data') }}</button>
             </div>
         </form>
 
@@ -102,12 +102,12 @@
             <table style="min-width: 980px;">
                 <thead>
                     <tr>
-                        <th>Mã đơn</th>
-                        <th>Khách hàng</th>
-                        <th>Trạng thái</th>
-                        <th>Thanh toán</th>
-                        <th>Tổng tiền</th>
-                        <th>Ngày tạo</th>
+                        <th>{{ __('admin.order.order_code') }}</th>
+                        <th>{{ __('admin.order.customer') }}</th>
+                        <th>{{ __('admin.order.status') }}</th>
+                        <th>{{ __('admin.order.payment') }}</th>
+                        <th>{{ __('admin.order.total_price') }}</th>
+                        <th>{{ __('admin.order.created_at') }}</th>
                         <th>{{ __('admin.table_actions') }}</th>
                     </tr>
                 </thead>
@@ -121,23 +121,26 @@
                             <td>
                                 <div>{{ $item->customer_display_name }}</div>
                                 @if($item->user_id)
-                                    <div class="cell-muted" style="font-size:0.85em;">Member</div>
+                                    <div class="cell-muted" style="font-size:0.85em;">{{ __('admin.order.member') }}</div>
                                 @else
-                                    <div class="cell-muted" style="font-size:0.85em;">Guest</div>
+                                    <div class="cell-muted" style="font-size:0.85em;">{{ __('admin.order.guest') }}</div>
                                 @endif
                             </td>
                             <td>
-                                <span class="badge badge-{{ $item->status instanceof \BackedEnum ? $item->status->value : $item->status }}">{{ $item->status instanceof \BackedEnum ? $item->status->value : $item->status }}</span>
+                                    @php
+                                        $orderStatus = $item->status instanceof \BackedEnum ? $item->status->value : $item->status;
+                                    @endphp
+                                    <span class="badge badge-{{ $orderStatus }}">{{ \App\Support\AdminLabel::orderStatus($orderStatus) }}</span>
                             </td>
                             <td>
                                 @if($item->payments->count() > 0)
                                     @php
                                         $latestPayment = $item->payments->last();
                                     @endphp
-                                    <span class="badge badge-{{ $latestPayment->status }}">{{ $latestPayment->status }}</span>
+                                    <span class="badge badge-{{ $latestPayment->status }}">{{ \App\Support\AdminLabel::paymentStatus($latestPayment->status) }}</span>
                                     <div class="cell-muted" style="font-size:0.85em;">{{ $latestPayment->method }}</div>
                                 @else
-                                    <span class="badge badge-pending">pending</span>
+                                    <span class="badge badge-pending">{{ \App\Support\AdminLabel::paymentStatus('pending') }}</span>
                                 @endif
                             </td>
                             <td>{{ $currency->format($item->total, true) }}</td>

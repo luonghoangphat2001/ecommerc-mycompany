@@ -153,6 +153,36 @@ class RepositoryServiceProvider extends ServiceProvider
             \App\Ecommerce\Analytics\Contracts\WebhookRepositoryInterface::class,
             \App\Ecommerce\Analytics\Repositories\EloquentWebhookRepository::class
         );
+
+        $this->app->bind(
+            \App\Ecommerce\Workspace\Repositories\WorkspaceRepositoryInterface::class,
+            \App\Ecommerce\Workspace\Repositories\WorkspaceRepository::class
+        );
+
+        $this->app->bind(
+            \App\Ecommerce\Workspace\Repositories\CfoRepositoryInterface::class,
+            \App\Ecommerce\Workspace\Repositories\CfoRepository::class
+        );
+
+        $this->app->bind(
+            \App\Ecommerce\Workspace\Repositories\LogisticsRepositoryInterface::class,
+            \App\Ecommerce\Workspace\Repositories\LogisticsRepository::class
+        );
+
+        $this->app->bind(
+            \App\Ecommerce\Workspace\Repositories\OpsRepositoryInterface::class,
+            \App\Ecommerce\Workspace\Repositories\OpsRepository::class
+        );
+
+        $this->app->bind(
+            \App\Ecommerce\Workspace\Repositories\CskhRepositoryInterface::class,
+            \App\Ecommerce\Workspace\Repositories\CskhRepository::class
+        );
+
+        $this->app->bind(
+            \App\Ecommerce\Workspace\Repositories\HrRepositoryInterface::class,
+            \App\Ecommerce\Workspace\Repositories\HrRepository::class
+        );
     }
 
 

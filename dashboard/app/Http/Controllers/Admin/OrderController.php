@@ -35,9 +35,9 @@ class OrderController extends BaseCrudController
     protected function fields(): array
     {
         return [
-            'status' => ['label' => 'Status', 'rules' => ['required', 'string', 'max:30']],
-            'currency' => ['label' => 'Currency', 'rules' => ['required', 'string', 'max:10']],
-            'total' => ['label' => 'Tổng tiền', 'type' => 'number', 'rules' => ['required', 'numeric', 'min:0']],
+            'status' => ['label' => __('admin.order.status'), 'rules' => ['required', 'string', 'max:30']],
+            'currency' => ['label' => __('admin.order.currency'), 'rules' => ['required', 'string', 'max:10']],
+            'total' => ['label' => __('admin.order.total_price'), 'type' => 'number', 'rules' => ['required', 'numeric', 'min:0']],
         ];
     }
 
@@ -135,7 +135,7 @@ class OrderController extends BaseCrudController
         $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
         $orderService->updateStatus($order, \App\Ecommerce\Order\Enums\OrderStatus::from($data['status']));
 
-        return redirect()->route('admin.orders.show', $order->id)->with('status', 'Đã cập nhật trạng thái đơn hàng');
+        return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.order.status_updated'));
     }
 
     public function storePayment(Request $request, int $id): RedirectResponse
@@ -155,7 +155,7 @@ class OrderController extends BaseCrudController
             'currency' => $order->currency ?: 'VND',
         ]);
 
-        return redirect()->route('admin.orders.show', $order->id)->with('status', 'Đã thêm payment');
+        return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.order.payment_added'));
     }
 
     public function storeRefund(Request $request, int $id): RedirectResponse
@@ -168,7 +168,7 @@ class OrderController extends BaseCrudController
         $order = Order::findOrFail($id);
         OrderRefund::create($data + ['order_id' => $order->id]);
 
-        return redirect()->route('admin.orders.show', $order->id)->with('status', 'Đã tạo refund');
+        return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.order.refund_created'));
     }
 
     public function edit(int $id): View
@@ -236,7 +236,7 @@ class OrderController extends BaseCrudController
             'billing.country_code' => ['nullable', 'string'],
             'billing.postal_code' => ['nullable', 'string'],
         ], [
-            'coupon_code.exists' => 'Mã giảm giá không tồn tại trong hệ thống.',
+            'coupon_code.exists' => __('admin.order.coupon_not_found'),
         ]);
 
         // 1. Delegate entirely to OrderService

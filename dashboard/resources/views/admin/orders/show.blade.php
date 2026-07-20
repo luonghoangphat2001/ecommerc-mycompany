@@ -11,6 +11,24 @@
         $discountTotal = $order->coupons->sum('discount_amount');
         $loyaltyDiscountTotal = $orderService->getLoyaltyDiscountTotal($order);
         $internalMetas = ['loyalty_discount', 'redeemed_points'];
+        $orderStatuses = ['pending', 'new', 'processing', 'delivering', 'completed', 'cancelled', 'refunded'];
+        $productImageUrl = function ($product) {
+            if (! $product) {
+                return null;
+            }
+
+            $imagePath = $product->featuredImage?->path;
+            $rawImages = $product->product_images;
+            $imageId = is_array($rawImages) ? ($rawImages[0] ?? null) : $rawImages;
+
+            if (! $imagePath && is_numeric($imageId)) {
+                $imagePath = \Awcodes\Curator\Models\Media::find($imageId)?->path;
+            } elseif (! $imagePath && is_string($imageId)) {
+                $imagePath = $imageId;
+            }
+
+            return $imagePath ? \Illuminate\Support\Facades\Storage::disk('public')->url($imagePath) : null;
+        };
     @endphp
 
     <style>
@@ -143,15 +161,18 @@
                                 <tr>
                                     <td>
                                         <div style="display:flex; gap:12px; align-items:center;">
-                                            @if ($item->product?->featuredImage?->url)
-                                                <img src="{{ $item->product->featuredImage->url }}" alt="" style="width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">
+                                            @php
+                                                $imageUrl = $productImageUrl($item->product);
+                                            @endphp
+                                            @if ($imageUrl)
+                                                <img src="{{ $imageUrl }}" alt="" style="width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">
                                             @else
-                                                <div style="width:48px; height:48px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:12px;">No img</div>
+                                                <div style="width:48px; height:48px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:12px;">{{ __('admin.order.no_image') }}</div>
                                             @endif
                                             <div>
                                                 <div style="font-weight: 500;">{{ $item->name ?? ('Item #' . $item->id) }}</div>
                                                 @if ($item->product)
-                                                    <div style="color: #64748b; font-size: 13px;">SKU: {{ $item->product->sku ?? 'N/A' }}</div>
+                                                    <div style="color: #64748b; font-size: 13px;">{{ __('admin.order.sku') }}: {{ $item->product->sku ?? __('admin.order.not_available') }}</div>
                                                 @endif
                                             </div>
                                         </div>
@@ -172,18 +193,18 @@
             <!-- Payments -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Lịch sử thanh toán</h3>
+                    <h3 class="card-title">{{ __('admin.order.payment_history') }}</h3>
                 </div>
                 <div class="table-wrap">
                     <table>
                         <thead>
                             <tr>
-                                <th>Method</th>
-                                <th>Status</th>
-                                <th>Provider</th>
-                                <th>Reference</th>
-                                <th class="text-right">Amount</th>
-                                <th class="text-right">Ngày</th>
+                                <th>{{ __('admin.order.method') }}</th>
+                                <th>{{ __('admin.order.status') }}</th>
+                                <th>{{ __('admin.order.provider') }}</th>
+                                <th>{{ __('admin.order.reference') }}</th>
+                                <th class="text-right">{{ __('admin.order.amount') }}</th>
+                                <th class="text-right">{{ __('admin.order.date') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -192,7 +213,7 @@
                                     <td><span style="text-transform: uppercase; font-size:12px; font-weight:600;">{{ $payment->method }}</span></td>
                                     <td>
                                         <span class="badge {{ $payment->status === 'paid' ? 'bg-green' : ($payment->status === 'failed' ? 'bg-red' : 'bg-yellow') }}">
-                                            {{ $payment->status }}
+                                            {{ \App\Support\AdminLabel::paymentStatus($payment->status) }}
                                         </span>
                                     </td>
                                     <td>{{ $payment->provider ?: '—' }}</td>
@@ -201,74 +222,61 @@
                                     <td class="text-right" style="color:#64748b; font-size:13px;">{{ $payment->created_at?->format('Y-m-d H:i') }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="6" style="text-align: center; color: #94a3b8;">Chưa có giao dịch thanh toán nào</td></tr>
+                                <tr><td colspan="6" style="text-align: center; color: #94a3b8;">{{ __('admin.order.no_payment_history') }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Refunds -->
-            @if($order->refunds->count() > 0)
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Lịch sử Hoàn tiền (Refunds)</h3>
+                    <h3 class="card-title">{{ __('admin.order.refund_history') }}</h3>
                 </div>
                 <div class="table-wrap">
                     <table>
                         <thead>
                             <tr>
-                                <th>Loại</th>
-                                <th>Trạng thái</th>
-                                <th>Lý do</th>
-                                <th class="text-right">Amount</th>
-                                <th class="text-right">Ngày hoàn</th>
+                                <th>{{ __('admin.order.type') }}</th>
+                                <th>{{ __('admin.order.status') }}</th>
+                                <th>{{ __('admin.order.reason') }}</th>
+                                <th class="text-right">{{ __('admin.order.amount') }}</th>
+                                <th class="text-right">{{ __('admin.order.refund_date') }}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($order->refunds as $refund)
-                                @php
-                                    $type = $refund->metadata['type'] ?? 'full';
-                                    $status = $refund->metadata['status'] ?? 'completed';
-                                @endphp
+                            @forelse ($order->refunds as $refund)
                                 <tr>
                                     <td>
-                                        @if($type === 'full')
-                                            <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; background:#fee2e2; color:#991b1b; font-weight:500;">Toàn phần</span>
-                                        @else
-                                            <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; background:#fef08a; color:#854d0e; font-weight:500;">Một phần</span>
-                                        @endif
+                                        <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; {{ ($refund->metadata['type'] ?? 'full') === 'full' ? 'background:#fee2e2; color:#991b1b;' : 'background:#fef08a; color:#854d0e;' }} font-weight:500;">{{ \App\Support\AdminLabel::refundType($refund->metadata['type'] ?? 'full') }}</span>
                                     </td>
                                     <td>
-                                        @if($status === 'completed')
-                                            <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; background:#dcfce7; color:#166534; font-weight:500;">Thành công</span>
-                                        @else
-                                            <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; background:#f1f5f9; color:#475569; font-weight:500;">{{ ucfirst($status) }}</span>
-                                        @endif
+                                        <span style="display:inline-block; padding:2px 8px; font-size:12px; border-radius:4px; {{ ($refund->metadata['status'] ?? 'completed') === 'completed' ? 'background:#dcfce7; color:#166534;' : 'background:#f1f5f9; color:#475569;' }} font-weight:500;">{{ \App\Support\AdminLabel::refundStatus($refund->metadata['status'] ?? 'completed') }}</span>
                                     </td>
                                     <td>{{ $refund->reason ?: '—' }}</td>
                                     <td class="text-right font-bold" style="color:#991b1b;">-{{ $money($refund->amount) }}</td>
                                     <td class="text-right" style="color:#64748b; font-size:13px;">{{ $refund->created_at?->format('Y-m-d H:i') }}</td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr><td colspan="5" style="text-align: center; color: #94a3b8;">{{ __('admin.messages.empty_state') }}</td></tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
-            @endif
             
             <!-- Activity Log -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Lịch sử trạng thái (Activity Log)</h3>
+                    <h3 class="card-title">{{ __('admin.order.activity_log') }}</h3>
                 </div>
                 <div class="table-wrap">
                     <table>
                         <thead>
                             <tr>
-                                <th>Hành động</th>
-                                <th>Người thực hiện</th>
-                                <th class="text-right">Thời gian</th>
+                                <th>{{ __('admin.order.action') }}</th>
+                                <th>{{ __('admin.order.actor') }}</th>
+                                <th class="text-right">{{ __('admin.order.time') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -278,15 +286,18 @@
                                         <div>{{ $activity->description }}</div>
                                         @if($activity->properties->has('attributes') && isset($activity->properties['attributes']['status']))
                                             <div style="font-size:12px; color:#64748b; margin-top:4px;">
-                                                Status: {{ $activity->properties['old']['status'] ?? 'N/A' }} &rarr; <strong>{{ $activity->properties['attributes']['status'] }}</strong>
+                                                {{ __('admin.order.status_changed') }}:
+                                                {{ \App\Support\AdminLabel::orderStatus($activity->properties['old']['status'] ?? null) }}
+                                                &rarr;
+                                                <strong>{{ \App\Support\AdminLabel::orderStatus($activity->properties['attributes']['status']) }}</strong>
                                             </div>
                                         @endif
                                     </td>
-                                    <td>{{ $activity->causer?->name ?? 'System' }}</td>
+                                    <td>{{ $activity->causer?->name ?? __('admin.order.system') }}</td>
                                     <td class="text-right" style="color:#64748b; font-size:13px;">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="3" style="text-align: center; color: #94a3b8;">Không có lịch sử</td></tr>
+                                <tr><td colspan="3" style="text-align: center; color: #94a3b8;">{{ __('admin.order.no_activity_history') }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -300,51 +311,51 @@
             <!-- Order Summary -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Tổng quan Đơn hàng</h3>
+                    <h3 class="card-title">{{ __('admin.order.order_summary') }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="field-list">
                         <div class="field-group">
-                            <div class="field-label">Trạng thái</div>
+                            <div class="field-label">{{ __('admin.order.status') }}</div>
                             <div class="field-value">
-                                <span class="badge" style="background:#e2e8f0; color:#475569; font-size:14px; padding:6px 12px;">{{ strtoupper($statusValue) }}</span>
+                                <span class="badge" style="background:#e2e8f0; color:#475569; font-size:14px; padding:6px 12px;">{{ \App\Support\AdminLabel::orderStatus($statusValue) }}</span>
                             </div>
                         </div>
                         <div class="field-group" style="display: flex; justify-content: space-between;">
-                            <div class="field-label" style="margin:0;">Tạm tính</div>
+                            <div class="field-label" style="margin:0;">{{ __('admin.order.subtotal') }}</div>
                             <div class="field-value">{{ $money($subtotal) }}</div>
                         </div>
                         
                         @if($couponSettings->enable_coupons)
                         <div class="field-group" style="display: flex; justify-content: space-between;">
-                            <div class="field-label" style="margin:0;">Giảm giá</div>
+                            <div class="field-label" style="margin:0;">{{ __('admin.order.discount') }}</div>
                             <div class="field-value" style="color:#16a34a;">-{{ $money($discountTotal) }}</div>
                         </div>
                         @endif
 
                         @if($loyaltySettings->enabled && $loyaltyDiscountTotal > 0)
                         <div class="field-group" style="display: flex; justify-content: space-between;">
-                            <div class="field-label" style="margin:0;">Đổi điểm (Loyalty)</div>
+                            <div class="field-label" style="margin:0;">{{ __('admin.order.redeemed_points') }}</div>
                             <div class="field-value" style="color:#16a34a;">-{{ $money($loyaltyDiscountTotal) }}</div>
                         </div>
                         @endif
                         
                         @if($checkoutSettings->enable_tax)
                         <div class="field-group" style="display: flex; justify-content: space-between;">
-                            <div class="field-label" style="margin:0;">Thuế (Tax)</div>
+                            <div class="field-label" style="margin:0;">{{ __('admin.order.tax') }}</div>
                             <div class="field-value">{{ $money($taxTotal) }}</div>
                         </div>
                         @endif
                         
                         @if($checkoutSettings->enable_shipping)
                         <div class="field-group" style="display: flex; justify-content: space-between;">
-                            <div class="field-label" style="margin:0;">Phí vận chuyển</div>
+                            <div class="field-label" style="margin:0;">{{ __('admin.order.shipping_price') }}</div>
                             <div class="field-value">{{ $money($shippingTotal) }}</div>
                         </div>
                         @endif
                         
                         <div class="field-group" style="display: flex; justify-content: space-between; border-top: 2px solid #e2e8f0; padding-top: 16px; margin-top: 4px;">
-                            <div class="field-label" style="margin:0; font-size: 16px; color:#0f172a;">TỔNG CỘNG</div>
+                            <div class="field-label" style="margin:0; font-size: 16px; color:#0f172a;">{{ __('admin.order.grand_total') }}</div>
                             <div class="field-value font-bold" style="font-size: 20px; color:#2563eb;">{{ $money($order->total) }}</div>
                         </div>
                     </div>
@@ -354,12 +365,12 @@
             <!-- Customer Details -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Khách hàng</h3>
+                    <h3 class="card-title">{{ __('admin.order.customer') }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="field-list">
                         <div class="field-group">
-                            <div class="field-label">Tên hiển thị</div>
+                            <div class="field-label">{{ __('admin.order.display_name') }}</div>
                             <div class="field-value">
                                 <strong>{{ $order->customer_display_name }}</strong>
                                 <span class="badge" style="background:#f1f5f9; color:#64748b; margin-left:8px;">{{ $order->customer_type }}</span>
@@ -367,7 +378,7 @@
                         </div>
                         @if($order->user)
                         <div class="field-group">
-                            <div class="field-label">Email tài khoản</div>
+                            <div class="field-label">{{ __('admin.order.account_email') }}</div>
                             <div class="field-value">{{ $order->user->email }}</div>
                         </div>
                         @endif
@@ -379,26 +390,26 @@
             @if($checkoutSettings->enable_shipping)
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Giao hàng (Shipping)</h3>
+                    <h3 class="card-title">{{ __('admin.order.shipping_information') }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="field-list">
                         <div class="field-group">
-                            <div class="field-label">Phương thức</div>
+                            <div class="field-label">{{ __('admin.order.method') }}</div>
                             <div class="field-value">
                                 @if($order->shipping?->method)
                                     <span class="badge bg-green">{{ $order->shipping->method }}</span>
                                 @else
-                                    <span style="color:#94a3b8;">N/A</span>
+                                    <span style="color:#94a3b8;">{{ __('admin.order.not_available') }}</span>
                                 @endif
                             </div>
                         </div>
                         <div class="field-group">
-                            <div class="field-label">Tracking Number</div>
+                            <div class="field-label">{{ __('admin.order.tracking_number') }}</div>
                             <div class="field-value">{{ $order->shipping?->tracking_number ?: '—' }}</div>
                         </div>
                         <div class="field-group">
-                            <div class="field-label">Địa chỉ nhận hàng</div>
+                            <div class="field-label">{{ __('admin.order.shipping_address') }}</div>
                             <div class="field-value">
                                 @if($order->shippingAddress)
                                     <div><strong>{{ $order->shippingAddress->first_name }} {{ $order->shippingAddress->last_name }}</strong></div>
@@ -415,7 +426,7 @@
                                         {{ $order->shippingAddress->country_code }}
                                     </div>
                                 @else
-                                    <span style="color:#94a3b8;">Chưa có địa chỉ giao hàng</span>
+                                    <span style="color:#94a3b8;">{{ __('admin.order.shipping_address_empty') }}</span>
                                 @endif
                             </div>
                         </div>
@@ -427,12 +438,12 @@
             <!-- Billing Information -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Thanh toán (Billing)</h3>
+                    <h3 class="card-title">{{ __('admin.order.billing_information') }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="field-list">
                         <div class="field-group">
-                            <div class="field-label">Địa chỉ thanh toán</div>
+                            <div class="field-label">{{ __('admin.order.billing_address') }}</div>
                             <div class="field-value">
                                 @if($order->billingAddress)
                                     <div><strong>{{ $order->billingAddress->first_name }} {{ $order->billingAddress->last_name }}</strong></div>
@@ -449,7 +460,7 @@
                                         {{ $order->billingAddress->country_code }}
                                     </div>
                                 @else
-                                    <span style="color:#94a3b8;">Giống địa chỉ giao hàng</span>
+                                    <span style="color:#94a3b8;">{{ __('admin.order.billing_same_as_shipping') }}</span>
                                 @endif
                             </div>
                         </div>
@@ -461,13 +472,13 @@
             @if($couponSettings->enable_coupons && $order->coupons->count() > 0)
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Coupons / Khuyến mãi</h3>
+                    <h3 class="card-title">{{ __('admin.order.coupon_promotions') }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="field-list">
                         @foreach($order->coupons as $coupon)
                             <div class="field-group">
-                                <div class="field-label">Code: <span style="color:#0f172a;">{{ $coupon->coupon_code }}</span></div>
+                                <div class="field-label">{{ __('admin.order.code_label') }}: <span style="color:#0f172a;">{{ $coupon->coupon_code }}</span></div>
                                 <div class="field-value" style="color:#16a34a; font-weight:bold;">
                                     -{{ $money($coupon->discount_amount) }}
                                 </div>
@@ -485,7 +496,7 @@
             @if($displayMetas->count() > 0)
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Ghi chú & Metadata</h3>
+                    <h3 class="card-title">{{ __('admin.order.metadata_notes') }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="field-list">

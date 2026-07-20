@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\Brand;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Spatie\Tags\Tag;
@@ -29,7 +30,68 @@ class ProductController extends BaseCrudController
 
     protected function searchable(): array
     {
-        return ['sku', 'slug', 'type'];
+        return ['name', 'sku', 'slug', 'type'];
+    }
+
+    protected function filters(): array
+    {
+        return [
+            'shop_brand_id' => [
+                'label' => 'Brand',
+                'placeholder' => 'Tất cả brand',
+                'options' => Brand::orderBy('slug')->pluck('slug', 'id')->toArray(),
+            ],
+            'type' => [
+                'label' => 'Loại',
+                'placeholder' => 'Tất cả loại',
+                'options' => [
+                    'deliverable' => 'Deliverable',
+                    'downloadable' => 'Downloadable',
+                    'service' => 'Service',
+                ],
+            ],
+            'is_visible' => [
+                'label' => 'Hiển thị',
+                'placeholder' => 'Tất cả trạng thái',
+                'options' => ['1' => 'Có', '0' => 'Không'],
+            ],
+            'featured' => [
+                'label' => 'Nổi bật',
+                'placeholder' => 'Tất cả',
+                'options' => ['1' => 'Có', '0' => 'Không'],
+            ],
+            'apply_tax' => [
+                'label' => 'Áp thuế',
+                'placeholder' => 'Tất cả',
+                'options' => ['1' => 'Có', '0' => 'Không'],
+            ],
+            'category_id' => [
+                'label' => 'Danh mục',
+                'placeholder' => 'Tất cả danh mục',
+                'options' => ProductCategory::orderBy('name')->pluck('name', 'id')->toArray(),
+            ],
+        ];
+    }
+
+    protected function indexQuery(Builder $query, Request $request): Builder
+    {
+        foreach (['shop_brand_id', 'type'] as $field) {
+            if ($request->filled($field)) {
+                $query->where($field, $request->query($field));
+            }
+        }
+
+        foreach (['is_visible', 'featured', 'apply_tax'] as $field) {
+            if ($request->filled($field)) {
+                $query->where($field, $request->boolean($field));
+            }
+        }
+
+        if ($request->filled('category_id')) {
+            $query->whereHas('categories', fn (Builder $categoryQuery) => $categoryQuery->whereKey($request->query('category_id')));
+        }
+
+        return $query;
     }
 
     protected function showGroups(): array

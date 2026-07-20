@@ -49,7 +49,9 @@
                                 @endforeach
                             </select>
                         @elseif ($type === 'multiselect')
-                            @php($selected = old($name, $formData[$name] ?? []))
+                            @php(
+                                $selected = old($name, isset($formData[$name]) ? $formData[$name] : (is_iterable(data_get($record, $name)) ? collect(data_get($record, $name))->pluck('name')->toArray() : []))
+                            )
                             <select id="{{ $name }}" name="{{ $name }}[]" multiple size="7">
                                 @foreach (($field['options'] ?? []) as $value => $label)
                                     <option value="{{ $value }}" @selected(in_array((string) $value, array_map('strval', (array) $selected), true))>{{ $label }}</option>
