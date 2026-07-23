@@ -19,6 +19,7 @@ use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class UnifiedShopSeeder extends Seeder
 {
@@ -27,6 +28,18 @@ class UnifiedShopSeeder extends Seeder
      */
     public function run(): void
     {
+        Schema::disableForeignKeyConstraints();
+        Product::truncate();
+        ProductCategory::truncate();
+        Brand::truncate();
+        Order::truncate();
+        OrderItem::truncate();
+        OrderAddress::truncate();
+        Payment::truncate();
+        DB::table('shop_category_product')->truncate();
+        DB::table('shop_brand_product')->truncate();
+        Schema::enableForeignKeyConstraints();
+
         // 0. Ensure a super admin or admin exists
         $user = User::first() ?? User::factory()->create();
 
@@ -77,21 +90,54 @@ class UnifiedShopSeeder extends Seeder
 
     protected function seedBrands(): \Illuminate\Database\Eloquent\Collection
     {
-        if (Brand::count() < 5) {
-            Brand::factory()->count(10)->create()->each(function ($brand) {
-                $brand->addresses()->create([
-                    'country_code' => 'VN',
-                    'address_detail' => fake()->streetAddress(),
-                    'state_id' => 'Thành phố Hồ Chí Minh',
-                    'city_id' => 'Quận 1',
-                    'ward_id' => 'Phường Bến Nghé',
-                    'postal_code' => '70000',
-                    'first_name' => fake()->firstName(),
-                    'last_name' => fake()->lastName(),
-                    'phone' => fake()->phoneNumber(),
-                    'email' => fake()->safeEmail(),
-                ]);
-            });
+        $fbBrands = [
+            [
+                'name' => ['vi' => 'Nhà máy Bia Heineken Việt Nam', 'en' => 'Heineken Vietnam Brewery'],
+                'description' => ['vi' => 'Nhà cung cấp chính thức các dòng sản phẩm bia Heineken, Tiger và Larue.', 'en' => 'Official supplier of Heineken, Tiger, and Larue beer products.'],
+            ],
+            [
+                'name' => ['vi' => 'Nhà cung cấp Nguyên liệu F&B Sài Gòn', 'en' => 'Saigon F&B Ingredients Supply'],
+                'description' => ['vi' => 'Cung cấp nguyên liệu tươi ngon, chất lượng cao cho ngành dịch vụ ăn uống.', 'en' => 'Providing fresh, high-quality ingredients for the food and beverage industry.'],
+            ],
+            [
+                'name' => ['vi' => 'Công ty Thực phẩm Cao cấp Classic Fine Foods', 'en' => 'Classic Fine Foods Vietnam'],
+                'description' => ['vi' => 'Nhập khẩu và phân phối thực phẩm cao cấp từ Châu Âu.', 'en' => 'Importer and distributor of premium fine food products from Europe.'],
+            ],
+            [
+                'name' => ['vi' => 'Tổng kho Rượu vang & Rượu mạnh Cellar', 'en' => 'Wine & Spirits Cellar Group'],
+                'description' => ['vi' => 'Nhà phân phối độc quyền các dòng rượu vang và rượu mạnh nhập khẩu chính ngạch.', 'en' => 'Exclusive distributor of officially imported wines and spirits.'],
+            ],
+            [
+                'name' => ['vi' => 'Rau củ hữu cơ Đà Lạt Fresh', 'en' => 'Dalat Fresh Organic Vegetables'],
+                'description' => ['vi' => 'Cung ứng rau củ quả hữu cơ, tươi sạch tiêu chuẩn VietGAP từ Đà Lạt.', 'en' => 'Supplying fresh, organic vegetables and fruits with VietGAP standards from Dalat.'],
+            ],
+            [
+                'name' => ['vi' => 'Nhà phân phối Thực phẩm Hảo hạng Gourmet', 'en' => 'Gourmet Food Distributors'],
+                'description' => ['vi' => 'Đối tác cung ứng nguyên liệu thực phẩm cao cấp cho nhà hàng và bar/club.', 'en' => 'Supply partner of premium food ingredients for restaurants and bars/clubs.'],
+            ],
+        ];
+
+        foreach ($fbBrands as $brandData) {
+            $brand = Brand::create([
+                'name' => $brandData['name'],
+                'description' => $brandData['description'],
+                'slug' => Str::slug($brandData['name']['en']) . '-' . Str::random(4),
+                'website' => 'https://' . Str::slug($brandData['name']['en']) . '.com.vn',
+                'is_visible' => true,
+            ]);
+
+            $brand->addresses()->create([
+                'country_code' => 'VN',
+                'address_detail' => fake()->streetAddress(),
+                'state_id' => 'Thành phố Hồ Chí Minh',
+                'city_id' => 'Quận 1',
+                'ward_id' => 'Phường Bến Nghé',
+                'postal_code' => '70000',
+                'first_name' => fake()->firstName(),
+                'last_name' => fake()->lastName(),
+                'phone' => fake()->phoneNumber(),
+                'email' => fake()->safeEmail(),
+            ]);
         }
         return Brand::all();
     }
@@ -99,18 +145,46 @@ class UnifiedShopSeeder extends Seeder
     protected function seedCategories(): \Illuminate\Support\Collection
     {
         if (ProductCategory::count() === 0) {
-            $categoryData = include database_path('data/category_shop.php');
-            foreach ($categoryData as $parentName => $children) {
+            $categoryTranslations = [
+                'Món ăn' => [
+                    'name' => ['vi' => 'Món ăn', 'en' => 'Food & Dishes'],
+                    'children' => [
+                        'Khai vị' => ['vi' => 'Khai vị', 'en' => 'Appetizers'],
+                        'Món chính F&B' => ['vi' => 'Món chính F&B', 'en' => 'Main Courses'],
+                        'Ăn nhẹ / Snack' => ['vi' => 'Ăn nhẹ / Snack', 'en' => 'Snacks & Pub Food'],
+                        'Tráng miệng' => ['vi' => 'Tráng miệng', 'en' => 'Desserts'],
+                    ]
+                ],
+                'Đồ uống có cồn' => [
+                    'name' => ['vi' => 'Đồ uống có cồn', 'en' => 'Alcoholic Beverages'],
+                    'children' => [
+                        'Cocktail đặc trưng' => ['vi' => 'Cocktail đặc trưng', 'en' => 'Signature Cocktails'],
+                        'Rượu mạnh / Spirits' => ['vi' => 'Rượu mạnh / Spirits', 'en' => 'Spirits & Liqueurs'],
+                        'Rượu vang / Wine' => ['vi' => 'Rượu vang / Wine', 'en' => 'Wines'],
+                        'Bia / Beer' => ['vi' => 'Bia / Beer', 'en' => 'Beers'],
+                    ]
+                ],
+                'Nước giải khát' => [
+                    'name' => ['vi' => 'Nước giải khát', 'en' => 'Non-Alcoholic Drinks'],
+                    'children' => [
+                        'Nước ngọt / Soft Drink' => ['vi' => 'Nước ngọt / Soft Drink', 'en' => 'Soft Drinks'],
+                        'Nước ép trái cây' => ['vi' => 'Nước ép trái cây', 'en' => 'Fresh Fruit Juices'],
+                        'Trà / Cà phê' => ['vi' => 'Trà / Cà phê', 'en' => 'Tea & Coffee'],
+                    ]
+                ],
+            ];
+
+            foreach ($categoryTranslations as $parentKey => $data) {
                 $parent = ProductCategory::factory()->create([
-                    'name' => ['vi' => $parentName, 'en' => 'EN: ' . $parentName],
-                    'slug' => Str::slug($parentName),
+                    'name' => $data['name'],
+                    'slug' => Str::slug($data['name']['en']),
                 ]);
 
-                foreach ($children as $childName) {
+                foreach ($data['children'] as $childKey => $childData) {
                     ProductCategory::factory()->create([
                         'parent_id' => $parent->id,
-                        'name' => ['vi' => $childName, 'en' => 'EN: ' . $childName],
-                        'slug' => Str::slug($childName),
+                        'name' => $childData,
+                        'slug' => Str::slug($childData['en']),
                     ]);
                 }
             }
@@ -133,6 +207,7 @@ class UnifiedShopSeeder extends Seeder
                         'shop_brand_id' => $brands->random()->id,
                         'tax_class_id' => $taxClasses->random()->id,
                     ]);
+
                     $product->categories()->attach($categories->random(rand(1, 2))->pluck('id')->toArray());
                 });
         }

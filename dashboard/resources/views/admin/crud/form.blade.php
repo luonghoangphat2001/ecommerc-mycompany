@@ -76,7 +76,13 @@
                             <div class="image-upload-wrapper">
                                 <input type="file" id="{{ $name }}" name="{{ $name }}" accept="image/*" onchange="previewImage(this, 'preview-{{ $name }}')">
                                 <div class="image-preview" style="margin-top: 10px;">
-                                    @php($imgSrc = old($name, $displayValue))
+                                    @php
+                                        $imgSrc = old($name, $displayValue);
+                                        if (is_numeric($imgSrc)) {
+                                            $media = \Awcodes\Curator\Models\Media::find($imgSrc);
+                                            $imgSrc = $media ? $media->path : $imgSrc;
+                                        }
+                                    @endphp
                                     @if($imgSrc)
                                         <img id="preview-{{ $name }}" src="{{ Str::startsWith($imgSrc, ['http', '/']) ? $imgSrc : asset('storage/' . $imgSrc) }}" style="max-height: 200px; max-width: 100%; object-fit: contain;">
                                     @else

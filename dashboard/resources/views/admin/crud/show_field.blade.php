@@ -8,6 +8,12 @@
 
 @if ($isEmpty)
     <span class="val-empty">Trống</span>
+@elseif (isset($record) && $record instanceof \Spatie\Permission\Models\Permission && isset($name) && $name === 'name')
+    <span class="badge bg-blue" style="font-weight: 600;">{{ \App\Support\AdminLabel::permission($value) }}</span>
+    <small class="cell-muted" style="display:block; font-size: 11px; margin-top: 2px;">code: {{ $value }}</small>
+@elseif (isset($record) && $record instanceof \Spatie\Permission\Models\Role && isset($name) && $name === 'name')
+    <span class="badge bg-blue" style="font-weight: 600;">{{ \App\Support\AdminLabel::role($value) }}</span>
+    <small class="cell-muted" style="display:block; font-size: 11px; margin-top: 2px;">code: {{ $value }}</small>
 @elseif ($type === 'image')
     @php
         $imagePath = $value;

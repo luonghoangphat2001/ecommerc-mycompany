@@ -94,6 +94,14 @@ class AdminValue
 
     protected static function formatModel(Model $model): string
     {
+        if ($model instanceof \Spatie\Permission\Models\Role) {
+            return AdminLabel::role($model->name);
+        }
+
+        if ($model instanceof \Spatie\Permission\Models\Permission) {
+            return AdminLabel::permission($model->name);
+        }
+
         foreach (['name', 'title', 'label', 'email', 'number', 'slug'] as $attribute) {
             if ($model->getAttribute($attribute)) {
                 return self::format($model->getAttribute($attribute), true);

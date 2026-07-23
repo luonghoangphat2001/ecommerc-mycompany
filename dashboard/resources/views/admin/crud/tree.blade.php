@@ -9,7 +9,16 @@
         echo '<div class="dd-handle">';
         echo '<div style="display:flex; justify-content:space-between; align-items:center;">';
         echo '<div>';
-        echo '<strong>' . e($item->name ?? $item->title ?? 'Item #' . $item->id) . '</strong>';
+        @php
+            $displayName = $item->name;
+            if (empty($displayName) && method_exists($item, 'getTranslation')) {
+                $displayName = $item->getTranslation('name', 'vi') ?: $item->getTranslation('name', config('app.fallback_locale', 'vi'));
+            }
+            if (empty($displayName)) {
+                $displayName = $item->title ?? 'Item #' . $item->id;
+            }
+        @endphp
+        echo '<strong>' . e($displayName) . '</strong>';
         echo '<span class="cell-muted" style="margin-left: 10px;">#' . e($item->id) . '</span>';
         if (isset($item->is_visible)) {
             echo '<span class="settings-chip" style="margin-left: 10px;">' . ($item->is_visible ? __('admin.categories.visible') : __('admin.categories.hidden')) . '</span>';

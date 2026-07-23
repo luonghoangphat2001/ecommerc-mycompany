@@ -1,19 +1,21 @@
 <?php
 
 return [
-    'Máy ảnh' => [
-        'Mirrorless',
-        'DSLR',
-        'Máy ảnh Film',
+    'Món ăn' => [
+        'Khai vị',
+        'Món chính F&B',
+        'Ăn nhẹ / Snack',
+        'Tráng miệng',
     ],
-    'Ống kính' => [
-        'Prime (Fixed)',
-        'Zoom',
-        'Macro',
+    'Đồ uống có cồn' => [
+        'Cocktail đặc trưng',
+        'Rượu mạnh / Spirits',
+        'Rượu vang / Wine',
+        'Bia / Beer',
     ],
-    'Phụ kiện' => [
-        'Thẻ nhớ',
-        'Đèn Flash',
-        'Studio & Livestream',
+    'Nước giải khát' => [
+        'Nước ngọt / Soft Drink',
+        'Nước ép trái cây',
+        'Trà / Cà phê',
     ],
 ];

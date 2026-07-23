@@ -70,6 +70,7 @@ class DatabaseSeeder extends Seeder
             EngagementSeeder::class,
             SystemSeeder::class,
             DepartmentSeeder::class,
+            DepartmentDataSeeder::class,
         ]);
     }
 

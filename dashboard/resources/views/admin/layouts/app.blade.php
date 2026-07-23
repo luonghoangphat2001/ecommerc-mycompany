@@ -1098,7 +1098,7 @@
                 <header class="topbar">
                     <div>
                         <div class="topbar-title">{{ $title ?? __('admin.brand.title') }}</div>
-                        <div class="topbar-meta">{{ auth()->user()->email }}</div>
+                        <div class="topbar-meta">{{ auth()->user()->email }} &bull; {{ auth()->user()->roles->pluck('name')->map(fn($r) => \App\Support\AdminLabel::role($r))->join(', ') ?: 'Thành viên' }}</div>
                     </div>
                     <div class="actions">
                         <a class="btn {{ app()->getLocale() === 'vi' ? '' : 'btn-secondary' }}" href="{{ request()->fullUrlWithQuery(['lang' => 'vi']) }}">VI</a>
