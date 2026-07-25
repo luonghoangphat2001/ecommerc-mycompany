@@ -37,29 +37,22 @@ jobs:
           npm ci
           npm run build
 
-      - name: Upload frontend assets
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: dashboard/public/build
-          target: /home/hpdev/dashboard.hpdev.name.vn/public
-          strip_components: 2
+      - name: Package frontend assets
+        run: |
+          echo "DASHBOARD_ASSET_ARCHIVE=$(tar -C dashboard/public -czf - build | base64 -w0)" >> "$GITHUB_ENV"
 
       - name: Deploy dashboard.hpdev.name.vn
         uses: appleboy/ssh-action@v1.0.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DASHBOARD_ASSET_ARCHIVE: ${{ env.DASHBOARD_ASSET_ARCHIVE }}
         with:
           host: ${{ secrets.SSH_HOST }}
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          envs: GITHUB_TOKEN
+          envs: GITHUB_TOKEN,DASHBOARD_ASSET_ARCHIVE
           script: |
             set -e
             REPO_URL="https://github.com/${{ github.repository }}.git"
@@ -87,6 +80,10 @@ jobs:
               --exclude='public/build' \
               -cf - . | tar -C "$TARGET_DIR" -xf -
             cp .deploy/dashboard-root.htaccess "$TARGET_DIR/.htaccess"
+            mkdir -p "$TARGET_DIR/public"
+            printf '%s' "$DASHBOARD_ASSET_ARCHIVE" \
+              | base64 --decode \
+              | tar -xz -C "$TARGET_DIR/public"
 
             cd "$TARGET_DIR"
             mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
