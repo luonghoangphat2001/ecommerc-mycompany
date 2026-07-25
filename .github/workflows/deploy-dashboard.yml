@@ -19,7 +19,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.4'
           extensions: mbstring, pdo_mysql
           coverage: none
 
@@ -53,7 +53,7 @@ jobs:
             REPO_URL="https://github.com/${{ github.repository }}.git"
             SOURCE_DIR="/home/hpdev/deploy/ecommerce-dashboard-source"
             TARGET_DIR="/home/hpdev/dashboard.hpdev.name.vn"
-            PHP_BIN="/opt/cpanel/ea-php82/root/usr/bin/php"
+            PHP_BIN="/opt/cpanel/ea-php84/root/usr/bin/php"
             B64_TOKEN=$(echo -n "x-access-token:$GITHUB_TOKEN" | base64 | tr -d '\n')
 
             mkdir -p "$(dirname "$SOURCE_DIR")" "$TARGET_DIR"
