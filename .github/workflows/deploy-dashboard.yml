@@ -37,6 +37,18 @@ jobs:
           npm ci
           npm run build
 
+      - name: Upload frontend assets
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          source: dashboard/public/build
+          target: /home/hpdev/dashboard.hpdev.name.vn/public
+          strip_components: 2
+
       - name: Deploy dashboard.hpdev.name.vn
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -72,15 +84,14 @@ jobs:
               --exclude='storage/app/public' \
               --exclude='storage/framework' \
               --exclude='storage/logs' \
+              --exclude='public/build' \
               -cf - . | tar -C "$TARGET_DIR" -xf -
             cp .deploy/dashboard-root.htaccess "$TARGET_DIR/.htaccess"
 
             cd "$TARGET_DIR"
-            "$PHP_BIN" "$(command -v composer)" install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-            npm ci
-            npm run build
-            mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+            mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
             chmod -R ug+rwX storage bootstrap/cache
+            "$PHP_BIN" "$(command -v composer)" install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
             if ! grep -q '^APP_KEY=base64:' .env; then
               "$PHP_BIN" artisan key:generate --force
