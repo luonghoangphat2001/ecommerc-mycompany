@@ -1,18 +1,29 @@
 <?php
 
+use App\Http\Controllers\Api\AddressController;
+use App\Http\Controllers\Api\Agent\AgentDashboardController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BrandController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\ComboController;
+use App\Http\Controllers\Api\CouponController;
+use App\Http\Controllers\Api\CrossSellController;
+use App\Http\Controllers\Api\LoyaltyController;
+use App\Http\Controllers\Api\MenuController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\PageController;
+use App\Http\Controllers\Api\PostCategoryController;
+use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\ProductCategoryController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProductInventoryController;
+use App\Http\Controllers\Api\StorefrontSettingsController;
+use App\Http\Controllers\Api\UpsellController;
+use App\Http\Middleware\CheckTokenExpiration;
+use App\Http\Middleware\HandleIdempotency;
+use App\Http\Middleware\VerifyAgentToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AddressController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\PostController;
-use App\Http\Controllers\Api\PostCategoryController;
-use App\Http\Controllers\Api\ProductCategoryController;
-use App\Http\Controllers\Api\BrandController;
-use App\Http\Controllers\Api\PageController;
-use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\Api\OrderController;
-use App\Http\Middleware\CheckTokenExpiration;
-use App\Http\Middleware\VerifyAgentToken;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,36 +37,36 @@ use App\Http\Middleware\VerifyAgentToken;
 */
 
 Route::middleware(['api'])->prefix('v1')->group(function () {
-    
+
     // Storefront API Group
     Route::prefix('storefront')->name('storefront.')->group(function () {
-        
+
         // Settings
-        Route::get('settings', [\App\Http\Controllers\Api\StorefrontSettingsController::class, 'index']);
-        
+        Route::get('settings', [StorefrontSettingsController::class, 'index']);
+
         // Menus
         Route::prefix('menus')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Api\MenuController::class, 'index']);
-            Route::get('{handle}', [\App\Http\Controllers\Api\MenuController::class, 'show']);
+            Route::get('/', [MenuController::class, 'index']);
+            Route::get('{handle}', [MenuController::class, 'show']);
         });
-        
+
         // Cart API
         Route::prefix('cart')->group(function () {
-            Route::post('/', [\App\Http\Controllers\Api\CartController::class, 'index']);
-            Route::delete('/', [\App\Http\Controllers\Api\CartController::class, 'clear']);
-            Route::post('sync', [\App\Http\Controllers\Api\CartController::class, 'sync']);
-            Route::post('items', [\App\Http\Controllers\Api\CartController::class, 'addItem']);
-            Route::put('items/{itemId}', [\App\Http\Controllers\Api\CartController::class, 'updateItem']);
-            Route::delete('items/{itemId}', [\App\Http\Controllers\Api\CartController::class, 'removeItem']);
-            Route::post('suggestions', [\App\Http\Controllers\Api\CartController::class, 'suggestions']);
-            Route::post('shipping-methods', [\App\Http\Controllers\Api\CartController::class, 'shippingMethods']);
+            Route::post('/', [CartController::class, 'index']);
+            Route::delete('/', [CartController::class, 'clear']);
+            Route::post('sync', [CartController::class, 'sync']);
+            Route::post('items', [CartController::class, 'addItem']);
+            Route::put('items/{itemId}', [CartController::class, 'updateItem']);
+            Route::delete('items/{itemId}', [CartController::class, 'removeItem']);
+            Route::post('suggestions', [CartController::class, 'suggestions']);
+            Route::post('shipping-methods', [CartController::class, 'shippingMethods']);
         });
-        
+
         // Coupon API
         Route::middleware('marketing.module:enable_coupons')->prefix('coupons')->group(function () {
-            Route::post('apply', [\App\Http\Controllers\Api\CouponController::class, 'apply']);
+            Route::post('apply', [CouponController::class, 'apply']);
         });
-        
+
         // Auth (Public)
         Route::prefix('auth')->group(function () {
             Route::post('login', [AuthController::class, 'login']);
@@ -84,23 +95,23 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         Route::prefix('products')->group(function () {
             Route::get('/', [ProductController::class, 'index']);
             Route::get('by-slug/{slug}', [ProductController::class, 'showBySlug']);
-            Route::get('{productId}/inventory', [\App\Http\Controllers\Api\ProductInventoryController::class, 'index']);
-            
-            Route::middleware('marketing.module:upsell_enabled')->get('{productId}/upsells', [\App\Http\Controllers\Api\UpsellController::class, 'index']);
-            Route::middleware('marketing.module:cross_sell_enabled')->get('{productId}/cross-sells', [\App\Http\Controllers\Api\CrossSellController::class, 'index']);
-            
+            Route::get('{productId}/inventory', [ProductInventoryController::class, 'index']);
+
+            Route::middleware('marketing.module:upsell_enabled')->get('{productId}/upsells', [UpsellController::class, 'index']);
+            Route::middleware('marketing.module:cross_sell_enabled')->get('{productId}/cross-sells', [CrossSellController::class, 'index']);
+
             Route::get('{product}', [ProductController::class, 'show']);
         });
-        
+
         Route::get('product-categories', [ProductCategoryController::class, 'index']);
         Route::get('brands', [BrandController::class, 'index']);
 
         // Combos
         Route::middleware('marketing.module:combo_enabled')->prefix('combos')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Api\ComboController::class, 'index']);
-            Route::get('{slug}', [\App\Http\Controllers\Api\ComboController::class, 'show']);
+            Route::get('/', [ComboController::class, 'index']);
+            Route::get('{slug}', [ComboController::class, 'show']);
         });
-        
+
         // Pages
         Route::prefix('pages')->group(function () {
             Route::get('/', [PageController::class, 'index']);
@@ -110,16 +121,16 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         // Authenticated Routes
         Route::middleware([
             'auth:sanctum',
-            \App\Http\Middleware\CheckTokenExpiration::class,
-            \App\Http\Middleware\HandleIdempotency::class
+            CheckTokenExpiration::class,
+            HandleIdempotency::class,
         ])->group(function () {
             // Auth (Protected)
             Route::prefix('auth')->group(function () {
                 Route::post('logout', [AuthController::class, 'logout']);
-                Route::get('profile', fn(Request $request) => $request->user()->load(['defaultShippingAddress', 'defaultBillingAddress']));
+                Route::get('profile', fn (Request $request) => $request->user()->load(['defaultShippingAddress', 'defaultBillingAddress']));
                 Route::put('profile', [AuthController::class, 'updateProfile']);
             });
-            
+
             // User Addresses
             Route::prefix('user-addresses')->group(function () {
                 Route::get('/', [AddressController::class, 'index']);
@@ -130,8 +141,8 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
 
             // Loyalty
             Route::middleware('marketing.module:loyalty_enabled')->prefix('loyalty')->group(function () {
-                Route::get('points', [\App\Http\Controllers\Api\LoyaltyController::class, 'getPoints']);
-                Route::get('history', [\App\Http\Controllers\Api\LoyaltyController::class, 'getHistory']);
+                Route::get('points', [LoyaltyController::class, 'getPoints']);
+                Route::get('history', [LoyaltyController::class, 'getHistory']);
             });
 
             // Orders
@@ -140,8 +151,7 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
 
         // Agent API
         Route::middleware([VerifyAgentToken::class])->prefix('agents')->name('agents.')->group(function () {
-            // Agent endpoints can be added here
-            // e.g., Route::post('sync-inventory', [AgentInventoryController::class, 'sync']);
+            Route::get('health', [AgentDashboardController::class, 'health'])->name('health');
         });
     });
 });

@@ -2,27 +2,37 @@
 
 namespace App\Providers;
 
+use App\Ecommerce\Agent\Contracts\AgentDashboardRepositoryInterface;
+use App\Ecommerce\Agent\Contracts\AgentDashboardServiceInterface;
+use App\Ecommerce\Agent\Repositories\EloquentAgentDashboardRepository;
+use App\Ecommerce\Agent\Services\AgentDashboardService;
+use App\Ecommerce\Location\Services\Location\LocationManager;
+use App\Listeners\LogSentMessage;
+use App\Settings\MailSettings;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Mail\Events\MessageSent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Mail\Events\MessageSent;
-use App\Listeners\LogSentMessage;
-
-use Faker\Factory as FakerFactory;
-use Faker\Generator;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
-     *
-     * @return void
      */
     public function register(): void
     {
-        $this->app->singleton(\App\Ecommerce\Location\Services\Location\LocationManager::class, function ($app) {
-            return new \App\Ecommerce\Location\Services\Location\LocationManager($app);
+        $this->app->bind(
+            AgentDashboardRepositoryInterface::class,
+            EloquentAgentDashboardRepository::class,
+        );
+        $this->app->bind(
+            AgentDashboardServiceInterface::class,
+            AgentDashboardService::class,
+        );
+
+        $this->app->singleton(LocationManager::class, function ($app) {
+            return new LocationManager($app);
         });
     }
 
@@ -41,7 +51,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Dynamic Mail Configuration
         try {
-            $mailSettings = app(\App\Settings\MailSettings::class);
+            $mailSettings = app(MailSettings::class);
 
             if ($mailSettings->email_host) {
                 config([
