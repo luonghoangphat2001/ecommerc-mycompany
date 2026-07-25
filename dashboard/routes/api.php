@@ -152,6 +152,7 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         // Agent API
         Route::middleware([VerifyAgentToken::class])->prefix('agents')->name('agents.')->group(function () {
             Route::get('health', [AgentDashboardController::class, 'health'])->name('health');
+            Route::get('metrics', [AgentDashboardController::class, 'metrics'])->name('metrics');
         });
     });
 });

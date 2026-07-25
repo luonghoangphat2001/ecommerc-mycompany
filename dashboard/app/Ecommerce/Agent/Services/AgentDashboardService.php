@@ -29,4 +29,22 @@ class AgentDashboardService implements AgentDashboardServiceInterface
             'checked_at' => now()->toIso8601String(),
         ];
     }
+
+    public function getMetrics(DepartmentAgent $agent, string $period = 'today'): array
+    {
+        $agent->loadMissing('department');
+
+        return [
+            'service' => 'hpdev-company-dashboard',
+            'status' => 'UP',
+            'api_version' => 'v1',
+            'agent' => [
+                'code' => $agent->agent_code,
+                'name' => $agent->name,
+                'department' => $agent->department?->code,
+            ],
+            'metrics' => $this->repository->getMetrics($period),
+            'checked_at' => now()->toIso8601String(),
+        ];
+    }
 }

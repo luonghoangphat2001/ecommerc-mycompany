@@ -10,4 +10,11 @@ interface AgentDashboardRepositoryInterface
      * @return array{products: int, orders: int, active_agents: int}
      */
     public function getOperationalSummary(): array;
+
+    /**
+     * Return read-only order and revenue metrics for the current business day.
+     *
+     * @return array{period: string, from: string, until: string, orders: int, revenue: int, currency: string, products: int}
+     */
+    public function getMetrics(string $period = 'today'): array;
 }

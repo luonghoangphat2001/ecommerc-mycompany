@@ -12,4 +12,9 @@ interface AgentDashboardServiceInterface
      * @return array<string, mixed>
      */
     public function getConnectionStatus(DepartmentAgent $agent): array;
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getMetrics(DepartmentAgent $agent, string $period = 'today'): array;
 }
