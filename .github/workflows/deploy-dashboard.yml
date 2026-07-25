@@ -1,0 +1,92 @@
+name: Deploy Dashboard
+
+on:
+  push:
+    branches:
+      - dashboarh
+
+concurrency:
+  group: dashboard-production
+  cancel-in-progress: true
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_mysql
+          coverage: none
+
+      - name: Validate PHP dependencies
+        working-directory: dashboard
+        run: |
+          composer validate --no-check-publish
+          composer install --prefer-dist --no-interaction
+          find app config database routes -type f -name '*.php' -print0 \
+            | xargs -0 -n1 php -l
+
+      - name: Validate frontend build
+        working-directory: dashboard
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy dashboard.hpdev.name.vn
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          envs: GITHUB_TOKEN
+          script: |
+            set -e
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+            SOURCE_DIR="/home/hpdev/deploy/ecommerce-dashboard-source"
+            TARGET_DIR="/home/hpdev/dashboard.hpdev.name.vn"
+            PHP_BIN="/opt/cpanel/ea-php82/root/usr/bin/php"
+            B64_TOKEN=$(echo -n "x-access-token:$GITHUB_TOKEN" | base64 | tr -d '\n')
+
+            mkdir -p "$(dirname "$SOURCE_DIR")" "$TARGET_DIR"
+            if [ ! -d "$SOURCE_DIR/.git" ]; then
+              git init "$SOURCE_DIR"
+            fi
+
+            cd "$SOURCE_DIR"
+            git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $B64_TOKEN"
+            git fetch "$REPO_URL" dashboarh
+            git checkout -B dashboarh FETCH_HEAD
+            git config --local --unset http.https://github.com/.extraheader || true
+
+            tar -C dashboard \
+              --exclude='.env' \
+              --exclude='storage/app/public' \
+              --exclude='storage/framework' \
+              --exclude='storage/logs' \
+              -cf - . | tar -C "$TARGET_DIR" -xf -
+            cp .deploy/dashboard-root.htaccess "$TARGET_DIR/.htaccess"
+
+            cd "$TARGET_DIR"
+            "$PHP_BIN" "$(command -v composer)" install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+            npm ci
+            npm run build
+            mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+            chmod -R ug+rwX storage bootstrap/cache
+
+            if ! grep -q '^APP_KEY=base64:' .env; then
+              "$PHP_BIN" artisan key:generate --force
+            fi
+            "$PHP_BIN" artisan migrate --force
+            "$PHP_BIN" artisan storage:link || true
+            "$PHP_BIN" artisan config:cache
+            "$PHP_BIN" artisan view:cache
+            echo "Dashboard deployed at $(date)"
