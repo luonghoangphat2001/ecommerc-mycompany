@@ -50,7 +50,6 @@
                         'route' => 'admin.workspace.show',
                         'query' => ['code' => $dept->code],
                         'match' => 'admin.workspace.show',
-                        'skip_permission' => true,
                     ];
                 }
                 return $items;
@@ -108,15 +107,13 @@
                         unset($group['items'][$itemIndex]);
                     }
                 } else {
-                    if (!($item['skip_permission'] ?? false)) {
-                        $module = str_replace(['admin.', '.*'], '', $item['match']);
-                        try {
-                            if (!auth()->user()->hasPermissionTo("view_{$module}")) {
-                                unset($group['items'][$itemIndex]);
-                            }
-                        } catch (\Exception $e) {
+                    $module = str_replace(['admin.', '.*'], '', $item['match']);
+                    try {
+                        if (!auth()->user()->hasPermissionTo("view_{$module}")) {
                             unset($group['items'][$itemIndex]);
                         }
+                    } catch (\Exception $e) {
+                        unset($group['items'][$itemIndex]);
                     }
                 }
             }
