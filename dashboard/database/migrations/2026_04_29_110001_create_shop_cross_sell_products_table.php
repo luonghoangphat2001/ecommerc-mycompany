@@ -17,7 +17,10 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['shop_product_id', 'cross_sell_product_id'], 'cross_sell_unique');
-            $table->index(['shop_product_id', 'is_active', 'sort_order']);
+            $table->index(
+                ['shop_product_id', 'is_active', 'sort_order'],
+                'cross_sell_active_sort_idx'
+            );
         });
     }
 
