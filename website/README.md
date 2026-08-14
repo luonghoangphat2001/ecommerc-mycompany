@@ -1,179 +1,126 @@
-# 🛒 Ecommerce Storefront — `website`
+# Ecommerce Storefront (`website`)
 
-Giao diện **người mua** của hệ thống My Ecommerce. Một SPA hiện đại xây trên **React 19**, sử dụng **Tailwind CSS** với phong cách Glassmorphism, kết nối tới backend Laravel/Filament qua REST API `/api/v1/`.
+SPA storefront dành cho khách mua hàng của My Ecommerce. Website dùng React và gọi Laravel dashboard backend qua REST API `/api/v1/storefront`.
 
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white) ![Tailwind](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css&logoColor=white) ![Zustand](https://img.shields.io/badge/State-Zustand-orange) ![TanStack Query](https://img.shields.io/badge/Data-TanStack_Query-FF4154)
+## Tính năng
 
----
+- Trang chủ, catalog, tìm kiếm/lọc sản phẩm và trang chi tiết.
+- Đăng ký, đăng nhập, quên/reset mật khẩu và tự refresh Sanctum token.
+- Giỏ hàng local với Zustand persist.
+- Checkout, địa chỉ giao hàng, shipping method và payment flow.
+- Tài khoản, profile, address book, lịch sử/chi tiết/theo dõi đơn hàng.
+- Blog/posts, static pages và menu động.
+- Đa ngôn ngữ/currency theo settings backend.
 
-## ✨ Tính năng
+## Tech stack
 
-| Module       | Chức năng                                                                                                    |
-| ------------ | ------------------------------------------------------------------------------------------------------------ |
-| **Auth**     | Đăng ký, đăng nhập, quên & đặt lại mật khẩu, lưu token Sanctum vào `localStorage`                            |
-| **Catalog**  | Trang chủ với sản phẩm nổi bật, Shop với lọc/tìm kiếm, trang chi tiết sản phẩm                               |
-| **Cart**     | Giỏ hàng với Zustand persist, cập nhật số lượng, xóa item                                                    |
-| **Checkout** | Form giao hàng + thanh toán đa phương thức, chọn shipping method, hỗ trợ địa chỉ Việt Nam (tỉnh/quận/phường) |
-| **Account**  | Quản lý hồ sơ, sổ địa chỉ (mặc định shipping/billing), đổi mật khẩu, lịch sử & theo dõi đơn hàng             |
-| **i18n**     | Đa ngôn ngữ qua `useSettingsStore.translate()` (key-based)                                                   |
-| **API Docs** | Swagger UI tại `/api-docs` (cần backend đang chạy)                                                           |
+- React 19, React Router 7.
+- Tailwind CSS, Lucide React, GSAP.
+- Zustand 5 cho auth/cart/settings.
+- Axios + TanStack Query.
+- Create React App (`react-scripts`) để dev/build.
 
----
-
-## 🧰 Tech stack
-
-- **Core**: React 19, React Router v7
-- **Styling**: Tailwind CSS 3.4, Lucide React (icons)
-- **State**: Zustand 5 (auth, cart, settings — có persist)
-- **Data fetching**: TanStack Query 5 + Axios (interceptors xử lý 401/403/500)
-- **Animation**: GSAP 3
-- **Docs**: Swagger UI React
-
----
-
-## 📂 Cấu trúc thư mục
+## Cấu trúc source
 
 ```text
 src/
-├── api/                    # Axios client + interceptors
-├── components/
-│   └── common/             # Design system: Button, Card, FormInput, FormSelect,
-│                           # FormCheckbox, FormRadio, FormSection, Alert,
-│                           # IconBadge, EmptyState, BackgroundOrbs, PageHeading,
-│                           # Loading, Error, Logo, NavLink, Skeleton
-├── features/               # Tổ chức theo domain
-│   ├── account/            # Profile, AddressBook, ChangePassword
-│   ├── address/            # Hooks lấy danh sách quốc gia / tỉnh / phường
-│   ├── auth/               # Login/Register/Forgot/Reset hooks + store
-│   ├── cart/               # CartItem, CartSummary, store
-│   ├── checkout/           # CheckoutForm, OrderSummary, hooks
-│   ├── home/               # Hero, Features
-│   ├── order/              # OrderHistory, OrderDetail, OrderTracking
-│   └── product/            # ProductCard, ProductInfo, ProductGallery
-├── hooks/                  # Hooks dùng chung
-├── pages/                  # HomePage, ShopPage, ProductDetailPage, CartPage,
-│                           # CheckoutPage, OrderSuccessPage, MyAccountPage,
-│                           # Login/{LoginPage,RegisterPage,ForgotPasswordPage,ResetPasswordPage}
-├── store/                  # Zustand stores (settings, ...)
-├── utils/                  # useFormatters, helpers
-└── App.js / index.js
+├── api/                    # axios client, response wrapper, interceptors
+├── components/common/      # UI design system dùng chung
+├── components/layout/      # header, navbar, footer, layout
+├── features/
+│   ├── auth/               # auth store, hooks, services
+│   ├── product/            # catalog/product APIs và components
+│   ├── cart/               # Zustand cart và cart APIs
+│   ├── checkout/           # order, shipping, payment
+│   ├── account/            # profile, address book
+│   ├── order/              # history, detail, tracking
+│   ├── address/            # country/province/district/ward
+│   ├── home/, menu/, post/ # nội dung trang chủ, menu, blog
+├── pages/                  # route-level pages
+├── store/                  # settings/menu stores
+└── utils/                  # format tiền/ngày và helpers
 ```
 
----
+## Routes giao diện
 
-## 🎨 Design system — `components/common/`
+| Path | Mục đích | Auth |
+|---|---|---|
+| `/` | Trang chủ | Không |
+| `/shop` | Danh sách sản phẩm | Không |
+| `/products/:slug` | Chi tiết sản phẩm | Không |
+| `/cart` | Giỏ hàng | Không |
+| `/checkout` | Checkout | Có |
+| `/checkout/success` | Kết quả đặt hàng | Không |
+| `/my-account` | Tài khoản, đơn hàng, địa chỉ | Có |
+| `/login`, `/register` | Đăng nhập/đăng ký | Không |
+| `/forgot-password`, `/reset-password` | Khôi phục mật khẩu | Không |
+| `/posts`, `/posts/:slug` | Blog | Không |
+| `/about`, `/contact`, `/shipping`, `/returns`, `/faq`, `/privacy`, `/terms`, `/p/:page` | Static pages | Không |
 
-Tất cả component trong thư mục này đều dùng **Glassmorphism** (`bg-white/60 backdrop-blur-xl rounded-[2.5rem]`) và export qua `index.js`.
+## Cài đặt local
 
-```jsx
-import { Button, Card, FormInput, FormSelect, FormSection, FormCheckbox, FormRadio, Alert, IconBadge, EmptyState, BackgroundOrbs, PageHeading } from "../components/common"
-```
-
-Một số component thường dùng:
-
-| Component        | Props chính                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------- |
-| `Button`         | `variant` (primary/blue/secondary/ghost/danger), `size` (sm/md/lg/xl/block), `as` (Link, button, ...) |
-| `Card`           | `shadow` (none/sm/md/lg), `overflow`, sub-components: `Header`, `Body`, `Footer`, `Title`             |
-| `FormInput`      | `icon` (focus-aware), `labelExtra`, `disabled`, `placeholder`                                         |
-| `FormSelect`     | `options` dạng `[[key, label], ...]`, `placeholder`                                                   |
-| `Alert`          | `variant` (error/success/info/warning), `shake`                                                       |
-| `IconBadge`      | `icon`, `color` (9 màu), `size` (sm/md/lg/xl)                                                         |
-| `EmptyState`     | `icon`, `title`, `description`, `action`                                                              |
-| `BackgroundOrbs` | `preset` (auth/hero) hoặc `orbs` tự định nghĩa                                                        |
-
----
-
-## 🚀 Cài đặt & chạy
-
-### 1. Cài dependencies
+Yêu cầu Node.js và npm.
 
 ```bash
-npm install --legacy-peer-deps
-```
-
-### 2. Cấu hình env
-
-```bash
+cd apps/website
+npm ci
 cp .env.example .env
+npm start
 ```
 
-Nội dung `.env`:
+Dev server chạy tại `http://localhost:3000`. `package.json` proxy request tới `http://127.0.0.1:8000` nếu dùng backend local.
 
-```env
-REACT_APP_API_URL=http://127.0.0.1:8000/api/v1
-REACT_APP_ADMIN_EMAIL=admin@admin.com
-REACT_APP_ADMIN_PASSWORD=password
-```
-
-> `axiosClient` sẽ ưu tiên `REACT_APP_API_URL`, rồi mới fallback sang `"/api/v1"` nếu env chưa có. Proxy trong `package.json` vẫn là lớp dự phòng khi dev.
-
-### 3. Chạy dev server
-
-```bash
-npm start                    # http://localhost:3000
-```
-
-### 4. Build production
+Build production:
 
 ```bash
 npm run build
 ```
 
----
+Build output nằm trong `build/`. Test React:
 
-## 🔗 Tích hợp backend
+```bash
+npm test -- --watchAll=false
+```
 
-| Endpoint kiểu | Đường dẫn                                                                  |
-| ------------- | -------------------------------------------------------------------------- |
-| Auth          | `POST /api/v1/auth/{register,login,logout,forgot-password,reset-password}` |
-| Sản phẩm      | `GET /api/v1/products`, `GET /api/v1/products/{id}`                        |
-| Đơn hàng      | `GET/POST /api/v1/orders`                                                  |
-| Địa chỉ       | `GET/POST/PUT/DELETE /api/v1/addresses`                                    |
-| Settings      | `GET /api/v1/settings`                                                     |
+## Cấu hình API
 
-Token Sanctum được Axios tự inject vào header `Authorization: Bearer ...` (xem `src/api/`).
+`.env.example`:
 
----
+```env
+REACT_APP_API_URL=http://127.0.0.1:8000/api/v1/storefront
+REACT_APP_ADMIN_EMAIL=admin@admin.com
+REACT_APP_ADMIN_PASSWORD=password
+```
 
-## 🧑‍💻 Code style
+`REACT_APP_API_URL` là base URL thực tế được dùng bởi `src/api/axiosClient.js`. Nếu bỏ trống, client fallback về `/api/v1`; khi chạy local nên đặt đầy đủ `/api/v1/storefront` để khớp backend hiện tại.
 
-- **Indent**: 4 spaces
-- **Quotes**: double `"..."`
-- **Semicolons**: KHÔNG dùng
-- **JSX**: ưu tiên một dòng dài cho element ngắn
-- **Comments**: tránh viết comment giải thích — đặt tên rõ ràng & tách biến
+`REACT_APP_ADMIN_EMAIL` và `REACT_APP_ADMIN_PASSWORD` chỉ được dùng để prefill thông tin login trong môi trường dev; không đưa credential production vào frontend vì biến `REACT_APP_*` được đóng gói vào JavaScript public.
 
----
+## API backend được sử dụng
 
-## 📝 Ghi chú dev
+Base URL là `/api/v1/storefront`:
 
-- Swagger UI: `http://localhost:3000/api-docs` (cần backend đang chạy).
-- Dữ liệu test: dùng tài khoản seed từ Filament backend (`php artisan db:seed`).
+```text
+auth/login, auth/register, auth/logout, auth/profile, auth/refresh-token
+settings, menus, pages, posts, post-categories
+products, product-categories, brands, combos
+cart, cart/items, cart/sync, cart/shipping-methods, coupons/apply
+addresses/countries, .../states, .../regions, .../sub-regions
+user-addresses, orders
+```
 
-## 🏛 Kiến trúc & Nguyên tắc Thiết kế (Clean Architecture)
+Request authenticated tự động gắn `Authorization: Bearer <token>` từ Zustand/localStorage. Khi nhận `401`, Axios thử refresh token; nếu refresh thất bại sẽ xóa auth state và chuyển về `/login`.
 
-Dự án áp dụng mô hình phân tách rõ ràng giữa UI (Giao diện) và Business Logic:
+Backend tương ứng nằm tại [../dashboard](../dashboard). API route source là `dashboard/routes/api.php`; các endpoint checkout/payment phải được đối chiếu với backend hiện tại trước khi bật ở production.
 
-- **Component (UI Layer):** Render UI, không chứa logic. File `.jsx` CHỈ dùng để render HTML/Giao diện.
-- **Custom Hook (Logic Layer):** Xử lý state, validation, API orchestration.
-- **Service Layer (Data Layer):** Đảm nhận việc gọi API qua `axiosClient`.
+## Nguyên tắc phát triển
 
-### 🔄 Các Pattern Chuyên sâu Đã áp dụng
+- Giữ luồng `Component → custom hook/service → axiosClient → backend`.
+- Component tập trung render; validation và API orchestration đặt ở hooks/services.
+- Dùng `utils/` cho format tiền, ngày và trạng thái đơn hàng.
+- Không hardcode secret hoặc credential vào source/frontend.
+- Khi thêm API, cập nhật service trong feature tương ứng và kiểm tra lại prefix `/api/v1/storefront`.
 
-- **Lazy Loading:** Tải các trang (`HomePage`, `ShopPage`, ...) theo nhu cầu bằng `React.lazy()`.
-- **Error Boundary:** Bao bọc toàn bộ ứng dụng để xử lý crash UI mượt mà.
-- **Strategy Pattern:** Tách biệt UI cho từng phương thức thanh toán (`PaymentStrategies.jsx`).
-- **Refresh Token Pattern:** Tự động cấp lại token trong [axiosClient.js](file:///Users/luonghoangphat/Documents/My_Ecommerce/website/src/api/axiosClient.js).
-- **Data Normalization:** Lưu trữ State giỏ hàng `O(1)` bằng `itemsById` trong [useCartStore.js](file:///Users/luonghoangphat/Documents/My_Ecommerce/website/src/features/cart/store/useCartStore.js).
-- **Memoization:** Tiết kiệm re-render qua `useMemo` và `React.memo()`.
+## Deploy
 
-### 📊 Luồng Dữ liệu (Strict Data Flow)
-
-`Component (UI) ↔ Custom Hook (Logic) ↔ Service Layer (API) ↔ Backend`
-
-### ⚠️ Quy tắc Code (Coding Conventions)
-
-- **Tách Utils:** Không viết inline format tiền/ngày tháng, dùng file `utils/`.
-- **Đa ngôn ngữ (i18n):** Lấy text qua `translate()` của Zustand store từ API. Không hardcode.
-- **Class Tailwind:** Tách thành biến riêng nếu chuỗi class quá dài.
+Repository `apps` hiện có workflow deploy cho dashboard tại `../.github/workflows/deploy-dashboard.yml`; workflow đó không build hoặc deploy `website`. Vì vậy, sau `npm run build`, cần cấu hình riêng nơi host storefront để publish thư mục `build/` và trỏ API về domain dashboard. Không nên ghi website đã tự động deploy nếu chưa có workflow/hosting tương ứng.
