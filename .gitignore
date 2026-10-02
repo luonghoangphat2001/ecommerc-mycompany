@@ -4,6 +4,9 @@
 .vscode/
 .idea/
 *.log
+*.sql
+*.sql.gz
+*.dump
 .windsurf/
 
 # Backend (dashboard)
