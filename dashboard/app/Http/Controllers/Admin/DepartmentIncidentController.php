@@ -113,4 +113,18 @@ class DepartmentIncidentController extends BaseCrudController
 
         return redirect()->route($this->routePrefix() . '.index')->with('success', 'Xóa thành công.');
     }
+
+    public function quickStatus(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    {
+        $status = $request->input('status');
+        if (!in_array($status, ['resolved', 'closed', 'investigating', 'open'], true)) {
+            return back()->with('error', 'Trạng thái không hợp lệ.');
+        }
+
+        $incident = DepartmentIncident::findOrFail($id);
+        $incident->status = $status;
+        $incident->save();
+
+        return back()->with('status', "Sự cố vận hành #{$incident->id} đã chuyển trạng thái sang [{$status}] thành công.");
+    }
 }

@@ -118,9 +118,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             $crud('webhook-logs', WebhookLogController::class, 'webhook-logs');
             $crud('department-audit-logs', DepartmentAuditLogController::class, 'department-audit-logs');
             $crud('financial-proposals', DepartmentFinancialProposalController::class, 'financial-proposals');
+            Route::post('financial-proposals/{id}/quick-status', [DepartmentFinancialProposalController::class, 'quickStatus'])->name('financial-proposals.quick-status');
             $crud('payrolls', DepartmentPayrollController::class, 'payrolls');
             $crud('purchase-orders', DepartmentPurchaseOrderController::class, 'purchase-orders');
             $crud('incidents', DepartmentIncidentController::class, 'incidents');
+            Route::post('incidents/{id}/quick-status', [DepartmentIncidentController::class, 'quickStatus'])->name('incidents.quick-status');
             $crud('customer-reviews', DepartmentCustomerReviewController::class, 'customer-reviews');
             $crud('employee-contracts', DepartmentEmployeeContractController::class, 'employee-contracts');
 

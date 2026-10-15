@@ -4,6 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Ecommerce\Analytics\Contracts\AnalyticsServiceInterface;
+use App\Models\Department;
+use App\Models\DepartmentAgent;
+use App\Models\DepartmentCustomerReview;
+use App\Models\DepartmentEmployeeContract;
+use App\Models\DepartmentFinancialProposal;
+use App\Models\DepartmentIncident;
+use App\Models\DepartmentMaterialPrice;
+use App\Models\DepartmentPurchaseOrder;
 use App\Models\Media;
 use App\Models\Order;
 use App\Models\Page;
@@ -47,6 +55,31 @@ class DashboardController extends Controller
         $topProductsDonut = $this->analytics->getTopProductsDonutChartData(5, $locale);
         $orderDistribution = $this->analytics->getOrderStatusDistribution();
 
+        // DAN ESR Executive Center Data
+        $swarmAgents = DepartmentAgent::with('department')->get();
+        $pendingProposals = DepartmentFinancialProposal::with(['department', 'user'])
+            ->where('status', 'pending')
+            ->orderByDesc('is_urgent')
+            ->latest('id')
+            ->take(5)
+            ->get();
+        $urgentIncidents = DepartmentIncident::with(['department', 'order'])
+            ->whereIn('status', ['open', 'investigating'])
+            ->latest('id')
+            ->take(5)
+            ->get();
+        $pendingPurchaseOrders = DepartmentPurchaseOrder::with('department')
+            ->whereIn('status', ['pending', 'shipping', 'partial'])
+            ->latest('id')
+            ->take(5)
+            ->get();
+        $materialPrices = DepartmentMaterialPrice::latest('id')->take(5)->get();
+        $expiringContractsCount = DepartmentEmployeeContract::where('end_date', '<=', now()->addDays(30))->count();
+        $negativeReviewsCount = DepartmentCustomerReview::where('rating', '<=', 2)->count();
+        $lowStockProductsCount = Product::where('stock', '<=', 10)->count();
+        $urgentProposalsCount = DepartmentFinancialProposal::where('status', 'pending')->where('is_urgent', true)->count();
+        $departments = Department::where('is_active', true)->get();
+
         return view('admin.dashboard', [
             'title' => __('admin.dashboard.title'),
             'totalUsers' => User::count(),
@@ -66,6 +99,18 @@ class DashboardController extends Controller
             'topProducts' => $topProducts,
             'topProductsDonut' => $topProductsDonut,
             'orderDistribution' => $orderDistribution,
+
+            // DAN ESR Executive Command Center
+            'swarmAgents' => $swarmAgents,
+            'pendingProposals' => $pendingProposals,
+            'urgentIncidents' => $urgentIncidents,
+            'pendingPurchaseOrders' => $pendingPurchaseOrders,
+            'materialPrices' => $materialPrices,
+            'expiringContractsCount' => $expiringContractsCount,
+            'negativeReviewsCount' => $negativeReviewsCount,
+            'lowStockProductsCount' => $lowStockProductsCount,
+            'urgentProposalsCount' => $urgentProposalsCount,
+            'departments' => $departments,
         ]);
     }
 }

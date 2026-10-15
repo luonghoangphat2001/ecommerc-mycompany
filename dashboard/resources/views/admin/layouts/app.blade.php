@@ -56,6 +56,16 @@
             }),
         ],
         [
+            'label' => 'DAN AI EXECUTIVE CENTER',
+            'items' => [
+                ['label' => '⭐ Command Center (CEO)', 'route' => 'admin.dashboard', 'match' => 'admin.dashboard'],
+                ['label' => '📥 Hộp thư Duyệt chi (L3)', 'route' => 'admin.financial-proposals.index', 'match' => 'admin.financial-proposals.*'],
+                ['label' => '🚨 Sự cố vận hành', 'route' => 'admin.incidents.index', 'match' => 'admin.incidents.*'],
+                ['label' => '🤖 Quản lý Agent Phòng Ban', 'route' => 'admin.department-agents.index', 'match' => 'admin.department-agents.*'],
+                ['label' => '📑 Nhật ký Kiểm toán AI', 'route' => 'admin.department-audit-logs.index', 'match' => 'admin.department-audit-logs.*'],
+            ],
+        ],
+        [
             'label' => 'admin.sidebar.group.settings',
             'items' => [
                 ['label' => 'admin.sidebar.general_settings', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'query' => ['tab' => 'settings']]

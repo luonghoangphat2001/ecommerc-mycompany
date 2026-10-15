@@ -119,4 +119,19 @@ class DepartmentFinancialProposalController extends BaseCrudController
 
         return redirect()->route($this->routePrefix() . '.index')->with('success', 'Xóa thành công.');
     }
+
+    public function quickStatus(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    {
+        $status = $request->input('status');
+        if (!in_array($status, ['approved', 'rejected'], true)) {
+            return back()->with('error', 'Trạng thái không hợp lệ.');
+        }
+
+        $proposal = DepartmentFinancialProposal::findOrFail($id);
+        $proposal->status = $status;
+        $proposal->save();
+
+        $actionText = $status === 'approved' ? 'được phê duyệt thành công (1-Click CEO Approval)' : 'bị từ chối';
+        return back()->with('status', "Đề xuất #{$proposal->id} \"{$proposal->title}\" đã {$actionText}.");
+    }
 }
