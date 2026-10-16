@@ -58,7 +58,7 @@ class ProductController extends BaseApiController
         );
         
         if (!$product) {
-            return $this->error('Product not found', 404);
+            return $this->notFound(__('messages.product_not_found') ?? 'Product not found');
         }
         
         return $this->ok(new ProductResource($product));

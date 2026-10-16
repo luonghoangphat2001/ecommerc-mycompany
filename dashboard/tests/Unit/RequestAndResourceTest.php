@@ -94,5 +94,27 @@ class RequestAndResourceTest extends TestCase
         $this->assertEquals('Q1, TP HCM', $response['warehouse_location']);
         $this->assertTrue($response['is_active']);
     }
+
+    public function test_enum_cases_integrity(): void
+    {
+        $this->assertEquals('pending', \App\Ecommerce\Order\Enums\OrderStatus::Pending->value);
+        $this->assertEquals('paid', \App\Enums\PaymentStatus::Paid->value);
+        $this->assertEquals('fixed_cart', \App\Enums\CouponType::FixedCart->value);
+        $this->assertEquals('product', \App\Enums\OrderItemType::Product->value);
+        $this->assertEquals('shipping', \App\Enums\AddressType::Shipping->value);
+        $this->assertEquals('flat_rate', \App\Enums\ShippingMethodType::FlatRate->value);
+    }
+
+    public function test_services_resolve_cleanly_via_container_di(): void
+    {
+        $calculator = app(\App\Ecommerce\Checkout\Services\CheckoutCalculatorService::class);
+        $this->assertInstanceOf(\App\Ecommerce\Checkout\Services\CheckoutCalculatorService::class, $calculator);
+
+        $couponService = app(\App\Ecommerce\Coupon\Contracts\CouponServiceInterface::class);
+        $this->assertInstanceOf(\App\Ecommerce\Coupon\Contracts\CouponServiceInterface::class, $couponService);
+
+        $productService = app(\App\Ecommerce\Product\Contracts\ProductServiceInterface::class);
+        $this->assertInstanceOf(\App\Ecommerce\Product\Contracts\ProductServiceInterface::class, $productService);
+    }
 }
 

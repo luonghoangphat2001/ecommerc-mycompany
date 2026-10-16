@@ -19,7 +19,8 @@ class CouponService implements CouponServiceInterface
 {
     public function __construct(
         protected CouponRepositoryInterface $couponRepository,
-        protected ProductRepositoryInterface $productRepository
+        protected ProductRepositoryInterface $productRepository,
+        protected Pipeline $pipeline
     ) {}
 
     /**
@@ -42,7 +43,7 @@ class CouponService implements CouponServiceInterface
             RestrictionChecker::class,
         ];
 
-        return app(Pipeline::class)
+        return $this->pipeline
             ->send($dto)
             ->through($checkers)
             ->thenReturn();
@@ -138,7 +139,7 @@ class CouponService implements CouponServiceInterface
             return [
                 'code' => $coupon->code,
                 'discount_amount' => $discountAmount,
-                'type' => $coupon->type
+                'type' => $coupon->type instanceof \BackedEnum ? $coupon->type->value : (string) $coupon->type,
             ];
         } finally {
             $lock->release();

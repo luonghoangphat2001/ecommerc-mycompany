@@ -12,12 +12,10 @@ use Closure;
 
 class ResolveShippingFeePipe
 {
-    protected $shippingManager;
-
-    public function __construct(ShippingManager $shippingManager)
-    {
-        $this->shippingManager = $shippingManager;
-    }
+    public function __construct(
+        protected ShippingManager $shippingManager,
+        protected InventorySettings $inventorySettings
+    ) {}
 
     public function handle(array $passable, Closure $next)
     {
@@ -38,12 +36,13 @@ class ResolveShippingFeePipe
                 return $next($passable);
             }
 
-            $driver = $this->shippingManager->driver($method->type);
+            $driverName = $method->type instanceof \BackedEnum ? $method->type->value : (string) $method->type;
+            $driver = $this->shippingManager->driver($driverName);
 
             $totalPackages = 1;
 
             // 1. Split shipping logic: count participating inventories if enabled
-            if (app(InventorySettings::class)->split_shipping_enabled) {
+            if ($this->inventorySettings->split_shipping_enabled) {
                 $productIds = collect($request->items)->pluck('product_id')->toArray();
                 $inventoriesCount = DB::table('shop_product_inventory_stocks')
                     ->whereIn('shop_product_id', $productIds)

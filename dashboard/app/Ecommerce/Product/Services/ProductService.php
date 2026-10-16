@@ -20,13 +20,22 @@ class ProductService implements ProductServiceInterface
     protected $productRepository;
 
     /**
+     * @var CheckoutSettings
+     */
+    protected $checkoutSettings;
+
+    /**
      * ProductService constructor.
      *
      * @param ProductRepositoryInterface $productRepository
+     * @param CheckoutSettings $checkoutSettings
      */
-    public function __construct(ProductRepositoryInterface $productRepository)
-    {
+    public function __construct(
+        ProductRepositoryInterface $productRepository,
+        CheckoutSettings $checkoutSettings
+    ) {
         $this->productRepository = $productRepository;
+        $this->checkoutSettings = $checkoutSettings;
     }
 
     /**
@@ -75,7 +84,7 @@ class ProductService implements ProductServiceInterface
      */
     public function calculateDisplayPrice(Product $product): int
     {
-        $settings = app(CheckoutSettings::class);
+        $settings = $this->checkoutSettings;
         $price = $product->price;
 
         if ($settings->prices_include_tax) {

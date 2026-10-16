@@ -19,14 +19,11 @@ use Illuminate\Pipeline\Pipeline;
 
 class CheckoutCalculatorService
 {
-    protected CheckoutSettings $checkoutSettings;
-    protected CouponSettings $couponSettings;
-
-    public function __construct(CheckoutSettings $checkoutSettings, CouponSettings $couponSettings)
-    {
-        $this->checkoutSettings = $checkoutSettings;
-        $this->couponSettings = $couponSettings;
-    }
+    public function __construct(
+        protected CheckoutSettings $checkoutSettings,
+        protected CouponSettings $couponSettings,
+        protected Pipeline $pipeline
+    ) {}
 
     /**
      * Calculate order totals using a pure pipeline.
@@ -59,7 +56,7 @@ class CheckoutCalculatorService
             $pipes[] = ResolveShippingFeePipe::class;
         }
 
-        $result = app(Pipeline::class)
+        $result = $this->pipeline
             ->send([
                 'request' => $request,
                 'result' => new CheckoutResultDTO(currency: $request->currency)
