@@ -174,21 +174,26 @@ class Product extends Model implements HasMedia
 
     public function getAvailableStockAttribute(): int
     {
-        $hasInventoryRows = DB::table('shop_product_inventory_stocks')
-            ->where('shop_product_id', $this->id)
-            ->exists();
-
-        if ($hasInventoryRows) {
-            return (int) DB::table('shop_product_inventory_stocks')
+        if ($this->relationLoaded('inventories')) {
+            $sum = (int) $this->inventories->sum('pivot.stock_quantity');
+            if ($sum > 0 || $this->inventories->isNotEmpty()) {
+                return $sum;
+            }
+        } else {
+            $stockSum = DB::table('shop_product_inventory_stocks')
                 ->where('shop_product_id', $this->id)
                 ->sum('stock_quantity');
+
+            if ($stockSum !== null && (int) $stockSum > 0) {
+                return (int) $stockSum;
+            }
         }
 
         if ((int) $this->qty > 0) {
             return (int) $this->qty;
         }
 
-        return (int) $this->total_stock;
+        return (int) ($this->total_stock ?? 0);
     }
 
     public function registerMediaConversions(?SpatieMedia $media = null): void

@@ -20,6 +20,9 @@ use App\Ecommerce\Inventory\Actions\DeductStockAction;
 use App\Ecommerce\Inventory\Actions\CheckStockAction;
 use App\Settings\InventorySettings;
 use Illuminate\Validation\ValidationException;
+use App\Ecommerce\Order\Enums\OrderStatus;
+use App\Enums\OrderItemType;
+use App\Enums\AddressType;
 
 class PlaceOrderAction
 {
@@ -199,7 +202,7 @@ class PlaceOrderAction
             'total' => $calcResult->total,
             'currency' => $calcResult->currency,
             'exchange_rate' => $calcResult->exchangeRate,
-            'status' => 'pending',
+            'status' => OrderStatus::Pending->value,
         ]);
     }
 
@@ -282,7 +285,7 @@ class PlaceOrderAction
             $itemMetadata = $this->deductInventoryAndBuildMetadata($item);
 
             $order->items()->create([
-                'type' => 'product',
+                'type' => OrderItemType::Product->value,
                 'shop_product_id' => $item['product_id'],
                 'qty' => $item['qty'],
                 'unit_price' => $item['unit_price'],
@@ -402,7 +405,7 @@ class PlaceOrderAction
     {
         if ($calcResult->shippingTotal > 0) {
             $order->items()->create([
-                'type' => 'shipping',
+                'type' => OrderItemType::Shipping->value,
                 'name' => 'Giao hàng: ' . $dto->shippingMethod,
                 'qty' => 1,
                 'unit_price' => $calcResult->shippingTotal,
@@ -412,7 +415,7 @@ class PlaceOrderAction
 
         foreach ($calcResult->appliedTaxes as $tax) {
             $order->items()->create([
-                'type' => 'tax',
+                'type' => OrderItemType::Tax->value,
                 'name' => $tax['name'],
                 'qty' => 1,
                 'unit_price' => $tax['amount'],
@@ -427,7 +430,7 @@ class PlaceOrderAction
     private function createOrderAddresses(Order $order, OrderDataDTO $dto): void
     {
         $shippingData = [
-            'type' => \App\Enums\AddressType::Shipping->value,
+            'type' => AddressType::Shipping->value,
             'first_name' => $dto->shippingAddress['first_name'] ?? '',
             'last_name' => $dto->shippingAddress['last_name'] ?? '',
             'phone' => $dto->shippingAddress['phone'] ?? '',
@@ -440,7 +443,7 @@ class PlaceOrderAction
         ];
 
         $billingData = [
-            'type' => \App\Enums\AddressType::Billing->value,
+            'type' => AddressType::Billing->value,
             'first_name' => $dto->billingAddress['first_name'] ?? '',
             'last_name' => $dto->billingAddress['last_name'] ?? '',
             'phone' => $dto->billingAddress['phone'] ?? '',
@@ -468,10 +471,10 @@ class PlaceOrderAction
                 });
             };
 
-            if (!$checkExists($shippingData, 'shipping')) {
+            if (!$checkExists($shippingData, AddressType::Shipping->value)) {
                 $addressBookService->addAddress($order->user_id, $shippingData);
             }
-            if (!empty($dto->billingAddress) && !$checkExists($billingData, 'billing')) {
+            if (!empty($dto->billingAddress) && !$checkExists($billingData, AddressType::Billing->value)) {
                 $addressBookService->addAddress($order->user_id, $billingData);
             }
         }

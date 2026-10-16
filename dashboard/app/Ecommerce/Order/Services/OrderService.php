@@ -7,6 +7,7 @@ use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 use App\Models\Order;
 use App\Models\OrderShipping;
 use App\Ecommerce\Order\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -385,7 +386,7 @@ class OrderService implements OrderServiceInterface
     public function confirmPayment(Order $order): bool
     {
         return $this->useTransaction(function () use ($order) {
-            $order->payments()->where('status', 'pending')->update(['status' => 'paid']);
+            $order->payments()->where('status', PaymentStatus::Pending->value)->update(['status' => PaymentStatus::Paid->value]);
             
             // If order was pending, move to processing if paid? 
             // Often business logic dictates that paid orders move to Processing.
@@ -434,7 +435,7 @@ class OrderService implements OrderServiceInterface
      */
     public function hasPendingPayments(Order $order): bool
     {
-        return $order->payments()->where('status', 'pending')->exists();
+        return $order->payments()->where('status', PaymentStatus::Pending->value)->exists();
     }
 
     /**

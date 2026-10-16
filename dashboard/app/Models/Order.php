@@ -175,6 +175,9 @@ class Order extends Model
 
     public function scopeOpen($query)
     {
-        return $query->whereIn('status', ['new', 'processing']);
+        return $query->whereIn('status', [
+            OrderStatus::New->value,
+            OrderStatus::Processing->value,
+        ]);
     }
 }
