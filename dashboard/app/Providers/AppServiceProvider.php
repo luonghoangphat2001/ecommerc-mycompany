@@ -45,6 +45,24 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::unguard();
 
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'product' => \App\Models\Product::class,
+            'post' => \App\Models\Post::class,
+            'user' => \App\Models\User::class,
+            'customer' => \App\Models\Customer::class,
+            'brand' => \App\Models\Brand::class,
+            'order' => \App\Models\Order::class,
+            'order_address' => \App\Models\OrderAddress::class,
+            'order_shipping' => \App\Models\OrderShipping::class,
+            'order_tax' => \App\Models\OrderTax::class,
+            'order_meta' => \App\Models\OrderMeta::class,
+            'order_item' => \App\Models\OrderItem::class,
+            'page' => \App\Models\Page::class,
+            'category' => \App\Models\Category::class,
+            'shop_category' => \App\Models\ProductCategory::class,
+            'comment' => \App\Models\Comment::class,
+        ]);
+
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }

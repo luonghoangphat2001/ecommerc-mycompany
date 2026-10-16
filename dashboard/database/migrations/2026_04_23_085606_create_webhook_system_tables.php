@@ -36,6 +36,9 @@ return new class extends Migration
             $table->string('status')->default('pending');
             $table->integer('duration')->nullable(); // in milliseconds
             $table->timestamp('created_at')->nullable();
+
+            $table->index('event_id', 'webhook_logs_event_id_idx');
+            $table->index(['status', 'created_at'], 'webhook_logs_status_created_idx');
         });
     }
 

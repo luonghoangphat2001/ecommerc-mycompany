@@ -81,6 +81,8 @@ return new class extends Migration
             $table->text('content')->nullable();
             $table->boolean('is_visible')->default(true);
             $table->timestamps();
+
+            $table->index(['commentable_type', 'commentable_id', 'is_visible', 'created_at'], 'comments_commentable_visible_created_idx');
         });
 
         // Tax Classes

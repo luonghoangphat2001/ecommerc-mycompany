@@ -11,6 +11,18 @@ class OrderPolicy
     use HandlesAuthorization;
 
     /**
+     * Perform pre-authorization checks.
+     */
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        return null;
+    }
+
+    /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
@@ -20,10 +32,11 @@ class OrderPolicy
 
     /**
      * Determine whether the user can view the model.
+     * Prevents IDOR/BOLA: Customers can only view their own orders.
      */
     public function view(User $user, Order $order): bool
     {
-        return $user->can('view_order');
+        return $order->user_id === $user->id || $user->can('view_order');
     }
 
     /**
@@ -31,7 +44,7 @@ class OrderPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('create_order');
+        return true;
     }
 
     /**
@@ -39,7 +52,7 @@ class OrderPolicy
      */
     public function update(User $user, Order $order): bool
     {
-        return $user->can('update_order');
+        return $order->user_id === $user->id || $user->can('update_order');
     }
 
     /**
@@ -47,7 +60,7 @@ class OrderPolicy
      */
     public function delete(User $user, Order $order): bool
     {
-        return $user->can('delete_order');
+        return $order->user_id === $user->id || $user->can('delete_order');
     }
 
     /**
@@ -63,7 +76,7 @@ class OrderPolicy
      */
     public function forceDelete(User $user, Order $order): bool
     {
-        return $user->can('{{ ForceDelete }}');
+        return $user->can('force_delete_order');
     }
 
     /**
@@ -71,7 +84,7 @@ class OrderPolicy
      */
     public function forceDeleteAny(User $user): bool
     {
-        return $user->can('{{ ForceDeleteAny }}');
+        return $user->can('force_delete_any_order');
     }
 
     /**
@@ -79,7 +92,7 @@ class OrderPolicy
      */
     public function restore(User $user, Order $order): bool
     {
-        return $user->can('{{ Restore }}');
+        return $user->can('restore_order');
     }
 
     /**
@@ -87,7 +100,7 @@ class OrderPolicy
      */
     public function restoreAny(User $user): bool
     {
-        return $user->can('{{ RestoreAny }}');
+        return $user->can('restore_any_order');
     }
 
     /**
@@ -95,7 +108,7 @@ class OrderPolicy
      */
     public function replicate(User $user, Order $order): bool
     {
-        return $user->can('{{ Replicate }}');
+        return $user->can('replicate_order');
     }
 
     /**
@@ -103,6 +116,6 @@ class OrderPolicy
      */
     public function reorder(User $user): bool
     {
-        return $user->can('{{ Reorder }}');
+        return $user->can('reorder_order');
     }
 }

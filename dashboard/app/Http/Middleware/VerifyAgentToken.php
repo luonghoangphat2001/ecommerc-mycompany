@@ -26,7 +26,8 @@ class VerifyAgentToken
             return response()->json(['error' => 'Unauthorized. Missing token or agent code.'], 401);
         }
 
-        $agent = DepartmentAgent::where('agent_code', $agentCode)
+        $agent = DepartmentAgent::with('department')
+            ->where('agent_code', $agentCode)
             ->where('status', AgentStatus::ACTIVE)
             ->first();
 
@@ -47,7 +48,7 @@ class VerifyAgentToken
         $risk = $department->risk_level_threshold;
         
         $isHighRisk = in_array($risk, [RiskLevelThreshold::HIGH, RiskLevelThreshold::CRITICAL]);
-        $status = $isHighRisk ? 'pending_approval' : 'success';
+        $status = $isHighRisk ? \App\Enums\WebhookLogStatus::PendingApproval->value : \App\Enums\WebhookLogStatus::Success->value;
         
         $eventId = $request->header('X-Event-Id', uniqid('evt_'));
 

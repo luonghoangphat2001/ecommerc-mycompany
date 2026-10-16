@@ -16,8 +16,7 @@ class OrderAddressFactory extends Factory
         $countryCode = !empty($countries) ? array_rand($countries) : 'VN';
 
         return [
-            'addressable_type' => \App\Models\Order::class,
-            'addressable_id' => 1,
+            'order_id' => 1,
             'country_code' => $countryCode,
             'first_name' => $this->faker->firstName(),
             'last_name' => $this->faker->lastName(),
@@ -29,7 +28,7 @@ class OrderAddressFactory extends Factory
             'ward_id' => 'Phường Bến Nghé',
             'postal_code' => $this->faker->postcode(),
             'company' => $this->faker->company(),
-            'type' => 'shipping', 
+            'type' => \App\Enums\AddressType::Shipping, 
         ];
     }
 }

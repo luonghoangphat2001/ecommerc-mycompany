@@ -24,6 +24,7 @@ class OrderItem extends Model
     ];
 
     protected $casts = [
+        'type' => \App\Enums\OrderItemType::class,
         'metadata' => 'array',
         'unit_price' => 'integer',
         'total' => 'integer',

@@ -17,7 +17,8 @@ class PaymentFactory extends Factory
             'currency' => $this->faker->randomElement(collect(Currency::getCurrencies())->keys()),
             'amount' => $this->faker->randomFloat(2, 100, 2000),
             'provider' => $this->faker->randomElement(['stripe', 'paypal']),
-            'method' => $this->faker->randomElement(['credit_card', 'bank_transfer', 'paypal']),
+            'method' => $this->faker->randomElement([\App\Enums\PaymentMethod::CreditCard, \App\Enums\PaymentMethod::BankTransfer, \App\Enums\PaymentMethod::Paypal]),
+            'status' => \App\Enums\PaymentStatus::Completed,
             'created_at' => $this->faker->dateTimeBetween('-1 year', '-6 month'),
             'updated_at' => $this->faker->dateTimeBetween('-5 month', 'now'),
         ];

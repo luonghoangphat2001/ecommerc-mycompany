@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('shop_loyalty_points', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnDelete();
             $table->integer('current_points')->default(0);
             $table->integer('lifetime_points')->default(0);
             $table->timestamps();
@@ -27,6 +27,9 @@ return new class extends Migration
             $table->unsignedBigInteger('order_id')->nullable();
             $table->timestamp('expired_at')->nullable();
             $table->timestamps();
+
+            $table->index(['user_id', 'created_at'], 'shop_loyalty_logs_user_created_idx');
+            $table->index('order_id', 'shop_loyalty_logs_order_id_idx');
         });
     }
 

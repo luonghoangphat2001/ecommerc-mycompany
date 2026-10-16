@@ -29,20 +29,22 @@ class InventoryService implements InventoryServiceInterface
     {
         $record = InventoryRecord::findOrFail($recordId);
 
-        if ($record->status === 'COMPLETED') {
+        if ($record->status === \App\Enums\InventoryRecordStatus::Completed || $record->status === 'COMPLETED') {
             throw new Exception(__('messages.record_already_processed'));
         }
 
         return DB::transaction(function () use ($record) {
             foreach ($record->items as $item) {
-                if ($record->type === 'IN') {
+                $recordType = $record->type instanceof \App\Enums\InventoryRecordType ? $record->type->value : $record->type;
+
+                if ($recordType === \App\Enums\InventoryRecordType::In->value) {
                     $this->addStock($item->shop_product_id, $item->warehouse_id, $item->quantity, 'record', $record->id);
-                } elseif ($record->type === 'OUT') {
+                } elseif ($recordType === \App\Enums\InventoryRecordType::Out->value) {
                     $this->deductStock($item->shop_product_id, $item->warehouse_id, $item->quantity, 'record', $record->id);
                 }
             }
 
-            $record->update(['status' => 'COMPLETED']);
+            $record->update(['status' => \App\Enums\InventoryRecordStatus::Completed]);
 
             return true;
         }, 3);

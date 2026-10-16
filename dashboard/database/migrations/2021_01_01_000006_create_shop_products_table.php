@@ -38,6 +38,10 @@ return new class extends Migration
             $table->integer('version')->default(1);
             $table->softDeletes();
             $table->timestamps();
+
+            $table->index(['is_visible', 'published_at', 'created_at'], 'shop_products_storefront_browse_idx');
+            $table->index(['is_visible', 'featured'], 'shop_products_featured_idx');
+            $table->index('type', 'shop_products_type_idx');
         });
 
 

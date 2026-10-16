@@ -29,8 +29,10 @@ class AgentDashboardController extends Controller
     {
         /** @var DepartmentAgent $agent */
         $agent = $request->attributes->get('agent');
-        $period = (string) $request->query('period', 'today');
-        if (!in_array($period, ['today', 'month', 'quarter', 'year'], true)) {
+        $period = (string) $request->query('period', \App\Enums\MetricPeriod::Today->value);
+        $metricPeriod = \App\Enums\MetricPeriod::tryFrom($period);
+
+        if (!$metricPeriod) {
             return response()->json([
                 'ok' => false,
                 'error' => 'period must be today, month, quarter, or year',
@@ -41,7 +43,7 @@ class AgentDashboardController extends Controller
             'ok' => true,
             'integration' => $this->service->getMetrics(
                 $agent,
-                $period,
+                $metricPeriod->value,
             ),
         ]);
     }

@@ -27,6 +27,7 @@ class WebhookLog extends Model
     ];
 
     protected $casts = [
+        'status' => \App\Enums\WebhookLogStatus::class,
         'payload' => 'array',
         'response' => 'array',
         'duration' => 'integer',

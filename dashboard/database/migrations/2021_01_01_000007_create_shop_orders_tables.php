@@ -22,6 +22,10 @@ return new class extends Migration
             $table->string('type')->default('shop');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['user_id', 'created_at'], 'shop_orders_user_created_idx');
+            $table->index(['user_id', 'status', 'created_at'], 'shop_orders_user_status_created_idx');
+            $table->index(['created_at', 'status', 'total'], 'shop_orders_metrics_idx');
         });
 
         // 2. Order Shipping Details (Separated)
@@ -59,6 +63,8 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->unsignedInteger('sort')->default(0);
             $table->timestamps();
+
+            $table->index(['order_id', 'type'], 'shop_order_items_order_type_idx');
         });
 
         // 5. Order Taxes (Separated for Multiple Tax support)
@@ -87,7 +93,7 @@ return new class extends Migration
         // 7. Order Addresses
         Schema::create('shop_order_addresses', function (Blueprint $table) {
             $table->id();
-            $table->morphs('addressable');
+            $table->foreignId('order_id')->constrained('shop_orders')->cascadeOnDelete();
             $table->string('type')->default('shipping'); 
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
@@ -101,6 +107,8 @@ return new class extends Migration
             $table->string('ward_id')->nullable();
             $table->string('postal_code')->nullable();
             $table->timestamps();
+
+            $table->index(['order_id', 'type'], 'shop_order_addresses_order_type_idx');
         });
 
         // 8. Payments

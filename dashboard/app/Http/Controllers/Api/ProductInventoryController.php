@@ -2,47 +2,39 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
 use App\Http\Controllers\Api\BaseApiController;
-use App\Models\Product;
+use App\Http\Resources\Api\InventoryResource;
 use Illuminate\Http\Request;
 
 class ProductInventoryController extends BaseApiController
 {
+    public function __construct(
+        protected ProductRepositoryInterface $productRepository
+    ) {}
+
     /**
      * Get inventory for a product across all warehouses
      */
     public function index(Request $request, $productId)
     {
         try {
-            $product = Product::with('inventories')->findOrFail($productId);
+            $product = $this->productRepository->find((int)$productId, ['*'], ['inventories']);
+            
+            if (!$product) {
+                return $this->notFound(__('messages.product_not_found') ?? 'Product not found');
+            }
             
             $variantId = $request->get('variant_id');
-            
             $inventories = $product->inventories;
             
             if ($variantId) {
                 $inventories = $inventories->where('pivot.variant_id', $variantId);
             }
             
-            return response()->json([
-                'success' => true,
-                'message' => 'Success',
-                'data' => $inventories->map(function ($inventory) {
-                    return [
-                        'warehouse_id' => $inventory->id,
-                        'warehouse_name' => $inventory->name ?? 'Unknown Warehouse',
-                        'warehouse_location' => $inventory->location ?? '',
-                        'quantity' => $inventory->pivot->stock_quantity ?? 0,
-                        'variant_id' => $inventory->pivot->variant_id ?? null,
-                    ];
-                })->toArray()
-            ]);
+            return $this->ok(InventoryResource::collection($inventories));
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'data' => null
-            ], 404);
+            return $this->error($e->getMessage(), 404);
         }
     }
 }

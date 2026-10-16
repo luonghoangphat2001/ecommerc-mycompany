@@ -37,7 +37,7 @@ class ProductCategoryController extends BaseApiController
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
-        $categories = $this->categoryService->paginate($perPage, ['*'], ['products']);
+        $categories = $this->categoryService->paginate($perPage, ['*'], []);
         
         return $this->ok(ProductCategoryResource::collection($categories));
     }
@@ -80,7 +80,7 @@ class ProductCategoryController extends BaseApiController
     )]
     public function show(ProductCategory $productCategory)
     {
-        return $this->ok(new ProductCategoryResource($productCategory->load('products')));
+        return $this->ok(new ProductCategoryResource($productCategory));
     }
 
     #[ApiUpdate(

@@ -96,6 +96,7 @@ class Product extends Model implements HasMedia
      * @var array<string, string>
      */
     protected $casts = [
+        'type' => \App\Enums\ProductType::class,
         'featured' => 'boolean',
         'is_visible' => 'boolean',
         'backorder' => 'boolean',
@@ -190,7 +191,7 @@ class Product extends Model implements HasMedia
         return (int) $this->total_stock;
     }
 
-    public function registerMediaConversions(SpatieMedia $media = null): void
+    public function registerMediaConversions(?SpatieMedia $media = null): void
 
     {
         $this->addMediaConversion('thumb')

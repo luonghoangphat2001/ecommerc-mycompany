@@ -141,7 +141,7 @@ class OrderController extends BaseApiController
         ),
         responseData: '#/components/schemas/OrderResource'
     )]
-    public function update(Request $request, $id)
+    public function update(\App\Http\Requests\API\UpdateOrderRequest $request, $id)
     {
         $order = $this->orderService->find($id);
 
@@ -151,7 +151,7 @@ class OrderController extends BaseApiController
 
         $this->authorize('update', $order);
 
-        $this->orderService->updateOrder($order, $request->only(['status', 'notes']));
+        $this->orderService->updateOrder($order, $request->validated());
 
         return $this->ok(new OrderResource($order->fresh(['items', 'shippingAddress', 'billingAddress'])));
     }

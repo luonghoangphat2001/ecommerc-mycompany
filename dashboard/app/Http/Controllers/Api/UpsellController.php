@@ -33,13 +33,6 @@ class UpsellController extends BaseApiController
     {
         $upsells = $this->upsellService->getUpsellsForProduct($productId);
         
-        // Load relationships on each upsell item
-        $upsells->each(function ($item) {
-            if ($item->relationLoaded('upsellProduct')) {
-                $item->upsellProduct->load('featuredImage', 'categories', 'brand');
-            }
-        });
-        
         return $this->ok(UpsellResource::collection($upsells));
     }
 }

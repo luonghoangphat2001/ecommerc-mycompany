@@ -805,15 +805,13 @@ class ImportDatabaseSeeder extends Seeder
         
         // 5. Tạo địa chỉ
         OrderAddress::factory()->create([
-            'addressable_type' => Order::class,
-            'addressable_id' => $order->id,
-            'type' => 'shipping',
+            'order_id' => $order->id,
+            'type' => \App\Enums\AddressType::Shipping,
         ]);
         
         OrderAddress::factory()->create([
-            'addressable_type' => Order::class,
-            'addressable_id' => $order->id,
-            'type' => 'billing',
+            'order_id' => $order->id,
+            'type' => \App\Enums\AddressType::Billing,
         ]);
         
         // 6. Tạo Payment

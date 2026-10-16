@@ -6,7 +6,8 @@ use App\Http\Controllers\Api\BaseApiController;
 use App\Ecommerce\Cart\Contracts\CartServiceInterface;
 use App\Ecommerce\Cart\Contracts\CartCalculationServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
-use App\Models\Product;
+use App\Http\Requests\API\Cart\AddToCartRequest;
+use App\Http\Requests\API\Cart\UpdateCartItemRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
@@ -22,7 +23,8 @@ class CartController extends BaseApiController
     public function __construct(
         protected CartServiceInterface $cartService,
         protected CartCalculationServiceInterface $calculationService,
-        protected ShippingServiceInterface $shippingService
+        protected ShippingServiceInterface $shippingService,
+        protected \App\Ecommerce\Product\Contracts\ProductRepositoryInterface $productRepository
     ) {}
 
     #[ApiPost(
@@ -99,22 +101,7 @@ class CartController extends BaseApiController
     )]
     public function sync(Request $request): JsonResponse
     {
-        $items = $request->input('items', []);
-        $validated = $this->cartService->syncAndValidate($items);
-        
-        $summary = $this->calculationService->calculate(
-            $validated['items'] ?? [],
-            $request->input('country', 'VN'),
-            $request->input('state'),
-            $request->input('shipping_method'),
-            $request->input('coupon_code')
-        );
-
-        return $this->success([
-            'items' => $validated['items'] ?? [],
-            'summary' => $summary,
-            'notifications' => $validated['notifications'] ?? [],
-        ]);
+        return $this->index($request);
     }
 
     #[ApiPost(
@@ -141,27 +128,23 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'available', type: 'boolean', example: true),
         ]
     )]
-    public function addItem(Request $request): JsonResponse
+    public function addItem(AddToCartRequest $request): JsonResponse
     {
-        $request->validate([
-            'product_id' => 'required|integer|exists:shop_products,id',
-            'quantity' => 'required|integer|min:1',
-        ]);
-
-        $product = Product::findOrFail($request->product_id);
+        $validated = $request->validated();
+        $product = $this->productRepository->find((int)$validated['product_id']);
         
-        if ($product->qty < $request->quantity) {
-            return $this->error('Sản phẩm không đủ số lượng trong kho', 422);
+        if (!$product || $product->qty < $validated['quantity']) {
+            return $this->error(__('messages.insufficient_stock') ?? 'Insufficient product stock', 422);
         }
 
         return $this->success([
             'product_id' => $product->id,
             'name' => $product->name,
             'price' => $product->price,
-            'quantity' => $request->quantity,
-            'subtotal' => $product->price * $request->quantity,
+            'quantity' => $validated['quantity'],
+            'subtotal' => $product->price * $validated['quantity'],
             'available' => true,
-        ], 'Thêm vào giỏ hàng thành công');
+        ], __('messages.cart_item_added') ?? 'Product added to cart');
     }
 
     #[ApiUpdate(
@@ -187,26 +170,24 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'available', type: 'boolean', example: true),
         ]
     )]
-    public function updateItem(Request $request, $itemId): JsonResponse
+    public function updateItem(UpdateCartItemRequest $request, $itemId): JsonResponse
     {
-        $request->validate([
-            'quantity' => 'required|integer|min:0',
-        ]);
-
-        $product = Product::find($itemId);
+        $validated = $request->validated();
+        $product = $this->productRepository->find((int)$itemId);
         
         if (!$product) {
-            return $this->error('Sản phẩm không tồn tại', 404);
+            return $this->error(__('messages.product_not_found') ?? 'Product not found', 404);
         }
 
-        if ($request->quantity > 0 && $product->qty < $request->quantity) {
-            return $this->error('Sản phẩm không đủ số lượng trong kho', 422);
+        $quantity = (int) $validated['quantity'];
+        if ($quantity > 0 && $product->qty < $quantity) {
+            return $this->error(__('messages.insufficient_stock') ?? 'Insufficient product stock', 422);
         }
 
         return $this->success([
             'product_id' => $product->id,
-            'quantity' => $request->quantity,
-            'available' => $request->quantity > 0 ? $product->qty >= $request->quantity : true,
+            'quantity' => $quantity,
+            'available' => $quantity > 0 ? $product->qty >= $quantity : true,
         ]);
     }
 
@@ -224,7 +205,7 @@ class CartController extends BaseApiController
     )]
     public function removeItem($itemId): JsonResponse
     {
-        return $this->success(['removed' => true], 'Đã xóa sản phẩm khỏi giỏ hàng');
+        return $this->success(['removed' => true], __('messages.cart_item_removed') ?? 'Cart item removed');
     }
 
     #[ApiDelete(
@@ -238,7 +219,7 @@ class CartController extends BaseApiController
     )]
     public function clear(): JsonResponse
     {
-        return $this->success(['cleared' => true], 'Đã xóa toàn bộ giỏ hàng');
+        return $this->success(['cleared' => true], __('messages.cart_cleared') ?? 'Cart cleared');
     }
 
     #[ApiPost(

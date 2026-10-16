@@ -30,14 +30,9 @@ class ComboController extends BaseApiController
     )]
     public function index(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'per_page' => 'integer|min:1|max:100',
-            'page' => 'integer|min:1',
-        ]);
-
         $combos = $this->comboService->getActiveCombos();
 
-        return $this->ok(ComboResource::collection($combos->paginate($validated['per_page'] ?? 15)));
+        return $this->ok(ComboResource::collection($combos));
     }
 
     #[ApiGet(

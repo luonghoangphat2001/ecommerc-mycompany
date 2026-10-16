@@ -41,10 +41,7 @@ class AddressController extends BaseApiController
     {
         $countries = $this->addressService->getCountries();
         
-        return response()->json([
-            'success' => true,
-            'data' => $countries
-        ]);
+        return $this->ok($countries);
     }
 
     #[ApiGet(
@@ -64,10 +61,7 @@ class AddressController extends BaseApiController
     {
         $states = $this->addressService->getStates($countryCode);
         
-        return response()->json([
-            'success' => true,
-            'data' => $states
-        ]);
+        return $this->ok($states);
     }
 
     #[ApiGet(
@@ -88,10 +82,7 @@ class AddressController extends BaseApiController
     {
         $regions = $this->addressService->getRegions($countryCode, $stateId);
         
-        return response()->json([
-            'success' => true,
-            'data' => $regions
-        ]);
+        return $this->ok($regions);
     }
 
     #[ApiGet(
@@ -113,10 +104,7 @@ class AddressController extends BaseApiController
     {
         $subRegions = $this->addressService->getSubRegions($countryCode, $stateId, $regionId);
         
-        return response()->json([
-            'success' => true,
-            'data' => $subRegions
-        ]);
+        return $this->ok($subRegions);
     }
 
     #[ApiGet(
@@ -138,10 +126,7 @@ class AddressController extends BaseApiController
         $user = $request->user();
         $addresses = $this->addressBookService->listAddresses($user->id);
         
-        return response()->json([
-            'success' => true,
-            'data' => $addresses
-        ]);
+        return $this->ok(\App\Http\Resources\Api\AddressResource::collection($addresses));
     }
 
     #[ApiPost(
@@ -178,31 +163,17 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'country', type: 'string', example: 'VN')
         ]
     )]
-    public function store(Request $request): JsonResponse
+    public function store(\App\Http\Requests\API\StoreAddressRequest $request): JsonResponse
     {
         $user = $request->user();
-        $validated = $request->validate([
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'company' => 'nullable|string',
-            'phone' => 'required|string',
-            'email' => 'nullable|email',
-            'type' => 'nullable|string|in:shipping,billing',
-            'country_code' => 'required|string|max:2',
-            'state_id' => 'nullable|string',
-            'city_id' => 'nullable|string',
-            'ward_id' => 'nullable|string',
-            'street' => 'required|string',
-            'zip' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $address = $this->addressBookService->addAddress($user->id, $validated);
 
-        return response()->json([
-            'success' => true,
-            'message' => __('messages.address_created') ?? 'Address saved successfully',
-            'data' => $address
-        ]);
+        return $this->created(
+            new \App\Http\Resources\Api\AddressResource($address),
+            __('messages.address_created') ?? 'Address saved successfully'
+        );
     }
 
     #[ApiUpdate(
@@ -238,36 +209,19 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'country', type: 'string', example: 'VN')
         ]
     )]
-    public function update(Request $request, $addressId): JsonResponse
+    public function update(\App\Http\Requests\API\UpdateAddressRequest $request, $addressId): JsonResponse
     {
         $user = $request->user();
-        $validated = $request->validate([
-            'first_name' => 'sometimes|string',
-            'last_name' => 'sometimes|string',
-            'company' => 'nullable|string',
-            'phone' => 'sometimes|string',
-            'email' => 'nullable|email',
-            'type' => 'nullable|string|in:shipping,billing',
-            'country_code' => 'sometimes|string|max:2',
-            'state_id' => 'nullable|string',
-            'city_id' => 'nullable|string',
-            'ward_id' => 'nullable|string',
-            'street' => 'sometimes|string',
-            'zip' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         try {
             $address = $this->addressBookService->updateAddress($user->id, (int) $addressId, $validated);
-            return response()->json([
-                'success' => true,
-                'message' => __('messages.address_updated') ?? 'Address updated successfully',
-                'data' => $address
-            ]);
+            return $this->ok(
+                new \App\Http\Resources\Api\AddressResource($address),
+                __('messages.address_updated') ?? 'Address updated successfully'
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
+            return $this->badRequest($e->getMessage());
         }
     }
 
@@ -288,15 +242,12 @@ class AddressController extends BaseApiController
         $deleted = $this->addressBookService->deleteAddress($user->id, (int) $addressId);
 
         if (!$deleted) {
-            return response()->json([
-                'success' => false,
-                'message' => __('messages.address_delete_failed') ?? 'Address deletion failed'
-            ], 400);
+            return $this->badRequest(__('messages.address_delete_failed') ?? 'Address deletion failed');
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => __('messages.address_deleted') ?? 'Address removed successfully'
-        ]);
+        return $this->ok(
+            ['deleted' => true],
+            __('messages.address_deleted') ?? 'Address removed successfully'
+        );
     }
 }

@@ -40,6 +40,9 @@ return new class extends Migration
             $table->integer('quantity');
             $table->timestamp('expires_at');
             $table->timestamps();
+
+            $table->index('expires_at', 'shop_stock_reservations_expires_at_idx');
+            $table->index(['order_id', 'sku'], 'shop_stock_reservations_order_sku_idx');
         });
     }
 

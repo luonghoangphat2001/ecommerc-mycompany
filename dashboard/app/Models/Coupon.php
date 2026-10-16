@@ -31,6 +31,7 @@ class Coupon extends Model
     ];
 
     protected $casts = [
+        'type' => \App\Enums\CouponType::class,
         'amount' => 'decimal:2',
         'minimum_order_amount' => 'decimal:2',
         'limit_usage_to_x_items' => 'integer',

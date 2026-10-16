@@ -33,13 +33,6 @@ class CrossSellController extends BaseApiController
     {
         $crossSells = $this->crossSellService->getCrossSellsForProduct($productId);
         
-        // Load relationships on each cross-sell item
-        $crossSells->each(function ($item) {
-            if ($item->relationLoaded('crossSellProduct')) {
-                $item->crossSellProduct->load('featuredImage', 'categories', 'brand');
-            }
-        });
-        
         return $this->ok(CrossSellResource::collection($crossSells));
     }
 }

@@ -20,6 +20,7 @@ class ShippingMethod extends Model
     ];
 
     protected $casts = [
+        'type' => \App\Enums\ShippingMethodType::class,
         'settings' => 'array',
         'is_enabled' => 'boolean',
     ];

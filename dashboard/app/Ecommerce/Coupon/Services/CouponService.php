@@ -55,8 +55,10 @@ class CouponService implements CouponServiceInterface
     {
         $discountAmount = 0.0;
 
+        $couponType = $coupon->type instanceof \App\Enums\CouponType ? $coupon->type : \App\Enums\CouponType::tryFrom((string)$coupon->type);
+
         // 1. Fixed Cart discount
-        if ($coupon->type === 'fixed_cart') {
+        if ($couponType === \App\Enums\CouponType::FixedCart) {
             $discountAmount = (float)$coupon->amount;
             return min($discountAmount, $subtotal);
         }
@@ -89,10 +91,10 @@ class CouponService implements CouponServiceInterface
             $itemQty = $item['quantity'] ?? 1;
             $itemPrice = (float)$product->price;
 
-            if ($coupon->type === 'percentage') {
+            if ($couponType === \App\Enums\CouponType::Percentage) {
                 $itemDiscount = ($itemPrice * $itemQty) * ($coupon->amount / 100);
                 $discountAmount += $itemDiscount;
-            } elseif ($coupon->type === 'fixed_product') {
+            } elseif ($couponType === \App\Enums\CouponType::FixedProduct) {
                 // Limit usage to X items if applicable
                 $allowedQty = $itemQty;
                 if ($coupon->limit_usage_to_x_items !== null) {

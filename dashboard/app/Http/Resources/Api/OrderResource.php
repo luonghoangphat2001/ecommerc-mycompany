@@ -44,7 +44,7 @@ class OrderResource extends BaseResource
         return array_merge([
             'id' => $this->id,
             'number' => $this->number,
-            'status' => $this->status,
+            'status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status,
             'currency' => $this->currency,
             'subtotal' => $this->subtotal,
             'tax_amount' => $this->tax_amount,
@@ -53,17 +53,21 @@ class OrderResource extends BaseResource
             'shipping_address' => new OrderAddressResource($this->whenLoaded('shippingAddress')),
             'billing_address' => new OrderAddressResource($this->whenLoaded('billingAddress')),
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
-            'status_history' => $this->relationLoaded('activities') || $this->activities 
-                ? $this->activities()->orderBy('created_at', 'asc')->get()->map(fn($activity) => [
-                    'status' => $activity->properties['attributes']['status'] ?? $this->status,
-                    'time' => $activity->created_at->toDateTimeString(),
-                ])->toArray() 
+            'status_history' => $this->relationLoaded('activities') && $this->activities->isNotEmpty()
+                ? $this->activities->sortBy('created_at')->map(fn($activity) => [
+                    'status' => $activity->properties['attributes']['status'] ?? ($this->status instanceof \BackedEnum ? $this->status->value : $this->status),
+                    'time' => $activity->created_at?->toDateTimeString(),
+                ])->values()->toArray() 
                 : [
-                    ['status' => $this->status, 'time' => $this->created_at->toDateTimeString()]
+                    ['status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status, 'time' => $this->created_at?->toDateTimeString()]
                 ],
             'shipping_method' => $this->relationLoaded('shipping') && $this->shipping ? $this->shipping->method : null,
-            'payment_method' => $this->relationLoaded('payments') && $this->payments->count() > 0 ? $this->payments->sortByDesc('id')->first()->method : null,
-            'payment_status' => $this->relationLoaded('payments') && $this->payments->count() > 0 ? $this->payments->sortByDesc('id')->first()->status : null,
+            'payment_method' => $this->relationLoaded('payments') && $this->payments->isNotEmpty() 
+                ? ($this->payments->sortByDesc('id')->first()->method instanceof \BackedEnum ? $this->payments->sortByDesc('id')->first()->method->value : $this->payments->sortByDesc('id')->first()->method) 
+                : null,
+            'payment_status' => $this->relationLoaded('payments') && $this->payments->isNotEmpty() 
+                ? ($this->payments->sortByDesc('id')->first()->status instanceof \BackedEnum ? $this->payments->sortByDesc('id')->first()->status->value : $this->payments->sortByDesc('id')->first()->status) 
+                : null,
             'customer_notes' => $this->relationLoaded('metas') && $this->metas ? $this->metas->where('key', 'customer_notes')->first()?->value : null,
             'loyalty_discount' => $this->relationLoaded('metas') && $this->metas ? (int) ($this->metas->where('key', 'loyalty_discount')->first()?->value ?? 0) : 0,
             'discount_total' => $this->relationLoaded('coupons') && $this->coupons ? $this->coupons->sum('discount_amount') : 0,

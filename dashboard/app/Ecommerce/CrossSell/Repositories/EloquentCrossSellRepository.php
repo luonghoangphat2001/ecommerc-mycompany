@@ -24,7 +24,11 @@ class EloquentCrossSellRepository extends BaseRepository implements CrossSellRep
      */
     public function getCrossSellsForProduct(int $productId): Collection
     {
-        return collect(CrossSellProduct::with('crossSellProduct')
+        return collect(CrossSellProduct::with([
+            'crossSellProduct.featuredImage',
+            'crossSellProduct.categories',
+            'crossSellProduct.brand',
+        ])
             ->where('shop_product_id', $productId)
             ->where('is_active', true)
             ->orderBy('sort_order')

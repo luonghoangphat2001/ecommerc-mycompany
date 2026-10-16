@@ -12,7 +12,21 @@ class Payment extends Model
 
     protected $table = 'shop_payments';
 
-    protected $guarded = [];
+    protected $fillable = [
+        'order_id',
+        'method',
+        'status',
+        'currency',
+        'amount',
+        'provider',
+        'reference',
+    ];
+
+    protected $casts = [
+        'status' => \App\Enums\PaymentStatus::class,
+        'method' => \App\Enums\PaymentMethod::class,
+        'amount' => 'integer',
+    ];
 
     /** @return BelongsTo<Order,self> */
     public function order(): BelongsTo

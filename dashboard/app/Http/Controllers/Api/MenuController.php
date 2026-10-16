@@ -5,19 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Api\BaseApiController;
 use Illuminate\Http\Request;
 use App\Http\Resources\Api\MenuResource;
-use App\Ecommerce\Menu\Services\MenuService;
+use App\Ecommerce\Menu\Contracts\MenuServiceInterface;
 use App\Swagger\Attributes\ApiList;
 use App\Swagger\Attributes\ApiGet;
 use OpenApi\Attributes as OAT;
 
 class MenuController extends BaseApiController
 {
-    protected $menuService;
-
-    public function __construct(MenuService $menuService)
-    {
-        $this->menuService = $menuService;
-    }
+    public function __construct(
+        protected MenuServiceInterface $menuService
+    ) {}
 
     #[ApiList(
         path: '/menus',
@@ -29,7 +26,7 @@ class MenuController extends BaseApiController
     public function index()
     {
         $menus = $this->menuService->getAllMenus();
-        return MenuResource::collection($menus);
+        return $this->ok(MenuResource::collection($menus));
     }
 
     /**
@@ -54,9 +51,9 @@ class MenuController extends BaseApiController
     {
         $menu = $this->menuService->getMenuBySlug($slug);
         if (!$menu) {
-            return response()->json(['success' => false, 'message' => 'Menu not found'], 404);
+            return $this->notFound(__('messages.menu_not_found') ?? 'Menu not found');
         }
-        return new MenuResource($menu);
+        return $this->ok(new MenuResource($menu));
     }
 
     /**

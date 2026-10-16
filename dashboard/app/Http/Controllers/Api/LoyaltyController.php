@@ -12,6 +12,9 @@ use App\Swagger\Attributes\ApiList;
 
 class LoyaltyController extends BaseApiController
 {
+    public function __construct(
+        protected LoyaltySettings $settings
+    ) {}
 
     #[ApiGet(
         path: '/user/loyalty/points',
@@ -28,9 +31,7 @@ class LoyaltyController extends BaseApiController
     )]
     public function getPoints(Request $request): JsonResponse
     {
-        $settings = app(LoyaltySettings::class);
-
-        if (!$settings->enabled) {
+        if (!$this->settings->enabled) {
             return $this->ok([
                 'enabled' => false,
                 'current_points' => 0,
@@ -46,8 +47,8 @@ class LoyaltyController extends BaseApiController
             'enabled' => true,
             'current_points' => $loyaltyPoint?->current_points ?? 0,
             'lifetime_points' => $loyaltyPoint?->lifetime_points ?? 0,
-            'points_per_currency' => $settings->points_per_currency,
-            'point_conversion_rate' => $settings->point_conversion_rate,
+            'points_per_currency' => $this->settings->points_per_currency,
+            'point_conversion_rate' => $this->settings->point_conversion_rate,
         ]);
     }
 
@@ -67,9 +68,7 @@ class LoyaltyController extends BaseApiController
     )]
     public function getHistory(Request $request): JsonResponse
     {
-        $settings = app(LoyaltySettings::class);
-
-        if (!$settings->enabled) {
+        if (!$this->settings->enabled) {
             return $this->ok([]);
         }
 
@@ -84,13 +83,13 @@ class LoyaltyController extends BaseApiController
             ->orderBy('created_at', 'desc')
             ->paginate($validated['per_page'] ?? 15);
 
-        return $this->ok($logs->map(fn($log) => [
+        return $this->ok($logs->through(fn($log) => [
             'id' => $log->id,
-            'action_type' => $log->action_type,
+            'action_type' => $log->action_type instanceof \BackedEnum ? $log->action_type->value : $log->action_type,
             'points_changed' => $log->points_changed,
             'order_id' => $log->order_id,
             'expired_at' => $log->expired_at?->toDateTimeString(),
-            'created_at' => $log->created_at->toDateTimeString(),
+            'created_at' => $log->created_at?->toDateTimeString(),
         ]));
     }
 }

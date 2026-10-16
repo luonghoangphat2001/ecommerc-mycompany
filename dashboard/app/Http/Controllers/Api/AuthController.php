@@ -14,6 +14,10 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use OpenApi\Attributes as OAT;
 
+use App\Http\Requests\API\Auth\LoginRequest;
+use App\Http\Requests\API\Auth\UpdateProfileRequest;
+use App\Http\Resources\Api\UserResource;
+
 class AuthController extends BaseApiController
 {
 
@@ -44,39 +48,31 @@ class AuthController extends BaseApiController
             new OAT\Property(property: 'access_token', type: 'string', example: '1|xyz...'),
             new OAT\Property(property: 'token_type', type: 'string', example: 'Bearer'),
             new OAT\Property(property: 'expires_in', type: 'integer', example: 3600),
-            new OAT\Property(property: 'user', type: 'object', properties: [
-                new OAT\Property(property: 'id', type: 'integer', example: 1),
-                new OAT\Property(property: 'name', type: 'string', example: 'John Doe'),
-                new OAT\Property(property: 'email', type: 'string', example: 'customer@example.com'),
-            ])
+            new OAT\Property(property: 'user', ref: '#/components/schemas/UserResource')
         ]
     )]
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-            'device_name' => 'required',
-        ]);
+        $validated = $request->validated();
 
         $authData = $this->authService->login(
-            $request->email,
-            $request->password,
-            $request->device_name
+            $validated['email'],
+            $validated['password'],
+            $validated['device_name']
         );
 
         \App\Services\Logging\ModuleLogger::auth()->info('login_success', 'User logged in successfully', [
             'user_id' => $authData['user']['id'],
-            'email' => $request->email,
-            'device_name' => $request->device_name,
+            'email' => $validated['email'],
+            'device_name' => $validated['device_name'],
         ]);
 
         return $this->ok([
             'access_token' => $authData['access_token'],
             'token_type' => $authData['token_type'],
             'expires_in' => $authData['expires_in'],
-            'user' => $authData['user']
-        ], 'Login successful.');
+            'user' => new UserResource($authData['user'])
+        ], __('messages.login_success') ?? 'Login successful.');
     }
 
     #[ApiPost(
@@ -108,7 +104,12 @@ class AuthController extends BaseApiController
             return $this->unauthorized('Token expired');
         }
 
-        return response()->json($authData, 200);
+        return $this->ok([
+            'access_token' => $authData['access_token'],
+            'token_type' => $authData['token_type'],
+            'expires_in' => $authData['expires_in'],
+            'user' => new UserResource($authData['user'])
+        ]);
     }
 
     #[ApiPost(
@@ -133,6 +134,23 @@ class AuthController extends BaseApiController
         return $this->ok(null, 'Logged out successfully');
     }
 
+    #[ApiGet(
+        path: '/auth/profile',
+        summary: 'Get Profile',
+        tags: 'Storefront - Authentication',
+        requiresAuth: true,
+        responseData: '#/components/schemas/UserResource'
+    )]
+    public function profile(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return $this->unauthorized(__('messages.unauthorized') ?? 'Unauthorized');
+        }
+
+        return $this->ok(new UserResource($user->load(['defaultShippingAddress', 'defaultBillingAddress'])));
+    }
+
     #[ApiUpdate(
         path: '/profile',
         summary: 'Update Profile',
@@ -149,29 +167,16 @@ class AuthController extends BaseApiController
                 ]
             )
         ),
-        responseData: [
-            new OAT\Property(property: 'id', type: 'integer', example: 1),
-            new OAT\Property(property: 'name', type: 'string', example: 'John Doe'),
-            new OAT\Property(property: 'email', type: 'string', example: 'customer@example.com'),
-            new OAT\Property(property: 'phone', type: 'string', nullable: true, example: '0123456789'),
-            new OAT\Property(property: 'default_shipping_address_id', type: 'integer', nullable: true, example: 1),
-            new OAT\Property(property: 'default_billing_address_id', type: 'integer', nullable: true, example: 2),
-        ]
+        responseData: '#/components/schemas/UserResource'
     )]
-    public function updateProfile(Request $request)
+    public function updateProfile(UpdateProfileRequest $request)
     {
         $user = $request->user();
         if (!$user) {
             return $this->notFound('User not found');
         }
 
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'phone' => 'sometimes|string|max:20',
-            'default_shipping_address_id' => 'sometimes|nullable|exists:addresses,id',
-            'default_billing_address_id' => 'sometimes|nullable|exists:addresses,id',
-        ]);
-
+        $validated = $request->validated();
         $oldData = $user->only(['name', 'phone', 'default_shipping_address_id', 'default_billing_address_id']);
         $user->update($validated);
 
@@ -181,6 +186,9 @@ class AuthController extends BaseApiController
             'new_data' => $validated,
         ]);
 
-        return $this->ok($user->fresh(['defaultShippingAddress', 'defaultBillingAddress']), 'Profile updated successfully');
+        return $this->ok(
+            new UserResource($user->fresh(['defaultShippingAddress', 'defaultBillingAddress'])),
+            __('messages.profile_updated') ?? 'Profile updated successfully'
+        );
     }
 }

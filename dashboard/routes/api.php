@@ -69,7 +69,7 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
 
         // Auth (Public)
         Route::prefix('auth')->group(function () {
-            Route::post('login', [AuthController::class, 'login']);
+            Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
             Route::post('refresh-token', [AuthController::class, 'refreshToken']);
         });
 
@@ -127,7 +127,7 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
             // Auth (Protected)
             Route::prefix('auth')->group(function () {
                 Route::post('logout', [AuthController::class, 'logout']);
-                Route::get('profile', fn (Request $request) => $request->user()->load(['defaultShippingAddress', 'defaultBillingAddress']));
+                Route::get('profile', [AuthController::class, 'profile']);
                 Route::put('profile', [AuthController::class, 'updateProfile']);
             });
 

@@ -24,7 +24,11 @@ class EloquentComboRepository extends BaseRepository implements ComboRepositoryI
      */
     public function getActiveCombos(): Collection
     {
-        return collect(ComboProduct::with('items')
+        return collect(ComboProduct::with([
+            'items.product.categories',
+            'items.product.brand',
+            'items.product.featuredImage',
+        ])
             ->where('is_active', true)
             ->where(function ($query) {
                 $query->whereNull('start_date')
@@ -43,7 +47,11 @@ class EloquentComboRepository extends BaseRepository implements ComboRepositoryI
      */
     public function getComboBySlug(string $slug)
     {
-        return ComboProduct::with('items')
+        return ComboProduct::with([
+            'items.product.categories',
+            'items.product.brand',
+            'items.product.featuredImage',
+        ])
             ->where('slug', $slug)
             ->where('is_active', true)
             ->where(function ($query) {

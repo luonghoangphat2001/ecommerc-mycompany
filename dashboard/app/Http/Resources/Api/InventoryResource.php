@@ -29,12 +29,21 @@ class InventoryResource extends BaseResource
     {
         return [
             'id' => $this->id,
+            'warehouse_id' => $this->id,
             'name' => $this->name,
+            'warehouse_name' => $this->name,
             'slug' => $this->slug,
             'location' => $this->location,
+            'warehouse_location' => $this->location,
             'is_active' => $this->is_active,
             'stock_quantity' => $this->whenPivotLoaded('shop_product_inventory_stocks', function () {
                 return $this->pivot->stock_quantity ?? 0;
+            }),
+            'quantity' => $this->whenPivotLoaded('shop_product_inventory_stocks', function () {
+                return $this->pivot->stock_quantity ?? 0;
+            }),
+            'variant_id' => $this->whenPivotLoaded('shop_product_inventory_stocks', function () {
+                return $this->pivot->variant_id ?? null;
             }),
         ];
     }

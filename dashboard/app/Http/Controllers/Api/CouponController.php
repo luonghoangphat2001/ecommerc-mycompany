@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\API\Coupon\ApplyCouponRequest;
 use App\Http\Controllers\Api\BaseApiController;
 use App\Ecommerce\Coupon\Contracts\CouponServiceInterface;
 use App\Exceptions\CouponValidationException;
@@ -39,17 +40,12 @@ class CouponController extends BaseApiController
             new OAT\Property(property: 'type', type: 'string', example: 'fixed')
         ]
     )]
-    public function apply(Request $request): JsonResponse
+    public function apply(ApplyCouponRequest $request): JsonResponse
     {
-        $request->validate([
-            'code' => 'required|string',
-            'items' => 'required|array',
-            'subtotal' => 'required|numeric',
-        ]);
-
-        $code = $request->input('code');
-        $items = $request->input('items');
-        $subtotal = (float)$request->input('subtotal');
+        $validated = $request->validated();
+        $code = $validated['code'];
+        $items = $validated['items'];
+        $subtotal = (float)$validated['subtotal'];
         $userId = auth('sanctum')->id();
 
         try {

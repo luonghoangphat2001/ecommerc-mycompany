@@ -427,7 +427,7 @@ class PlaceOrderAction
     private function createOrderAddresses(Order $order, OrderDataDTO $dto): void
     {
         $shippingData = [
-            'type' => 'shipping',
+            'type' => \App\Enums\AddressType::Shipping->value,
             'first_name' => $dto->shippingAddress['first_name'] ?? '',
             'last_name' => $dto->shippingAddress['last_name'] ?? '',
             'phone' => $dto->shippingAddress['phone'] ?? '',
@@ -440,7 +440,7 @@ class PlaceOrderAction
         ];
 
         $billingData = [
-            'type' => 'billing',
+            'type' => \App\Enums\AddressType::Billing->value,
             'first_name' => $dto->billingAddress['first_name'] ?? '',
             'last_name' => $dto->billingAddress['last_name'] ?? '',
             'phone' => $dto->billingAddress['phone'] ?? '',

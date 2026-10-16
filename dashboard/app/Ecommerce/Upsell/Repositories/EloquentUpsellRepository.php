@@ -24,7 +24,11 @@ class EloquentUpsellRepository extends BaseRepository implements UpsellRepositor
      */
     public function getUpsellsForProduct(int $productId): Collection
     {
-        return collect(UpsellProduct::with('upsellProduct')
+        return collect(UpsellProduct::with([
+            'upsellProduct.featuredImage',
+            'upsellProduct.categories',
+            'upsellProduct.brand',
+        ])
             ->where('shop_product_id', $productId)
             ->where('is_active', true)
             ->orderBy('sort_order')

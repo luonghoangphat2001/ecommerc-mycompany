@@ -17,6 +17,12 @@ class LoyaltyLog extends Model
         'expired_at',
     ];
 
+    protected $casts = [
+        'action_type' => \App\Enums\LoyaltyActionType::class,
+        'expired_at' => 'datetime',
+        'points_changed' => 'integer',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');

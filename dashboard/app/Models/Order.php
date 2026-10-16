@@ -92,7 +92,7 @@ class Order extends Model
 
     public function productItems()
     {
-        return $this->items()->where('type', 'product');
+        return $this->items()->where('type', \App\Enums\OrderItemType::Product->value);
     }
 
     public function getSubtotalAttribute(): int
@@ -105,22 +105,22 @@ class Order extends Model
         return (int) ($this->attributes['total'] ?? 0);
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\MorphMany */
-    public function addresses()
+    /** @return \Illuminate\Database\Eloquent\Relations\HasMany */
+    public function addresses(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->morphMany(OrderAddress::class, 'addressable');
+        return $this->hasMany(OrderAddress::class, 'order_id');
     }
 
-    /** @return MorphOne<OrderAddress> */
-    public function shippingAddress(): MorphOne
+    /** @return \Illuminate\Database\Eloquent\Relations\HasOne<OrderAddress> */
+    public function shippingAddress(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->morphOne(OrderAddress::class, 'addressable')->where('type', 'shipping');
+        return $this->hasOne(OrderAddress::class, 'order_id')->where('type', \App\Enums\AddressType::Shipping->value);
     }
 
-    /** @return MorphOne<OrderAddress> */
-    public function billingAddress(): MorphOne
+    /** @return \Illuminate\Database\Eloquent\Relations\HasOne<OrderAddress> */
+    public function billingAddress(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->morphOne(OrderAddress::class, 'addressable')->where('type', 'billing');
+        return $this->hasOne(OrderAddress::class, 'order_id')->where('type', \App\Enums\AddressType::Billing->value);
     }
 
     /** @return BelongsTo<User,self> */

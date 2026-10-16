@@ -29,9 +29,6 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
 
         app()->setLocale($locale);
 
-        activity('system')
-            ->log('Storefront settings fetched via API. Locale: ' . $locale);
-
         return Cache::remember('storefront_settings_v1_' . $locale, 3600, function () use ($locale) {
             /** @var GeneralSettings $general */
             $general = app(GeneralSettings::class);

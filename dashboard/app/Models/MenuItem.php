@@ -45,7 +45,7 @@ class MenuItem extends Model
 
     public function children(): HasMany
     {
-        return $this->hasMany(self::class, 'parent_id')->orderBy(Schema::hasColumn('menu_items', 'order') ? 'order' : 'id');
+        return $this->hasMany(self::class, 'parent_id')->orderBy('order');
     }
 
     public function getLabelAttribute($value): string

@@ -268,10 +268,9 @@ class UnifiedShopSeeder extends Seeder
         $email = fake()->safeEmail();
         $phone = fake()->phoneNumber();
 
-        foreach (['shipping', 'billing'] as $type) {
+        foreach ([\App\Enums\AddressType::Shipping, \App\Enums\AddressType::Billing] as $type) {
             OrderAddress::factory()->create([
-                'addressable_id' => $order->id,
-                'addressable_type' => \App\Models\Order::class,
+                'order_id' => $order->id,
                 'type' => $type,
                 'first_name' => $fName,
                 'last_name' => $lName,
@@ -293,8 +292,8 @@ class UnifiedShopSeeder extends Seeder
             'amount' => $order->total,
             'currency' => 'VND',
             'provider' => 'COD',
-            'method' => 'cash',
-            'status' => 'success'
+            'method' => \App\Enums\PaymentMethod::Cod,
+            'status' => \App\Enums\PaymentStatus::Completed,
         ]);
     }
 }

@@ -15,6 +15,11 @@ class InventoryRecord extends Model
         'notes',
     ];
 
+    protected $casts = [
+        'type' => \App\Enums\InventoryRecordType::class,
+        'status' => \App\Enums\InventoryRecordStatus::class,
+    ];
+
     /**
      * Relate child items.
      *
