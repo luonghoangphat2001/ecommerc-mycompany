@@ -1,19 +1,34 @@
 import React, { useState, useMemo } from "react"
-import { Package } from "lucide-react"
+import { Package, ChevronRight } from "lucide-react"
 import { useFormatters } from "../../../utils/useFormatters"
 import Card from "../../../components/common/Card"
 
-const OrderHistory = ({ orders, onViewOrder }) => {
+const STATUS_BADGE = {
+    pending: "bg-amber-50 text-amber-800 border-amber-200",
+    new: "bg-sky-50 text-sky-800 border-sky-200",
+    processing: "bg-sky-50 text-[#004687] border-sky-200",
+    shipping: "bg-sky-50 text-sky-800 border-sky-200",
+    delivering: "bg-sky-50 text-sky-800 border-sky-200",
+    completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    cancelled: "bg-red-50 text-red-700 border-red-200",
+    refunded: "bg-slate-100 text-slate-700 border-slate-300",
+}
+
+const PAYMENT_BADGE = {
+    pending: "bg-amber-50 text-amber-800 border-amber-200",
+    paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    failed: "bg-red-50 text-red-700 border-red-200",
+}
+
+const OrderHistory = ({ orders = [], onViewOrder }) => {
     const { formatCurrency } = useFormatters()
     const [statusFilter, setStatusFilter] = useState("all")
     const [timeFilter, setTimeFilter] = useState("all")
 
     const filteredOrders = useMemo(() => {
         return orders.filter((order) => {
-            // Status filter
             if (statusFilter !== "all" && order.status !== statusFilter) return false
 
-            // Time filter
             if (timeFilter !== "all") {
                 const orderDate = new Date(order.created_at)
                 const now = new Date()
@@ -26,86 +41,134 @@ const OrderHistory = ({ orders, onViewOrder }) => {
     }, [orders, statusFilter, timeFilter])
 
     return (
-        <Card className="p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-            <Card.Header className="px-0 pt-0 border-none flex flex-col md:flex-row justify-between md:items-center gap-4">
-                <Card.Title className="text-2xl font-black tracking-tight">Lịch sử đơn hàng</Card.Title>
-                <div className="flex items-center gap-4">
-                    <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="p-2 border border-slate-200 rounded-lg text-sm bg-slate-50">
-                        <option value="all">Tất cả trạng thái</option>
-                        <option value="pending">Chờ xử lý</option>
-                        <option value="processing">Đang xử lý</option>
-                        <option value="shipping">Đang giao</option>
-                        <option value="completed">Hoàn thành</option>
-                        <option value="cancelled">Đã hủy</option>
+        <Card className="p-6 sm:p-8 tabular-nums">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-5 mb-6 border-b border-slate-100">
+                <div>
+                    <h2 className="text-lg font-bold text-[#09253E] tracking-tight">Order History</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        Inspect past purchases, invoice totals, and fulfillment status.
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium bg-white text-slate-800 focus:outline-none focus:border-[#004687]"
+                    >
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipping">Shipping</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
                     </select>
 
-                    <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="p-2 border border-slate-200 rounded-lg text-sm bg-slate-50">
-                        <option value="all">Mọi thời gian</option>
-                        <option value="30_days">30 ngày qua</option>
-                        <option value="6_months">6 tháng qua</option>
-                        <option value="1_year">Năm qua</option>
+                    <select
+                        value={timeFilter}
+                        onChange={(e) => setTimeFilter(e.target.value)}
+                        className="px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium bg-white text-slate-800 focus:outline-none focus:border-[#004687]"
+                    >
+                        <option value="all">All Time</option>
+                        <option value="30_days">Last 30 Days</option>
+                        <option value="6_months">Last 6 Months</option>
+                        <option value="1_year">Past Year</option>
                     </select>
                 </div>
-            </Card.Header>
+            </div>
 
-            <Card.Body className="px-0 pb-0">
-                <div className="space-y-4">
-                    {filteredOrders.map((order) => {
-                        const firstItem = order.items && order.items.length > 0 ? order.items[0] : null
-                        const extraItemsCount = order.items ? order.items.length - 1 : 0
-                        const statusColors = {
-                            pending: "bg-yellow-100 text-yellow-700",
-                            processing: "bg-blue-100 text-blue-700",
-                            shipping: "bg-indigo-100 text-indigo-700",
-                            completed: "bg-green-100 text-green-700",
-                            cancelled: "bg-red-100 text-red-700",
-                            refunded: "bg-purple-100 text-purple-700",
-                        }
-                        const paymentStatusColors = {
-                            pending: "bg-yellow-100 text-yellow-700",
-                            paid: "bg-green-100 text-green-700",
-                            failed: "bg-red-100 text-red-700",
-                        }
-                        return (
-                            <div key={order.id} onClick={() => onViewOrder(order)} className="group p-6 border border-slate-100 rounded-3xl hover:border-blue-200 hover:bg-blue-50/20 transition-all cursor-pointer flex flex-col md:flex-row justify-between md:items-center gap-4">
-                                <div className="flex items-start md:items-center gap-4 md:gap-6 flex-1">
-                                    <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-100 rounded-2xl overflow-hidden shadow-sm flex-shrink-0 flex items-center justify-center text-slate-400">{firstItem?.product?.image?.url ? <img src={firstItem.product.image.url} alt={firstItem.product.name} className="w-full h-full object-cover" /> : <Package size={24} />}</div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <p className="font-bold text-slate-900">Mã đơn: {order.number || order.id}</p>
-                                            <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${statusColors[order.status] || "bg-slate-100 text-slate-600"}`}>{order.status}</span>
-                                            {order.payment_status && <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full ${paymentStatusColors[order.payment_status] || "bg-slate-100 text-slate-600"}`}>{order.payment_status}</span>}
-                                        </div>
-                                        <p className="text-xs text-slate-500 mb-2">Ngày đặt: {new Date(order.created_at).toLocaleDateString("vi-VN")}</p>
-                                        {firstItem && (
-                                            <p className="text-sm font-medium text-slate-800 line-clamp-1">
-                                                {firstItem.product?.name || "Sản phẩm"} (x{firstItem.qty}){extraItemsCount > 0 && <span className="text-slate-500 ml-1">+ {extraItemsCount} sản phẩm khác</span>}
-                                            </p>
-                                        )}
-                                        {order.payment_method && <p className="text-xs text-slate-500 mt-1 uppercase">Thanh toán qua: {order.payment_method}</p>}
-                                    </div>
+            <div className="space-y-3.5">
+                {filteredOrders.map((order) => {
+                    const firstItem = order.items && order.items.length > 0 ? order.items[0] : null
+                    const extraItemsCount = order.items ? order.items.length - 1 : 0
+                    return (
+                        <div
+                            key={order.id}
+                            onClick={() => onViewOrder(order)}
+                            className="group p-4 sm:p-5 border border-slate-200/90 rounded-xl hover:border-[#004687]/60 hover:bg-slate-50/50 transition-all cursor-pointer flex flex-col sm:flex-row justify-between sm:items-center gap-4"
+                        >
+                            <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
+                                <div className="w-14 h-14 bg-slate-100 rounded-lg border border-slate-200/70 overflow-hidden flex-shrink-0 flex items-center justify-center text-slate-400">
+                                    {firstItem?.product?.image?.url ? (
+                                        <img
+                                            src={firstItem.product.image.url}
+                                            alt={firstItem.product.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <Package size={22} />
+                                    )}
                                 </div>
-
-                                <div className="text-left md:text-right flex flex-row md:flex-col justify-between items-center md:items-end">
-                                    <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-1">Tổng tiền</p>
-                                    <p className="font-black text-blue-600 text-lg md:text-xl">{formatCurrency(order.total)}</p>
-                                    <button className="mt-2 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">Xem chi tiết</button>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                                        <span className="font-mono font-bold text-sm text-[#09253E]">
+                                            #{order.number || order.id}
+                                        </span>
+                                        <span
+                                            className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${
+                                                STATUS_BADGE[order.status] ||
+                                                "bg-slate-100 text-slate-600 border-slate-200"
+                                            }`}
+                                        >
+                                            {order.status}
+                                        </span>
+                                        {order.payment_status && (
+                                            <span
+                                                className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border ${
+                                                    PAYMENT_BADGE[order.payment_status] ||
+                                                    "bg-slate-100 text-slate-600 border-slate-200"
+                                                }`}
+                                            >
+                                                {order.payment_status}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-slate-500 mb-1">
+                                        Placed on {new Date(order.created_at).toLocaleDateString("vi-VN")}
+                                    </p>
+                                    {firstItem && (
+                                        <p className="text-xs font-semibold text-slate-800 truncate">
+                                            {firstItem.product?.name || "Item"} (×{firstItem.qty})
+                                            {extraItemsCount > 0 && (
+                                                <span className="text-slate-500 font-normal ml-1">
+                                                    + {extraItemsCount} more
+                                                </span>
+                                            )}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
-                        )
-                    })}
-                </div>
 
-                {filteredOrders.length === 0 && (
-                    <div className="py-20 flex flex-col items-center justify-center text-center">
-                        <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-4">
-                            <Package size={32} />
+                            <div className="flex sm:flex-col justify-between items-center sm:items-end pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
+                                <div className="text-left sm:text-right">
+                                    <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
+                                        Total
+                                    </p>
+                                    <p className="font-extrabold text-[#004687] text-base">
+                                        {formatCurrency(order.total)}
+                                    </p>
+                                </div>
+                                <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[#004687] group-hover:translate-x-0.5 transition-transform">
+                                    <span>Details</span>
+                                    <ChevronRight size={14} />
+                                </span>
+                            </div>
                         </div>
-                        <p className="text-slate-900 font-bold mb-1">Bạn chưa có đơn hàng nào phù hợp</p>
-                        <p className="text-slate-500 text-sm">Hãy thử thay đổi bộ lọc hoặc tiếp tục mua sắm.</p>
+                    )
+                })}
+            </div>
+
+            {filteredOrders.length === 0 && (
+                <div className="py-16 flex flex-col items-center justify-center text-center">
+                    <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mb-3">
+                        <Package size={24} />
                     </div>
-                )}
-            </Card.Body>
+                    <p className="text-[#09253E] font-bold text-sm mb-1">No matching orders found</p>
+                    <p className="text-slate-500 text-xs">
+                        Adjust your filter selection or browse the catalog to place an order.
+                    </p>
+                </div>
+            )}
         </Card>
     )
 }

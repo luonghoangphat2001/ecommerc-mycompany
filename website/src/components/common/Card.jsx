@@ -4,12 +4,12 @@ const CardContext = createContext()
 
 const SHADOWS = {
     none: "",
-    sm: "shadow-[0_8px_30px_rgba(0,0,0,0.02)]",
-    md: "shadow-[0_20px_50px_rgba(0,0,0,0.04)]",
-    lg: "shadow-[0_20px_50px_rgba(0,0,0,0.05)]",
+    sm: "shadow-card",
+    md: "shadow-sm",
+    lg: "shadow-card-hover",
 }
 
-const CARD_BASE = "bg-white/60 backdrop-blur-xl border border-white/60 rounded-[2.5rem] transition-all duration-300"
+const CARD_BASE = "bg-white border border-slate-200/90 rounded-xl transition-all duration-200"
 
 const Card = ({ children, shadow = "sm", overflow = "hidden", className = "" }) => {
     const shadowClass = SHADOWS[shadow] ?? SHADOWS.sm
@@ -21,12 +21,18 @@ const Card = ({ children, shadow = "sm", overflow = "hidden", className = "" }) 
     )
 }
 
-Card.Header = ({ children, className = "" }) => <div className={`p-8 border-b border-slate-100 ${className}`}>{children}</div>
+Card.Header = ({ children, className = "" }) => (
+    <div className={`px-5 py-4 sm:px-6 sm:py-5 border-b border-slate-100 ${className}`}>{children}</div>
+)
 
-Card.Body = ({ children, className = "" }) => <div className={`p-8 ${className}`}>{children}</div>
+Card.Body = ({ children, className = "" }) => <div className={`p-5 sm:p-6 ${className}`}>{children}</div>
 
-Card.Footer = ({ children, className = "" }) => <div className={`p-8 border-t border-slate-100 bg-slate-50/50 ${className}`}>{children}</div>
+Card.Footer = ({ children, className = "" }) => (
+    <div className={`px-5 py-4 sm:px-6 sm:py-4 border-t border-slate-100 bg-slate-50/60 ${className}`}>{children}</div>
+)
 
-Card.Title = ({ children, className = "" }) => <h3 className={`text-xl font-bold text-slate-900 ${className}`}>{children}</h3>
+Card.Title = ({ children, className = "" }) => (
+    <h3 className={`text-base sm:text-lg font-bold text-slate-900 tracking-tight ${className}`}>{children}</h3>
+)
 
 export default Card

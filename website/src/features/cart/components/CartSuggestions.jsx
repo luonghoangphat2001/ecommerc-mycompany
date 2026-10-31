@@ -1,34 +1,31 @@
-import useSettingsStore from '../../../store/useSettingsStore';
-import React from 'react';
-import { useCartSuggestions } from '../hooks/useCartSuggestions';
-import ProductCard from '../../product/components/ProductCard';
+import React from "react"
+import useSettingsStore from "../../../store/useSettingsStore"
+import { useCartSuggestions } from "../hooks/useCartSuggestions"
+import ProductCard from "../../product/components/ProductCard"
 
 const CartSuggestions = () => {
-  const { translate } = useTranslation('cart');
-  const { data: suggestions, isLoading } = useCartSuggestions();
+    const translate = useSettingsStore((state) => state.translate)
+    const { data: suggestions, isLoading } = useCartSuggestions()
 
-  const containerClass = "mt-8";
-  const titleClass = "text-xl font-bold mb-4";
-  const gridClass = "grid grid-cols-2 md:grid-cols-4 gap-4";
-  const emptyClass = "text-center text-gray-500 py-4";
+    if (!suggestions || suggestions.length === 0) return null
 
-  if (!suggestions || suggestions.length === 0) return null;
+    return (
+        <div className="mt-10 pt-8 border-t border-slate-200/80">
+            <h2 className="text-lg font-bold text-[#09253E] mb-4 tracking-tight">
+                {translate("cart.suggestions") || "Recommended for Your Order"}
+            </h2>
 
-  return (
-    <div className={containerClass}>
-      <h2 className={titleClass}>{translate('suggestions')}</h2>
-      
-      {isLoading ? (
-        <div className={emptyClass}>{translate('common.loading')}</div>
-      ) : (
-        <div className={gridClass}>
-          {suggestions.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+            {isLoading ? (
+                <div className="text-center text-slate-500 text-sm py-4">{translate("common.loading")}</div>
+            ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    {suggestions.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
-};
+    )
+}
 
-export default CartSuggestions;
+export default CartSuggestions

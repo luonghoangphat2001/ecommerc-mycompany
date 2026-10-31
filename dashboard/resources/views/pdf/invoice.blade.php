@@ -4,20 +4,20 @@
     <meta charset="utf-8">
     <title>Invoice #{{ $order->number }}</title>
     <style>
-        body { font-family: 'Inter', sans-serif; font-size: 14px; color: #333; }
+        body { font-family: 'DejaVu Sans', 'Be Vietnam Pro', sans-serif; font-size: 14px; color: #0f172a; }
         .invoice-box { max-width: 800px; margin: auto; padding: 30px; }
         .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-        .logo { font-size: 24px; font-weight: bold; color: #4F46E5; }
+        .logo { font-size: 24px; font-weight: bold; color: #004687; }
         .info { margin-bottom: 20px; }
         .info table { width: 100%; }
         .info td { vertical-align: top; }
         .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .table th, .table td { border-bottom: 1px solid #eee; padding: 12px; text-align: left; }
-        .table th { background: #f9fafb; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        .table th, .table td { border-bottom: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        .table th { background: #f8fafc; font-weight: bold; text-transform: uppercase; font-size: 12px; }
         .totals { margin-top: 30px; float: right; width: 300px; }
         .totals table { width: 100%; }
         .totals td { padding: 5px 0; }
-        .totals .bold { font-weight: bold; font-size: 18px; color: #4F46E5; }
+        .totals .bold { font-weight: bold; font-size: 18px; color: #004687; }
         .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #9ca3af; }
     </style>
 </head>

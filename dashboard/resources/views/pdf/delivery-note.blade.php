@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <title>Delivery Note #{{ $order->number }}</title>
     <style>
-        body { font-family: 'Inter', sans-serif; font-size: 14px; color: #333; }
+        body { font-family: 'DejaVu Sans', 'Be Vietnam Pro', sans-serif; font-size: 14px; color: #0f172a; }
         .invoice-box { max-width: 800px; margin: auto; padding: 30px; }
         .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-        .logo { font-size: 24px; font-weight: bold; color: #4F46E5; }
+        .logo { font-size: 24px; font-weight: bold; color: #004687; }
         .info { margin-bottom: 20px; }
         .info table { width: 100%; }
         .info td { vertical-align: top; }

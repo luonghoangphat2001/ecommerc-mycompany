@@ -143,11 +143,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             });
             Route::resource('mail-logs', MailLogController::class)->only(['index', 'show'])->names('mail-logs');
 
-            $crud('departments', DepartmentController::class, 'departments');
-            Route::post('departments/{department}/agents', [DepartmentAgentController::class, 'store'])->name('departments.agents.store');
-            Route::delete('departments/{department}/agents/{agent}', [DepartmentAgentController::class, 'destroy'])->name('departments.agents.destroy');
+            Route::post('departments/{department}/agents', [DepartmentAgentController::class, 'storeForDepartment'])->name('departments.agents.store');
+            Route::delete('departments/{department}/agents/{agent}', [DepartmentAgentController::class, 'destroyForDepartment'])->name('departments.agents.destroy');
             Route::post('departments/{department}/agents/{agent}/regenerate', [DepartmentAgentController::class, 'regenerateTokens'])->name('departments.agents.regenerate');
-            Route::resource('department-audit-logs', DepartmentAuditLogController::class)->only(['index', 'show'])->names('department-audit-logs');
         });
     });
 });

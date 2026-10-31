@@ -1,5 +1,17 @@
 import React from "react"
-import { User, Package, LogOut, ChevronRight, Lock, MapPin } from "lucide-react"
+import {
+    User,
+    Package,
+    LogOut,
+    ChevronRight,
+    Lock,
+    MapPin,
+    LayoutDashboard,
+    CreditCard,
+    RotateCcw,
+    Ticket,
+    Award,
+} from "lucide-react"
 import useSettingsStore from "../../../store/useSettingsStore"
 
 const AccountSidebar = ({ user, onLogout, activeTab, setActiveTab }) => {
@@ -9,45 +21,67 @@ const AccountSidebar = ({ user, onLogout, activeTab, setActiveTab }) => {
     const loyaltyEnabled = getSetting("marketing.enable_loyalty")
 
     const menuItems = [
-        { id: "dashboard", label: translate("account.dashboard_title") || "Dashboard", icon: User },
-        { id: "profile", label: translate("account.profile_title"), icon: User },
-        { id: "address", label: translate("account.addresses_title"), icon: MapPin },
-        { id: "orders", label: translate("account.orders_title"), icon: Package },
-        { id: "payments", label: translate("account.payments_title") || "Payments", icon: Lock }, // we can use CreditCard but not imported
-        { id: "refunds", label: translate("account.refunds_title") || "Refunds", icon: Package },
-        ...(couponsEnabled ? [{ id: "coupons", label: translate("account.coupons_title") || "Coupons", icon: Package }] : []),
-        ...(loyaltyEnabled ? [{ id: "loyalty", label: translate("account.loyalty_title") || "Loyalty Points", icon: Package }] : []),
-        { id: "password", label: translate("account.password_title"), icon: Lock },
+        { id: "dashboard", label: translate("account.dashboard_title") || "Overview", icon: LayoutDashboard },
+        { id: "orders", label: translate("account.orders_title") || "Order History", icon: Package },
+        { id: "profile", label: translate("account.profile_title") || "Profile Details", icon: User },
+        { id: "address", label: translate("account.addresses_title") || "Address Book", icon: MapPin },
+        { id: "payments", label: translate("account.payments_title") || "Payment History", icon: CreditCard },
+        { id: "refunds", label: translate("account.refunds_title") || "Returns & Refunds", icon: RotateCcw },
+        ...(couponsEnabled
+            ? [{ id: "coupons", label: translate("account.coupons_title") || "Vouchers", icon: Ticket }]
+            : []),
+        ...(loyaltyEnabled
+            ? [{ id: "loyalty", label: translate("account.loyalty_title") || "Loyalty Points", icon: Award }]
+            : []),
+        { id: "password", label: translate("account.password_title") || "Security & Password", icon: Lock },
     ]
 
     return (
-        <aside className="w-full md:w-80 space-y-4">
-            <div className="bg-white/60 backdrop-blur-xl border border-white/60 rounded-[2.5rem] p-8 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
-                <div className="flex flex-col items-center text-center mb-8">
-                    <div className="w-20 h-20 bg-gradient-to-tr from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-blue-600 mb-4 shadow-inner">
-                        <User size={32} />
+        <aside className="w-full lg:w-72 flex-shrink-0">
+            <div className="bg-white border border-slate-200/90 rounded-xl p-5 shadow-card">
+                <div className="flex items-center gap-3.5 pb-4 mb-4 border-b border-slate-100">
+                    <div className="w-11 h-11 bg-[#004687]/10 rounded-lg flex items-center justify-center text-[#004687] font-bold text-base shrink-0">
+                        {user?.name ? user.name.charAt(0).toUpperCase() : <User size={20} />}
                     </div>
-                    <h2 className="text-xl font-bold text-slate-900">{user?.name}</h2>
-                    <p className="text-sm text-slate-500">{user?.email}</p>
+                    <div className="min-w-0">
+                        <h2 className="text-sm font-bold text-[#09253E] truncate">{user?.name}</h2>
+                        <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                    </div>
                 </div>
 
-                <nav className="space-y-2">
-                    {menuItems.map((item) => (
-                        <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${activeTab === item.id ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "text-slate-600 hover:bg-slate-50 font-semibold"}`}>
-                            <div className="flex items-center gap-3">
-                                <item.icon size={20} />
-                                <span className={activeTab === item.id ? "font-bold" : ""}>{item.label}</span>
-                            </div>
-                            <ChevronRight size={18} opacity={activeTab === item.id ? 1 : 0.5} />
-                        </button>
-                    ))}
+                <nav className="space-y-1">
+                    {menuItems.map((item) => {
+                        const isActive = activeTab === item.id
+                        return (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => setActiveTab(item.id)}
+                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                                    isActive
+                                        ? "bg-[#004687] text-white shadow-card"
+                                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                }`}
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <item.icon size={16} />
+                                    <span>{item.label}</span>
+                                </div>
+                                <ChevronRight size={14} className={isActive ? "opacity-100" : "opacity-40"} />
+                            </button>
+                        )
+                    })}
 
-                    <button onClick={onLogout} className="w-full flex items-center justify-between p-4 text-red-500 hover:bg-red-50 rounded-2xl font-semibold transition-all mt-4">
-                        <div className="flex items-center gap-3">
-                            <LogOut size={20} />
-                            <span>{translate("header.logout") || "Đăng xuất"}</span>
-                        </div>
-                    </button>
+                    <div className="pt-2 mt-2 border-t border-slate-100">
+                        <button
+                            type="button"
+                            onClick={onLogout}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold transition-colors"
+                        >
+                            <LogOut size={16} />
+                            <span>{translate("header.logout") || "Sign Out"}</span>
+                        </button>
+                    </div>
                 </nav>
             </div>
         </aside>

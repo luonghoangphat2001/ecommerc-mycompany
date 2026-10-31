@@ -1,79 +1,131 @@
 import React from "react"
-import { ShoppingCart } from "lucide-react"
+import { ShoppingCart, ShieldCheck, CheckCircle2, AlertCircle, Minus, Plus } from "lucide-react"
 import { Button } from "../../../components/common"
 import { useFormatters } from "../../../utils/useFormatters"
 
 const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAddToCart, translate }) => {
     const { formatCurrency } = useFormatters()
+    const isAvailable = stock > 0
 
     return (
-        <div className="flex flex-col justify-center">
-            {product.is_featured && <span className="inline-block px-3 py-1 text-xs font-bold text-blue-600 bg-blue-50 rounded-full mb-4 w-max">{translate("product.featured")}</span>}
+        <div className="flex flex-col">
+            {/* Status & Featured Badges */}
+            <div className="flex items-center flex-wrap gap-2 mb-3">
+                {product.is_featured && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-[#004687] bg-[#004687]/10 rounded-md">
+                        {translate("product.featured") || "Featured"}
+                    </span>
+                )}
+                <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold rounded-md ${
+                        isAvailable
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                            : "bg-red-50 text-red-700 border border-red-200/60"
+                    }`}
+                >
+                    {isAvailable ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+                    <span className="tabular-nums">
+                        {isAvailable ? `In Stock (${stock} units)` : "Out of Stock"}
+                    </span>
+                </span>
+            </div>
 
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 tracking-tight">{product.name}</h1>
+            {/* Product Title */}
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#09253E] mb-3 tracking-tight leading-snug">
+                {product.name}
+            </h1>
 
-            <div className="text-3xl font-black text-blue-600 mb-6 flex items-end gap-3">
-                {formatCurrency(product.effective_price || product.price)}
+            {/* Pricing Block */}
+            <div className="flex items-baseline gap-3 pb-5 mb-5 border-b border-slate-200/80 tabular-nums">
+                <span className="text-2xl sm:text-3xl font-extrabold text-[#004687]">
+                    {formatCurrency(product.effective_price || product.price)}
+                </span>
                 {product.is_on_sale && (
-                    <span className="text-xl text-slate-400 line-through font-medium mb-1">
+                    <span className="text-base text-slate-400 line-through font-medium">
                         {formatCurrency(product.price)}
                     </span>
                 )}
             </div>
 
-            <div className="prose prose-slate text-slate-600 mb-8 leading-relaxed">
+            {/* Product Description */}
+            <div className="text-sm text-slate-600 mb-6 leading-relaxed">
                 <p>{product.description || translate("product.no_description")}</p>
             </div>
 
-            <div className="flex flex-col gap-3 mb-8 border-y border-slate-100 py-6">
-                {product.brand && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-slate-500 font-medium text-sm w-24">{translate("product.brand")}:</span>
-                        <span className="text-slate-900 font-bold">{product.brand.name}</span>
-                    </div>
-                )}
-                {product.categories && product.categories.length > 0 && (
-                    <div className="flex items-start gap-2">
-                        <span className="text-slate-500 font-medium text-sm w-24">{translate("product.categories")}:</span>
-                        <div className="flex flex-wrap gap-2">
-                            {product.categories.map((cat) => (
-                                <span key={cat.id} className="text-xs font-semibold bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
-                                    {cat.name}
-                                </span>
-                            ))}
+            {/* Specifications Meta Table */}
+            {(product.brand || (product.categories && product.categories.length > 0) || product.sku) && (
+                <div className="flex flex-col gap-2.5 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-xs">
+                    {product.sku && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-slate-500 font-medium">SKU:</span>
+                            <span className="text-slate-900 font-mono font-semibold">{product.sku}</span>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                    {product.brand && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-slate-500 font-medium">{translate("product.brand")}:</span>
+                            <span className="text-slate-900 font-semibold">{product.brand.name}</span>
+                        </div>
+                    )}
+                    {product.categories && product.categories.length > 0 && (
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-slate-500 font-medium">{translate("product.categories")}:</span>
+                            <div className="flex flex-wrap justify-end gap-1.5">
+                                {product.categories.map((cat) => (
+                                    <span
+                                        key={cat.id}
+                                        className="font-semibold bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded"
+                                    >
+                                        {cat.name}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
-            <div className="flex items-center gap-4 mb-8">
-                <div className="flex items-center bg-slate-100 rounded-full px-4 py-2 border border-slate-200">
-                    <button onClick={onDecrement} className="text-slate-500 hover:text-blue-600 font-bold px-2">
-                        -
+            {/* Quantity & Add to Cart Row */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
+                <div className="inline-flex items-center justify-between bg-white rounded-lg border border-slate-300 h-11 px-1 shrink-0">
+                    <button
+                        type="button"
+                        onClick={onDecrement}
+                        aria-label="Decrease quantity"
+                        className="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#004687] hover:bg-slate-100 rounded-md transition-colors"
+                    >
+                        <Minus size={15} />
                     </button>
-                    <span className="w-10 text-center font-semibold text-slate-800">{quantity}</span>
-                    <button onClick={onIncrement} className="text-slate-500 hover:text-blue-600 font-bold px-2">
-                        +
+                    <span className="w-10 text-center text-sm font-bold text-slate-900 tabular-nums">
+                        {quantity}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={onIncrement}
+                        aria-label="Increase quantity"
+                        className="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#004687] hover:bg-slate-100 rounded-md transition-colors"
+                    >
+                        <Plus size={15} />
                     </button>
                 </div>
-                <div className={`text-sm font-medium ${stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {stock > 0 ? 'Còn hàng' : 'Hết hàng'}
-                </div>
+
+                <Button
+                    onClick={() => onAddToCart()}
+                    disabled={!isAvailable}
+                    variant="primary"
+                    size="block"
+                    className="h-11 gap-2.5 flex-1"
+                >
+                    <ShoppingCart size={18} />
+                    <span>{isAvailable ? translate("product.add_to_cart") : "Out of Stock"}</span>
+                </Button>
             </div>
 
-            <Button 
-                onClick={() => { 
-                  console.log('Button clicked - stock:', stock, 'product available:', stock > 0);
-                  onAddToCart(); 
-                }} 
-                disabled={stock <= 0}
-                variant="blue" 
-                size="block" 
-                className="gap-3 !rounded-full hover:-translate-y-0.5 hover:shadow-xl"
-            >
-                <ShoppingCart size={22} />
-                {stock > 0 ? translate("product.add_to_cart") : 'Hết hàng'} ({stock || 0})
-            </Button>
+            {/* Service Guarantee Note */}
+            <div className="flex items-center gap-2 text-xs text-slate-500 pt-2">
+                <ShieldCheck size={15} className="text-[#004687] shrink-0" />
+                <span>Official warranty included • Inspected before dispatch</span>
+            </div>
         </div>
     )
 }

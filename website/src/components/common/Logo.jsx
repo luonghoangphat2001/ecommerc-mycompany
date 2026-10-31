@@ -7,8 +7,19 @@ const Logo = () => {
     const storeName = useSettingsStore((state) => state.getSetting("general.site_name") || state.getSetting("general.store_name") || "NovaStore")
 
     return (
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            {logo ? <img src={logo} alt={storeName} className="h-8 w-auto object-contain" /> : <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 tracking-tight">{storeName}</span>}
+        <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+            {logo ? (
+                <img src={logo} alt={storeName} className="h-8 w-auto object-contain" />
+            ) : (
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#004687] flex items-center justify-center text-white font-extrabold text-base shadow-xs">
+                        <span className="text-[#FBAE17]">{storeName.charAt(0) || "N"}</span>
+                    </div>
+                    <span className="text-xl font-extrabold text-[#09253E] tracking-tight">
+                        {storeName}
+                    </span>
+                </div>
+            )}
         </Link>
     )
 }

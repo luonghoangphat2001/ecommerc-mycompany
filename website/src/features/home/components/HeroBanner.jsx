@@ -1,26 +1,29 @@
-import useSettingsStore from '../../../store/useSettingsStore';
-import React from 'react';
+import React from "react"
+import useSettingsStore from "../../../store/useSettingsStore"
 
 const HeroBanner = ({ content }) => {
-  const { translate } = useTranslation('home');
+    const translate = useSettingsStore((state) => state.translate)
 
-  const containerClass = "relative h-96 bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center";
-  const contentClass = "text-center text-white px-4";
-  const titleClass = "text-4xl md:text-5xl font-bold mb-4";
-  const subtitleClass = "text-xl md:text-2xl mb-8";
-  const buttonClass = "bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition";
+    if (!content) return null
 
-  if (!content) return null;
+    return (
+        <div className="relative py-16 px-6 bg-[#09253E] rounded-xl border border-slate-800 flex items-center justify-center">
+            <div className="text-center text-white max-w-2xl">
+                <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">
+                    {content.title || translate("home.hero.title_1")}
+                </h1>
+                <p className="text-base md:text-lg text-slate-300 mb-6">
+                    {content.subtitle || translate("home.hero.subtitle")}
+                </p>
+                <button
+                    type="button"
+                    className="bg-[#FBAE17] text-[#09253E] px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-[#e59c0d] transition-colors"
+                >
+                    {translate("home.hero.cta_primary")}
+                </button>
+            </div>
+        </div>
+    )
+}
 
-  return (
-    <div className={containerClass}>
-      <div className={contentClass}>
-        <h1 className={titleClass}>{content.title || translate('hero_title')}</h1>
-        <p className={subtitleClass}>{content.subtitle || translate('hero_subtitle')}</p>
-        <button className={buttonClass}>{translate('shop_now')}</button>
-      </div>
-    </div>
-  );
-};
-
-export default HeroBanner;
+export default HeroBanner

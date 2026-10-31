@@ -1,30 +1,133 @@
 import React from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight } from "lucide-react"
-import { Button, BackgroundOrbs } from "../../../components/common"
+import { ArrowRight, ShieldCheck, Truck, Layers, CheckCircle2 } from "lucide-react"
+import { Button } from "../../../components/common"
 
 const Hero = ({ translate }) => {
     return (
-        <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden rounded-[3rem] mb-20">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-500/10 to-transparent z-0"></div>
-            <BackgroundOrbs preset="hero" />
+        <section className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-white mb-10 shadow-card">
+            <div className="grid grid-cols-1 lg:grid-cols-12">
+                {/* Left Column: Value Proposition & Primary Actions */}
+                <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 flex flex-col justify-between">
+                    <div>
+                        <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#004687] mb-4">
+                            <span className="w-2 h-2 rounded-full bg-[#FBAE17]" />
+                            <span>VERIFIED RETAIL & FULFILLMENT NETWORK</span>
+                        </div>
 
-            <div className="max-w-4xl mx-auto text-center relative z-10 px-4">
-                <span className="inline-block px-4 py-1.5 bg-blue-100 text-blue-600 rounded-full text-sm font-bold mb-6 animate-in slide-in-from-bottom duration-500">{translate("product.featured")} 2026 Collection</span>
-                <h1 className="text-5xl md:text-7xl font-black text-slate-900 mb-8 leading-[1.1] tracking-tight animate-in slide-in-from-bottom duration-700 delay-100">
-                    Trải Nghiệm Mua Sắm <br />
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">Đẳng Cấp NovaStore</span>
-                </h1>
-                <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto font-medium leading-relaxed animate-in slide-in-from-bottom duration-700 delay-200">Khám phá bộ sưu tập sản phẩm công nghệ và phong cách sống cao cấp, mang lại giá trị thực thụ cho phong cách của bạn.</p>
+                        <h1 className="text-2xl sm:text-4xl lg:text-[40px] font-extrabold text-[#09253E] mb-4 leading-[1.15] tracking-tight">
+                            {translate?.("home.hero.title_1") || "Precision Commerce"} &{" "}
+                            <span className="text-[#004687]">
+                                {translate?.("home.hero.title_2") || "Curated Essentials"}
+                            </span>
+                        </h1>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in slide-in-from-bottom duration-700 delay-300">
-                    <Button as={Link} to="/shop" size="xl" className="gap-2 group hover:-translate-y-1">
-                        {translate("header.shop")} Ngay
-                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                    <Link to="/docs/api" className="px-10 py-4 bg-white/60 backdrop-blur-xl border border-white/60 text-slate-800 font-bold rounded-2xl hover:bg-white transition-all shadow-lg transform hover:-translate-y-1">
-                        Tìm hiểu thêm
-                    </Link>
+                        <p className="text-sm sm:text-base text-slate-600 mb-7 max-w-xl leading-relaxed">
+                            {translate?.("home.hero.subtitle") ||
+                                "Discover quality-assured electronics, workspace instruments, and modern lifestyle goods backed by real-time multi-warehouse inventory and rapid nationwide dispatch."}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-3 mb-8">
+                            <Button
+                                as={Link}
+                                to="/shop"
+                                variant="primary"
+                                size="lg"
+                                className="gap-2 group"
+                            >
+                                <span>{translate?.("home.hero.cta_primary") || translate?.("header.shop") || "Browse Catalog"}</span>
+                                <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+                            </Button>
+                            <Link
+                                to="/posts"
+                                className="px-5 py-2.5 bg-white border border-slate-300 text-slate-800 font-semibold rounded-lg hover:bg-slate-50 hover:border-slate-400 transition-colors text-sm"
+                            >
+                                {translate?.("header.blog") || "Editorial & Guides"}
+                            </Link>
+                        </div>
+                    </div>
+
+                    {/* Structured Key Service Metrics */}
+                    <div className="pt-6 border-t border-slate-200/80 grid grid-cols-3 gap-4 tabular-nums">
+                        <div>
+                            <div className="text-lg sm:text-xl font-extrabold text-[#09253E]">100%</div>
+                            <div className="text-xs text-slate-500 font-medium">Origin Verified</div>
+                        </div>
+                        <div className="border-l border-slate-200/80 pl-4">
+                            <div className="text-lg sm:text-xl font-extrabold text-[#004687]">24h</div>
+                            <div className="text-xs text-slate-500 font-medium">Order Dispatch SLA</div>
+                        </div>
+                        <div className="border-l border-slate-200/80 pl-4">
+                            <div className="text-lg sm:text-xl font-extrabold text-[#09253E]">30-Day</div>
+                            <div className="text-xs text-slate-500 font-medium">Protected Returns</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column: Structured Enterprise Fulfillment & Showcase Panel */}
+                <div className="lg:col-span-5 bg-[#09253E] text-white p-6 sm:p-10 flex flex-col justify-between relative overflow-hidden border-t lg:border-t-0 lg:border-l border-slate-200/20">
+                    <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 opacity-15"
+                        style={{
+                            backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px)",
+                            backgroundSize: "20px 20px",
+                        }}
+                    />
+
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                                Live Inventory & Fulfillment
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-400/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                Operational
+                            </span>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="p-3.5 rounded-lg bg-white/[0.06] border border-white/10 flex items-start gap-3">
+                                <Layers size={18} className="text-[#FBAE17] mt-0.5 flex-shrink-0" />
+                                <div>
+                                    <div className="text-xs font-bold text-white">Multi-Warehouse Stock Visibility</div>
+                                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                                        Check exact unit availability by distribution hub before placing your order.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-lg bg-white/[0.06] border border-white/10 flex items-start gap-3">
+                                <Truck size={18} className="text-[#FBAE17] mt-0.5 flex-shrink-0" />
+                                <div>
+                                    <div className="text-xs font-bold text-white">End-to-End Order Tracking</div>
+                                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                                        Real-time status updates from warehouse packing to doorstep handover.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="p-3.5 rounded-lg bg-white/[0.06] border border-white/10 flex items-start gap-3">
+                                <ShieldCheck size={18} className="text-[#FBAE17] mt-0.5 flex-shrink-0" />
+                                <div>
+                                    <div className="text-xs font-bold text-white">Official Warranty & Invoice</div>
+                                    <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                                        Every purchase includes digital invoice documentation and manufacturer coverage.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="relative z-10 pt-5 mt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
+                        <span className="inline-flex items-center gap-1.5">
+                            <CheckCircle2 size={14} className="text-[#FBAE17]" />
+                            <span>Free shipping on orders over 500,000₫</span>
+                        </span>
+                        <Link to="/shop" className="text-[#FBAE17] hover:underline font-semibold">
+                            View All →
+                        </Link>
+                    </div>
                 </div>
             </div>
         </section>

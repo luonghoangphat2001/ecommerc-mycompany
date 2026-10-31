@@ -1,44 +1,55 @@
-import useSettingsStore from '../../../store/useSettingsStore';
-import React from 'react';
+import React from "react"
+import { Banknote, Smartphone, QrCode, CreditCard } from "lucide-react"
+import useSettingsStore from "../../../store/useSettingsStore"
 
-const PaymentMethodList = ({ paymentMethods, selectedMethod, onMethodChange }) => {
-  const { translate } = useTranslation('checkout');
+const METHOD_ICONS = {
+    cod: Banknote,
+    momo: Smartphone,
+    vnpay: QrCode,
+    card: CreditCard,
+}
 
-  const containerClass = "space-y-3";
-  const methodClass = "flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition";
-  const selectedClass = "border-blue-500 bg-blue-50";
-  const iconClass = "w-8 h-8";
-  const infoClass = "flex-1";
-  const nameClass = "font-medium";
-  const descClass = "text-sm text-gray-600";
+const PaymentMethodList = ({ paymentMethods = [], selectedMethod, onMethodChange }) => {
+    const translate = useSettingsStore((state) => state.translate)
 
-  const methodIcons = {
-    cod: '💵',
-    momo: '📱',
-    vnpay: '🔷',
-    card: '💳',
-  };
-
-  return (
-    <div className={containerClass}>
-      {paymentMethods.map((method) => (
-        <div
-          key={method.id}
-          className={`${methodClass} ${selectedMethod === method.id ? selectedClass : ''}`}
-          onClick={() => onMethodChange(method.id)}
-        >
-          <span className={iconClass}>{methodIcons[method.code] || '💳'}</span>
-          <div className={infoClass}>
-            <div className={nameClass}>{translate(method.code)}</div>
-            {method.description && <div className={descClass}>{method.description}</div>}
-          </div>
-          <div className="w-5 h-5 border-2 rounded-full flex items-center justify-center">
-            {selectedMethod === method.id && <div className="w-3 h-3 bg-blue-500 rounded-full" />}
-          </div>
+    return (
+        <div className="space-y-3">
+            {paymentMethods.map((method) => {
+                const Icon = METHOD_ICONS[method.code] || CreditCard
+                const isSelected = selectedMethod === method.id
+                return (
+                    <div
+                        key={method.id}
+                        className={`flex items-center gap-3.5 p-4 border rounded-xl cursor-pointer transition-all ${
+                            isSelected
+                                ? "border-[#004687] bg-[#004687]/[0.03] ring-1 ring-[#004687]"
+                                : "border-slate-200 hover:border-slate-300 bg-white"
+                        }`}
+                        onClick={() => onMethodChange(method.id)}
+                    >
+                        <div className="w-9 h-9 rounded-lg bg-slate-100 text-[#004687] flex items-center justify-center flex-shrink-0">
+                            <Icon size={18} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-slate-900">
+                                {method.name || translate(`checkout.${method.code}`)}
+                            </div>
+                            {method.description && (
+                                <div className="text-xs text-slate-500 mt-0.5">{method.description}</div>
+                            )}
+                        </div>
+                        <div
+                            className={`w-4 h-4 border rounded-full flex items-center justify-center ${
+                                isSelected ? "border-[#004687]" : "border-slate-300"
+                            }`}
+                        >
+                            {isSelected && <div className="w-2 h-2 bg-[#004687] rounded-full" />}
+                        </div>
+                    </div>
+                )
+            })}
         </div>
-      ))}
-    </div>
-  );
-};
+    )
+}
 
-export default PaymentMethodList;
+export default PaymentMethodList

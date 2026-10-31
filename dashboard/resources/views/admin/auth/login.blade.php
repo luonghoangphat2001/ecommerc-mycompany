@@ -2,8 +2,8 @@
 
 @section('content')
     <div class="card login-card">
-        <div class="brand" style="border-bottom:0; margin-bottom:8px; padding:0;">
-            <div class="brand-mark">A</div>
+        <div class="brand" style="border-bottom: 1px solid #f1f5f9; margin-bottom: 18px; padding: 0 0 14px 0;">
+            <div class="brand-mark">N</div>
             <div>
                 <div class="brand-title">{{ __('admin.brand.title') }}</div>
                 <div class="brand-subtitle">{{ __('admin.brand.subtitle') }}</div>
@@ -31,12 +31,12 @@
                 <input id="password" type="password" name="password" value="{{ old('password', config('admin.login.password')) }}" required>
             </div>
 
-            <label style="display:flex; align-items:center; gap:8px; margin:2px 0 8px;">
-                <input type="checkbox" name="remember" style="width:auto;">
-                {{ __('admin.auth.remember') }}
+            <label style="display:flex; align-items:center; gap:8px; margin:4px 0 8px; font-weight:500;">
+                <input type="checkbox" name="remember" style="width:15px; height:15px; accent-color:var(--fi-primary);">
+                <span>{{ __('admin.auth.remember') }}</span>
             </label>
 
-            <button type="submit" class="btn">{{ __('admin.auth.submit') }}</button>
+            <button type="submit" class="btn" style="width:100%; min-height:38px;">{{ __('admin.auth.submit') }}</button>
         </form>
     </div>
 @endsection

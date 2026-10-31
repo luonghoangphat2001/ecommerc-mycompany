@@ -94,12 +94,13 @@
 
             <div style="display: flex; flex-direction: column; gap: 10px; max-height: 500px; overflow-y: auto; padding-right: 5px;">
                 @forelse($incidents as $incident)
-                    <div style="background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid {{ $incident->status === 'open' ? '#ef4444' : ($incident->status === 'in_progress' ? '#f59e0b' : '#10b981') }}; border-radius: 6px; padding: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="font-weight: bold; font-size: 14px; color: #0f172a;">
+                    <div style="background: #fff; border: 1px solid {{ $incident->status === 'open' ? '#fecaca' : ($incident->status === 'in_progress' ? '#fde68a' : '#e2e8f0') }}; border-radius: 8px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: 700; font-size: 14px; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: {{ $incident->status === 'open' ? '#ef4444' : ($incident->status === 'in_progress' ? '#f59e0b' : '#10b981') }}; display: inline-block;"></span>
                                 {{ __('workspace.ops.incident_types.' . $incident->type) }}
                             </span>
-                            <span style="font-size: 11px; padding: 2px 6px; border-radius: 10px; background: #f1f5f9; color: #64748b;">
+                            <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569;">
                                 {{ __('workspace.ops.statuses.' . $incident->status) }}
                             </span>
                         </div>

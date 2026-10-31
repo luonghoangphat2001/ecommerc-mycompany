@@ -70,8 +70,8 @@
                 <h1 class="page-title">{{ __('admin.order.edit_title', ['number' => $order->number]) }}</h1>
             </div>
             <div class="actions" style="display: flex; gap: 12px;">
-                <a class="btn btn-secondary" href="{{ route('admin.orders.show', $order->id) }}" style="background: #fff; border: 1px solid #cbd5e1; color: #475569;">{{ __('admin.order.cancel_edit') }}</a>
-                <button type="submit" class="btn btn-primary" style="background: #3b82f6; color: #fff; border: none;">{{ __('admin.order.save_changes') }}</button>
+                <a class="btn btn-secondary" href="{{ route('admin.orders.show', $order->id) }}">{{ __('admin.order.cancel_edit') }}</a>
+                <button type="submit" class="btn btn-primary">{{ __('admin.order.save_changes') }}</button>
             </div>
         </div>
 

@@ -1,100 +1,126 @@
 import React from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight, Truck, Receipt, Tag } from "lucide-react"
+import { ArrowRight, Truck, Receipt, Tag, ShieldCheck } from "lucide-react"
 import { useFormatters } from "../../../utils/useFormatters"
 import { Card, Button } from "../../../components/common"
 
-const CartSummary = ({ summary, coupon, translate }) => {
+const CartSummary = ({ summary, total: propTotal, coupon, translate }) => {
     const { formatCurrency } = useFormatters()
 
-    if (!summary) {
-        summary = { subtotal: 0, shipping: { amount: 0 }, tax: { amount: 0 }, total: 0 }
+    const fallbackTotal = propTotal || 0
+    const resolvedSummary = summary || {
+        subtotal: fallbackTotal,
+        shipping: { amount: 0 },
+        tax: { amount: 0 },
+        total: fallbackTotal,
     }
 
-    const { subtotal, shipping, tax, total, discount = 0 } = summary
+    const subtotal = resolvedSummary.subtotal ?? fallbackTotal
+    const shipping = resolvedSummary.shipping || { amount: 0 }
+    const tax = resolvedSummary.tax || { amount: 0 }
+    const total = resolvedSummary.total ?? fallbackTotal
+    const discount = resolvedSummary.discount || 0
+
     const hasShipping = shipping?.amount > 0
     const hasTax = tax?.amount > 0
     const hasDiscount = discount > 0 || coupon
 
     return (
-        <Card shadow="md" className="p-8 sticky top-32">
-            <h2 className="text-xl font-bold text-slate-900 mb-6">{translate("cart.summary_title")}</h2>
+        <Card shadow="sm" className="p-6 sticky top-28 tabular-nums">
+            <h2 className="text-base font-bold text-[#09253E] pb-4 mb-4 border-b border-slate-100">
+                {translate("cart.summary_title")}
+            </h2>
 
-            <div className="space-y-4 mb-6">
-                {/* Subtotal */}
+            <div className="space-y-3 mb-5 text-sm">
                 <div className="flex justify-between text-slate-600">
                     <span>{translate("cart.subtotal")}</span>
-                    <span className="font-medium">{formatCurrency(subtotal)}</span>
+                    <span className="font-semibold text-slate-900">{formatCurrency(subtotal)}</span>
                 </div>
 
-                {/* Shipping */}
                 <div className="flex justify-between items-center text-slate-600">
-                    <div className="flex items-center gap-2">
-                        <Truck size={16} />
+                    <div className="flex items-center gap-1.5">
+                        <Truck size={15} className="text-slate-400" />
                         <span>{shipping?.method_name || translate("cart.shipping")}</span>
                     </div>
-                    <span className={`font-medium ${hasShipping ? "" : "text-green-600"}`}>{hasShipping ? formatCurrency(shipping.amount) : translate("cart.free")}</span>
-                </div>
-
-                {/* Tax */}
-                {hasTax && (
-                    <div className="flex justify-between items-center text-slate-600">
-                        <div className="flex items-center gap-2">
-                            <Receipt size={16} />
-                            <span>{tax?.rate_name || translate("cart.tax")}</span>
-                        </div>
-                        <span className="font-medium">{formatCurrency(tax.amount)}</span>
-                    </div>
-                )}
-
-                {/* Discount / Coupon */}
-                {hasDiscount && (
-                    <div className="flex justify-between items-center text-green-600">
-                        <div className="flex items-center gap-2">
-                            <Tag size={16} />
-                            <span>{coupon?.code || translate("cart.discount")}</span>
-                        </div>
-                        <span className="font-medium">-{formatCurrency(discount || coupon?.discount_amount || 0)}</span>
-                    </div>
-                )}
-
-                {/* Items Count */}
-                <div className="flex justify-between text-slate-500 text-sm">
-                    <span>{translate("cart.items_count")}</span>
-                    <span>
-                        {summary?.items_count || 0} {translate("cart.items")}
+                    <span className={`font-semibold ${hasShipping ? "text-slate-900" : "text-emerald-700"}`}>
+                        {hasShipping ? formatCurrency(shipping.amount) : translate("cart.free")}
                     </span>
                 </div>
 
-                {/* Total */}
-                <div className="flex justify-between text-slate-900 font-bold text-xl pt-4 border-t-2 border-slate-200">
+                {hasTax && (
+                    <div className="flex justify-between items-center text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                            <Receipt size={15} className="text-slate-400" />
+                            <span>{tax?.rate_name || translate("cart.tax")}</span>
+                        </div>
+                        <span className="font-semibold text-slate-900">{formatCurrency(tax.amount)}</span>
+                    </div>
+                )}
+
+                {hasDiscount && (
+                    <div className="flex justify-between items-center text-emerald-700">
+                        <div className="flex items-center gap-1.5">
+                            <Tag size={15} />
+                            <span>{coupon?.code || translate("cart.discount")}</span>
+                        </div>
+                        <span className="font-semibold">
+                            -{formatCurrency(discount || coupon?.discount_amount || 0)}
+                        </span>
+                    </div>
+                )}
+
+                {resolvedSummary?.items_count !== undefined && (
+                    <div className="flex justify-between text-slate-500 text-xs pt-1">
+                        <span>{translate("cart.items_count")}</span>
+                        <span>
+                            {resolvedSummary.items_count} {translate("cart.items")}
+                        </span>
+                    </div>
+                )}
+
+                <div className="flex justify-between items-baseline text-[#09253E] font-bold text-base pt-4 border-t border-slate-200">
                     <span>{translate("cart.total")}</span>
-                    <span className="text-blue-600">{formatCurrency(total)}</span>
+                    <span className="text-xl font-extrabold text-[#004687]">{formatCurrency(total)}</span>
                 </div>
             </div>
 
             {/* Free Shipping Progress */}
-            {subtotal < 500000 && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-xl">
-                    <div className="flex items-center gap-2 text-blue-700 mb-2">
-                        <Truck size={18} />
-                        <span className="font-medium text-sm">{translate("cart.free_shipping_hint")}</span>
+            {subtotal > 0 && subtotal < 500000 && (
+                <div className="mb-5 p-3.5 bg-slate-50 border border-slate-200/80 rounded-lg">
+                    <div className="flex items-center gap-2 text-[#004687] mb-2">
+                        <Truck size={15} />
+                        <span className="font-semibold text-xs">{translate("cart.free_shipping_hint")}</span>
                     </div>
-                    <div className="w-full bg-blue-200 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${Math.min((subtotal / 500000) * 100, 100)}%` }} />
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div
+                            className="bg-[#004687] h-1.5 rounded-full transition-all"
+                            style={{ width: `${Math.min((subtotal / 500000) * 100, 100)}%` }}
+                        />
                     </div>
-                    <p className="text-xs text-blue-600 mt-2">{translate("cart.free_shipping_amount", { amount: formatCurrency(500000 - subtotal) })}</p>
+                    <p className="text-[11px] text-slate-600 mt-1.5">
+                        {translate("cart.free_shipping_amount", {
+                            amount: formatCurrency(500000 - subtotal),
+                        })}
+                    </p>
                 </div>
             )}
 
-            <Button as={Link} to="/checkout" size="block" className="flex items-center justify-center gap-2 hover:-translate-y-0.5">
-                {translate("cart.checkout_button")}
-                <ArrowRight size={20} />
+            <Button as={Link} to="/checkout" size="block" className="gap-2">
+                <span>{translate("cart.checkout_button")}</span>
+                <ArrowRight size={17} />
             </Button>
 
-            <Link to="/shop" className="block text-center text-slate-500 hover:text-blue-600 font-medium mt-4 transition-colors">
+            <Link
+                to="/shop"
+                className="block text-center text-xs text-slate-500 hover:text-[#004687] font-semibold mt-3.5 transition-colors"
+            >
                 {translate("cart.continue_shopping")}
             </Link>
+
+            <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+                <ShieldCheck size={13} className="text-[#004687]" />
+                <span>Encrypted checkout & verified fulfillment</span>
+            </div>
         </Card>
     )
 }

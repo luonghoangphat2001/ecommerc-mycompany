@@ -91,9 +91,9 @@
     <div class="actions-bar">
         <h1 class="page-title">{{ $title }}</h1>
         <div class="actions" style="display: flex; gap: 12px;">
-            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}" style="background: #fff; border: 1px solid #cbd5e1; color: #475569;">{{ __('admin.actions.back') }}</a>
+            <a class="btn btn-secondary" href="{{ route($routePrefix . '.index') }}">{{ __('admin.actions.back') }}</a>
             @if ($canEdit ?? true)
-                <a class="btn btn-primary" href="{{ route($routePrefix . '.edit', $record->id) }}" style="background: #3b82f6; color: #fff; border: none;">{{ __('admin.actions.edit') }}</a>
+                <a class="btn btn-primary" href="{{ route($routePrefix . '.edit', $record->id) }}">{{ __('admin.actions.edit') }}</a>
             @endif
         </div>
     </div>

@@ -214,9 +214,9 @@
                             </div>
                             <div>
                                 @if($address->type === 'shipping')
-                                    <span class="badge bg-green">📦 Giao hàng</span>
+                                    <span class="badge bg-green">Giao hàng</span>
                                 @else
-                                    <span class="badge bg-yellow">💳 Thanh toán</span>
+                                    <span class="badge bg-yellow">Thanh toán</span>
                                 @endif
                             </div>
                         </div>

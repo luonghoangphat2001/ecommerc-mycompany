@@ -46,52 +46,97 @@ const ProfileDetails = ({ user }) => {
             })
 
             await refreshUser()
-            toast.success(translate("account.profile_updated") || "Cập nhật thông tin thành công!")
+            toast.success(translate("account.profile_updated") || "Profile updated successfully!")
         } catch (error) {
             console.error(error)
-            toast.error(error.response?.data?.message || translate("account.profile_update_failed") || "Cập nhật thất bại!")
+            toast.error(
+                error.response?.data?.message ||
+                    translate("account.profile_update_failed") ||
+                    "Failed to update profile."
+            )
         } finally {
             setIsSubmitting(false)
         }
     }
 
     return (
-        <div className="space-y-8">
-            <Card shadow="md" className="p-8 md:p-10">
-                <Card.Header className="px-0 pt-0 border-none">
-                    <div className="flex items-center gap-3 mb-8">
-                        <IconBadge icon={User} color="indigo" />
-                        <h2 className="text-xl font-bold text-slate-900">{translate("account.profile_title")}</h2>
+        <Card shadow="sm" className="p-6 sm:p-8">
+            <div className="flex items-center gap-3 pb-4 mb-6 border-b border-slate-100">
+                <IconBadge icon={User} color="blue" size="sm" />
+                <h2 className="text-lg font-bold text-[#09253E] tracking-tight">
+                    {translate("account.profile_title")}
+                </h2>
+            </div>
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="md:col-span-2 flex items-center gap-5 pb-4 border-b border-slate-100">
+                    <div
+                        className="relative group cursor-pointer shrink-0"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-slate-400">
+                            {avatarPreview ? (
+                                <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <User size={28} />
+                            )}
+                        </div>
+                        <div className="absolute inset-0 bg-slate-900/50 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Camera size={18} className="text-white" />
+                        </div>
                     </div>
-                </Card.Header>
+                    <div>
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-xs font-semibold text-[#004687] hover:underline"
+                        >
+                            {translate("account.change_avatar") || "Upload new avatar"}
+                        </button>
+                        <p className="text-xs text-slate-500 mt-0.5">JPG, PNG or WEBP. Max 2MB.</p>
+                    </div>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                    />
+                </div>
 
-                <Card.Body className="px-0 pb-0">
-                    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="md:col-span-2 flex flex-col items-center justify-center mb-6">
-                            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                <div className="w-24 h-24 rounded-full bg-slate-100 border-4 border-white shadow-lg overflow-hidden flex items-center justify-center text-slate-400">{avatarPreview ? <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" /> : <User size={40} />}</div>
-                                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Camera size={24} className="text-white" />
-                                </div>
-                            </div>
-                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
-                            <p className="text-sm text-slate-500 mt-3">{translate("account.change_avatar") || "Thay đổi ảnh đại diện"}</p>
-                        </div>
+                <FormInput
+                    label={translate("account.full_name")}
+                    name="name"
+                    icon={User}
+                    value={formData.name}
+                    onChange={updateField("name")}
+                    required
+                />
+                <FormInput
+                    label={translate("account.email")}
+                    name="email"
+                    type="email"
+                    icon={Mail}
+                    value={formData.email}
+                    disabled
+                />
+                <FormInput
+                    label={translate("account.phone")}
+                    name="phone"
+                    type="tel"
+                    icon={Phone}
+                    value={formData.phone}
+                    onChange={updateField("phone")}
+                />
 
-                        <FormInput label={translate("account.full_name")} icon={User} value={formData.name} onChange={updateField("name")} required />
-                        <FormInput label={translate("account.email")} type="email" icon={Mail} value={formData.email} disabled />
-                        <FormInput label={translate("account.phone")} type="tel" icon={Phone} value={formData.phone} onChange={updateField("phone")} />
-
-                        <div className="md:col-span-2 pt-4">
-                            <Button type="submit" variant="blue" size="lg" disabled={isSubmitting} className="flex items-center justify-center gap-2">
-                                {isSubmitting && <Loader2 className="animate-spin" size={18} />}
-                                {translate("account.save_changes")}
-                            </Button>
-                        </div>
-                    </form>
-                </Card.Body>
-            </Card>
-        </div>
+                <div className="md:col-span-2 pt-3 border-t border-slate-100">
+                    <Button type="submit" variant="primary" size="md" disabled={isSubmitting} className="gap-2">
+                        {isSubmitting && <Loader2 className="animate-spin" size={16} />}
+                        <span>{translate("account.save_changes")}</span>
+                    </Button>
+                </div>
+            </form>
+        </Card>
     )
 }
 

@@ -37,14 +37,17 @@
         </div>
     @endif
 @elseif ($type === 'boolean' || $type === 'select')
-    @if (isset($field['options']) && array_key_exists($value, $field['options']))
-        {{ $field['options'][$value] }}
+    @php
+        $lookupKey = $value instanceof \BackedEnum ? $value->value : $value;
+    @endphp
+    @if (isset($field['options']) && (is_string($lookupKey) || is_int($lookupKey)) && array_key_exists($lookupKey, $field['options']))
+        {{ $field['options'][$lookupKey] }}
     @elseif (is_bool($value) || $value === '1' || $value === '0')
         <span class="badge {{ $value ? 'bg-green' : 'bg-red' }}">
             {{ $value ? 'Có' : 'Không' }}
         </span>
     @else
-        {{ $value }}
+        {{ $value instanceof \BackedEnum ? $value->value : $value }}
     @endif
 @elseif (is_array($value))
     @if ($compact)

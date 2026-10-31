@@ -2,30 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #004687;
+  --color-primary-hover: #003669;
+  --color-brand-dark: #09253E;
+  --color-secondary: #FBAE17;
+  --color-surface-canvas: #F8FAFC;
+  --color-surface-card: #FFFFFF;
+  --color-border-subtle: #E2E8F0;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-[#F8FAFC] text-slate-900 font-sans selection:bg-[#004687] selection:text-white;
+  }
+
+  /* Custom Focus Ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-[#004687]/30 ring-offset-1 ring-offset-white;
+  }
+
+  /* Numeric Discipline */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 @layer utilities {
-  /* Simple glassmorphism class */
-  .glass {
-    @apply bg-white/70 backdrop-blur-md shadow-sm border border-white/20 rounded-xl;
+  /* Crisp tactile surface card */
+  .surface-card {
+    @apply bg-white border border-slate-200/90 rounded-xl shadow-card;
   }
-  
-  /* Simple subtle shadow to simulate floating */
+
+  /* Subtle elevation */
   .floating-shadow {
-    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
   }
-  
-  /* Minimal hover effect to pull card up */
+
+  /* Clean micro-interaction */
   .hover-float {
-    @apply transition-transform duration-300 ease-out hover:-translate-y-1;
+    @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover;
+  }
+
+  /* Subtle entrance animation */
+  .animate-fade-up {
+    animation: fadeUp 0.35s var(--ease-out-expo) both;
   }
 }
 
-/* Mini Cart Animations */
+/* Custom Subtle Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Keyframe Animations */
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
@@ -35,6 +90,33 @@
   }
 }
 
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-slideInRight {
-  animation: slideInRight 0.3s ease-out;
+  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hover-float:hover {
+    transform: none !important;
+  }
 }

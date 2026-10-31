@@ -1,9 +1,9 @@
 import React from "react"
-import { User, Mail, Lock, Phone } from "lucide-react"
+import { User, Mail, Lock, Phone, ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
 import useSettingsStore from "../../store/useSettingsStore"
 import useRegisterForm from "../../features/auth/hooks/useRegisterForm"
-import { FormInput, Button, Alert, BackgroundOrbs } from "../../components/common"
+import { FormInput, Button, Alert, Logo } from "../../components/common"
 
 const RegisterPage = () => {
     const translate = useSettingsStore((state) => state.translate)
@@ -12,39 +12,94 @@ const RegisterPage = () => {
     const updateField = (field) => (e) => setFormData({ ...formData, [field]: e.target.value })
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center relative overflow-hidden font-sans py-12">
-            <BackgroundOrbs preset="auth" />
+        <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4 py-10 font-sans">
+            <div className="w-full max-w-[460px] mb-6 flex items-center justify-between">
+                <Logo />
+                <Link
+                    to="/"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#004687] transition-colors"
+                >
+                    <ArrowLeft size={14} />
+                    <span>Storefront</span>
+                </Link>
+            </div>
 
-            <div className="bg-white/60 backdrop-blur-xl p-8 md:p-12 w-full max-w-[500px] border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.05)] rounded-[2.5rem] relative z-10 mx-4">
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-3 tracking-tight">NovaStore</h1>
-                    <p className="text-slate-500 font-medium">{translate("auth.register_subtitle")}</p>
+            <div className="bg-white p-7 sm:p-9 w-full max-w-[460px] border border-slate-200/90 shadow-card rounded-xl">
+                <div className="mb-6 pb-4 border-b border-slate-100">
+                    <h1 className="text-xl font-bold text-[#09253E] tracking-tight">
+                        {translate("auth.register_button") || "Create Account"}
+                    </h1>
+                    <p className="text-slate-500 text-xs mt-1">{translate("auth.register_subtitle")}</p>
                 </div>
 
                 {error && (
-                    <Alert variant="error" className="mb-6 flex items-center">
+                    <Alert variant="error" className="mb-5">
                         {error}
                     </Alert>
                 )}
 
-                <form onSubmit={handleRegister} className="space-y-5">
-                    <FormInput label={translate("auth.full_name")} icon={User} placeholder="Nguyễn Văn A" value={formData.name} onChange={updateField("name")} required />
-                    <FormInput label={translate("auth.email")} type="email" icon={Mail} placeholder="email@example.com" value={formData.email} onChange={updateField("email")} required />
-                    <FormInput label={translate("auth.phone")} type="tel" icon={Phone} placeholder="0987 654 321" value={formData.phone} onChange={updateField("phone")} required />
+                <form onSubmit={handleRegister} className="space-y-4">
+                    <FormInput
+                        label={translate("auth.full_name")}
+                        name="name"
+                        icon={User}
+                        placeholder="Full Name"
+                        value={formData.name}
+                        onChange={updateField("name")}
+                        required
+                    />
+                    <FormInput
+                        label={translate("auth.email")}
+                        name="email"
+                        type="email"
+                        icon={Mail}
+                        placeholder="email@example.com"
+                        value={formData.email}
+                        onChange={updateField("email")}
+                        required
+                    />
+                    <FormInput
+                        label={translate("auth.phone")}
+                        name="phone"
+                        type="tel"
+                        icon={Phone}
+                        placeholder="0987 654 321"
+                        value={formData.phone}
+                        onChange={updateField("phone")}
+                        required
+                    />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormInput label={translate("auth.password")} type="password" icon={Lock} placeholder="••••••••" value={formData.password} onChange={updateField("password")} required />
-                        <FormInput label={translate("auth.confirm_password")} type="password" icon={Lock} placeholder="••••••••" value={formData.password_confirmation} onChange={updateField("password_confirmation")} required />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormInput
+                            label={translate("auth.password")}
+                            name="password"
+                            type="password"
+                            icon={Lock}
+                            placeholder="••••••••"
+                            value={formData.password}
+                            onChange={updateField("password")}
+                            required
+                        />
+                        <FormInput
+                            label={translate("auth.confirm_password")}
+                            name="password_confirmation"
+                            type="password"
+                            icon={Lock}
+                            placeholder="••••••••"
+                            value={formData.password_confirmation}
+                            onChange={updateField("password_confirmation")}
+                            required
+                        />
                     </div>
 
-                    <Button type="submit" size="block" disabled={isLoading} className="mt-4">
+                    <Button type="submit" variant="primary" size="block" disabled={isLoading} className="mt-2 h-11">
                         {isLoading ? translate("auth.processing") : translate("auth.register_button")}
                     </Button>
                 </form>
 
-                <div className="mt-10 text-center text-sm">
-                    <span className="text-slate-500">{translate("auth.have_account")} </span>
-                    <Link to="/login" className="font-bold text-blue-600 hover:text-blue-700 transition-colors ml-1">
+                <div className="mt-6 pt-5 border-t border-slate-100 text-center text-xs text-slate-500">
+                    <span>{translate("auth.have_account")} </span>
+                    <Link to="/login" className="font-bold text-[#004687] hover:underline ml-1">
                         {translate("auth.login_button")}
                     </Link>
                 </div>

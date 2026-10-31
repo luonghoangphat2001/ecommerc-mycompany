@@ -1,51 +1,68 @@
-import useSettingsStore from '../../../store/useSettingsStore';
 import React from "react"
 import { Link } from "react-router-dom"
-import { Calendar, User, Clock, Tag, ArrowRight, Eye } from "lucide-react"
+import { Calendar, User, Clock, Tag, ArrowRight, Eye, FileText } from "lucide-react"
 import { formatDate } from "../../../utils/date"
 import { truncateText } from "../../../utils/formatters"
+import useSettingsStore from "../../../store/useSettingsStore"
 
 const PostCard = ({ post, variant = "default" }) => {
-    const translate = useSettingsStore(state => state.translate);
+    const translate = useSettingsStore((state) => state.translate)
 
     if (!post) return null
 
-    const { title, slug, excerpt, content, author, tags = [], published_at, created_at, view_count = 0, read_time, is_featured = false } = post
+    const {
+        title,
+        slug,
+        excerpt,
+        content,
+        author,
+        tags = [],
+        published_at,
+        created_at,
+        view_count = 0,
+        read_time,
+        is_featured = false,
+    } = post
 
-    // Use image_url from API (like Product), fallback to image object url
     const postImage = post.image_url || post.image?.url || post.featured_image || null
     const postCategory = post.category || post.categories?.[0]
-
-    // Calculate read time if not provided (rough estimate: 200 words per minute)
     const estimatedReadTime = read_time || Math.ceil((content?.split(/\s+/)?.length || 0) / 200)
 
-    // Card variants
     const isHorizontal = variant === "horizontal"
     const isCompact = variant === "compact"
 
     if (isCompact) {
         return (
-            <Link to={`/posts/${slug}`} className="flex gap-4 p-4 bg-white rounded-xl hover:bg-slate-50 transition-colors group">
+            <Link
+                to={`/posts/${slug}`}
+                className="flex gap-3.5 p-3.5 bg-white border border-slate-200/90 rounded-xl hover:border-[#004687]/60 transition-colors group shadow-card"
+            >
                 {postImage ? (
                     <img
                         src={postImage}
                         alt={title}
-                        className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                        className="w-16 h-16 object-cover rounded-lg flex-shrink-0 border border-slate-200/70"
                         onError={(e) => {
                             e.target.style.display = "none"
                         }}
                     />
                 ) : (
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-2xl">📝</span>
+                    <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-lg border border-slate-200/70 flex items-center justify-center flex-shrink-0">
+                        <FileText size={20} />
                     </div>
                 )}
                 <div className="flex-1 min-w-0">
-                    {postCategory && <span className="text-xs text-blue-600 font-medium">{postCategory.name}</span>}
-                    <h4 className="font-semibold text-slate-800 line-clamp-2 group-hover:text-blue-600 transition-colors">{title}</h4>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                    {postCategory && (
+                        <span className="text-[11px] text-[#004687] font-semibold uppercase tracking-wider">
+                            {postCategory.name}
+                        </span>
+                    )}
+                    <h4 className="text-sm font-bold text-[#09253E] line-clamp-2 group-hover:text-[#004687] transition-colors">
+                        {title}
+                    </h4>
+                    <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500 tabular-nums">
                         <span className="flex items-center gap-1">
-                            <Calendar size={12} />
+                            <Calendar size={11} />
                             {formatDate(published_at || created_at)}
                         </span>
                     </div>
@@ -56,80 +73,91 @@ const PostCard = ({ post, variant = "default" }) => {
 
     if (isHorizontal) {
         return (
-            <div className="flex flex-col md:flex-row bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
-                {/* Image */}
-                <div className="md:w-2/5 relative overflow-hidden">
+            <div className="flex flex-col md:flex-row bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-200 group">
+                <div className="md:w-2/5 relative overflow-hidden bg-slate-100 border-b md:border-b-0 md:border-r border-slate-100">
                     {postImage ? (
                         <img
                             src={postImage}
                             alt={title}
-                            className="w-full h-64 md:h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="w-full h-56 md:h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                             onError={(e) => {
                                 e.target.style.display = "none"
                                 e.target.nextSibling.style.display = "flex"
                             }}
                         />
                     ) : null}
-                    <div className={`w-full h-64 md:h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center ${postImage ? "hidden" : ""}`}>
-                        <span className="text-6xl">📝</span>
+                    <div
+                        className={`w-full h-56 md:h-full bg-slate-100 text-slate-400 flex items-center justify-center ${
+                            postImage ? "hidden" : ""
+                        }`}
+                    >
+                        <FileText size={36} />
                     </div>
-                    {is_featured && <span className="absolute top-4 left-4 px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">{translate?.("featured") || "Nổi bật"}</span>}
+                    {is_featured && (
+                        <span className="absolute top-3 left-3 px-2.5 py-0.5 bg-[#09253E] text-white text-[11px] font-semibold rounded-md">
+                            {translate?.("product.featured") || "Featured"}
+                        </span>
+                    )}
                 </div>
 
-                {/* Content */}
-                <div className="md:w-3/5 p-6 md:p-8 flex flex-col">
-                    {/* Category */}
+                <div className="md:w-3/5 p-6 sm:p-7 flex flex-col">
                     {postCategory && (
-                        <Link to={`/posts?category=${postCategory.slug}`} className="text-sm text-blue-600 font-medium hover:text-blue-700 mb-3">
+                        <Link
+                            to={`/posts?category=${postCategory.slug}`}
+                            className="text-xs text-[#004687] font-semibold uppercase tracking-wider mb-2"
+                        >
                             {postCategory.name}
                         </Link>
                     )}
 
-                    {/* Title */}
-                    <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-xl font-bold text-[#09253E] mb-2.5 group-hover:text-[#004687] transition-colors tracking-tight">
                         <Link to={`/posts/${slug}`}>{title}</Link>
                     </h3>
 
-                    {/* Excerpt */}
-                    <p className="text-slate-600 mb-4 line-clamp-3">{truncateText(excerpt || content, 200)}</p>
+                    <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">
+                        {truncateText(excerpt || content, 200)}
+                    </p>
 
-                    {/* Tags */}
                     {tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-4">
+                        <div className="flex flex-wrap gap-1.5 mb-4">
                             {tags.slice(0, 3).map((tag) => (
-                                <span key={tag.id || tag} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-lg">
+                                <span
+                                    key={tag.id || tag}
+                                    className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-md"
+                                >
                                     <Tag size={10} className="inline mr-1" />
                                     {tag.name || tag}
                                 </span>
                             ))}
-                            {tags.length > 3 && <span className="px-2 py-1 text-slate-400 text-xs">+{tags.length - 3}</span>}
                         </div>
                     )}
 
-                    {/* Meta */}
-                    <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-100">
-                        <div className="flex items-center gap-4 text-sm text-slate-500">
+                    <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-100 tabular-nums">
+                        <div className="flex items-center gap-4 text-xs text-slate-500">
                             {author && (
                                 <span className="flex items-center gap-1.5">
-                                    <User size={14} />
+                                    <User size={13} />
                                     {author.name || author}
                                 </span>
                             )}
                             <span className="flex items-center gap-1.5">
-                                <Calendar size={14} />
+                                <Calendar size={13} />
                                 {formatDate(published_at || created_at)}
                             </span>
                             {estimatedReadTime > 0 && (
                                 <span className="flex items-center gap-1.5">
-                                    <Clock size={14} />
-                                    {estimatedReadTime} {translate?.("min_read") || "phút đọc"}
+                                    <Clock size={13} />
+                                    {estimatedReadTime} min
                                 </span>
                             )}
                         </div>
 
-                        <Link to={`/posts/${slug}`} className="flex items-center gap-1 text-blue-600 font-medium hover:gap-2 transition-all">
-                            {translate?.("read_more") || "Đọc tiếp"}
-                            <ArrowRight size={16} />
+                        <Link
+                            to={`/posts/${slug}`}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#004687] hover:text-[#09253E] transition-colors"
+                        >
+                            <span>Read Article</span>
+                            <ArrowRight size={14} />
                         </Link>
                     </div>
                 </div>
@@ -137,69 +165,62 @@ const PostCard = ({ post, variant = "default" }) => {
         )
     }
 
-    // Default card layout
     return (
-        <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group">
-            {/* Image */}
-            <div className="relative aspect-video overflow-hidden">
+        <article className="bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-card hover:shadow-card-hover hover:border-[#004687]/60 transition-all duration-200 group flex flex-col">
+            <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 border-b border-slate-100">
                 {postImage ? (
                     <img
                         src={postImage}
                         alt={title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                         onError={(e) => {
                             e.target.style.display = "none"
                             e.target.nextSibling.style.display = "flex"
                         }}
                     />
                 ) : null}
-                <div className={`w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center ${postImage ? "hidden" : ""}`}>
-                    <span className="text-6xl">📝</span>
+                <div
+                    className={`w-full h-full bg-slate-100 text-slate-400 flex items-center justify-center ${
+                        postImage ? "hidden" : ""
+                    }`}
+                >
+                    <FileText size={32} />
                 </div>
 
-                {/* Category Badge */}
                 {postCategory && (
-                    <Link to={`/posts?category=${postCategory.slug}`} className="absolute top-4 left-4 px-3 py-1 bg-white/90 backdrop-blur-sm text-blue-600 text-xs font-semibold rounded-full hover:bg-white transition-colors">
+                    <Link
+                        to={`/posts?category=${postCategory.slug}`}
+                        className="absolute top-3 left-3 px-2.5 py-0.5 bg-white/95 text-[#004687] text-[11px] font-semibold rounded-md shadow-card"
+                    >
                         {postCategory.name}
                     </Link>
                 )}
 
-                {/* Featured Badge */}
-                {is_featured && <span className="absolute top-4 right-4 px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">{translate?.("featured") || "Nổi bật"}</span>}
+                {is_featured && (
+                    <span className="absolute top-3 right-3 px-2.5 py-0.5 bg-[#09253E] text-white text-[11px] font-semibold rounded-md">
+                        Featured
+                    </span>
+                )}
 
-                {/* View Count */}
                 {view_count > 0 && (
-                    <div className="absolute bottom-4 left-4 flex items-center gap-1 px-2 py-1 bg-black/50 text-white text-xs rounded-lg">
-                        <Eye size={12} />
+                    <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 bg-slate-900/75 text-white text-[11px] rounded tabular-nums">
+                        <Eye size={11} />
                         {view_count.toLocaleString()}
                     </div>
                 )}
             </div>
 
-            {/* Content */}
-            <div className="p-6">
-                {/* Title */}
-                <h3 className="text-xl font-bold text-slate-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+            <div className="p-5 flex flex-col flex-1">
+                <h3 className="text-base font-bold text-[#09253E] mb-2 line-clamp-2 group-hover:text-[#004687] transition-colors leading-snug">
                     <Link to={`/posts/${slug}`}>{title}</Link>
                 </h3>
 
-                {/* Excerpt */}
-                <p className="text-slate-600 text-sm mb-4 line-clamp-2">{truncateText(excerpt || content, 120)}</p>
+                <p className="text-slate-600 text-xs mb-4 line-clamp-2 leading-relaxed">
+                    {truncateText(excerpt || content, 120)}
+                </p>
 
-                {/* Tags */}
-                {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        {tags.slice(0, 3).map((tag, index) => (
-                            <span key={tag.id || tag || index} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded">
-                                #{tag.name || tag}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                {/* Meta */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                <div className="mt-auto flex items-center justify-between pt-3.5 border-t border-slate-100 tabular-nums text-xs text-slate-500">
+                    <div className="flex items-center gap-3">
                         {author && (
                             <span className="flex items-center gap-1">
                                 <User size={12} />
@@ -213,9 +234,9 @@ const PostCard = ({ post, variant = "default" }) => {
                     </div>
 
                     {estimatedReadTime > 0 && (
-                        <span className="flex items-center gap-1 text-xs text-slate-400">
+                        <span className="flex items-center gap-1 text-slate-400">
                             <Clock size={12} />
-                            {estimatedReadTime} {translate?.("min_read") || "phút"}
+                            {estimatedReadTime}m
                         </span>
                     )}
                 </div>

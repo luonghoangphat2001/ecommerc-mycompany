@@ -1,22 +1,25 @@
 import React from "react"
 
 const VARIANTS = {
-    primary: "bg-slate-900 hover:bg-blue-600 text-white shadow-xl shadow-slate-200 hover:shadow-blue-200",
-    blue: "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-100",
-    secondary: "bg-slate-200 hover:bg-slate-300 text-slate-800",
+    primary: "bg-[#004687] hover:bg-[#003669] text-white shadow-card",
+    gold: "bg-[#FBAE17] hover:bg-[#e59c0d] text-[#09253E] shadow-card font-bold",
+    blue: "bg-[#004687] hover:bg-[#003669] text-white shadow-card",
+    secondary: "bg-slate-100 hover:bg-slate-200/80 text-slate-800 border border-slate-200/80",
+    outline: "bg-white hover:bg-slate-50 text-slate-800 border border-slate-300",
     ghost: "bg-transparent hover:bg-slate-100 text-slate-700",
-    danger: "bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-100",
+    danger: "bg-red-600 hover:bg-red-700 text-white shadow-card",
 }
 
 const SIZES = {
-    sm: "py-2 px-4 text-sm",
-    md: "py-3 px-6",
-    lg: "py-3.5 px-8",
-    xl: "py-4 px-10",
-    block: "py-4 w-full text-center",
+    sm: "py-1.5 px-3 text-xs",
+    md: "py-2.5 px-4 text-sm",
+    lg: "py-2.5 px-5 text-sm",
+    xl: "py-3 px-6 text-sm sm:text-base",
+    block: "py-2.5 px-4 w-full text-center text-sm font-semibold",
 }
 
-const BASE = "font-bold rounded-2xl transition-all active:scale-[0.98] transform disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none inline-flex items-center justify-center"
+const BASE =
+    "font-semibold rounded-lg transition-all duration-150 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer select-none"
 
 const Button = ({ as: Tag = "button", variant = "primary", size = "md", className = "", children, ...rest }) => {
     const variantClass = VARIANTS[variant] || VARIANTS.primary

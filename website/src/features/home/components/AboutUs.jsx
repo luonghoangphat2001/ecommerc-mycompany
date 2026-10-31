@@ -1,21 +1,21 @@
-import useSettingsStore from '../../../store/useSettingsStore';
-import React from 'react';
+import React from "react"
+import useSettingsStore from "../../../store/useSettingsStore"
 
 const AboutUs = ({ content }) => {
-  const { translate } = useTranslation('about');
+    const translate = useSettingsStore((state) => state.translate)
 
-  const containerClass = "max-w-4xl mx-auto py-16 px-4";
-  const titleClass = "text-3xl font-bold text-center mb-8";
-  const descriptionClass = "text-lg text-gray-600 text-center leading-relaxed";
+    if (!content) return null
 
-  if (!content) return null;
+    return (
+        <div className="max-w-4xl mx-auto py-12 px-4">
+            <h2 className="text-2xl font-bold text-[#09253E] text-center mb-4 tracking-tight">
+                {content.title || translate("header.about")}
+            </h2>
+            <p className="text-base text-slate-600 text-center leading-relaxed">
+                {content.description || translate("footer.description")}
+            </p>
+        </div>
+    )
+}
 
-  return (
-    <div className={containerClass}>
-      <h2 className={titleClass}>{content.title || translate('title')}</h2>
-      <p className={descriptionClass}>{content.description || translate('description')}</p>
-    </div>
-  );
-};
-
-export default AboutUs;
+export default AboutUs

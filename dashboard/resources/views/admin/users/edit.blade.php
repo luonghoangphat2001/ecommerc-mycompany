@@ -102,8 +102,8 @@
                                     </label>
                                     
                                     <select name="addresses[{{ $index }}][type]" class="input input-sm" style="width: auto; padding: 4px 8px; border-radius: 4px; background: white; font-weight: 500; color: #475569;">
-                                        <option value="shipping" @selected(($address['type'] ?? '') == 'shipping')>📦 Shipping</option>
-                                        <option value="billing" @selected(($address['type'] ?? '') == 'billing')>💳 Billing</option>
+                                        <option value="shipping" @selected(($address['type'] ?? '') == 'shipping')>Shipping</option>
+                                        <option value="billing" @selected(($address['type'] ?? '') == 'billing')>Billing</option>
                                     </select>
                                 </div>
                                 <button type="button" style="background: white; border: 1px solid #f87171; color: #ef4444; padding: 4px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='white'" onclick="this.closest('.address-block').remove()">Xóa</button>
@@ -244,8 +244,8 @@
                         Mặc định
                     </label>
                     <select name="addresses[${addrIndex}][type]" class="input input-sm" style="width: auto; padding: 4px 8px; border-radius: 4px; background: white; font-weight: 500; color: #475569;">
-                        <option value="shipping">📦 Shipping</option>
-                        <option value="billing">💳 Billing</option>
+                        <option value="shipping">Shipping</option>
+                        <option value="billing">Billing</option>
                     </select>
                 </div>
                 <button type="button" style="background: white; border: 1px solid #f87171; color: #ef4444; padding: 4px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='white'" onclick="this.closest('.address-block').remove()">Xóa</button>

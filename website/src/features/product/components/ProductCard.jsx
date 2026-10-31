@@ -1,6 +1,6 @@
 import React from "react"
 import { Link } from "react-router-dom"
-import { ShoppingCart, AlertCircle, Sparkles, Package } from "lucide-react"
+import { ShoppingCart, AlertCircle } from "lucide-react"
 import useCartStore from "../../cart/store/useCartStore"
 import useSettingsStore from "../../../store/useSettingsStore"
 import { useFormatters } from "../../../utils/useFormatters"
@@ -10,10 +10,12 @@ const ProductCard = ({ product }) => {
     const translate = useSettingsStore((state) => state.translate)
     const { formatCurrency } = useFormatters()
 
-    // Inventory info from API
     const stock = product.stock || product.qty || 0
     const inventories = product.inventories || []
-    const totalWarehouseStock = inventories.reduce((sum, inv) => sum + (inv.stock_quantity || inv.pivot?.quantity || 0), 0)
+    const totalWarehouseStock = inventories.reduce(
+        (sum, inv) => sum + (inv.stock_quantity || inv.pivot?.quantity || 0),
+        0
+    )
     const isAvailable = product.is_available !== false && (stock > 0 || totalWarehouseStock > 0)
 
     const handleAddToCart = (e) => {
@@ -26,72 +28,115 @@ const ProductCard = ({ product }) => {
 
     const imageSrc = product.image?.url || product.image || product.image_url
     const hasDiscount = product.is_on_sale
-    const discountPercent = hasDiscount && product.price > 0 ? Math.round((1 - product.effective_price / product.price) * 100) : 0
+    const discountPercent =
+        hasDiscount && product.price > 0
+            ? Math.round((1 - product.effective_price / product.price) * 100)
+            : 0
 
     return (
-        <Link to={`/products/${product.slug || product.id}`} className={`group flex flex-col rounded-2xl overflow-hidden transition-all duration-300 bg-white/40 backdrop-blur-md border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] ${!isAvailable ? "opacity-75" : ""}`}>
+        <Link
+            to={`/products/${product.slug || product.id}`}
+            className={`group flex flex-col rounded-xl overflow-hidden transition-all duration-200 bg-white border border-slate-200/90 shadow-card hover:border-[#004687]/60 hover:shadow-card-hover hover:-translate-y-0.5 ${
+                !isAvailable ? "opacity-80" : ""
+            }`}
+        >
             {/* Product Image */}
-            <div className="relative aspect-[4/5] bg-slate-100 overflow-hidden">
+            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100">
                 <img
                     src={imageSrc || "/placeholder-product.jpg"}
                     alt={product.name}
-                    className={`w-full h-full object-cover transition-transform duration-500 ${isAvailable ? "group-hover:scale-105" : "grayscale"}`}
+                    loading="lazy"
+                    className={`w-full h-full object-cover transition-transform duration-300 ease-out ${
+                        isAvailable ? "group-hover:scale-[1.03]" : "grayscale"
+                    }`}
                     onError={(e) => {
                         e.target.src = "/placeholder-product.jpg"
                     }}
                 />
 
-                {/* Badges */}
-                <div className="absolute top-3 left-3 flex flex-col gap-2">
-                    {product.featured && (
-                        <span className="px-2.5 py-1 text-xs font-semibold bg-white/90 backdrop-blur-md text-slate-800 rounded-full shadow-sm flex items-center gap-1">
-                            <Sparkles size={12} />
-                            {translate("product.featured")}
+                {/* Top Left Badges */}
+                <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
+                    {(product.featured || product.is_featured) && (
+                        <span className="px-2 py-0.5 text-[11px] font-semibold bg-[#09253E] text-white rounded-md shadow-card">
+                            {translate("product.featured") || "Featured"}
                         </span>
                     )}
-                    {hasDiscount && discountPercent > 0 && <span className="px-2.5 py-1 text-xs font-bold bg-red-500 text-white rounded-full shadow-sm">-{discountPercent}%</span>}
+                    {hasDiscount && discountPercent > 0 && (
+                        <span className="px-2 py-0.5 text-[11px] font-bold bg-red-600 text-white rounded-md shadow-card tabular-nums">
+                            -{discountPercent}%
+                        </span>
+                    )}
                 </div>
 
-                {/* Stock Status Badge */}
-                <div className="absolute top-3 right-3">{!isAvailable ? <span className="px-2.5 py-1 text-xs font-semibold bg-slate-800/90 text-white rounded-full">Hết hàng</span> : null}</div>
+                {/* Top Right Stock Badge if Out of Stock */}
+                {!isAvailable && (
+                    <div className="absolute top-2.5 right-2.5">
+                        <span className="px-2 py-0.5 text-[11px] font-semibold bg-slate-900/85 text-white rounded-md">
+                            Out of Stock
+                        </span>
+                    </div>
+                )}
             </div>
 
-            {/* Product Info */}
-            <div className="flex flex-col flex-1 p-5">
-                {/* Category */}
-                {product.categories && product.categories.length > 0 && <span className="text-[10px] text-blue-500 font-medium mb-1">{product.categories[0].name}</span>}
-
-                {/* Product Name */}
-                <h3 className="font-medium text-slate-800 line-clamp-2 text-sm leading-snug mb-2 group-hover:text-blue-600 transition-colors">{product.name}</h3>
-
-                {/* Brand & Inventory */}
-                <div className="flex flex-col gap-1 mb-2">
-                    {product.brand && <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">{product.brand.name}</span>}
-
-                    {/* Inventory Info */}
-                    {isAvailable && (
-                        <div className="flex items-center gap-1 text-xs text-green-600">
-                            <Package size={12} />
-                            <span>Còn hàng</span>
-                        </div>
+            {/* Product Content */}
+            <div className="flex flex-col flex-1 p-4 sm:p-5">
+                {/* Category & Brand Meta */}
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                    {product.categories && product.categories.length > 0 ? (
+                        <span className="text-[11px] text-[#004687] font-semibold uppercase tracking-wider truncate">
+                            {product.categories[0].name}
+                        </span>
+                    ) : (
+                        <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                            {product.brand?.name || "Catalog"}
+                        </span>
                     )}
-                    {!isAvailable && (
-                        <div className="flex items-center gap-1 text-xs text-red-500">
-                            <AlertCircle size={12} />
-                            <span>Hết hàng</span>
-                        </div>
-                    )}
+
+                    <span
+                        className={`inline-flex items-center gap-1 text-[11px] font-medium shrink-0 ${
+                            isAvailable ? "text-emerald-700" : "text-red-600"
+                        }`}
+                    >
+                        <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                                isAvailable ? "bg-emerald-500" : "bg-red-500"
+                            }`}
+                        />
+                        {isAvailable ? "In Stock" : "Out of Stock"}
+                    </span>
                 </div>
 
-                {/* Price & Add to Cart */}
-                <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-100">
-                    <div className="flex flex-col">
-                        <span className="font-bold text-slate-900">{formatCurrency(product.effective_price || product.price)}</span>
-                        {hasDiscount && <span className="text-xs text-slate-400 line-through">{formatCurrency(product.price)}</span>}
+                {/* Product Name */}
+                <h3 className="font-semibold text-[#09253E] line-clamp-2 text-sm leading-snug mb-3 group-hover:text-[#004687] transition-colors">
+                    {product.name}
+                </h3>
+
+                {/* Price & Action Footer */}
+                <div className="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
+                    <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-base text-[#09253E] tabular-nums truncate">
+                            {formatCurrency(product.effective_price || product.price)}
+                        </span>
+                        {hasDiscount && (
+                            <span className="text-xs text-slate-400 line-through tabular-nums">
+                                {formatCurrency(product.price)}
+                            </span>
+                        )}
                     </div>
 
-                    <button onClick={handleAddToCart} disabled={!isAvailable} title={isAvailable ? translate("product.add_to_cart") : "Hết hàng"} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-sm ${isAvailable ? "bg-slate-50 text-slate-600 hover:bg-blue-600 hover:text-white hover:shadow-md" : "bg-slate-100 text-slate-400 cursor-not-allowed"}`}>
-                        {isAvailable ? <ShoppingCart size={18} /> : <AlertCircle size={18} />}
+                    <button
+                        type="button"
+                        onClick={handleAddToCart}
+                        disabled={!isAvailable}
+                        aria-label={isAvailable ? translate("product.add_to_cart") : "Out of Stock"}
+                        title={isAvailable ? translate("product.add_to_cart") : "Out of Stock"}
+                        className={`h-9 px-3 rounded-lg inline-flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors shrink-0 ${
+                            isAvailable
+                                ? "bg-[#004687]/10 text-[#004687] hover:bg-[#004687] hover:text-white"
+                                : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                        }`}
+                    >
+                        {isAvailable ? <ShoppingCart size={15} /> : <AlertCircle size={15} />}
                     </button>
                 </div>
             </div>

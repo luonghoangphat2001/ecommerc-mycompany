@@ -1,14 +1,14 @@
 import React from "react"
 
 const SIZES = {
-    md: "text-2xl",
-    lg: "text-3xl",
-    xl: "text-4xl",
+    md: "text-xl sm:text-2xl",
+    lg: "text-2xl sm:text-3xl",
+    xl: "text-3xl sm:text-4xl",
 }
 
 const PageHeading = ({ size = "lg", as: Tag = "h1", children, className = "" }) => {
     const sizeClass = SIZES[size] || SIZES.lg
-    return <Tag className={`${sizeClass} font-black tracking-tight text-slate-900 ${className}`}>{children}</Tag>
+    return <Tag className={`${sizeClass} font-bold tracking-tight text-[#09253E] ${className}`}>{children}</Tag>
 }
 
 export default PageHeading

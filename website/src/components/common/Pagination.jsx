@@ -5,34 +5,53 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     if (totalPages <= 1) return null
 
     return (
-        <div className="flex items-center justify-center space-x-2 mt-8">
-            <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} className="p-2 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                <ChevronLeft size={20} />
+        <nav aria-label="Pagination" className="flex items-center justify-center gap-1.5 mt-8 tabular-nums">
+            <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                aria-label="Previous page"
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+                <ChevronLeft size={18} />
             </button>
 
             {[...Array(totalPages)].map((_, i) => {
                 const page = i + 1
-                // Simple windowing logic
                 if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                    const isActive = currentPage === page
                     return (
-                        <button key={page} onClick={() => onPageChange(page)} className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-colors ${currentPage === page ? "bg-slate-900 text-white border-slate-900 font-medium" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
+                        <button
+                            key={page}
+                            onClick={() => onPageChange(page)}
+                            aria-current={isActive ? "page" : undefined}
+                            className={`w-9 h-9 text-sm flex items-center justify-center rounded-lg border transition-colors ${
+                                isActive
+                                    ? "bg-[#004687] text-white border-[#004687] font-semibold shadow-card"
+                                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                            }`}
+                        >
                             {page}
                         </button>
                     )
                 } else if (page === currentPage - 2 || page === currentPage + 2) {
                     return (
-                        <span key={page} className="px-2 text-slate-400">
-                            ...
+                        <span key={page} className="px-1.5 text-slate-400 text-sm">
+                            …
                         </span>
                     )
                 }
                 return null
             })}
 
-            <button onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} className="p-2 rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                <ChevronRight size={20} />
+            <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                aria-label="Next page"
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+                <ChevronRight size={18} />
             </button>
-        </div>
+        </nav>
     )
 }
 

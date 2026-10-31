@@ -60,7 +60,7 @@
                         <td style="max-width: 300px;">
                             <div style="font-size: 13px; color: #334155; margin-bottom: 5px;">{{ $review->content }}</div>
                             @if($review->reply_content)
-                                <div style="background: #f1f5f9; padding: 6px; border-radius: 4px; border-left: 2px solid #3b82f6; font-size: 12px; color: #475569;">
+                                <div style="background: #f0f9ff; padding: 8px 10px; border-radius: 6px; border: 1px solid #bae6fd; font-size: 12px; color: #0369a1;">
                                     <strong>{{ __('workspace.cskh.tables.reviews.reply') }}:</strong> {{ $review->reply_content }}
                                 </div>
                             @endif
@@ -182,7 +182,7 @@
                             labels: {
                                 padding: 20,
                                 font: {
-                                    family: "'Inter', sans-serif",
+                                    family: "'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                                     size: 13
                                 }
                             }

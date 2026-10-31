@@ -4,15 +4,15 @@
     <meta charset="utf-8">
     <title>Đơn hàng hiện đại - #{{ $order->number ?? '0001' }}</title>
     <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #2d3748; background: #f7fafc; margin: 0; padding: 0; }
-        .wrapper { background: #f7fafc; padding: 40px 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .header { background: #4a5568; color: #ffffff; padding: 40px 30px; text-align: center; }
+        body { font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #0f172a; background: #f8fafc; margin: 0; padding: 0; }
+        .wrapper { background: #f8fafc; padding: 40px 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04); }
+        .header { background: #09253e; color: #ffffff; padding: 36px 30px; text-align: center; }
         .content { padding: 30px; }
-        .order-card { background: #edf2f7; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .order-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; }
         .total-row { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #e2e8f0; }
-        .footer { text-align: center; padding: 30px; font-size: 13px; color: #a0aec0; }
-        .button { display: inline-block; padding: 12px 24px; background: #4a5568; color: #ffffff; text-decoration: none; border-radius: 6px; margin-top: 20px; }
+        .footer { text-align: center; padding: 30px; font-size: 13px; color: #64748b; }
+        .button { display: inline-block; padding: 12px 24px; background: #004687; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 20px; }
     </style>
 </head>
 <body>

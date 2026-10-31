@@ -1,11 +1,14 @@
 import React, { useEffect } from "react"
 import { useLocation, Link, useNavigate } from "react-router-dom"
-import { CheckCircle, Package, Home, ShoppingBag } from "lucide-react"
+import { CheckCircle, Package, ShoppingBag } from "lucide-react"
 import useSettingsStore from "../store/useSettingsStore"
+import Logo from "../components/common/Logo"
 
 const OrderSuccessPage = () => {
     const translate = useSettingsStore((state) => state.translate)
-    const storeName = useSettingsStore((state) => state.getSetting("general.site_name") || state.getSetting("general.store_name") || "NovaStore")
+    const storeName = useSettingsStore(
+        (state) => state.getSetting("general.site_name") || state.getSetting("general.store_name") || "NovaStore"
+    )
     const location = useLocation()
     const navigate = useNavigate()
     const order = location.state?.order
@@ -20,53 +23,61 @@ const OrderSuccessPage = () => {
     if (!order) return null
 
     return (
-        <div className="min-h-screen bg-slate-50 pt-32 pb-20 font-sans">
-            <div className="max-w-3xl mx-auto px-4">
-                <div className="bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.03)] border border-slate-100 overflow-hidden text-center p-12 md:p-20 relative">
-                    {/* Background decoration */}
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 to-purple-600"></div>
-                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-50 rounded-full blur-3xl opacity-60"></div>
-                    <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-50 rounded-full blur-3xl opacity-60"></div>
+        <div className="min-h-screen bg-[#F8FAFC] py-16 px-4 font-sans flex flex-col items-center justify-center">
+            <div className="mb-8">
+                <Logo />
+            </div>
 
-                    <div className="relative z-10">
-                        <div className="w-24 h-24 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce-slow">
-                            <CheckCircle size={48} />
-                        </div>
+            <div className="w-full max-w-xl bg-white rounded-xl shadow-card border border-slate-200/90 p-6 sm:p-10 text-center tabular-nums">
+                <div className="w-14 h-14 bg-emerald-50 border border-emerald-200/70 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-5">
+                    <CheckCircle size={28} strokeWidth={2.2} />
+                </div>
 
-                        <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-4 tracking-tight">{translate("checkout.success_title")}</h1>
-                        <p className="text-slate-500 text-lg mb-10 max-w-md mx-auto leading-relaxed">{translate("checkout.success_msg")}</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#09253E] mb-2 tracking-tight">
+                    {translate("checkout.success_title")}
+                </h1>
+                <p className="text-slate-500 text-sm mb-7 max-w-md mx-auto leading-relaxed">
+                    {translate("checkout.success_msg")}
+                </p>
 
-                        <div className="bg-slate-50 rounded-3xl p-6 md:p-8 mb-10 border border-slate-100 inline-block w-full max-w-md">
-                            <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200">
-                                <span className="text-slate-500 font-medium">{translate("checkout.order_number")}:</span>
-                                <span className="text-slate-900 font-black text-lg">{order.number}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-slate-500 font-medium">{translate("checkout.order_status")}:</span>
-                                <span className="bg-blue-50 text-blue-600 px-4 py-1 rounded-full text-sm font-bold">{order.status_label || translate("checkout.order_received")}</span>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-                            <Link to="/shop" className="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-2">
-                                <ShoppingBag size={20} />
-                                {translate("checkout.continue_shopping")}
-                            </Link>
-                            <Link to="/my-account" className="w-full md:w-auto bg-white border border-slate-200 hover:border-blue-600 hover:text-blue-600 text-slate-700 font-bold py-4 px-8 rounded-2xl transition-all flex items-center justify-center gap-2">
-                                <Package size={20} />
-                                {translate("checkout.view_orders")}
-                            </Link>
-                        </div>
+                <div className="bg-slate-50 rounded-xl p-4 sm:p-5 mb-7 border border-slate-200/80 text-left space-y-3">
+                    <div className="flex justify-between items-center pb-3 border-b border-slate-200/80">
+                        <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                            {translate("checkout.order_number")}
+                        </span>
+                        <span className="text-[#09253E] font-bold text-sm font-mono">{order.number}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                            {translate("checkout.order_status")}
+                        </span>
+                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-md text-xs font-semibold">
+                            {order.status_label || translate("checkout.order_received")}
+                        </span>
                     </div>
                 </div>
 
-                <div className="mt-12 text-center">
-                    <p className="text-slate-400 text-sm flex items-center justify-center gap-2">
-                        <Home size={14} />
-                        {storeName} &copy; {new Date().getFullYear()}
-                    </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <Link
+                        to="/shop"
+                        className="w-full sm:w-auto bg-[#004687] hover:bg-[#003669] text-white font-semibold py-2.5 px-5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-card"
+                    >
+                        <ShoppingBag size={16} />
+                        <span>{translate("checkout.continue_shopping")}</span>
+                    </Link>
+                    <Link
+                        to="/my-account?tab=orders"
+                        className="w-full sm:w-auto bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                        <Package size={16} />
+                        <span>{translate("checkout.view_orders")}</span>
+                    </Link>
                 </div>
             </div>
+
+            <p className="mt-8 text-slate-400 text-xs">
+                {storeName} &copy; {new Date().getFullYear()}
+            </p>
         </div>
     )
 }

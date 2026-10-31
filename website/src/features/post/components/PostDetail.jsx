@@ -1,58 +1,69 @@
-import useSettingsStore from '../../../store/useSettingsStore';
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { formatDate } from '../../../utils/date';
+import React from "react"
+import { Link } from "react-router-dom"
+import { ArrowLeft, Calendar, User } from "lucide-react"
+import { formatDate } from "../../../utils/date"
+import useSettingsStore from "../../../store/useSettingsStore"
 
 const PostDetail = ({ post }) => {
-  const translate = useSettingsStore(state => state.translate);
+    const translate = useSettingsStore((state) => state.translate)
 
-  const containerClass = "max-w-4xl mx-auto py-8 px-4";
-  const headerClass = "mb-8";
-  const categoryClass = "text-sm text-blue-600 font-medium";
-  const titleClass = "text-3xl font-bold mt-4 mb-4";
-  const metaClass = "flex items-center gap-4 text-sm text-gray-500";
-  const imageClass = "w-full h-64 md:h-96 object-cover rounded-lg mb-8";
-  const contentClass = "prose max-w-none";
-  const backClass = "text-blue-600 hover:text-blue-800 mb-4 inline-block";
+    if (!post) return null
 
-  if (!post) return null;
+    const postImage = post.image_url || post.image?.url || post.featured_image
+    const postCategory = post.category || post.categories?.[0]
 
-  // Use image_url from API (like Product)
-  const postImage = post.image_url || post.image?.url || post.featured_image;
-  const postCategory = post.category || post.categories?.[0];
+    return (
+        <article className="max-w-3xl mx-auto">
+            <Link
+                to="/posts"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#004687] mb-5 transition-colors"
+            >
+                <ArrowLeft size={15} />
+                <span>{translate("back_to_posts") || "Back to Insights"}</span>
+            </Link>
 
-  return (
-    <div className={containerClass}>
-      <Link to="/posts" className={backClass}>← {translate('back_to_posts')}</Link>
-      
-      <div className={headerClass}>
-        {postCategory && <span className={categoryClass}>{postCategory.name}</span>}
-        <h1 className={titleClass}>{post.title}</h1>
-        <div className={metaClass}>
-          <span>{translate('author')}: {post.author?.name}</span>
-          <span>{translate('published_at')}: {formatDate(post.published_at)}</span>
-        </div>
-      </div>
+            <div className="bg-white border border-slate-200/90 rounded-xl p-6 sm:p-10 shadow-card">
+                <header className="mb-6 pb-6 border-b border-slate-100">
+                    {postCategory && (
+                        <span className="inline-block text-xs text-[#004687] font-semibold uppercase tracking-wider mb-2">
+                            {postCategory.name}
+                        </span>
+                    )}
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[#09253E] tracking-tight leading-snug mb-3">
+                        {post.title}
+                    </h1>
+                    <div className="flex items-center gap-4 text-xs text-slate-500 tabular-nums">
+                        {post.author?.name && (
+                            <span className="inline-flex items-center gap-1.5">
+                                <User size={13} />
+                                <span>{post.author.name}</span>
+                            </span>
+                        )}
+                        <span className="inline-flex items-center gap-1.5">
+                            <Calendar size={13} />
+                            <span>{formatDate(post.published_at || post.created_at)}</span>
+                        </span>
+                    </div>
+                </header>
 
-      {postImage ? (
-        <img 
-          src={postImage} 
-          alt={post.title} 
-          className={imageClass}
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
-      ) : (
-        <div className={`${imageClass} bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center`}>
-          <span className="text-6xl">📝</span>
-        </div>
-      )}
+                {postImage && (
+                    <img
+                        src={postImage}
+                        alt={post.title}
+                        className="w-full h-64 sm:h-80 object-cover rounded-xl mb-6 border border-slate-200/70"
+                        onError={(e) => {
+                            e.target.style.display = "none"
+                        }}
+                    />
+                )}
 
-      <div 
-        className={contentClass}
-        dangerouslySetInnerHTML={{ __html: post.content }}
-      />
-    </div>
-  );
-};
+                <div
+                    className="prose prose-slate max-w-none text-slate-700 leading-relaxed text-sm sm:text-base"
+                    dangerouslySetInnerHTML={{ __html: post.content }}
+                />
+            </div>
+        </article>
+    )
+}
 
-export default PostDetail;
+export default PostDetail

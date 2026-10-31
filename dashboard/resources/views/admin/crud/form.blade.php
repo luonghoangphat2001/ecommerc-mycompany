@@ -23,6 +23,9 @@
                     @php
                         $type = $field['type'] ?? 'text';
                         $defaultValue = $formData[$name] ?? data_get($record, $name);
+                        if ($defaultValue instanceof \BackedEnum) {
+                            $defaultValue = $defaultValue->value;
+                        }
                         $displayValue = is_array($defaultValue) ? json_encode($defaultValue, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : $defaultValue;
                         
                         $isWideDefault = in_array($type, ['textarea', 'editor', 'multiselect', 'tree-select', 'checkboxgroup', 'image', 'tags-checkboxes'], true);
@@ -59,7 +62,7 @@
                             </select>
                         @elseif ($type === 'tree-select')
                             @php($selected = old($name, $formData[$name] ?? []))
-                            <div class="tree-select-wrapper" style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                            <div class="tree-select-wrapper" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--fi-border); padding: 10px; border-radius: 6px;">
                                 @include('admin.crud.tree_node', ['nodes' => $field['tree_nodes'] ?? [], 'level' => 0, 'name' => $name, 'selected' => $selected])
                             </div>
                         @elseif ($type === 'checkboxgroup')
@@ -84,15 +87,15 @@
                                         }
                                     @endphp
                                     @if($imgSrc)
-                                        <img id="preview-{{ $name }}" src="{{ Str::startsWith($imgSrc, ['http', '/']) ? $imgSrc : asset('storage/' . $imgSrc) }}" style="max-height: 200px; max-width: 100%; object-fit: contain;">
+                                        <img id="preview-{{ $name }}" src="{{ Str::startsWith($imgSrc, ['http', '/']) ? $imgSrc : asset('storage/' . $imgSrc) }}" alt="" style="max-height: 200px; max-width: 100%; object-fit: contain;">
                                     @else
-                                        <img id="preview-{{ $name }}" style="max-height: 200px; max-width: 100%; object-fit: contain; display: none;">
+                                        <img id="preview-{{ $name }}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="" style="max-height: 200px; max-width: 100%; object-fit: contain; display: none;">
                                     @endif
                                 </div>
                             </div>
                         @elseif ($type === 'tags-checkboxes')
                             @php($selected = old($name, $formData[$name] ?? []))
-                            <div class="tree-select-wrapper" style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                            <div class="tree-select-wrapper" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--fi-border); padding: 10px; border-radius: 6px;">
                                 <div style="display: flex; flex-direction: column; gap: 8px;">
                                     @foreach (($field['options'] ?? []) as $value => $label)
                                         <label class="checkbox-item" style="margin-bottom: 0;">

@@ -1,88 +1,115 @@
-import useSettingsStore from '../../../store/useSettingsStore';
-import React from 'react';
+import React from "react"
+import useSettingsStore from "../../../store/useSettingsStore"
 
-const ShippingForm = ({ form, shippingMethods, selectedShippingMethod, onShippingMethodChange }) => {
-  const { translate } = useTranslation('checkout');
-  const { register, formState: { errors } } = form;
+const ShippingForm = ({ form, shippingMethods = [], selectedShippingMethod, onShippingMethodChange }) => {
+    const translate = useSettingsStore((state) => state.translate)
+    const {
+        register,
+        formState: { errors },
+    } = form
 
-  const containerClass = "space-y-6";
-  const sectionClass = "space-y-4";
-  const titleClass = "text-lg font-semibold";
-  const gridClass = "grid grid-cols-1 md:grid-cols-2 gap-4";
-  const inputClass = "w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent";
-  const errorClass = "text-red-500 text-sm";
-  const radioContainerClass = "space-y-2";
-  const radioClass = "flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50";
-  const selectedRadioClass = "border-blue-500 bg-blue-50";
+    const inputClass =
+        "w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#004687]/15 focus:border-[#004687]"
+    const errorClass = "text-red-600 text-xs mt-1"
 
-  return (
-    <div className={containerClass}>
-      <div className={sectionClass}>
-        <h2 className={titleClass}>{translate('shipping_info')}</h2>
-        <div className={gridClass}>
-          <div>
-            <label className="block text-sm font-medium mb-1">{translate('profile.first_name')}</label>
-            <input {...register('shipping_address.first_name')} className={inputClass} />
-            {errors.shipping_address?.first_name && <p className={errorClass}>{errors.shipping_address.first_name.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{translate('profile.last_name')}</label>
-            <input {...register('shipping_address.last_name')} className={inputClass} />
-            {errors.shipping_address?.last_name && <p className={errorClass}>{errors.shipping_address.last_name.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{translate('profile.email')}</label>
-            <input {...register('shipping_address.email')} type="email" className={inputClass} />
-            {errors.shipping_address?.email && <p className={errorClass}>{errors.shipping_address.email.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{translate('profile.phone')}</label>
-            <input {...register('shipping_address.phone')} className={inputClass} />
-            {errors.shipping_address?.phone && <p className={errorClass}>{errors.shipping_address.phone.message}</p>}
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium mb-1">{translate('address.street')}</label>
-            <input {...register('shipping_address.address')} className={inputClass} />
-            {errors.shipping_address?.address && <p className={errorClass}>{errors.shipping_address.address.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{translate('address.city')}</label>
-            <input {...register('shipping_address.city')} className={inputClass} />
-            {errors.shipping_address?.city && <p className={errorClass}>{errors.shipping_address.city.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{translate('address.postal_code')}</label>
-            <input {...register('shipping_address.postal_code')} className={inputClass} />
-            {errors.shipping_address?.postal_code && <p className={errorClass}>{errors.shipping_address.postal_code.message}</p>}
-          </div>
+    return (
+        <div className="space-y-6">
+            <div className="space-y-4">
+                <h2 className="text-base font-bold text-[#09253E]">{translate("checkout.shipping_info")}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                            {translate("checkout.first_name")}
+                        </label>
+                        <input {...register("shipping_address.first_name")} className={inputClass} />
+                        {errors.shipping_address?.first_name && (
+                            <p className={errorClass}>{errors.shipping_address.first_name.message}</p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                            {translate("checkout.last_name")}
+                        </label>
+                        <input {...register("shipping_address.last_name")} className={inputClass} />
+                        {errors.shipping_address?.last_name && (
+                            <p className={errorClass}>{errors.shipping_address.last_name.message}</p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                            {translate("checkout.email")}
+                        </label>
+                        <input {...register("shipping_address.email")} type="email" className={inputClass} />
+                        {errors.shipping_address?.email && (
+                            <p className={errorClass}>{errors.shipping_address.email.message}</p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                            {translate("checkout.phone")}
+                        </label>
+                        <input {...register("shipping_address.phone")} className={inputClass} />
+                        {errors.shipping_address?.phone && (
+                            <p className={errorClass}>{errors.shipping_address.phone.message}</p>
+                        )}
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                            {translate("checkout.address")}
+                        </label>
+                        <input {...register("shipping_address.address")} className={inputClass} />
+                        {errors.shipping_address?.address && (
+                            <p className={errorClass}>{errors.shipping_address.address.message}</p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                            {translate("checkout.city")}
+                        </label>
+                        <input {...register("shipping_address.city")} className={inputClass} />
+                        {errors.shipping_address?.city && (
+                            <p className={errorClass}>{errors.shipping_address.city.message}</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {shippingMethods.length > 0 && (
+                <div className="space-y-3">
+                    <h2 className="text-base font-bold text-[#09253E]">
+                        {translate("checkout.shipping_method")}
+                    </h2>
+                    <div className="space-y-2.5">
+                        {shippingMethods.map((method) => (
+                            <label
+                                key={method.id}
+                                className={`flex items-center gap-3 p-3.5 border rounded-xl cursor-pointer transition-colors ${
+                                    selectedShippingMethod === method.id
+                                        ? "border-[#004687] bg-[#004687]/[0.03]"
+                                        : "border-slate-200 hover:bg-slate-50"
+                                }`}
+                            >
+                                <input
+                                    type="radio"
+                                    value={method.id}
+                                    {...register("shipping_method_id")}
+                                    onChange={() => onShippingMethodChange(method.id)}
+                                    className="accent-[#004687]"
+                                />
+                                <div className="flex-1 flex justify-between text-sm">
+                                    <span className="font-semibold text-slate-900">{method.name}</span>
+                                    <span className="text-slate-600 tabular-nums">{method.price}</span>
+                                </div>
+                            </label>
+                        ))}
+                    </div>
+                    {errors.shipping_method_id && (
+                        <p className={errorClass}>{errors.shipping_method_id.message}</p>
+                    )}
+                </div>
+            )}
         </div>
-      </div>
+    )
+}
 
-      <div className={sectionClass}>
-        <h2 className={titleClass}>{translate('payment_method')}</h2>
-        <div className={radioContainerClass}>
-          {shippingMethods.map((method) => (
-            <label
-              key={method.id}
-              className={`${radioClass} ${selectedShippingMethod === method.id ? selectedRadioClass : ''}`}
-            >
-              <input
-                type="radio"
-                value={method.id}
-                {...register('shipping_method_id')}
-                onChange={() => onShippingMethodChange(method.id)}
-              />
-              <div>
-                <span className="font-medium">{method.name}</span>
-                <span className="text-sm text-gray-600 ml-2">{method.price}</span>
-              </div>
-            </label>
-          ))}
-        </div>
-        {errors.shipping_method_id && <p className={errorClass}>{errors.shipping_method_id.message}</p>}
-      </div>
-    </div>
-  );
-};
-
-export default ShippingForm;
+export default ShippingForm
