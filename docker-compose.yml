@@ -1,0 +1,51 @@
+name: ecommerce-mycompany
+
+services:
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: ecommerce-mycompany-dashboard
+    restart: unless-stopped
+    ports:
+      - "8009:80"
+    environment:
+      APP_URL: http://localhost:8009
+      FRONTEND_URL: http://localhost:8010
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8010,http://localhost:5173,http://127.0.0.1:8010,http://127.0.0.1:3000
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+    volumes:
+      - ./dashboard:/var/www/html
+    networks:
+      - ecommerce-network
+
+  website:
+    build:
+      context: ./website
+      dockerfile: Dockerfile
+      target: development
+    container_name: ecommerce-mycompany-website
+    restart: unless-stopped
+    ports:
+      - "8010:3000"
+    environment:
+      PORT: 3000
+      HOST: 0.0.0.0
+      WDS_SOCKET_PORT: 8010
+      CHOKIDAR_USEPOLLING: "true"
+      REACT_APP_API_URL: http://localhost:8009/api/v1/storefront
+    volumes:
+      - ./website:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    depends_on:
+      - dashboard
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge
+

@@ -25,6 +25,28 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
+    <script>
+      // Prevent browser extensions (e.g. Urban VPN, adblockers) from triggering React error overlay
+      window.addEventListener('error', function(event) {
+        if (
+          (event.filename && event.filename.includes('chrome-extension://')) ||
+          (event.error && event.error.stack && event.error.stack.includes('chrome-extension://'))
+        ) {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', function(event) {
+        if (
+          event.reason &&
+          event.reason.stack &&
+          event.reason.stack.includes('chrome-extension://')
+        ) {
+          event.stopImmediatePropagation();
+          event.preventDefault();
+        }
+      }, true);
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
