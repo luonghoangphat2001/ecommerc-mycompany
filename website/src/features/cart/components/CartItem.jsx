@@ -1,5 +1,5 @@
 import React from "react"
-import { Trash2, Plus, Minus, AlertCircle, MapPin } from "lucide-react"
+import { Trash2, Plus, Minus, AlertCircle, MapPin, Package } from "lucide-react"
 import { useFormatters } from "../../../utils/useFormatters"
 
 const CartItem = ({ item, onUpdateQuantity, onRemove, notification }) => {
@@ -18,15 +18,24 @@ const CartItem = ({ item, onUpdateQuantity, onRemove, notification }) => {
         >
             <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
                 {/* Product Image */}
-                <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden border border-slate-200/70 flex-shrink-0 relative">
-                    <img
-                        src={imageSrc || "/placeholder-product.jpg"}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                            e.target.src = "/placeholder-product.jpg"
-                        }}
-                    />
+                <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden border border-slate-200/70 flex-shrink-0 relative flex items-center justify-center text-slate-400">
+                    {imageSrc ? (
+                        <img
+                            src={imageSrc}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                                e.currentTarget.onerror = null
+                                e.currentTarget.style.display = "none"
+                                if (e.currentTarget.nextSibling) {
+                                    e.currentTarget.nextSibling.style.display = "flex"
+                                }
+                            }}
+                        />
+                    ) : null}
+                    <div className={`w-full h-full items-center justify-center ${imageSrc ? "hidden" : "flex"}`}>
+                        <Package size={28} />
+                    </div>
                     {!isAvailable && (
                         <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center">
                             <span className="text-white text-[10px] font-bold px-1.5 py-0.5 bg-red-600 rounded">

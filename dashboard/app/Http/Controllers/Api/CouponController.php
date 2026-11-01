@@ -65,4 +65,54 @@ class CouponController extends BaseApiController
             return $this->error($e->getMessage(), 422);
         }
     }
+
+    public function index(Request $request): JsonResponse
+    {
+        $coupons = \App\Models\Coupon::query()
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+            })
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($coupon) => [
+                'id' => $coupon->id,
+                'code' => $coupon->code,
+                'type' => $coupon->type instanceof \BackedEnum ? $coupon->type->value : $coupon->type,
+                'value' => (float) $coupon->value,
+                'min_order_amount' => (float) ($coupon->min_order_amount ?? 0),
+                'max_discount_amount' => $coupon->max_discount_amount ? (float) $coupon->max_discount_amount : null,
+                'starts_at' => $coupon->starts_at?->toIso8601String(),
+                'expires_at' => $coupon->expires_at?->toIso8601String(),
+            ]);
+
+        return $this->ok($coupons);
+    }
+
+    public function myUsages(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return $this->unauthorized();
+        }
+
+        $usages = \App\Models\OrderCoupon::query()
+            ->with(['order', 'coupon'])
+            ->whereHas('order', fn ($q) => $q->where('user_id', $user->id))
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($usage) => [
+                'id' => $usage->id,
+                'order_id' => $usage->order_id,
+                'order_number' => $usage->order?->number,
+                'code' => $usage->coupon_code,
+                'discount_amount' => (float) $usage->discount_amount,
+                'used_at' => $usage->created_at?->toIso8601String(),
+            ]);
+
+        return $this->ok($usages);
+    }
 }

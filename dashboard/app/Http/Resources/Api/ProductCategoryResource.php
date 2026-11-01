@@ -28,6 +28,9 @@ class ProductCategoryResource extends BaseResource
             'name' => $this->translate('name'),
             'slug' => $this->slug,
             'description' => $this->translate('description'),
+            'parent_id' => $this->parent_id,
+            'children' => self::collection($this->whenLoaded('children')),
+            'products_count' => $this->whenCounted('products', $this->products_count ?? null),
         ], $this->getVisibility(), $this->getTimestamps());
     }
 }

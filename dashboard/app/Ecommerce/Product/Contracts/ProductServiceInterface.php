@@ -41,7 +41,7 @@ interface ProductServiceInterface
      */
     public function calculateDisplayPrice(Product $product): int;
 
-    public function paginate(int $perPage = 15, array $columns = ['*'], array $relations = []);
+    public function paginate(int $perPage = 15, array $columns = ['*'], array $relations = [], array $filters = []);
 
     public function findOrFail(int|string $id, array $columns = ['*'], array $relations = []): Product;
 

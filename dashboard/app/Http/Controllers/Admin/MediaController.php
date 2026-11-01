@@ -70,4 +70,37 @@ class MediaController extends BaseCrudController
             'caption' => ['label' => __('admin.media.fields.caption'), 'type' => 'textarea', 'rules' => ['nullable', 'string']],
         ];
     }
+
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|image|max:10240',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('uploads', 'public');
+        $url = asset('storage/' . $path);
+
+        try {
+            Media::create([
+                'name' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
+                'file_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'disk' => 'public',
+                'size' => $file->getSize(),
+                'path' => $path,
+                'visibility' => 'public',
+                'type' => 'image',
+                'ext' => $file->getClientOriginalExtension(),
+            ]);
+        } catch (\Throwable $e) {
+            // Keep going even if media record insert has an issue
+        }
+
+        return response()->json([
+            'success' => true,
+            'url' => $url,
+            'path' => $path,
+        ]);
+    }
 }

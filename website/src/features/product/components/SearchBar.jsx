@@ -25,7 +25,7 @@ const SearchBar = ({ placeholder }) => {
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="block w-full pl-9 pr-3.5 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#004687]/15 focus:border-[#004687] transition-all"
+                className="block w-full pl-10 pr-3.5 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50/80 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#004687]/15 focus:border-[#004687] transition-all"
                 placeholder={placeholder || "Search products, SKUs..."}
             />
         </form>

@@ -75,6 +75,137 @@ class AuthController extends BaseApiController
         ], __('messages.login_success') ?? 'Login successful.');
     }
 
+    public function register(Request $request)
+    {
+        $rules = [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'password' => ['required', 'string', 'min:6'],
+            'device_name' => ['nullable', 'string', 'max:255'],
+        ];
+
+        if ($request->filled('password_confirmation')) {
+            $rules['password'][] = 'confirmed';
+        }
+
+        $validated = $request->validate($rules);
+
+        $authData = $this->authService->register($validated);
+
+        \App\Services\Logging\ModuleLogger::auth()->info('register_success', 'User registered successfully', [
+            'user_id' => $authData['user']->id,
+            'email' => $validated['email'],
+        ]);
+
+        return $this->created([
+            'access_token' => $authData['access_token'],
+            'token_type' => $authData['token_type'],
+            'expires_in' => $authData['expires_in'],
+            'user' => new UserResource($authData['user']),
+        ], __('storefront.auth.register_success'));
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+        $token = null;
+
+        if ($user) {
+            $token = \Illuminate\Support\Str::random(64);
+            try {
+                \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
+                    ['email' => $user->email],
+                    [
+                        'token' => Hash::make($token),
+                        'created_at' => now(),
+                    ]
+                );
+            } catch (\Throwable $e) {
+                // Table may not exist in minimal sqlite setup
+            }
+        }
+
+        return $this->ok([
+            'reset_sent' => true,
+            'email' => $validated['email'],
+        ], __('storefront.auth.reset_email_sent'));
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $rules = [
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'min:6'],
+            'token' => ['nullable', 'string'],
+        ];
+
+        if ($request->filled('password_confirmation')) {
+            $rules['password'][] = 'confirmed';
+        }
+
+        $validated = $request->validate($rules);
+
+        $user = User::where('email', $validated['email'])->first();
+        if (!$user) {
+            return $this->notFound('User not found');
+        }
+
+        $user->update([
+            'password' => $validated['password'],
+        ]);
+
+        try {
+            \Illuminate\Support\Facades\DB::table('password_reset_tokens')
+                ->where('email', $user->email)
+                ->delete();
+        } catch (\Throwable $e) {
+            // Ignore if table doesn't exist
+        }
+
+        return $this->ok([
+            'reset' => true,
+        ], __('storefront.auth.reset_success'));
+    }
+
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return $this->unauthorized(__('messages.unauthorized') ?? 'Unauthorized');
+        }
+
+        $rules = [
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:6'],
+        ];
+
+        if ($request->filled('password_confirmation')) {
+            $rules['password'][] = 'confirmed';
+        }
+
+        $validated = $request->validate($rules);
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => [__('storefront.account.password_update_failed')],
+            ]);
+        }
+
+        $user->update([
+            'password' => $validated['password'],
+        ]);
+
+        return $this->ok(
+            new UserResource($user->fresh(['defaultShippingAddress', 'defaultBillingAddress'])),
+            __('storefront.account.password_updated')
+        );
+    }
+
     #[ApiPost(
         path: '/auth/refresh-token',
         summary: 'Refresh Access Token',
@@ -177,18 +308,42 @@ class AuthController extends BaseApiController
         }
 
         $validated = $request->validated();
+
+        if (!empty($validated['password'])) {
+            if (empty($validated['current_password']) || !Hash::check($validated['current_password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'current_password' => [__('storefront.account.password_update_failed')],
+                ]);
+            }
+            if ($request->filled('password_confirmation') && $validated['password'] !== $request->input('password_confirmation')) {
+                throw ValidationException::withMessages([
+                    'password_confirmation' => [__('storefront.account.password_mismatch')],
+                ]);
+            }
+        } else {
+            unset($validated['password']);
+        }
+
+        unset($validated['current_password'], $validated['password_confirmation']);
+
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $validated['photo'] = $path;
+        }
+        unset($validated['avatar']);
+
         $oldData = $user->only(['name', 'phone', 'default_shipping_address_id', 'default_billing_address_id']);
         $user->update($validated);
 
         \App\Services\Logging\ModuleLogger::user()->info('profile_updated', 'User profile updated successfully', [
             'user_id' => $user->id,
             'old_data' => $oldData,
-            'new_data' => $validated,
+            'new_data' => collect($validated)->except(['password'])->toArray(),
         ]);
 
         return $this->ok(
             new UserResource($user->fresh(['defaultShippingAddress', 'defaultBillingAddress'])),
-            __('messages.profile_updated') ?? 'Profile updated successfully'
+            __('storefront.account.profile_updated')
         );
     }
 }

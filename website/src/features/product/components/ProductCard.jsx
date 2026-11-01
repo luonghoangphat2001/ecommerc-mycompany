@@ -1,6 +1,6 @@
 import React from "react"
 import { Link } from "react-router-dom"
-import { ShoppingCart, AlertCircle } from "lucide-react"
+import { ShoppingCart, AlertCircle, Package } from "lucide-react"
 import useCartStore from "../../cart/store/useCartStore"
 import useSettingsStore from "../../../store/useSettingsStore"
 import { useFormatters } from "../../../utils/useFormatters"
@@ -8,7 +8,7 @@ import { useFormatters } from "../../../utils/useFormatters"
 const ProductCard = ({ product }) => {
     const addToCart = useCartStore((state) => state.addToCart)
     const translate = useSettingsStore((state) => state.translate)
-    const { formatCurrency } = useFormatters()
+    const { formatCurrency, getLocalizedText } = useFormatters()
 
     const stock = product.stock || product.qty || 0
     const inventories = product.inventories || []
@@ -32,6 +32,7 @@ const ProductCard = ({ product }) => {
         hasDiscount && product.price > 0
             ? Math.round((1 - product.effective_price / product.price) * 100)
             : 0
+    const productName = getLocalizedText(product.name)
 
     return (
         <Link
@@ -41,18 +42,27 @@ const ProductCard = ({ product }) => {
             }`}
         >
             {/* Product Image */}
-            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100">
-                <img
-                    src={imageSrc || "/placeholder-product.jpg"}
-                    alt={product.name}
-                    loading="lazy"
-                    className={`w-full h-full object-cover transition-transform duration-300 ease-out ${
-                        isAvailable ? "group-hover:scale-[1.03]" : "grayscale"
-                    }`}
-                    onError={(e) => {
-                        e.target.src = "/placeholder-product.jpg"
-                    }}
-                />
+            <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100 flex items-center justify-center text-slate-300">
+                {imageSrc ? (
+                    <img
+                        src={imageSrc}
+                        alt={productName}
+                        loading="lazy"
+                        className={`w-full h-full object-cover transition-transform duration-300 ease-out ${
+                            isAvailable ? "group-hover:scale-[1.03]" : "grayscale"
+                        }`}
+                        onError={(e) => {
+                            e.currentTarget.onerror = null
+                            e.currentTarget.style.display = "none"
+                            if (e.currentTarget.nextSibling) {
+                                e.currentTarget.nextSibling.style.display = "flex"
+                            }
+                        }}
+                    />
+                ) : null}
+                <div className={`w-full h-full items-center justify-center ${imageSrc ? "hidden" : "flex"}`}>
+                    <Package size={36} />
+                </div>
 
                 {/* Top Left Badges */}
                 <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
@@ -72,7 +82,7 @@ const ProductCard = ({ product }) => {
                 {!isAvailable && (
                     <div className="absolute top-2.5 right-2.5">
                         <span className="px-2 py-0.5 text-[11px] font-semibold bg-slate-900/85 text-white rounded-md">
-                            Out of Stock
+                            {translate("product.out_of_stock") || "Out of Stock"}
                         </span>
                     </div>
                 )}
@@ -84,11 +94,11 @@ const ProductCard = ({ product }) => {
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                     {product.categories && product.categories.length > 0 ? (
                         <span className="text-[11px] text-[#004687] font-semibold uppercase tracking-wider truncate">
-                            {product.categories[0].name}
+                            {getLocalizedText(product.categories[0].name)}
                         </span>
                     ) : (
                         <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                            {product.brand?.name || "Catalog"}
+                            {getLocalizedText(product.brand?.name) || translate("header.shop") || "Catalog"}
                         </span>
                     )}
 
@@ -102,13 +112,15 @@ const ProductCard = ({ product }) => {
                                 isAvailable ? "bg-emerald-500" : "bg-red-500"
                             }`}
                         />
-                        {isAvailable ? "In Stock" : "Out of Stock"}
+                        {isAvailable
+                            ? translate("product.in_stock") || "In Stock"
+                            : translate("product.out_of_stock") || "Out of Stock"}
                     </span>
                 </div>
 
                 {/* Product Name */}
                 <h3 className="font-semibold text-[#09253E] line-clamp-2 text-sm leading-snug mb-3 group-hover:text-[#004687] transition-colors">
-                    {product.name}
+                    {productName}
                 </h3>
 
                 {/* Price & Action Footer */}
@@ -128,8 +140,8 @@ const ProductCard = ({ product }) => {
                         type="button"
                         onClick={handleAddToCart}
                         disabled={!isAvailable}
-                        aria-label={isAvailable ? translate("product.add_to_cart") : "Out of Stock"}
-                        title={isAvailable ? translate("product.add_to_cart") : "Out of Stock"}
+                        aria-label={isAvailable ? translate("product.add_to_cart") : translate("product.out_of_stock")}
+                        title={isAvailable ? translate("product.add_to_cart") : translate("product.out_of_stock")}
                         className={`h-9 px-3 rounded-lg inline-flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors shrink-0 ${
                             isAvailable
                                 ? "bg-[#004687]/10 text-[#004687] hover:bg-[#004687] hover:text-white"

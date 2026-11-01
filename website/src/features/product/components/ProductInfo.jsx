@@ -4,8 +4,10 @@ import { Button } from "../../../components/common"
 import { useFormatters } from "../../../utils/useFormatters"
 
 const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAddToCart, translate }) => {
-    const { formatCurrency } = useFormatters()
+    const { formatCurrency, getLocalizedText } = useFormatters()
     const isAvailable = stock > 0
+    const productName = getLocalizedText(product.name)
+    const productDescription = getLocalizedText(product.description)
 
     return (
         <div className="flex flex-col">
@@ -25,14 +27,16 @@ const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAdd
                 >
                     {isAvailable ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
                     <span className="tabular-nums">
-                        {isAvailable ? `In Stock (${stock} units)` : "Out of Stock"}
+                        {isAvailable
+                            ? translate("product.in_stock_units", { count: stock }) || `In Stock (${stock} units)`
+                            : translate("product.out_of_stock") || "Out of Stock"}
                     </span>
                 </span>
             </div>
 
             {/* Product Title */}
             <h1 className="text-2xl sm:text-3xl font-bold text-[#09253E] mb-3 tracking-tight leading-snug">
-                {product.name}
+                {productName}
             </h1>
 
             {/* Pricing Block */}
@@ -49,7 +53,7 @@ const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAdd
 
             {/* Product Description */}
             <div className="text-sm text-slate-600 mb-6 leading-relaxed">
-                <p>{product.description || translate("product.no_description")}</p>
+                <p>{productDescription || translate("product.no_description")}</p>
             </div>
 
             {/* Specifications Meta Table */}
@@ -57,14 +61,14 @@ const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAdd
                 <div className="flex flex-col gap-2.5 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-xs">
                     {product.sku && (
                         <div className="flex items-center justify-between">
-                            <span className="text-slate-500 font-medium">SKU:</span>
+                            <span className="text-slate-500 font-medium">{translate("product.sku") || "SKU"}:</span>
                             <span className="text-slate-900 font-mono font-semibold">{product.sku}</span>
                         </div>
                     )}
                     {product.brand && (
                         <div className="flex items-center justify-between">
                             <span className="text-slate-500 font-medium">{translate("product.brand")}:</span>
-                            <span className="text-slate-900 font-semibold">{product.brand.name}</span>
+                            <span className="text-slate-900 font-semibold">{getLocalizedText(product.brand.name)}</span>
                         </div>
                     )}
                     {product.categories && product.categories.length > 0 && (
@@ -76,7 +80,7 @@ const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAdd
                                         key={cat.id}
                                         className="font-semibold bg-white border border-slate-200 text-slate-700 px-2 py-0.5 rounded"
                                     >
-                                        {cat.name}
+                                        {getLocalizedText(cat.name)}
                                     </span>
                                 ))}
                             </div>
@@ -117,14 +121,21 @@ const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAdd
                     className="h-11 gap-2.5 flex-1"
                 >
                     <ShoppingCart size={18} />
-                    <span>{isAvailable ? translate("product.add_to_cart") : "Out of Stock"}</span>
+                    <span>
+                        {isAvailable
+                            ? translate("product.add_to_cart")
+                            : translate("product.out_of_stock") || "Out of Stock"}
+                    </span>
                 </Button>
             </div>
 
             {/* Service Guarantee Note */}
             <div className="flex items-center gap-2 text-xs text-slate-500 pt-2">
                 <ShieldCheck size={15} className="text-[#004687] shrink-0" />
-                <span>Official warranty included • Inspected before dispatch</span>
+                <span>
+                    {translate("product.warranty_note") ||
+                        "Official warranty included • Inspected before dispatch"}
+                </span>
             </div>
         </div>
     )

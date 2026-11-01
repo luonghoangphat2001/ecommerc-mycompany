@@ -6,10 +6,16 @@ import useSettingsStore from "../store/useSettingsStore"
 import CartItem from "../features/cart/components/CartItem"
 import CartSummary from "../features/cart/components/CartSummary"
 import { EmptyState, Button, PageHeading } from "../components/common"
+import useSeo from "../utils/useSeo"
 
 const CartPage = () => {
     const { items, summary, updateQuantity, removeFromCart, getCartTotal } = useCartStore()
     const translate = useSettingsStore((state) => state.translate)
+
+    useSeo({
+        title: translate("cart.page_title") || "Shopping Cart",
+        canonicalPath: "/cart",
+    })
 
     if (items.length === 0) {
         return (

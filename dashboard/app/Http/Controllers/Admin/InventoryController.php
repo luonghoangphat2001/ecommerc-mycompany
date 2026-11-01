@@ -3,11 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasInventoryTabs;
 use App\Models\Inventory;
 use Illuminate\Support\Str;
 
 class InventoryController extends BaseCrudController
 {
+    use HasInventoryTabs;
+
+    protected function activeTab(): ?string
+    {
+        return 'inventories';
+    }
     protected function modelClass(): string
     {
         return Inventory::class;

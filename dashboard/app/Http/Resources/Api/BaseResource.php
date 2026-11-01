@@ -12,12 +12,7 @@ class BaseResource extends JsonResource
      */
     protected function translate(string $field): mixed
     {
-        if (method_exists($this->resource, 'getTranslation')) {
-            $locale = app()->getLocale();
-            return $this->resource->getTranslation($field, $locale);
-        }
-
-        return $this->resource->{$field} ?? null;
+        return $this->translateField($this->resource, $field);
     }
 
     /**
@@ -46,11 +41,34 @@ class BaseResource extends JsonResource
      */
     protected function translateField($model, string $field): mixed
     {
-        if (method_exists($model, 'getTranslation')) {
-            $locale = app()->getLocale();
-            return $model->getTranslation($field, $locale);
+        if (!$model) {
+            return null;
         }
 
-        return $model->{$field} ?? null;
+        $locale = app()->getLocale() ?: 'vi';
+
+        if (method_exists($model, 'isTranslatableAttribute') && $model->isTranslatableAttribute($field)) {
+            $value = $model->getTranslation($field, $locale, false);
+            if ($value !== '' && $value !== null) {
+                return $value;
+            }
+            $translations = method_exists($model, 'getTranslations') ? $model->getTranslations($field) : [];
+            return $translations[$locale] ?? $translations['vi'] ?? $translations['en'] ?? (!empty($translations) ? reset($translations) : null);
+        }
+
+        $raw = $model->{$field} ?? null;
+
+        if (is_array($raw)) {
+            return $raw[$locale] ?? $raw['vi'] ?? $raw['en'] ?? (!empty($raw) ? reset($raw) : null);
+        }
+
+        if (is_string($raw) && str_starts_with(trim($raw), '{')) {
+            $decoded = json_decode($raw, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded[$locale] ?? $decoded['vi'] ?? $decoded['en'] ?? (!empty($decoded) ? reset($decoded) : $raw);
+            }
+        }
+
+        return $raw;
     }
 }

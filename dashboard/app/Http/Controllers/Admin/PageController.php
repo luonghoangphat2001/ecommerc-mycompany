@@ -30,20 +30,20 @@ class PageController extends BaseCrudController
     protected function fields(): array
     {
         return [
-            'title' => ['label' => 'Title', 'rules' => ['required', 'string', 'max:255']],
+            'title' => ['label' => __('admin.fields.title'), 'rules' => ['required']],
             'slug' => ['label' => 'Slug', 'rules' => ['required', 'string', 'max:255']],
             'layout' => ['label' => 'Layout', 'rules' => ['required', 'string', 'max:100']],
             'parent_id' => [
-                'label' => 'Parent',
+                'label' => __('admin.fields.parent'),
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:pages,id'],
-                'options' => ['' => '-- Root --'] + Page::orderBy('id')->pluck('title', 'id')->toArray(),
+                'options' => ['' => '-- Root --'] + Page::orderBy('id')->get()->pluck('title', 'id')->toArray(),
             ],
             'blocks' => [
-                'label' => 'Blocks JSON',
+                'label' => __('admin.page.fields.blocks'),
                 'type' => 'blocks',
                 'rules' => ['nullable', 'string'],
-                'hint' => 'Hỗ trợ kéo thả block dạng media, text, textarea, gallery, code-editor, number.',
+                'hint' => __('admin.page.blocks_hint'),
                 'isWide' => true,
             ],
         ];
@@ -51,6 +51,8 @@ class PageController extends BaseCrudController
 
     protected function mutateData(array $data, ?\Illuminate\Database\Eloquent\Model $record = null): array
     {
+        $data = parent::mutateData($data, $record);
+
         if (isset($data['blocks']) && is_string($data['blocks'])) {
             $decoded = json_decode($data['blocks'], true);
             $data['blocks'] = json_last_error() === JSON_ERROR_NONE ? $decoded : [];
@@ -67,9 +69,7 @@ class PageController extends BaseCrudController
         if (! $record) {
             return [
                 'blocks' => json_encode([
-                    ['type' => 'media', 'value' => null, 'caption' => ''],
-                    ['type' => 'text', 'value' => ''],
-                    ['type' => 'textarea', 'value' => ''],
+                    ['type' => 'editor', 'value' => '', 'caption' => ''],
                 ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
             ];
         }

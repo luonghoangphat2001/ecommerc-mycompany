@@ -11,10 +11,10 @@ return new class extends Migration
         // Brands
         Schema::create('shop_brands', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->json('name');
             $table->string('slug')->unique();
             $table->string('website')->nullable();
-            $table->longText('description')->nullable();
+            $table->json('description')->nullable();
             $table->unsignedBigInteger('sort')->default(0);
             $table->boolean('is_visible')->default(false);
             $table->string('seo_title')->nullable();
@@ -26,10 +26,10 @@ return new class extends Migration
         // Shop Categories
         Schema::create('shop_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->json('name');
             $table->string('slug')->unique();
             $table->foreignId('parent_id')->nullable()->constrained('shop_categories')->cascadeOnDelete();
-            $table->longText('description')->nullable();
+            $table->json('description')->nullable();
             $table->unsignedBigInteger('sort')->default(0);
             $table->boolean('is_visible')->default(false);
             $table->string('seo_title', 60)->nullable();

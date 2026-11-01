@@ -12,133 +12,164 @@
     $topProductsDonutList = collect($topProductsDonut ?? []);
     $donutTotal = max(1, $topProductsDonutList->sum('total_sold'));
     $donutColors = ['#004687', '#0284c7', '#059669', '#fbae17', '#475569', '#94a3b8'];
-    $donutSegments = [];
-    $offset = 0;
-    foreach ($topProductsDonutList as $index => $item) {
-        $percentage = ($item->total_sold / $donutTotal) * 100;
-        $donutSegments[] = $donutColors[$index % count($donutColors)] . ' ' . $offset . '% ' . ($offset + $percentage) . '%';
-        $offset += $percentage;
-    }
-    $donutBackground = $donutSegments !== [] ? 'conic-gradient(' . implode(', ', $donutSegments) . ')' : '#e2e8f0';
+
+    $statusCollection = collect(!empty($orderStatusCounts) ? $orderStatusCounts : ($orderDistribution ?? []));
+    $statusTotalCount = max(1, $statusCollection->sum());
 @endphp
 
 @section('content')
     @if (session('status'))
-        <div class="status-message" style="display: flex; align-items: center; gap: 8px; margin-bottom: 18px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div class="status-message">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span>{{ session('status') }}</span>
         </div>
     @endif
     @if (session('error'))
-        <div style="background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 10px 14px; border-radius: 8px; margin-bottom: 18px; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div style="background: var(--fi-danger-bg); border: 1px solid var(--fi-danger-border); color: #b91c1c; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-weight: 600; font-size: 12.5px; display: flex; align-items: center; gap: 8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span>{{ session('error') }}</span>
         </div>
     @endif
 
-    <!-- Executive Operations Command Center -->
-    <div class="card" style="margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 18px; border-bottom: 1px solid #f1f5f9; padding-bottom: 16px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 40px; height: 40px; border-radius: 10px; background: #09253e; display: grid; place-items: center; color: #fbae17; flex-shrink: 0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
-                </div>
-                <div>
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <h2 style="font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -0.01em; color: #09253e;">TRUNG TÂM ĐIỀU HÀNH & GIÁM SÁT DOANH NGHIỆP</h2>
-                        <span class="badge badge-success">
-                            <span style="width: 6px; height: 6px; border-radius: 999px; background: #059669;"></span>
-                            Đang hoạt động (6 phân hệ)
-                        </span>
-                    </div>
-                    <p style="margin: 3px 0 0 0; color: #64748b; font-size: 12.5px;">
-                        Bảng điều khiển tích hợp giám sát chuỗi cung ứng, vận hành, kiểm toán và phê duyệt chi phí theo thời gian thực
-                    </p>
-                </div>
+    <!-- 1. EXECUTIVE PAGE HEADER -->
+    <div class="page-header" style="margin-bottom: 18px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <h1 class="page-title">{{ __('admin.dashboard.title') }}</h1>
+                <span class="badge badge-success">{{ __('admin.executive.active_departments') }}</span>
             </div>
-
-            <!-- Quick Alert Badges -->
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;" class="tabular-nums">
-                <a href="#exception-inbox" class="badge badge-danger" style="padding: 5px 10px; text-decoration: none;">
-                    <span>Phê duyệt chi:</span> <strong>{{ $pendingProposals->count() }} Chờ duyệt</strong>
-                </a>
-                <a href="{{ route('admin.workspace.show', 'ops') }}" class="badge badge-warning" style="padding: 5px 10px; text-decoration: none;">
-                    <span>Sự cố mở:</span> <strong>{{ $urgentIncidents->count() }}</strong>
-                </a>
-                <a href="{{ route('admin.workspace.show', 'logistics') }}" class="badge badge-info" style="padding: 5px 10px; text-decoration: none;">
-                    <span>Tồn kho cảnh báo:</span> <strong>{{ $lowStockProductsCount }} SKU</strong>
-                </a>
-            </div>
+            <p class="page-description">{{ __('admin.dashboard.description') }}</p>
         </div>
 
-        <!-- 6 Department Workspaces Grid -->
-        <div style="margin-bottom: 16px;">
-            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px;">
-                CÁC PHÂN HỆ NGHIỆP VỤ THEO PHÒNG BAN
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 10px;">
-                @php
-                    $agentCards = [
-                        ['code' => 'rnd', 'name' => 'Phòng R&D', 'role' => 'Sản phẩm & Khuyến mãi', 'tag' => 'R&D', 'color' => '#004687'],
-                        ['code' => 'logistics', 'name' => 'Phòng Logistics', 'role' => 'Chuỗi cung ứng & PO', 'tag' => 'LOG', 'color' => '#0284c7'],
-                        ['code' => 'cfo', 'name' => 'Phòng Tài Chính', 'role' => 'Dòng tiền & Chi phí', 'tag' => 'CFO', 'color' => '#059669'],
-                        ['code' => 'ops', 'name' => 'Phòng Vận Hành', 'role' => 'Vận hành & Sự cố', 'tag' => 'OPS', 'color' => '#d97706'],
-                        ['code' => 'cskh', 'name' => 'Phòng CSKH', 'role' => 'Trải nghiệm & Đánh giá', 'tag' => 'CS', 'color' => '#004687'],
-                        ['code' => 'hr', 'name' => 'Phòng Nhân Sự', 'role' => 'Nhân sự & Hợp đồng', 'tag' => 'HR', 'color' => '#0d9488'],
-                    ];
-                @endphp
-                @foreach ($agentCards as $agent)
-                    <a href="{{ route('admin.workspace.show', $agent['code']) }}" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; transition: border-color 0.15s ease, background 0.15s ease;">
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <span style="font-size: 10.5px; font-weight: 700; color: {{ $agent['color'] }}; background: #ffffff; border: 1px solid #e2e8f0; padding: 1px 6px; border-radius: 4px;">{{ $agent['tag'] }}</span>
-                                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #047857; font-weight: 600;">
-                                    <span style="width: 5px; height: 5px; border-radius: 999px; background: #059669;"></span> Hoạt động
-                                </span>
-                            </div>
-                            <strong style="color: #09253e; font-size: 13px; display: block;">{{ $agent['name'] }}</strong>
-                            <span style="color: #64748b; font-size: 11.5px; display: block; margin-top: 2px;">{{ $agent['role'] }}</span>
-                        </div>
-                        <span style="margin-top: 10px; font-size: 11.5px; color: #004687; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-                            Mở phân hệ &rarr;
-                        </span>
-                    </a>
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Quick Shortcuts -->
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 8px; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; color: #475569; margin-right: 4px;">TRUY CẬP NHANH:</span>
-            <a href="{{ route('admin.workspace.show', 'cfo') }}" class="btn btn-secondary" style="min-height: 28px; padding: 4px 10px; font-size: 11.5px;">
-                Bảng cân đối dòng tiền
+        <div class="actions tabular-nums">
+            <a href="#exception-inbox" class="btn btn-secondary btn-sm">
+                <span style="width: 6px; height: 6px; border-radius: 999px; background: {{ $pendingProposals->count() > 0 ? '#dc2626' : '#059669' }};"></span>
+                <span>{{ __('admin.executive.pending_approvals') }}: <strong>{{ $pendingProposals->count() }}</strong></span>
             </a>
-            <a href="{{ route('admin.workspace.show', 'logistics') }}" class="btn btn-secondary" style="min-height: 28px; padding: 4px 10px; font-size: 11.5px;">
-                Kiểm tra tồn kho & Đơn PO
+            <a href="{{ route('admin.workspace.show', 'ops') }}" class="btn btn-secondary btn-sm">
+                <span style="width: 6px; height: 6px; border-radius: 999px; background: {{ $urgentIncidents->count() > 0 ? '#d97706' : '#059669' }};"></span>
+                <span>{{ __('admin.executive.open_incidents') }}: <strong>{{ $urgentIncidents->count() }}</strong></span>
             </a>
-            <a href="{{ route('admin.workspace.show', 'ops') }}" class="btn btn-secondary" style="min-height: 28px; padding: 4px 10px; font-size: 11.5px;">
-                Sự cố giao vận
-            </a>
-            <a href="{{ route('admin.workspace.show', 'hr') }}" class="btn btn-secondary" style="min-height: 28px; padding: 4px 10px; font-size: 11.5px;">
-                Hợp đồng & Quỹ lương
+            <a href="{{ route('admin.orders.index') }}" class="btn btn-primary btn-sm">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                <span>{{ __('admin.executive.manage_orders') }}</span>
             </a>
         </div>
     </div>
 
-    <!-- Exception Inbox & Incident Radar -->
-    <div id="exception-inbox" class="dashboard-grid" style="margin-bottom: 20px;">
-        <!-- Column 1: CEO 1-Click Financial Proposals -->
-        <div class="card">
-            <div class="panel-heading" style="margin-bottom: 14px;">
+    <!-- 2. PRIMARY 4-KPI COMMERCE & FINANCIAL STRIP (STRIPE / SHOPIFY STYLE) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 14px;" class="tabular-nums">
+        <!-- Total Revenue -->
+        <div class="stat">
+            <div class="label">
+                <span>{{ __('admin.dashboard.stats.revenue') }}</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#004687" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="value" style="color: #091e34;">{{ number_format($totalRevenue) }} <span style="font-size: 12px; font-weight: 600; color: var(--fi-muted);">VND</span></div>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--fi-border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--fi-muted);">
+                <span>{{ __('admin.dashboard.stats.paid_payments') }}</span>
+                <strong style="color: #047857;">{{ number_format($paidPayments) }} {{ __('admin.executive.transactions_unit') }}</strong>
+            </div>
+        </div>
+
+        <!-- Total Orders -->
+        <div class="stat">
+            <div class="label">
+                <span>{{ __('admin.dashboard.stats.orders') }}</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <div class="value">{{ number_format($totalOrders) }}</div>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--fi-border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--fi-muted);">
+                <span>{{ __('admin.dashboard.stats.pending_orders') }}</span>
+                <span class="badge {{ $pendingOrders > 0 ? 'badge-warning' : 'badge-secondary' }}" style="padding: 1px 6px; font-size: 11px;">{{ number_format($pendingOrders) }} {{ __('admin.executive.pending_unit') }}</span>
+            </div>
+        </div>
+
+        <!-- Products & Catalog -->
+        <div class="stat">
+            <div class="label">
+                <span>{{ __('admin.dashboard.stats.products') }}</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            </div>
+            <div class="value">{{ number_format($totalProducts) }}</div>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--fi-border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--fi-muted);">
+                <span>{{ __('admin.executive.low_stock_alert') }}</span>
+                <span class="badge {{ $lowStockProductsCount > 0 ? 'badge-danger' : 'badge-success' }}" style="padding: 1px 6px; font-size: 11px;">{{ number_format($lowStockProductsCount) }} SKU</span>
+            </div>
+        </div>
+
+        <!-- Customers & System Content -->
+        <div class="stat">
+            <div class="label">
+                <span>{{ __('admin.dashboard.stats.users') }}</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="value">{{ number_format($totalUsers) }}</div>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--fi-border-subtle); display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--fi-muted);">
+                <span>{{ __('admin.dashboard.stats.content') }} / {{ __('admin.dashboard.stats.media') }}</span>
+                <strong style="color: var(--fi-text-secondary);">{{ number_format($totalPosts) }} {{ __('admin.executive.posts_unit') }} &bull; {{ number_format($totalMedia) }} {{ __('admin.executive.files_unit') }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. DEPARTMENT WORKSPACES COMMAND GRID -->
+    <div class="card" style="padding: 16px 18px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 11.5px; font-weight: 700; color: var(--fi-text); text-transform: uppercase; letter-spacing: 0.04em;">
+                    {{ __('admin.executive.command_grid_title') }}
+                </span>
+                <span style="color: #cbd5e1;">&bull;</span>
+                <span style="font-size: 12px; color: var(--fi-muted);">{{ __('admin.executive.command_grid_subtitle') }}</span>
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <a href="{{ route('admin.financial-proposals.index') }}" class="link-action">{{ __('admin.executive.expense_inbox') }}</a>
+                <a href="{{ route('admin.incidents.index') }}" class="link-action">{{ __('admin.executive.incident_mgmt') }}</a>
+                <a href="{{ route('admin.department-audit-logs.index') }}" class="link-action">{{ __('admin.executive.audit_log_short') }}</a>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px;">
+            @php
+                $agentCards = [
+                    ['code' => 'cfo', 'name' => __('admin.executive.dept_cfo_name'), 'role' => __('admin.executive.dept_cfo_role'), 'tag' => 'CFO'],
+                    ['code' => 'logistics', 'name' => __('admin.executive.dept_logistics_name'), 'role' => __('admin.executive.dept_logistics_role'), 'tag' => 'LOG'],
+                    ['code' => 'ops', 'name' => __('admin.executive.dept_ops_name'), 'role' => __('admin.executive.dept_ops_role'), 'tag' => 'OPS'],
+                    ['code' => 'cskh', 'name' => __('admin.executive.dept_cskh_name'), 'role' => __('admin.executive.dept_cskh_role'), 'tag' => 'CSKH'],
+                    ['code' => 'rnd', 'name' => __('admin.executive.dept_rnd_name'), 'role' => __('admin.executive.dept_rnd_role'), 'tag' => 'R&D'],
+                    ['code' => 'hr', 'name' => __('admin.executive.dept_hr_name'), 'role' => __('admin.executive.dept_hr_role'), 'tag' => 'HR'],
+                ];
+            @endphp
+            @foreach ($agentCards as $agent)
+                <a href="{{ route('admin.workspace.show', $agent['code']) }}" style="background: #f8fafc; border: 1px solid var(--fi-border); border-radius: 8px; padding: 11px 13px; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; transition: border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;" onmouseover="this.style.background='#ffffff'; this.style.borderColor='#004687';" onmouseout="this.style.background='#f8fafc'; this.style.borderColor='var(--fi-border)';">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <span class="mono" style="font-size: 10px; font-weight: 700; color: var(--fi-primary); background: var(--fi-primary-soft); border: 1px solid var(--fi-primary-border); padding: 1px 6px; border-radius: 4px;">{{ $agent['tag'] }}</span>
+                            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; color: #047857; font-weight: 600;">
+                                <span style="width: 5px; height: 5px; border-radius: 999px; background: #059669;"></span> Online
+                            </span>
+                        </div>
+                        <strong style="color: var(--fi-text); font-size: 12.5px; display: block;">{{ $agent['name'] }}</strong>
+                        <span style="color: var(--fi-muted); font-size: 11.5px; display: block; margin-top: 2px;">{{ $agent['role'] }}</span>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- 4. EXCEPTION INBOX & INCIDENT RADAR -->
+    <div id="exception-inbox" class="dashboard-grid" style="margin-top: 0; margin-bottom: 18px;">
+        <!-- Left: CEO 1-Click Financial Proposals -->
+        <div class="table-panel card" style="margin-bottom: 0;">
+            <div style="padding: 14px 18px; border-bottom: 1px solid var(--fi-border); background: #fcfcfd; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                 <div>
-                    <h2 style="display: flex; align-items: center; gap: 8px;">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#004687" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-                        <span>Hộp Thư Bất Thường — Phê Duyệt Chi Phí (CEO 1-Click)</span>
+                    <h2 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--fi-text);">
+                        {{ __('admin.executive.proposals_title') }}
                     </h2>
-                    <p>Các đề xuất ngân sách phân tầng L3 (> 20M hoặc Khẩn cấp). CEO chỉ cần 1 thao tác để quyết định.</p>
+                    <p style="margin: 2px 0 0; font-size: 11.5px; color: var(--fi-muted);">{{ __('admin.executive.proposals_subtitle') }}</p>
                 </div>
-                <span class="badge badge-danger">
-                    {{ $pendingProposals->count() }} Chờ duyệt
+                <span class="badge {{ $pendingProposals->count() > 0 ? 'badge-danger' : 'badge-success' }}">
+                    {{ $pendingProposals->count() }} {{ __('admin.executive.awaiting_approval') }}
                 </span>
             </div>
 
@@ -146,60 +177,54 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Tiêu đề đề xuất</th>
-                            <th>Phòng ban</th>
-                            <th style="text-align: right;">Số tiền (VND)</th>
-                            <th style="text-align: center;">Mức độ</th>
-                            <th style="text-align: center;">Thao tác 1-Click</th>
+                            <th>{{ __('admin.executive.col_proposal') }}</th>
+                            <th>{{ __('admin.executive.col_department') }}</th>
+                            <th class="text-right">{{ __('admin.executive.col_amount') }}</th>
+                            <th class="text-center">{{ __('admin.executive.col_priority') }}</th>
+                            <th class="text-right">{{ __('admin.executive.col_decision') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($pendingProposals as $proposal)
                             <tr>
                                 <td>
-                                    <strong style="color: #0f172a;">{{ $proposal->title }}</strong>
-                                    <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
-                                        Người gửi: {{ $proposal->user->name ?? 'N/A' }} &bull; #{{ $proposal->id }}
+                                    <strong style="color: var(--fi-text);">{{ $proposal->title }}</strong>
+                                    <div class="cell-muted" style="margin-top: 1px;">
+                                        {{ $proposal->user->name ?? 'N/A' }} &bull; <span class="mono">#{{ $proposal->id }}</span>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge badge-secondary">
-                                        {{ $proposal->department->name ?? 'N/A' }}
-                                    </span>
+                                    <span class="badge badge-secondary">{{ $proposal->department->name ?? 'N/A' }}</span>
                                 </td>
-                                <td style="text-align: right; font-weight: 700; color: #b91c1c;">
+                                <td class="text-right font-bold mono" style="color: #b91c1c;">
                                     {{ number_format($proposal->amount) }}
                                 </td>
-                                <td style="text-align: center;">
+                                <td class="text-center">
                                     @if ($proposal->is_urgent)
-                                        <span class="badge badge-danger">Khẩn cấp</span>
+                                        <span class="badge badge-danger">{{ __('admin.executive.priority_urgent') }}</span>
                                     @else
-                                        <span class="badge badge-secondary">Thường</span>
+                                        <span class="badge badge-secondary">{{ __('admin.executive.priority_normal') }}</span>
                                     @endif
                                 </td>
-                                <td style="text-align: center;">
-                                    <div style="display: inline-flex; gap: 6px;">
-                                        <form method="POST" action="{{ route('admin.financial-proposals.quick-status', $proposal->id) }}">
+                                <td class="text-right">
+                                    <div style="display: inline-flex; gap: 5px;">
+                                        <form method="POST" action="{{ route('admin.financial-proposals.quick-status', $proposal->id) }}" style="margin: 0;">
                                             @csrf
                                             <input type="hidden" name="status" value="approved">
-                                            <button type="submit" class="btn" style="min-height: 28px; padding: 4px 10px; font-size: 11.5px; background: #059669;" title="Phê duyệt ngay 1 chạm">
-                                                Duyệt
-                                            </button>
+                                            <button type="submit" class="btn btn-sm" style="background: #059669;">{{ __('admin.executive.btn_approve') }}</button>
                                         </form>
-                                        <form method="POST" action="{{ route('admin.financial-proposals.quick-status', $proposal->id) }}">
+                                        <form method="POST" action="{{ route('admin.financial-proposals.quick-status', $proposal->id) }}" style="margin: 0;">
                                             @csrf
                                             <input type="hidden" name="status" value="rejected">
-                                            <button type="submit" class="btn btn-secondary" style="min-height: 28px; padding: 4px 8px; font-size: 11.5px;" title="Từ chối đề xuất">
-                                                Từ chối
-                                            </button>
+                                            <button type="submit" class="btn btn-secondary btn-sm">{{ __('admin.executive.btn_reject') }}</button>
                                         </form>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" style="text-align: center; padding: 24px; color: #059669; font-weight: 600;">
-                                    Không có đề xuất nào tồn đọng trong Exception Inbox.
+                                <td colspan="5" class="empty-state" style="padding: 26px;">
+                                    {{ __('admin.executive.no_pending_proposals') }}
                                 </td>
                             </tr>
                         @endforelse
@@ -208,267 +233,134 @@
             </div>
         </div>
 
-        <!-- Column 2: Operational Incidents & Purchase Orders -->
-        <div class="card">
-            <div class="panel-heading" style="margin-bottom: 14px;">
-                <div>
-                    <h2 style="display: flex; align-items: center; gap: 8px;">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        <span>Radar Sự Cố Vận Hành & Chuỗi Cung Ứng</span>
-                    </h2>
-                    <p>Giám sát sự cố đơn hàng và tiến độ giao hàng từ các nhà cung cấp chiến lược.</p>
-                </div>
-                <a href="{{ route('admin.workspace.show', 'ops') }}" style="font-size: 12px; color: #004687; text-decoration: none; font-weight: 600; white-space: nowrap;">
-                    Xem chi tiết &rarr;
-                </a>
+        <!-- Right: Operational Incidents & Purchase Orders -->
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <h3 class="card-title">{{ __('admin.executive.radar_title') }}</h3>
+                <a href="{{ route('admin.workspace.show', 'ops') }}" class="link-action">{{ __('admin.executive.open_ops') }} &rarr;</a>
             </div>
 
             <div style="display: grid; gap: 14px;" class="tabular-nums">
                 <div>
-                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;">
-                        Sự cố cần giải quyết ({{ $urgentIncidents->count() }})
+                    <div style="font-size: 11px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;">
+                        {{ __('admin.executive.open_ops_incidents') }} ({{ $urgentIncidents->count() }})
                     </div>
                     @forelse ($urgentIncidents as $incident)
-                        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                            <div>
-                                <strong style="color: #991b1b; font-size: 12.5px;">{{ $incident->type }}</strong>
-                                <span style="font-size: 11.5px; color: #64748b; margin-left: 6px;">Đơn #{{ $incident->order_id }}</span>
-                                <p style="margin: 2px 0 0 0; color: #7f1d1d; font-size: 12px;">{{ Str::limit($incident->description, 60) }}</p>
+                        <div style="background: var(--fi-danger-bg); border: 1px solid var(--fi-danger-border); border-radius: 7px; padding: 9px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                            <div style="min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <strong style="color: #991b1b; font-size: 12.5px;">{{ $incident->type_label }}</strong>
+                                    @if (!empty($incident->order_id))
+                                        <span class="mono" style="font-size: 11px; color: #64748b;">#{{ $incident->order_id }}</span>
+                                    @endif
+                                </div>
+                                <p style="margin: 2px 0 0; color: #7f1d1d; font-size: 11.5px;">{{ Str::limit($incident->description, 58) }}</p>
                             </div>
-                            <form method="POST" action="{{ route('admin.incidents.quick-status', $incident->id) }}">
+                            <form method="POST" action="{{ route('admin.incidents.quick-status', $incident->id) }}" style="margin: 0; flex-shrink: 0;">
                                 @csrf
                                 <input type="hidden" name="status" value="resolved">
-                                <button type="submit" class="btn btn-secondary" style="min-height: 28px; padding: 4px 10px; font-size: 11.5px; border-color: #fca5a5; color: #b91c1c;">
-                                    Đã xử lý
-                                </button>
+                                <button type="submit" class="btn btn-secondary btn-sm" style="border-color: #fca5a5; color: #b91c1c;">{{ __('admin.executive.btn_resolve') }}</button>
                             </form>
                         </div>
                     @empty
-                        <div style="color: #059669; font-size: 12.5px; font-weight: 500; padding: 6px 0;">Không có sự cố vận hành mở.</div>
+                        <div style="background: #f8fafc; border: 1px solid var(--fi-border); border-radius: 7px; padding: 10px 12px; font-size: 12px; color: #047857; font-weight: 500;">
+                            {{ __('admin.executive.system_stable') }}
+                        </div>
                     @endforelse
                 </div>
 
                 <div>
-                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;">
-                        Theo dõi Đơn Mua Hàng PO Logistics
+                    <div style="font-size: 11px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;">
+                        {{ __('admin.executive.active_po') }} ({{ $pendingPurchaseOrders->count() }})
                     </div>
                     @forelse ($pendingPurchaseOrders as $po)
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 9px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="background: #f8fafc; border: 1px solid var(--fi-border); border-radius: 7px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
                             <div>
-                                <strong style="color: #09253e; font-size: 12.5px;">{{ $po->po_number }}</strong>
-                                <span style="font-size: 12px; color: #64748b; margin-left: 6px;">{{ $po->supplier_name }}</span>
-                                <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
-                                    Dự kiến: {{ optional($po->expected_delivery_date)->format('d/m/Y') ?? 'Chưa xác định' }}
+                                <strong class="mono" style="color: var(--fi-text); font-size: 12px;">{{ $po->po_number }}</strong>
+                                <span style="font-size: 12px; color: var(--fi-muted); margin-left: 6px;">{{ $po->supplier_name }}</span>
+                                <div style="font-size: 11px; color: var(--fi-muted); margin-top: 1px;">
+                                    {{ __('admin.executive.po_expected') }}: {{ optional($po->expected_delivery_date)->format('d/m/Y') ?? __('admin.executive.po_tbd') }}
                                 </div>
                             </div>
-                            <div style="text-align: right;">
-                                <strong style="font-size: 12.5px; color: #004687; display: block; margin-bottom: 2px;">{{ number_format($po->total_amount) }} VND</strong>
+                            <div class="text-right">
+                                <strong class="mono" style="font-size: 12px; color: var(--fi-primary); display: block; margin-bottom: 2px;">{{ number_format($po->total_amount) }}</strong>
                                 <span class="badge badge-info">{{ $po->status }}</span>
                             </div>
                         </div>
                     @empty
-                        <div style="color: #64748b; font-size: 12.5px; padding: 6px 0;">Chưa có đơn PO nào đang xử lý.</div>
+                        <div style="color: var(--fi-muted); font-size: 12px; padding: 6px 0;">{{ __('admin.executive.no_active_po') }}</div>
                     @endforelse
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Strategic Material Price Radar -->
-    @if ($materialPrices->isNotEmpty())
-        <div class="card" style="margin-bottom: 20px; padding: 16px 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#004687" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                    <strong style="font-size: 13.5px; color: #09253e;">Chỉ Số Giá Vật Tư Chiến Lược (Logistics & R&D Price Radar)</strong>
-                </div>
-                <a href="{{ route('admin.workspace.show', 'cfo') }}" style="font-size: 12px; color: #004687; text-decoration: none; font-weight: 600;">
-                    Xem biểu đồ giá chi tiết &rarr;
-                </a>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;" class="tabular-nums">
-                @foreach ($materialPrices as $price)
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
-                        <div style="font-size: 11.5px; color: #64748b; font-weight: 600;">{{ $price->material_name }}</div>
-                        <div style="font-size: 15px; font-weight: 800; color: #09253e; margin-top: 3px;">
-                            {{ number_format($price->price) }} <span style="font-size: 11px; font-weight: 500; color: #64748b;">VND</span>
-                        </div>
-                        <div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px;">
-                            Cập nhật: {{ optional($price->recorded_at)->format('d/m/Y') ?? 'Hôm nay' }}
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
-
-    <div class="page-header" style="margin-top: 18px;">
-        <div>
-            <h1 class="page-title">{{ __('admin.dashboard.title') }}</h1>
-            <p class="page-description">{{ __('admin.dashboard.description') }}</p>
-        </div>
-    </div>
-
-    <div class="stats">
-        <div class="stat">
-            <div class="label">{{ __('admin.dashboard.stats.users') }}</div>
-            <div class="value">{{ number_format($totalUsers) }}</div>
-        </div>
-        <div class="stat">
-            <div class="label">{{ __('admin.dashboard.stats.products') }}</div>
-            <div class="value">{{ number_format($totalProducts) }}</div>
-        </div>
-        <div class="stat">
-            <div class="label">{{ __('admin.dashboard.stats.orders') }}</div>
-            <div class="value">{{ number_format($totalOrders) }}</div>
-        </div>
-        <div class="stat">
-            <div class="label">{{ __('admin.dashboard.stats.revenue') }}</div>
-            <div class="value">{{ number_format($totalRevenue) }}</div>
-        </div>
-        <div class="stat">
-            <div class="label">{{ __('admin.dashboard.stats.pending_orders') }}</div>
-            <div class="value">{{ number_format($pendingOrders) }}</div>
-        </div>
-        <div class="stat">
-            <div class="label">{{ __('admin.dashboard.stats.paid_payments') }}</div>
-            <div class="value">{{ number_format($paidPayments) }}</div>
-        </div>
-        <div class="stat">
-            <div class="label">{{ __('admin.dashboard.stats.content') }}</div>
-            <div class="value">{{ number_format($totalPosts) }} / {{ number_format($totalPages) }}</div>
-        </div>
-        <div class="stat">
-            <div class="label">{{ __('admin.dashboard.stats.media') }}</div>
-            <div class="value">{{ number_format($totalMedia) }} / {{ number_format($totalTaxClasses) }} / {{ number_format($totalWebhooks) }}</div>
-        </div>
-    </div>
-
-    <div class="dashboard-grid">
-        <div class="card">
-            <div class="panel-heading">
+    <!-- 5. REVENUE CHART & TOP PRODUCTS PERFORMANCE -->
+    <div class="dashboard-grid" style="margin-top: 0; margin-bottom: 18px;">
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
                 <div>
-                    <h2>{{ __('admin.dashboard.line_revenue') }}</h2>
-                    <p>{{ __('admin.dashboard.labels.value') }}</p>
+                    <h3 class="card-title">{{ __('admin.dashboard.line_revenue') }}</h3>
                 </div>
+                <span class="cell-muted mono" style="font-size: 11px;">{{ __('admin.executive.months_12') }}</span>
             </div>
-            <svg viewBox="0 0 1000 260" width="100%" height="250" role="img" aria-label="{{ __('admin.dashboard.line_revenue') }}">
+            <svg viewBox="0 0 1000 245" width="100%" height="235" role="img" aria-label="{{ __('admin.dashboard.line_revenue') }}">
                 <defs>
                     <linearGradient id="revenueFill" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stop-color="#004687" stop-opacity="0.18" />
-                        <stop offset="100%" stop-color="#004687" stop-opacity="0" />
+                        <stop offset="0%" stop-color="#004687" stop-opacity="0.16" />
+                        <stop offset="100%" stop-color="#004687" stop-opacity="0.0" />
                     </linearGradient>
                 </defs>
-                @for ($i = 0; $i < 11; $i++)
-                    <line x1="{{ 40 + $i * 88 }}" y1="20" x2="{{ 40 + $i * 88 }}" y2="220" stroke="#f1f5f9" />
-                @endfor
                 @for ($i = 0; $i < 5; $i++)
-                    <line x1="40" y1="{{ 20 + $i * 50 }}" x2="960" y2="{{ 20 + $i * 50 }}" stroke="#f1f5f9" />
+                    <line x1="36" y1="{{ 20 + $i * 46 }}" x2="964" y2="{{ 20 + $i * 46 }}" stroke="#f1f5f9" stroke-dasharray="3 3" />
                 @endfor
                 @if ($revenue !== [])
                     @php
                         $points = [];
-                        $areaPoints = ['40,220'];
+                        $areaPoints = ['36,204'];
                         foreach ($revenue as $index => $amount) {
-                            $x = 40 + ($index * 80);
-                            $y = 220 - (($amount / $revenueMax) * 180);
+                            $x = 36 + ($index * 84);
+                            $y = 204 - (($amount / $revenueMax) * 168);
                             $points[] = $x . ',' . $y;
                             $areaPoints[] = $x . ',' . $y;
                         }
-                        $areaPoints[] = (40 + (count($revenue) - 1) * 80) . ',220';
+                        $areaPoints[] = (36 + (count($revenue) - 1) * 84) . ',204';
                     @endphp
                     <polygon points="{{ implode(' ', $areaPoints) }}" fill="url(#revenueFill)" />
-                    <polyline points="{{ implode(' ', $points) }}" fill="none" stroke="#004687" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                    <polyline points="{{ implode(' ', $points) }}" fill="none" stroke="#004687" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                     @foreach ($revenue as $index => $amount)
                         @php
-                            $x = 40 + ($index * 80);
-                            $y = 220 - (($amount / $revenueMax) * 180);
+                            $x = 36 + ($index * 84);
+                            $y = 204 - (($amount / $revenueMax) * 168);
                         @endphp
-                        <circle cx="{{ $x }}" cy="{{ $y }}" r="4.5" fill="#ffffff" stroke="#004687" stroke-width="2.5" />
-                        <text x="{{ $x }}" y="245" text-anchor="middle" fill="#64748b" font-size="11" font-weight="600">{{ $months[$index] ?? ($index + 1) }}</text>
+                        <circle cx="{{ $x }}" cy="{{ $y }}" r="4" fill="#ffffff" stroke="#004687" stroke-width="2.25" />
+                        <text x="{{ $x }}" y="230" text-anchor="middle" fill="#64748b" font-size="11" font-weight="600">{{ $months[$index] ?? ($index + 1) }}</text>
                     @endforeach
                 @endif
             </svg>
         </div>
 
-        <div class="card">
-            <div class="panel-heading">
-                <div>
-                    <h2>{{ __('admin.dashboard.column_products') }}</h2>
-                    <p>{{ __('admin.dashboard.labels.name') }}</p>
-                </div>
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <h3 class="card-title">{{ __('admin.dashboard.column_products') }}</h3>
+                <a href="{{ route('admin.products.index') }}" class="link-action">{{ __('admin.executive.all_products') }} &rarr;</a>
             </div>
-            <div style="display:grid; gap:12px;" class="tabular-nums">
-                @forelse ($topProductsList as $item)
+            <div style="display: grid; gap: 11px;" class="tabular-nums">
+                @forelse ($topProductsList as $idx => $item)
                     @php
                         $revenuePercent = $topProductsMax > 0 ? max(6, (($item->revenue ?? 0) / $topProductsMax) * 100) : 6;
                     @endphp
                     <div>
-                        <div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:5px;">
-                            <strong style="font-size:12.5px; color:#09253e;">{{ $item->product_name ?? __('admin.dashboard.labels.name') }}</strong>
-                            <span class="cell-muted" style="font-weight:600;">{{ number_format($item->revenue ?? 0) }}</span>
-                        </div>
-                        <div style="height:8px; border-radius:999px; background:#f1f5f9; overflow:hidden;">
-                            <div style="height:100%; width:{{ min(100, $revenuePercent) }}%; background:#004687; border-radius:999px;"></div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="empty-state">{{ __('admin.messages.empty_state') }}</div>
-                @endforelse
-            </div>
-        </div>
-    </div>
-
-    <div class="dashboard-grid" style="margin-top:16px;">
-        <div class="card">
-            <div class="panel-heading">
-                <div>
-                    <h2>{{ __('admin.dashboard.donut_distribution') }}</h2>
-                    <p>{{ __('admin.dashboard.labels.percentage') }}</p>
-                </div>
-            </div>
-            <div style="display:grid; grid-template-columns: 220px minmax(0, 1fr); gap:18px; align-items:center;" class="tabular-nums">
-                <div style="display:grid; place-items:center;">
-                    <div style="width:196px; height:196px; border-radius:999px; background: {{ $donutBackground }}; display:grid; place-items:center; box-shadow: inset 0 0 0 14px #fff;">
-                        <div style="width:108px; height:108px; border-radius:999px; background:#fff; display:grid; place-items:center; text-align:center; box-shadow: 0 0 0 1px #e2e8f0;">
-                            <div>
-                                <div style="font-size:20px; font-weight:800; color:#09253e;">{{ count($topProductsDonutList) }}</div>
-                                <div class="cell-muted" style="font-size:11px;">{{ __('admin.dashboard.labels.name') }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="metric-list">
-                    @forelse ($topProductsDonutList as $index => $item)
-                        @php
-                            $percent = round((($item->total_sold ?? 0) / $donutTotal) * 100, 1);
-                        @endphp
-                        <div class="metric-row">
-                            <span style="display:flex; align-items:center; gap:9px; font-weight:500;">
-                                <span style="width:10px; height:10px; border-radius:3px; background: {{ $donutColors[$index % count($donutColors)] }};"></span>
-                                {{ $item->product_name ?? '-' }}
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px;">
+                            <span style="display: flex; align-items: center; gap: 7px; min-width: 0;">
+                                <span class="mono" style="font-size: 10.5px; font-weight: 700; color: var(--fi-muted); width: 18px;">#{{ $idx + 1 }}</span>
+                                <strong style="font-size: 12.5px; color: var(--fi-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $item->product_name ?? __('admin.dashboard.labels.name') }}</strong>
                             </span>
-                            <strong>{{ $percent }}%</strong>
+                            <span class="mono" style="font-size: 12px; font-weight: 700; color: var(--fi-text-secondary);">{{ number_format($item->revenue ?? 0) }}</span>
                         </div>
-                    @empty
-                        <div class="empty-state">{{ __('admin.messages.empty_state') }}</div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="panel-heading">
-                <div>
-                    <h2>{{ __('admin.dashboard.order_status') }}</h2>
-                    <p>{{ __('admin.dashboard.labels.status') }}</p>
-                </div>
-            </div>
-            <div class="metric-list tabular-nums">
-                @forelse ($orderDistribution as $status => $total)
-                    <div class="metric-row">
-                        <span class="badge badge-{{ $status ?: 'secondary' }}">{{ $status ?: 'unknown' }}</span>
-                        <strong>{{ number_format($total) }}</strong>
+                        <div style="height: 6px; border-radius: 999px; background: #f1f5f9; overflow: hidden;">
+                            <div style="height: 100%; width: {{ min(100, $revenuePercent) }}%; background: var(--fi-primary); border-radius: 999px;"></div>
+                        </div>
                     </div>
                 @empty
                     <div class="empty-state">{{ __('admin.messages.empty_state') }}</div>
@@ -477,9 +369,13 @@
         </div>
     </div>
 
-    <div class="dashboard-grid" style="margin-top:16px;">
-        <div class="card">
-            <h2 class="section-title" style="margin-top:0;">{{ __('admin.dashboard.latest_orders') }}</h2>
+    <!-- 6. LATEST ORDERS TABLE & ORDER STATUS DISTRIBUTION -->
+    <div class="dashboard-grid" style="margin-top: 0; margin-bottom: 18px;">
+        <div class="table-panel card" style="margin-bottom: 0;">
+            <div style="padding: 13px 18px; border-bottom: 1px solid var(--fi-border); background: #fcfcfd; display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">{{ __('admin.dashboard.latest_orders') }}</h3>
+                <a href="{{ route('admin.orders.index') }}" class="link-action">{{ __('admin.executive.view_all') }} &rarr;</a>
+            </div>
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -487,8 +383,8 @@
                             <th>{{ __('admin.dashboard.labels.id') }}</th>
                             <th>{{ __('admin.dashboard.labels.code') }}</th>
                             <th>{{ __('admin.dashboard.labels.status') }}</th>
-                            <th>{{ __('admin.dashboard.labels.total') }}</th>
-                            <th>{{ __('admin.dashboard.labels.created_at') }}</th>
+                            <th class="text-right">{{ __('admin.dashboard.labels.total') }}</th>
+                            <th class="text-right">{{ __('admin.dashboard.labels.created_at') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -497,11 +393,15 @@
                                 $status = $order->status instanceof \BackedEnum ? $order->status->value : $order->status;
                             @endphp
                             <tr>
-                                <td class="cell-muted">#{{ $order->id }}</td>
-                                <td style="font-weight:600;">{{ $order->number ?: '-' }}</td>
-                                <td><span class="badge badge-{{ $status ?: 'secondary' }}">{{ $status ?: '-' }}</span></td>
-                                <td style="font-weight:600;">{{ number_format($order->total) }} {{ $order->currency }}</td>
-                                <td class="cell-muted">{{ optional($order->created_at)->format('d/m/Y H:i') }}</td>
+                                <td class="cell-muted mono">#{{ $order->id }}</td>
+                                <td>
+                                    <a href="{{ route('admin.orders.show', $order->id) }}" class="mono" style="font-weight: 700; color: var(--fi-primary);">
+                                        {{ $order->number ?: ('#' . $order->id) }}
+                                    </a>
+                                </td>
+                                <td><span class="badge badge-{{ $status ?: 'secondary' }}">{{ \App\Support\AdminLabel::orderStatus($status ?: 'pending') }}</span></td>
+                                <td class="text-right font-bold mono">{{ number_format($order->total) }} {{ $order->currency }}</td>
+                                <td class="text-right cell-muted mono">{{ optional($order->created_at)->format('d/m/Y H:i') }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -513,18 +413,80 @@
             </div>
         </div>
 
-        <div class="card">
-            <h2 class="section-title" style="margin-top:0;">{{ __('admin.dashboard.order_status') }}</h2>
-            <div class="metric-list tabular-nums">
-                @forelse ($orderStatusCounts as $status => $total)
-                    <div class="metric-row">
-                        <span class="badge badge-{{ $status ?: 'secondary' }}">{{ $status ?: 'unknown' }}</span>
-                        <strong>{{ number_format($total) }}</strong>
+        <div class="card" style="margin-bottom: 0;">
+            <div class="card-header">
+                <h3 class="card-title">{{ __('admin.dashboard.order_status') }} &amp; {{ __('admin.dashboard.donut_distribution') }}</h3>
+            </div>
+            <div style="display: grid; gap: 16px;" class="tabular-nums">
+                <div class="metric-list">
+                    @forelse ($statusCollection as $status => $total)
+                        @php
+                            $pct = round(($total / $statusTotalCount) * 100, 1);
+                        @endphp
+                        <div class="metric-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="badge badge-{{ $status ?: 'secondary' }}">{{ \App\Support\AdminLabel::orderStatus($status ?: 'unknown') }}</span>
+                                <span class="mono" style="font-size: 12px;">
+                                    <strong>{{ number_format($total) }}</strong>
+                                    <span class="cell-muted">({{ $pct }}%)</span>
+                                </span>
+                            </div>
+                            <div style="height: 5px; background: #f1f5f9; border-radius: 999px; overflow: hidden;">
+                                <div style="height: 100%; width: {{ min(100, max(4, $pct)) }}%; background: var(--fi-primary); border-radius: 999px;"></div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="empty-state">{{ __('admin.messages.empty_state') }}</div>
+                    @endforelse
+                </div>
+
+                @if ($topProductsDonutList->isNotEmpty())
+                    <div style="border-top: 1px solid var(--fi-border); padding-top: 12px;">
+                        <div style="font-size: 11px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;">
+                            {{ __('admin.executive.top_selling_share') }}
+                        </div>
+                        <div class="metric-list">
+                            @foreach ($topProductsDonutList->take(4) as $index => $item)
+                                @php
+                                    $percent = round((($item->total_sold ?? 0) / $donutTotal) * 100, 1);
+                                @endphp
+                                <div class="metric-row">
+                                    <span style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 500; min-width: 0;">
+                                        <span style="width: 8px; height: 8px; border-radius: 2px; background: {{ $donutColors[$index % count($donutColors)] }}; flex-shrink: 0;"></span>
+                                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $item->product_name ?? '-' }}</span>
+                                    </span>
+                                    <strong class="mono" style="font-size: 12px;">{{ $percent }}%</strong>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                @empty
-                    <div class="empty-state">{{ __('admin.messages.empty_state') }}</div>
-                @endforelse
+                @endif
             </div>
         </div>
     </div>
+
+    <!-- 7. STRATEGIC MATERIAL PRICE TICKER -->
+    @if ($materialPrices->isNotEmpty())
+        <div class="card" style="padding: 14px 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 12px; font-weight: 700; color: var(--fi-text); text-transform: uppercase; letter-spacing: 0.04em;">
+                    {{ __('admin.executive.material_ticker_title') }}
+                </span>
+                <a href="{{ route('admin.workspace.show', 'cfo') }}" class="link-action">{{ __('admin.executive.detailed_chart') }} &rarr;</a>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;" class="tabular-nums">
+                @foreach ($materialPrices as $price)
+                    <div style="background: #f8fafc; border: 1px solid var(--fi-border); border-radius: 7px; padding: 9px 12px;">
+                        <div style="font-size: 11px; color: var(--fi-muted); font-weight: 600;">{{ $price->material_name }}</div>
+                        <div class="mono" style="font-size: 14px; font-weight: 700; color: var(--fi-text); margin-top: 2px;">
+                            {{ number_format($price->price) }} <span style="font-size: 10.5px; font-weight: 500; color: var(--fi-muted);">VND</span>
+                        </div>
+                        <div style="font-size: 10.5px; color: #94a3b8; margin-top: 2px;">
+                            {{ optional($price->recorded_at)->format('d/m/Y') ?? __('admin.executive.today') }}
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 @endsection

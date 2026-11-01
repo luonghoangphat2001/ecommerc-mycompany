@@ -28,12 +28,22 @@ class UserResource extends BaseResource
      */
     public function toArray(Request $request): array
     {
+        $avatarUrl = null;
+        if (!empty($this->photo)) {
+            if (str_starts_with($this->photo, 'http://') || str_starts_with($this->photo, 'https://') || str_starts_with($this->photo, '/')) {
+                $avatarUrl = $this->photo;
+            } else {
+                $avatarUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($this->photo);
+            }
+        }
+
         return [
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
             'photo' => $this->photo,
+            'avatar_url' => $avatarUrl,
             'gender' => $this->gender,
             'birthday' => $this->birthday,
             'bio' => $this->bio,

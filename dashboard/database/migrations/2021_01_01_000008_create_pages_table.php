@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('pages', function (Blueprint $table) {
             $table->id();
-            $table->string('title')->index();
+            $table->json('title');
             $table->string('slug');
             $table->string('layout')->default('default')->index();
             $table->json('blocks');

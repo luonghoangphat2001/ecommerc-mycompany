@@ -1,8 +1,39 @@
 import axios from 'axios';
-
 import toast from 'react-hot-toast';
+import useSettingsStore from '../store/useSettingsStore';
+import viLocales from '../locales/vi.json';
+import enLocales from '../locales/en.json';
 
-const apiBaseUrl = (process.env.REACT_APP_API_URL || '/api/v1').replace(/\/$/, '');
+const rawApiUrl = (process.env.REACT_APP_API_URL || '/api/v1/storefront').replace(/\/$/, '');
+const apiBaseUrl = rawApiUrl.endsWith('/api/v1') ? `${rawApiUrl}/storefront` : rawApiUrl;
+
+const getActiveLanguage = () => {
+  try {
+    const storeLang = useSettingsStore?.getState?.()?.language;
+    if (storeLang === 'vi' || storeLang === 'en') {
+      return storeLang;
+    }
+    const saved = localStorage.getItem('app_language');
+    if (saved === 'vi' || saved === 'en') {
+      return saved;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return 'vi';
+};
+
+const getLocalizedErrorMessage = (errorKey, fallback) => {
+  try {
+    const translated = useSettingsStore?.getState?.()?.translate?.(`errors.${errorKey}`);
+    if (translated) return translated;
+  } catch (e) {
+    // ignore
+  }
+  const lang = getActiveLanguage();
+  const dict = lang === 'en' ? enLocales : viLocales;
+  return dict?.errors?.[errorKey] || fallback;
+};
 
 const axiosClient = axios.create({
   baseURL: apiBaseUrl,
@@ -23,6 +54,15 @@ axiosClient.interceptors.request.use(
     } catch (e) {
       console.error('Error reading auth token', e);
     }
+
+    const lang = getActiveLanguage();
+    config.headers['Accept-Language'] = lang;
+    config.headers['X-Locale'] = lang;
+    config.params = {
+      locale: lang,
+      ...(config.params || {}),
+    };
+
     return config;
   },
   (error) => {
@@ -34,7 +74,7 @@ let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
+  failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
@@ -55,16 +95,16 @@ axiosClient.interceptors.response.use(
       const { status, data } = error.response;
 
       // Handle 401 Unauthorized
-      if (status === 401 && !originalRequest._retry) {
+      if (status === 401 && originalRequest && !originalRequest._retry && !String(originalRequest.url).includes('auth/login')) {
         if (isRefreshing) {
           return new Promise(function (resolve, reject) {
             failedQueue.push({ resolve, reject });
           })
-            .then(token => {
+            .then((token) => {
               originalRequest.headers['Authorization'] = 'Bearer ' + token;
               return axiosClient(originalRequest);
             })
-            .catch(err => {
+            .catch((err) => {
               return Promise.reject(err);
             });
         }
@@ -73,22 +113,24 @@ axiosClient.interceptors.response.use(
         isRefreshing = true;
 
         return new Promise(function (resolve, reject) {
-          axiosClient.post('auth/refresh-token')
+          axiosClient
+            .post('auth/refresh-token')
             .then((refreshResponse) => {
-              const accessToken = refreshResponse?.access_token;
+              const newAccessToken =
+                refreshResponse?.data?.access_token || refreshResponse?.access_token;
               try {
                 const authStorage = JSON.parse(localStorage.getItem('auth-storage'));
-                if (authStorage && authStorage.state) {
-                  authStorage.state.access_token = accessToken;
+                if (authStorage && authStorage.state && newAccessToken) {
+                  authStorage.state.access_token = newAccessToken;
                   localStorage.setItem('auth-storage', JSON.stringify(authStorage));
                 }
               } catch (e) {
                 console.error('Failed to update token in storage', e);
               }
 
-              axiosClient.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken;
-              originalRequest.headers['Authorization'] = 'Bearer ' + accessToken;
-              processQueue(null, accessToken);
+              axiosClient.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
+              originalRequest.headers['Authorization'] = 'Bearer ' + newAccessToken;
+              processQueue(null, newAccessToken);
               resolve(axiosClient(originalRequest));
             })
             .catch((err) => {
@@ -103,21 +145,31 @@ axiosClient.interceptors.response.use(
         });
       }
 
-      // Handle other common errors globally
+      // Handle other common errors globally with localized messages
       if (status === 403) {
-        toast.error('You do not have permission to access this resource.', { id: 'error-403' });
+        toast.error(
+          getLocalizedErrorMessage('forbidden', 'You do not have permission to access this resource.'),
+          { id: 'error-403' }
+        );
       } else if (status === 404) {
-        // Do not show toast for 404s by default, especially for menus, as they are handled by fallbacks
-        // toast.error('The requested resource was not found.', { id: 'error-404' });
+        // Do not show toast for 404s by default, handled by fallbacks
       } else if (status === 422) {
-        const message = data?.message || 'Validation failed. Please check your inputs.';
+        const message =
+          data?.message ||
+          getLocalizedErrorMessage('validation', 'Validation failed. Please check your inputs.');
         toast.error(message, { id: 'error-422' });
       } else if (status >= 500) {
-        toast.error('A server error occurred. Please try again later.', { id: 'error-500' });
+        toast.error(
+          getLocalizedErrorMessage('server', 'A server error occurred. Please try again later.'),
+          { id: 'error-500' }
+        );
       }
     } else {
       // Network error or no response
-      toast.error('Network error. Please check your connection.', { id: 'error-network' });
+      toast.error(
+        getLocalizedErrorMessage('network', 'Network error. Please check your connection.'),
+        { id: 'error-network' }
+      );
     }
 
     return Promise.reject(error);

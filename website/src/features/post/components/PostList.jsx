@@ -47,7 +47,7 @@ const PostList = ({ posts, loading, layout = "grid", columns = 3, showFeatured =
                 {onLayoutChange && (
                     <div className="flex items-center justify-between">
                         <p className="text-slate-500 text-xs font-semibold tabular-nums">
-                            {posts.length} articles
+                            {translate?.("blog.articles_count", { count: posts.length }) || `${posts.length} articles`}
                         </p>
                         <div className="flex items-center gap-1.5">
                             <button

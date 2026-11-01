@@ -21,6 +21,10 @@ const useMenuStore = create((set, get) => ({
     }
   },
 
+  fetchMainMenu: async () => {
+    return get().fetchMenus();
+  },
+
   getMenuBySlug: (slug) => {
     const { menus } = get();
     return menus.find(menu => menu.slug === slug);

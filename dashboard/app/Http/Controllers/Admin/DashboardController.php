@@ -76,7 +76,7 @@ class DashboardController extends Controller
         $materialPrices = DepartmentMaterialPrice::latest('id')->take(5)->get();
         $expiringContractsCount = DepartmentEmployeeContract::where('end_date', '<=', now()->addDays(30))->count();
         $negativeReviewsCount = DepartmentCustomerReview::where('rating', '<=', 2)->count();
-        $lowStockProductsCount = Product::where('stock', '<=', 10)->count();
+        $lowStockProductsCount = Product::where('qty', '<=', 10)->count();
         $urgentProposalsCount = DepartmentFinancialProposal::where('status', 'pending')->where('is_urgent', true)->count();
         $departments = Department::where('is_active', true)->get();
 

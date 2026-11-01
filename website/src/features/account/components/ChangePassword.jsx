@@ -27,12 +27,25 @@ const ChangePassword = () => {
 
         setLoading(true)
         try {
-            await apiService.put("auth/profile", formData)
+            try {
+                await apiService.post("auth/change-password", formData)
+            } catch (err) {
+                if (err?.response?.status === 404 || err?.response?.status === 405) {
+                    await apiService.put("auth/profile", formData)
+                } else {
+                    throw err
+                }
+            }
             toast.success(translate("account.password_updated") || "Password updated successfully!")
             setFormData({ current_password: "", password: "", password_confirmation: "" })
         } catch (error) {
+            const validationErrors = error?.response?.data?.errors
+            const firstValidationMessage = validationErrors
+                ? Object.values(validationErrors).flat()[0]
+                : null
             toast.error(
-                error.response?.data?.message ||
+                firstValidationMessage ||
+                    error.response?.data?.message ||
                     translate("account.password_update_failed") ||
                     "Failed to update password."
             )

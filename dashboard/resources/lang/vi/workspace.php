@@ -3,6 +3,8 @@
 return [
     
     'default' => [
+        'title' => 'Không Gian Làm Việc',
+        'description' => 'Tổng quan phân hệ phòng ban và tác vụ vận hành',
         'statuses' => [
             'active' => 'Đang hoạt động',
             'suspended' => 'Tạm ngưng',
@@ -161,9 +163,9 @@ return [
             'empty_incidents' => 'Không có sự cố nào.',
         ],
         'incident_types' => [
-            'late_delivery' => 'Giao trễ',
-            'damaged_goods' => 'Hàng hỏng',
-            'return_request' => 'Yêu cầu hoàn',
+            'late_delivery' => 'Giao hàng trễ',
+            'damaged_goods' => 'Hàng hư hỏng',
+            'return_request' => 'Yêu cầu hoàn trả',
             'system_error' => 'Lỗi hệ thống',
         ],
         'statuses' => [

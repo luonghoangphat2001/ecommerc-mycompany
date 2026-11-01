@@ -1,9 +1,9 @@
-import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
+import useSettingsStore from '../../../store/useSettingsStore';
 import ProductCard from './ProductCard';
 
 const ProductSlider = ({ products, title, loading }) => {
-  const { translate } = useTranslation('product');
+  const { translate } = useSettingsStore();
 
   const containerClass = "w-full";
   const headerClass = "flex items-center justify-between mb-4";

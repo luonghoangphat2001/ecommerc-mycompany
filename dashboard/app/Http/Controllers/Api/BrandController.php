@@ -33,8 +33,8 @@ class BrandController extends BaseApiController
     )]
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
-        $brands = $this->brandService->paginateBrands($perPage);
+        $perPage = (int) $request->get('per_page', 50);
+        $brands = Brand::withCount('products')->paginate($perPage);
         return $this->ok(BrandResource::collection($brands));
     }
 

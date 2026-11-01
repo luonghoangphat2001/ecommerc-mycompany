@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Ecommerce\Inventory\Services\InventoryService;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasInventoryTabs;
 use App\Models\Inventory;
 use App\Models\InventoryRecord;
 use App\Models\InventoryRecordItem;
@@ -14,6 +15,12 @@ use Illuminate\Http\Request;
 
 class InventoryRecordController extends BaseCrudController
 {
+    use HasInventoryTabs;
+
+    protected function activeTab(): ?string
+    {
+        return 'inventory-records';
+    }
     protected function modelClass(): string
     {
         return InventoryRecord::class;

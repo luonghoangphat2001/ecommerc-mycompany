@@ -64,7 +64,7 @@ const useUserAddress = () => {
       if (type === 'shipping') payload.default_shipping_address_id = addressId;
       if (type === 'billing') payload.default_billing_address_id = addressId;
 
-      await axiosClient.put('user/profile', payload);
+      await axiosClient.put('auth/profile', payload);
 
       // Refresh user to sync default addresses
       await refreshUser();

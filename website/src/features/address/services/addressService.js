@@ -23,19 +23,19 @@ const addressService = {
 
   // User Address APIs
   listUserAddresses: () => {
-    return apiService.get('user/addresses');
+    return apiService.get('user-addresses');
   },
 
   createUserAddress: (data) => {
-    return apiService.post('user/addresses', data);
+    return apiService.post('user-addresses', data);
   },
 
   updateUserAddress: (id, data) => {
-    return apiService.put(`user/addresses/${id}`, data);
+    return apiService.put(`user-addresses/${id}`, data);
   },
 
   deleteUserAddress: (id) => {
-    return apiService.delete(`user/addresses/${id}`);
+    return apiService.delete(`user-addresses/${id}`);
   }
 };
 

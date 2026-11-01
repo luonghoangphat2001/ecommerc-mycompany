@@ -8,9 +8,12 @@ import { FormInput, FormSelect, FormCheckbox, FormRadio, FormSection } from "../
 
 const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChange, onBillingToggle }) => {
     const translate = useSettingsStore((state) => state.translate)
-    const { formatCurrency } = useFormatters()
+    const { formatCurrency, getLocalizedText } = useFormatters()
     const { countries, states, regions, subRegions, paymentMethods, shippingMethods } =
         useCheckoutAddress(formData)
+
+    const isVietnam = formData.country?.toUpperCase() === "VN"
+    const isBillingVietnam = formData.billingCountry?.toUpperCase() === "VN"
 
     return (
         <div className="lg:col-span-2 space-y-6">
@@ -59,7 +62,7 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                         options={Object.entries(countries)}
                         placeholder={translate("checkout.select_country") || "Select country"}
                     />
-                    {formData.country !== "vn" && formData.country !== "VN" && (
+                    {!isVietnam && (
                         <FormInput
                             label={translate("checkout.city") || "City"}
                             name="city"
@@ -69,7 +72,7 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                         />
                     )}
 
-                    {formData.country === "vn" && (
+                    {isVietnam && (
                         <>
                             <FormSelect
                                 label={translate("checkout.state") || "Province / City"}
@@ -177,7 +180,7 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                             options={Object.entries(countries)}
                             placeholder={translate("checkout.select_country") || "Select country"}
                         />
-                        {formData.billingCountry !== "vn" && formData.billingCountry !== "VN" && (
+                        {!isBillingVietnam && (
                             <FormInput
                                 label={translate("checkout.city") || "City"}
                                 name="billingCity"
@@ -187,7 +190,7 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                             />
                         )}
 
-                        {formData.billingCountry === "vn" && (
+                        {isBillingVietnam && (
                             <>
                                 <FormSelect
                                     label={translate("checkout.state") || "Province / City"}
@@ -238,23 +241,28 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                 iconColor="blue"
             >
                 <div className="space-y-3">
-                    {paymentMethods.map((method) => (
-                        <FormRadio
-                            key={method.id}
-                            name="paymentMethod"
-                            value={method.id}
-                            label={method.name}
-                            checked={String(formData.paymentMethod) === String(method.id)}
-                            onChange={onPaymentChange}
-                            accessory={
-                                method.icon === "truck" ? (
-                                    <Truck size={18} className="text-[#004687]" />
-                                ) : method.icon === "credit-card" ? (
-                                    <CreditCard size={18} className="text-[#004687]" />
-                                ) : null
-                            }
-                        />
-                    ))}
+                    {paymentMethods.map((method) => {
+                        const methodId = method.id || method.code
+                        const localizedMethodName =
+                            translate(`checkout.${methodId}`) || getLocalizedText(method.name) || methodId
+                        return (
+                            <FormRadio
+                                key={methodId}
+                                name="paymentMethod"
+                                value={methodId}
+                                label={localizedMethodName}
+                                checked={String(formData.paymentMethod) === String(methodId)}
+                                onChange={onPaymentChange}
+                                accessory={
+                                    method.icon === "truck" || methodId === "cod" ? (
+                                        <Truck size={18} className="text-[#004687]" />
+                                    ) : method.icon === "credit-card" || methodId === "bank_transfer" ? (
+                                        <CreditCard size={18} className="text-[#004687]" />
+                                    ) : null
+                                }
+                            />
+                        )
+                    })}
                 </div>
                 {(() => {
                     const SelectedStrategy = paymentStrategiesMap[formData.paymentMethod]
@@ -269,23 +277,35 @@ const CheckoutForm = ({ formData, onInputChange, onPaymentChange, onShippingChan
                     iconColor="green"
                 >
                     <div className="space-y-3">
-                        {shippingMethods.map((method) => (
-                            <FormRadio
-                                key={method.id}
-                                name="shippingMethod"
-                                value={method.id}
-                                label={method.name}
-                                checked={String(formData.shippingMethod) === String(method.id)}
-                                onChange={onShippingChange}
-                                accentColor="green"
-                            >
-                                {method.settings?.cost && (
-                                    <p className="text-xs text-emerald-700 font-semibold tabular-nums mt-0.5">
-                                        {formatCurrency(method.settings.cost)}
-                                    </p>
-                                )}
-                            </FormRadio>
-                        ))}
+                        {shippingMethods.map((method, index) => {
+                            const methodId = method.id ?? method.method_id ?? method.code ?? method.type ?? `method-${index}`
+                            const methodValue = method.code || method.type || String(methodId)
+                            const cost = method.cost ?? method.amount ?? method.settings?.cost ?? 0
+                            const isChecked =
+                                String(formData.shippingMethod) === String(methodValue) ||
+                                String(formData.shippingMethod) === String(methodId)
+                            return (
+                                <FormRadio
+                                    key={methodId}
+                                    name="shippingMethod"
+                                    value={methodValue}
+                                    label={getLocalizedText(method.name || method.title) || methodValue}
+                                    checked={isChecked}
+                                    onChange={onShippingChange}
+                                    accentColor="green"
+                                >
+                                    {cost > 0 ? (
+                                        <p className="text-xs text-emerald-700 font-semibold tabular-nums mt-0.5">
+                                            {formatCurrency(cost)}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-emerald-700 font-semibold mt-0.5">
+                                            {translate("cart.free") || "Free"}
+                                        </p>
+                                    )}
+                                </FormRadio>
+                            )
+                        })}
                     </div>
                 </FormSection>
             )}

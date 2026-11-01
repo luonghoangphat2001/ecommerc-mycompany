@@ -48,9 +48,11 @@ class MenuResource extends BaseResource
         return [
             'id' => $item->id,
             'label' => $item->label,
+            'title' => $item->label,
             'url' => $item->url,
+            'target' => $item->target ?? '_self',
             'parent_id' => $item->parent_id,
-            'order' => $item->order,
+            'order' => $item->order ?? 0,
             'children' => $item->children && $item->children->count() > 0 
                 ? $item->children->map(fn($child) => $this->formatMenuItem($child)) 
                 : []
@@ -64,11 +66,15 @@ class MenuResource extends BaseResource
      */
     public function toArray($request)
     {
+        $formattedItems = $this->items ? $this->items->map(fn($item) => $this->formatMenuItem($item)) : [];
+
         return array_merge([
             'id' => $this->id,
             'name' => $this->name,
-            'slug' => $this->slug,
-            'menu_items' => $this->items->map(fn($item) => $this->formatMenuItem($item)),
+            'slug' => $this->handle ?? $this->slug,
+            'handle' => $this->handle ?? $this->slug,
+            'menu_items' => $formattedItems,
+            'items' => $formattedItems,
         ], $this->getTimestamps());
     }
 }

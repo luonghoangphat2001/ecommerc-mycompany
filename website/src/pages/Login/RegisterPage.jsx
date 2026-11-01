@@ -4,10 +4,17 @@ import { Link } from "react-router-dom"
 import useSettingsStore from "../../store/useSettingsStore"
 import useRegisterForm from "../../features/auth/hooks/useRegisterForm"
 import { FormInput, Button, Alert, Logo } from "../../components/common"
+import useSeo from "../../utils/useSeo"
 
 const RegisterPage = () => {
     const translate = useSettingsStore((state) => state.translate)
     const { formData, setFormData, error, handleRegister, isLoading } = useRegisterForm()
+
+    useSeo({
+        title: translate("auth.register_title") || translate("auth.register_button") || "Create Account",
+        description: translate("auth.register_subtitle"),
+        canonicalPath: "/register",
+    })
 
     const updateField = (field) => (e) => setFormData({ ...formData, [field]: e.target.value })
 
@@ -20,7 +27,7 @@ const RegisterPage = () => {
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#004687] transition-colors"
                 >
                     <ArrowLeft size={14} />
-                    <span>Storefront</span>
+                    <span>{translate("common.back_to_storefront") || "Storefront"}</span>
                 </Link>
             </div>
 
@@ -43,7 +50,7 @@ const RegisterPage = () => {
                         label={translate("auth.full_name")}
                         name="name"
                         icon={User}
-                        placeholder="Full Name"
+                        placeholder={translate("auth.full_name") || "Full Name"}
                         value={formData.name}
                         onChange={updateField("name")}
                         required

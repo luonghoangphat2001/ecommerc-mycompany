@@ -37,13 +37,13 @@ class ProductController extends BaseCrudController
     {
         return [
             'shop_brand_id' => [
-                'label' => 'Brand',
-                'placeholder' => 'Tất cả brand',
-                'options' => Brand::orderBy('slug')->pluck('slug', 'id')->toArray(),
+                'label' => __('admin.fields.brand'),
+                'placeholder' => __('admin.filters.all_brands'),
+                'options' => Brand::orderBy('id')->get()->mapWithKeys(fn ($b) => [$b->id => $b->name])->toArray(),
             ],
             'type' => [
-                'label' => 'Loại',
-                'placeholder' => 'Tất cả loại',
+                'label' => __('admin.fields.type'),
+                'placeholder' => __('admin.filters.all_types'),
                 'options' => [
                     'deliverable' => 'Deliverable',
                     'downloadable' => 'Downloadable',
@@ -51,24 +51,24 @@ class ProductController extends BaseCrudController
                 ],
             ],
             'is_visible' => [
-                'label' => 'Hiển thị',
-                'placeholder' => 'Tất cả trạng thái',
-                'options' => ['1' => 'Có', '0' => 'Không'],
+                'label' => __('admin.fields.is_visible'),
+                'placeholder' => __('admin.filters.all_statuses'),
+                'options' => ['1' => __('admin.common.yes'), '0' => __('admin.common.no')],
             ],
             'featured' => [
-                'label' => 'Nổi bật',
-                'placeholder' => 'Tất cả',
-                'options' => ['1' => 'Có', '0' => 'Không'],
+                'label' => __('admin.fields.featured'),
+                'placeholder' => __('admin.filters.all'),
+                'options' => ['1' => __('admin.common.yes'), '0' => __('admin.common.no')],
             ],
             'apply_tax' => [
-                'label' => 'Áp thuế',
-                'placeholder' => 'Tất cả',
-                'options' => ['1' => 'Có', '0' => 'Không'],
+                'label' => __('admin.fields.apply_tax'),
+                'placeholder' => __('admin.filters.all'),
+                'options' => ['1' => __('admin.common.yes'), '0' => __('admin.common.no')],
             ],
             'category_id' => [
-                'label' => 'Danh mục',
-                'placeholder' => 'Tất cả danh mục',
-                'options' => ProductCategory::orderBy('name')->pluck('name', 'id')->toArray(),
+                'label' => __('admin.fields.category'),
+                'placeholder' => __('admin.filters.all_categories'),
+                'options' => ProductCategory::orderBy('id')->get()->pluck('name', 'id')->toArray(),
             ],
         ];
     }
@@ -98,15 +98,15 @@ class ProductController extends BaseCrudController
     {
         return [
             'general' => [
-                'label' => 'Thông tin chung',
+                'label' => __('admin.common.general_info'),
                 'fields' => ['name', 'sku', 'slug', 'shop_brand_id', 'type', 'is_visible', 'featured', 'published_at', 'apply_tax'],
             ],
             'pricing' => [
-                'label' => 'Giá & Tồn kho',
-                'fields' => ['price', 'old_price', 'sale_price', 'sale_start_date', 'sale_end_date', 'cost', 'qty', 'security_stock', 'backorder', 'requires_shipping'],
+                'label' => __('admin.product.groups.pricing'),
+                'fields' => ['price', 'old_price', 'cost', 'sale_price', 'sale_start_date', 'sale_end_date', 'qty', 'security_stock', 'backorder', 'requires_shipping'],
             ],
             'content' => [
-                'label' => 'Mô tả',
+                'label' => __('admin.fields.description'),
                 'fields' => ['description'],
             ],
             'media' => [
@@ -114,7 +114,7 @@ class ProductController extends BaseCrudController
                 'fields' => ['image'],
             ],
             'taxonomy' => [
-                'label' => 'Phân loại',
+                'label' => __('admin.post.groups.taxonomy'),
                 'fields' => ['categories'],
             ],
             'seo' => [
@@ -126,32 +126,34 @@ class ProductController extends BaseCrudController
 
     protected function fields(): array
     {
+        $yesNo = ['1' => __('admin.common.yes'), '0' => __('admin.common.no')];
+
         return [
-            'image' => ['label' => 'Image', 'type' => 'image', 'rules' => ['nullable', 'image', 'max:5120']],
-            'name' => ['label' => 'Tên', 'rules' => ['required', 'string']],
+            'image' => ['label' => __('admin.fields.image'), 'type' => 'image', 'rules' => ['nullable', 'image', 'max:5120']],
+            'name' => ['label' => __('admin.fields.name'), 'rules' => ['required', 'string']],
             'sku' => ['label' => 'SKU', 'rules' => ['required', 'string', 'max:100']],
             'slug' => ['label' => 'Slug', 'rules' => ['required', 'string', 'max:255'], 'hideOnIndex' => true],
 
             'shop_brand_id' => [
-                'label' => 'Brand',
+                'label' => __('admin.fields.brand'),
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:shop_brands,id'],
-                'options' => ['' => '-- Chọn brand --'] + Brand::orderBy('id')->pluck('slug', 'id')->toArray(),
+                'options' => ['' => '-- ' . __('admin.fields.brand') . ' --'] + Brand::orderBy('id')->get()->mapWithKeys(fn ($b) => [$b->id => $b->name])->toArray(),
                 'hideOnIndex' => true,
             ],
 
-            'price' => ['label' => 'Giá', 'type' => 'number', 'rules' => ['required', 'numeric', 'min:0']],
-            'old_price' => ['label' => 'Giá gốc', 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
-            'sale_price' => ['label' => 'Giá Sale', 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
-            'sale_start_date' => ['label' => 'Ngày bắt đầu Sale', 'type' => 'datetime-local', 'rules' => ['nullable', 'date'], 'hideOnIndex' => true],
-            'sale_end_date' => ['label' => 'Ngày kết thúc Sale', 'type' => 'datetime-local', 'rules' => ['nullable', 'date', 'after_or_equal:sale_start_date'], 'hideOnIndex' => true],
+            'price' => ['label' => __('admin.fields.price'), 'type' => 'number', 'rules' => ['required', 'numeric', 'min:0']],
+            'old_price' => ['label' => __('admin.fields.old_price'), 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
             'cost' => ['label' => 'Cost', 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
-            'qty' => ['label' => 'Qty', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']],
+            'sale_price' => ['label' => __('admin.fields.sale_price'), 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
+            'sale_start_date' => ['label' => __('admin.fields.sale_start_date'), 'type' => 'datetime-local', 'rules' => ['nullable', 'date'], 'hideOnIndex' => true],
+            'sale_end_date' => ['label' => __('admin.fields.sale_end_date'), 'type' => 'datetime-local', 'rules' => ['nullable', 'date', 'after_or_equal:sale_start_date'], 'hideOnIndex' => true],
+            'qty' => ['label' => __('admin.fields.qty'), 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']],
 
             'security_stock' => ['label' => 'Security Stock', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0'], 'hideOnIndex' => true],
 
             'type' => [
-                'label' => 'Type',
+                'label' => __('admin.fields.type'),
                 'type' => 'select',
                 'rules' => ['required', 'string', 'max:50'],
                 'options' => [
@@ -162,20 +164,20 @@ class ProductController extends BaseCrudController
                 'hideOnIndex' => true,
             ],
 
-            'featured' => ['label' => 'Featured', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không'], 'hideOnIndex' => true],
-            'is_visible' => ['label' => 'Hiển thị', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
-            'apply_tax' => ['label' => 'Apply Tax', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
-            'backorder' => ['label' => 'Backorder', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không'], 'hideOnIndex' => true],
-            'requires_shipping' => ['label' => 'Requires Shipping', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không'], 'hideOnIndex' => true],
+            'featured' => ['label' => __('admin.fields.featured'), 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => $yesNo, 'hideOnIndex' => true],
+            'is_visible' => ['label' => __('admin.fields.is_visible'), 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => $yesNo],
+            'apply_tax' => ['label' => __('admin.fields.apply_tax'), 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => $yesNo],
+            'backorder' => ['label' => 'Backorder', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => $yesNo, 'hideOnIndex' => true],
+            'requires_shipping' => ['label' => 'Requires Shipping', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => $yesNo, 'hideOnIndex' => true],
 
-            'published_at' => ['label' => 'Published At', 'type' => 'date', 'rules' => ['nullable', 'date'], 'hideOnIndex' => true],
-            'description' => ['label' => 'Mô tả sản phẩm', 'type' => 'editor', 'rules' => ['nullable', 'string'], 'hideOnIndex' => true],
+            'published_at' => ['label' => __('admin.fields.published_at'), 'type' => 'date', 'rules' => ['nullable', 'date'], 'hideOnIndex' => true],
+            'description' => ['label' => __('admin.fields.description'), 'type' => 'editor', 'rules' => ['nullable'], 'hideOnIndex' => true],
 
             'seo_title' => ['label' => 'SEO Title', 'rules' => ['nullable', 'string', 'max:255'], 'colspan' => 'full', 'hideOnIndex' => true],
             'seo_description' => ['label' => 'SEO Description', 'type' => 'textarea', 'rules' => ['nullable', 'string', 'max:255'], 'hideOnIndex' => true],
 
             'categories' => [
-                'label' => 'Categories',
+                'label' => __('admin.fields.categories'),
                 'type' => 'tree-select',
                 'colspan' => 1,
                 'rules' => ['nullable', 'array'],
@@ -225,7 +227,7 @@ class ProductController extends BaseCrudController
             'cost' => ['nullable', 'numeric', 'min:0'],
             'qty' => ['nullable', 'integer', 'min:0'],
             'security_stock' => ['nullable', 'integer', 'min:0'],
-            'type' => ['required', 'string', 'max:50'],
+            'type' => ['required'],
             'featured' => ['nullable', 'boolean'],
             'is_visible' => ['nullable', 'boolean'],
             'apply_tax' => ['nullable', 'boolean'],
@@ -234,7 +236,7 @@ class ProductController extends BaseCrudController
             'published_at' => ['nullable', 'date'],
             'seo_title' => ['nullable', 'string', 'max:255'],
             'seo_description' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable'],
             'image' => ['nullable', 'image', 'max:5120'],
             'categories' => ['nullable', 'array'],
             'categories.*' => ['integer', 'exists:shop_categories,id'],

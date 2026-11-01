@@ -2,7 +2,7 @@
     <div class="!z-5 relative flex h-full w-full flex-col rounded-xl bg-white bg-clip-border p-4 shadow-3xl shadow-shadow-500 dark:!bg-navy-800 dark:text-white dark:shadow-none">
         <div class="mb-auto flex flex-col items-center justify-center">
             <div class="flex items-center justify-center rounded-full text-5xl font-bold text-brand-500 dark:text-white">
-                <img src="{{  $logo) }}" alt="Logo" class="h-12 w-12 rounded-full">
+                <img src="{{ $logo }}" alt="Logo" class="h-12 w-12 rounded-full">
             </div>
             <h4 class="mt-3 mb-px text-2xl font-bold text-navy-700 dark:text-white">
                 {{$name}}

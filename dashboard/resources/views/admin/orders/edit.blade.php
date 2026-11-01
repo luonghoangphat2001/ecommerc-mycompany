@@ -9,75 +9,31 @@
     @endphp
 
     <style>
-        .edit-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            gap: 24px;
-        }
-        @media (min-width: 1024px) {
-            .edit-layout {
-                grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-                align-items: start;
-            }
-        }
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-            margin-bottom: 24px;
-        }
-        .card-header {
-            padding: 16px 24px;
-            border-bottom: 1px solid #e2e8f0;
-            background: #f8fafc;
-        }
-        .card-title { margin: 0; font-size: 16px; font-weight: 600; color: #0f172a; }
-        .card-body { padding: 16px 24px; }
-        
-        .form-row { margin-bottom: 16px; }
-        .form-row:last-child { margin-bottom: 0; }
-        .form-label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-        .form-control { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; color: #1e293b; background: #fff; transition: border-color 0.2s; box-sizing: border-box; }
-        .form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-        textarea.form-control { min-height: 80px; resize: vertical; }
-        
-        .table-wrap { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
-        th { padding: 12px; border-bottom: 2px solid #e2e8f0; font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #1e293b; vertical-align: middle; }
-        
-        .item-input { width: 100px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
-        .text-right { text-align: right; }
-        .font-bold { font-weight: 600; }
-        
-        .summary-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed #e2e8f0; }
+        .item-input { width: 110px; min-height: 30px; padding: 4px 8px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--fi-border); }
         .summary-row:last-child { border-bottom: none; }
-        .summary-label { font-weight: 500; color: #475569; }
-        .summary-value { font-weight: 600; color: #0f172a; }
-        
-        .actions-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .page-title { margin: 0; font-size: 24px; font-weight: 700; color: #0f172a; }
+        .summary-label { font-weight: 500; color: var(--fi-text-secondary); font-size: 12.5px; }
+        .summary-value { font-weight: 700; color: var(--fi-text); font-family: var(--fi-font-mono); }
     </style>
+
+    <x-admin.page-header
+        :title="__('admin.order.edit_title', ['number' => $order->number])"
+        description="Cập nhật danh mục sản phẩm, địa chỉ giao nhận và trạng thái đơn hàng"
+        :backUrl="route('admin.orders.show', $order->id)"
+    >
+        <x-slot:actions>
+            <a class="btn btn-secondary" href="{{ route('admin.orders.show', $order->id) }}">&larr; {{ __('admin.order.cancel_edit') }}</a>
+            <button type="submit" form="order-edit-form" class="btn btn-primary">{{ __('admin.order.save_changes') }}</button>
+        </x-slot:actions>
+    </x-admin.page-header>
 
     <form method="post" action="{{ route('admin.orders.update', $order->id) }}" id="order-edit-form">
         @csrf
         @method('put')
 
-        <div class="actions-bar">
-            <div>
-                <h1 class="page-title">{{ __('admin.order.edit_title', ['number' => $order->number]) }}</h1>
-            </div>
-            <div class="actions" style="display: flex; gap: 12px;">
-                <a class="btn btn-secondary" href="{{ route('admin.orders.show', $order->id) }}">{{ __('admin.order.cancel_edit') }}</a>
-                <button type="submit" class="btn btn-primary">{{ __('admin.order.save_changes') }}</button>
-            </div>
-        </div>
-
         @if ($errors->any())
-            <div style="background: #fee2e2; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #fecaca;">
-                <ul style="margin:0; padding-left:20px;">
+            <div style="background: var(--fi-danger-bg); color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 18px; border: 1px solid var(--fi-danger-border);">
+                <ul style="margin: 0; padding-left: 20px;">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -89,8 +45,8 @@
             <!-- Main Column -->
             <div class="show-main">
                 <!-- Order Items -->
-                <div class="card">
-                    <div class="card-header">
+                <div class="table-panel card">
+                    <div style="padding: 13px 18px; border-bottom: 1px solid var(--fi-border); background: #fcfcfd;">
                         <h3 class="card-title">{{ __('admin.order.order_items') }}</h3>
                     </div>
                     <div class="table-wrap">
@@ -108,18 +64,18 @@
                                     <tr class="order-item-row">
                                         <td>
                                             <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item->id }}">
-                                            <div style="font-weight: 500;">{{ $item->name ?? ('Item #' . $item->id) }}</div>
+                                            <div style="font-weight: 600; color: var(--fi-text);">{{ $item->name ?? ('Item #' . $item->id) }}</div>
                                             @if ($item->product)
-                                                <div style="color: #64748b; font-size: 13px;">{{ __('admin.order.sku') }}: {{ $item->product->sku ?? __('admin.order.not_available') }}</div>
+                                                <div class="cell-muted mono">{{ __('admin.order.sku') }}: {{ $item->product->sku ?? __('admin.order.not_available') }}</div>
                                             @endif
                                         </td>
                                         <td>
-                                            <input type="number" class="item-input js-item-price" name="items[{{ $index }}][unit_price]" value="{{ $item->unit_price }}" min="0" step="1">
+                                            <input type="number" class="item-input js-item-price mono" name="items[{{ $index }}][unit_price]" value="{{ $item->unit_price }}" min="0" step="1">
                                         </td>
                                         <td>
-                                            <input type="number" class="item-input js-item-qty" name="items[{{ $index }}][qty]" value="{{ $item->qty }}" min="1" step="1">
+                                            <input type="number" class="item-input js-item-qty mono" name="items[{{ $index }}][qty]" value="{{ $item->qty }}" min="1" step="1">
                                         </td>
-                                        <td class="text-right font-bold js-item-total-display">
+                                        <td class="text-right font-bold mono js-item-total-display">
                                             {{ number_format($item->unit_price * $item->qty, 0, ',', '.') }}
                                         </td>
                                     </tr>
@@ -130,26 +86,26 @@
                 </div>
 
                 <!-- Addresses -->
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 18px;">
                     <!-- Shipping -->
-                    <div class="card">
+                    <div class="card" style="margin-bottom: 0;">
                         <div class="card-header">
                             <h3 class="card-title">{{ __('admin.order.shipping_address') }}</h3>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body" style="display: grid; gap: 12px;">
                             <div class="form-row">
                                 <label class="form-label">{{ __('admin.order.full_name') }}</label>
-                                <div style="display:flex; gap:8px;">
-                                    <input type="text" class="form-control" name="shipping[first_name]" value="{{ $order->shippingAddress?->first_name }}">
-                                    <input type="text" class="form-control" name="shipping[last_name]" value="{{ $order->shippingAddress?->last_name }}">
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" class="form-control" name="shipping[first_name]" value="{{ $order->shippingAddress?->first_name }}" placeholder="Họ">
+                                    <input type="text" class="form-control" name="shipping[last_name]" value="{{ $order->shippingAddress?->last_name }}" placeholder="Tên">
                                 </div>
                             </div>
-                            <div class="form-row" style="display:flex; gap:8px;">
-                                <div style="flex:1;">
+                            <div class="form-row" style="display: flex; gap: 8px;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.phone') }}</label>
                                     <input type="text" class="form-control" name="shipping[phone]" value="{{ $order->shippingAddress?->phone }}">
                                 </div>
-                                <div style="flex:1;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.email') }}</label>
                                     <input type="email" class="form-control" name="shipping[email]" value="{{ $order->shippingAddress?->email }}">
                                 </div>
@@ -162,22 +118,22 @@
                                 <label class="form-label">{{ __('admin.order.address_line_2') }}</label>
                                 <input type="text" class="form-control" name="shipping[address_line_2]" value="{{ $order->shippingAddress?->address_line_2 }}">
                             </div>
-                            <div class="form-row" style="display:flex; gap:8px;">
-                                <div style="flex:1;">
+                            <div class="form-row" style="display: flex; gap: 8px;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.city') }}</label>
                                     <input type="text" class="form-control" name="shipping[city_id]" value="{{ $order->shippingAddress?->city_id }}">
                                 </div>
-                                <div style="flex:1;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.state') }}</label>
                                     <input type="text" class="form-control" name="shipping[state_id]" value="{{ $order->shippingAddress?->state_id }}">
                                 </div>
                             </div>
-                            <div class="form-row" style="display:flex; gap:8px;">
-                                <div style="flex:1;">
+                            <div class="form-row" style="display: flex; gap: 8px;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.country') }}</label>
                                     <input type="text" class="form-control" name="shipping[country_code]" value="{{ $order->shippingAddress?->country_code ?? 'VN' }}">
                                 </div>
-                                <div style="flex:1;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.postal_code') }}</label>
                                     <input type="text" class="form-control" name="shipping[postal_code]" value="{{ $order->shippingAddress?->postal_code }}">
                                 </div>
@@ -186,24 +142,24 @@
                     </div>
 
                     <!-- Billing -->
-                    <div class="card">
+                    <div class="card" style="margin-bottom: 0;">
                         <div class="card-header">
                             <h3 class="card-title">{{ __('admin.order.billing_address') }}</h3>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body" style="display: grid; gap: 12px;">
                             <div class="form-row">
                                 <label class="form-label">{{ __('admin.order.full_name') }}</label>
-                                <div style="display:flex; gap:8px;">
-                                    <input type="text" class="form-control" name="billing[first_name]" value="{{ $order->billingAddress?->first_name }}">
-                                    <input type="text" class="form-control" name="billing[last_name]" value="{{ $order->billingAddress?->last_name }}">
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" class="form-control" name="billing[first_name]" value="{{ $order->billingAddress?->first_name }}" placeholder="Họ">
+                                    <input type="text" class="form-control" name="billing[last_name]" value="{{ $order->billingAddress?->last_name }}" placeholder="Tên">
                                 </div>
                             </div>
-                            <div class="form-row" style="display:flex; gap:8px;">
-                                <div style="flex:1;">
+                            <div class="form-row" style="display: flex; gap: 8px;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.phone') }}</label>
                                     <input type="text" class="form-control" name="billing[phone]" value="{{ $order->billingAddress?->phone }}">
                                 </div>
-                                <div style="flex:1;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.email') }}</label>
                                     <input type="email" class="form-control" name="billing[email]" value="{{ $order->billingAddress?->email }}">
                                 </div>
@@ -216,22 +172,22 @@
                                 <label class="form-label">{{ __('admin.order.address_line_2') }}</label>
                                 <input type="text" class="form-control" name="billing[address_line_2]" value="{{ $order->billingAddress?->address_line_2 }}">
                             </div>
-                            <div class="form-row" style="display:flex; gap:8px;">
-                                <div style="flex:1;">
+                            <div class="form-row" style="display: flex; gap: 8px;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.city') }}</label>
                                     <input type="text" class="form-control" name="billing[city_id]" value="{{ $order->billingAddress?->city_id }}">
                                 </div>
-                                <div style="flex:1;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.state') }}</label>
                                     <input type="text" class="form-control" name="billing[state_id]" value="{{ $order->billingAddress?->state_id }}">
                                 </div>
                             </div>
-                            <div class="form-row" style="display:flex; gap:8px;">
-                                <div style="flex:1;">
+                            <div class="form-row" style="display: flex; gap: 8px;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.country') }}</label>
                                     <input type="text" class="form-control" name="billing[country_code]" value="{{ $order->billingAddress?->country_code ?? 'VN' }}">
                                 </div>
-                                <div style="flex:1;">
+                                <div style="flex: 1;">
                                     <label class="form-label">{{ __('admin.order.postal_code') }}</label>
                                     <input type="text" class="form-control" name="billing[postal_code]" value="{{ $order->billingAddress?->postal_code }}">
                                 </div>
@@ -253,7 +209,6 @@
 
             <!-- Sidebar Column -->
             <div class="show-sidebar">
-                
                 <!-- Status -->
                 <div class="card">
                     <div class="card-header">
@@ -276,7 +231,7 @@
                     <div class="card-header">
                         <h3 class="card-title">{{ __('admin.order.adjustments') }}</h3>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" style="display: grid; gap: 12px;">
                         @if($checkoutSettings->enable_shipping)
                         <div class="form-row">
                             <label class="form-label">{{ __('admin.order.shipping_method') }}</label>
@@ -290,11 +245,11 @@
                             </select>
                         </div>
                         @endif
-                        
+
                         @if($couponSettings->enable_coupons)
                         <div class="form-row">
                             <label class="form-label">{{ __('admin.order.coupon_code') }}</label>
-                            <input type="text" name="coupon_code" class="form-control" value="{{ $order->coupons->first()?->coupon_code }}" placeholder="{{ __('admin.order.coupon_code_placeholder') }}">
+                            <input type="text" name="coupon_code" class="form-control mono" value="{{ $order->coupons->first()?->coupon_code }}" placeholder="{{ __('admin.order.coupon_code_placeholder') }}">
                         </div>
                         @endif
 
@@ -304,18 +259,18 @@
                             @php
                                 $redeemedPoints = (int) ($order->metas->where('key', 'redeemed_points')->first()?->value ?? 0);
                             @endphp
-                            <input type="number" name="redeemed_points" class="form-control" value="{{ $redeemedPoints }}" min="0" step="1">
+                            <input type="number" name="redeemed_points" class="form-control mono" value="{{ $redeemedPoints }}" min="0" step="1">
                         </div>
                         @endif
-                        
+
                         @if($checkoutSettings->enable_tax)
                         <div class="form-row">
                             <label class="form-label">{{ __('admin.order.manual_tax_override') }}</label>
                             @php
                                 $manualTaxAmount = $order->metas->where('key', 'manual_tax_amount')->first()?->value;
                             @endphp
-                            <input type="number" name="manual_tax_amount" class="form-control" value="{{ $manualTaxAmount }}" min="0" step="1" placeholder="{{ __('admin.order.manual_tax_placeholder') }}">
-                            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">{{ __('admin.order.current_system_tax', ['amount' => number_format($order->tax_amount ?? 0, 0, ',', '.')]) }}</div>
+                            <input type="number" name="manual_tax_amount" class="form-control mono" value="{{ $manualTaxAmount }}" min="0" step="1" placeholder="{{ __('admin.order.manual_tax_placeholder') }}">
+                            <small class="field-hint">{{ __('admin.order.current_system_tax', ['amount' => number_format($order->tax_amount ?? 0, 0, ',', '.')]) }}</small>
                         </div>
                         @endif
                     </div>
@@ -331,45 +286,45 @@
                             <span class="summary-label">{{ __('admin.order.subtotal') }}</span>
                             <span class="summary-value" id="js-subtotal-display">{{ number_format($order->subtotal, 0, ',', '.') }}</span>
                         </div>
-                        
+
                         @if($checkoutSettings->enable_shipping)
                         <div class="summary-row">
                             <span class="summary-label">{{ __('admin.order.shipping_price') }}</span>
                             <span class="summary-value">{{ number_format($order->shipping?->amount ?? 0, 0, ',', '.') }}</span>
                         </div>
                         @endif
-                        
+
                         @if($checkoutSettings->enable_tax)
                         <div class="summary-row">
                             <span class="summary-label">{{ __('admin.order.tax') }}</span>
                             <span class="summary-value">{{ number_format($order->tax_amount ?? 0, 0, ',', '.') }}</span>
                         </div>
                         @endif
-                        
+
                         @if($couponSettings->enable_coupons)
                         <div class="summary-row">
                             <span class="summary-label">{{ __('admin.order.discount') }}</span>
-                            <span class="summary-value" style="color: #16a34a;">
+                            <span class="summary-value" style="color: #047857;">
                                 -{{ number_format($discountTotal, 0, ',', '.') }}
                             </span>
                         </div>
                         @endif
-                        
+
                         @if($loyaltySettings->enabled && $loyaltyDiscountTotal > 0)
                         <div class="summary-row">
                             <span class="summary-label">{{ __('admin.order.redeemed_points') }}</span>
-                            <span class="summary-value" style="color: #16a34a;">
+                            <span class="summary-value" style="color: #047857;">
                                 -{{ number_format($loyaltyDiscountTotal, 0, ',', '.') }}
                             </span>
                         </div>
                         @endif
-                        
-                        <div class="summary-row" style="border-top: 2px solid #e2e8f0; margin-top: 8px; padding-top: 16px; flex-direction: column; align-items: flex-end;">
-                            <div style="display: flex; justify-content: space-between; width: 100%;">
-                                <span class="summary-label" style="font-size: 16px; color:#0f172a;">{{ __('admin.order.saved_total') }}</span>
-                                <span class="summary-value" style="font-size: 20px; color:#2563eb;">{{ number_format($order->total, 0, ',', '.') }}</span>
+
+                        <div class="summary-row" style="border-top: 2px solid var(--fi-border); margin-top: 8px; padding-top: 14px; flex-direction: column; align-items: flex-end;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: baseline;">
+                                <span class="summary-label" style="font-size: 13.5px; font-weight: 700; color: var(--fi-text);">{{ __('admin.order.saved_total') }}</span>
+                                <span class="summary-value" style="font-size: 18px; color: var(--fi-primary);">{{ number_format($order->total, 0, ',', '.') }}</span>
                             </div>
-                            <span style="font-size: 12px; color: #64748b; margin-top: 4px; font-style: italic;">
+                            <span class="field-hint" style="font-style: italic;">
                                 {{ __('admin.order.recalculate_note', ['action' => __('admin.order.save_changes')]) }}
                             </span>
                         </div>
@@ -377,39 +332,42 @@
                 </div>
             </div>
         </div>
+
         <!-- Refund Modal -->
-        <div id="refund-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-            <div style="background: #fff; border-radius: 12px; width: 400px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px;">{{ __('admin.order.refund_order_title') }}</h3>
-                
-                <div class="form-row">
-                    <label class="form-label">{{ __('admin.order.refund_type') }}</label>
-                    <select name="refund_type" id="refund_type" class="form-control" onchange="document.getElementById('refund_amount_container').style.display = this.value === 'partial' ? 'block' : 'none'">
-                        <option value="full">{{ \App\Support\AdminLabel::refundType('full') }}</option>
-                        <option value="partial">{{ \App\Support\AdminLabel::refundType('partial') }}</option>
-                    </select>
+        <div id="refund-modal" style="display: none; position: fixed; inset: 0; background: rgba(9, 30, 52, 0.5); backdrop-filter: blur(2px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+            <div class="card" style="width: min(100%, 420px); margin: 0; box-shadow: var(--fi-shadow-md);">
+                <div class="card-header">
+                    <h3 class="card-title">{{ __('admin.order.refund_order_title') }}</h3>
                 </div>
-                
-                <div class="form-row" id="refund_amount_container" style="display: none;">
-                    <label class="form-label">{{ __('admin.order.refund_amount') }}</label>
-                    <input type="number" name="refund_amount" id="refund_amount" class="form-control" min="0" step="1" placeholder="{{ __('admin.order.refund_amount_placeholder') }}">
-                    <div style="font-size: 12px; color: #64748b; margin-top: 4px;">{{ __('admin.order.refund_amount_hint') }}</div>
+
+                <div style="display: grid; gap: 12px;">
+                    <div class="form-row">
+                        <label class="form-label">{{ __('admin.order.refund_type') }}</label>
+                        <select name="refund_type" id="refund_type" class="form-control" onchange="document.getElementById('refund_amount_container').style.display = this.value === 'partial' ? 'block' : 'none'">
+                            <option value="full">{{ \App\Support\AdminLabel::refundType('full') }}</option>
+                            <option value="partial">{{ \App\Support\AdminLabel::refundType('partial') }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row" id="refund_amount_container" style="display: none;">
+                        <label class="form-label">{{ __('admin.order.refund_amount') }}</label>
+                        <input type="number" name="refund_amount" id="refund_amount" class="form-control mono" min="0" step="1" placeholder="{{ __('admin.order.refund_amount_placeholder') }}">
+                        <small class="field-hint">{{ __('admin.order.refund_amount_hint') }}</small>
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">{{ __('admin.order.refund_reason') }}</label>
+                        <textarea name="refund_reason" id="refund_reason" class="form-control" placeholder="{{ __('admin.order.refund_reason_placeholder') }}"></textarea>
+                    </div>
                 </div>
-                
-                <div class="form-row">
-                    <label class="form-label">{{ __('admin.order.refund_reason') }}</label>
-                    <textarea name="refund_reason" id="refund_reason" class="form-control" placeholder="{{ __('admin.order.refund_reason_placeholder') }}"></textarea>
-                </div>
-                
-                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
-                    <button type="button" class="btn btn-secondary" onclick="closeRefundModal()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">{{ __('admin.order.close') }}</button>
-                    <button type="button" class="btn btn-primary" onclick="confirmRefundModal()" style="padding: 8px 16px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer;">{{ __('admin.order.confirm') }}</button>
+
+                <div class="form-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRefundModal()">{{ __('admin.order.close') }}</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmRefundModal()">{{ __('admin.order.confirm') }}</button>
                 </div>
             </div>
         </div>
     </form>
-
-
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -419,13 +377,11 @@
 
             const calculateSubtotals = () => {
                 let subtotal = 0;
-                
-                // Calculate item totals
                 document.querySelectorAll('.order-item-row').forEach(row => {
                     const price = parseFloat(row.querySelector('.js-item-price').value) || 0;
                     const qty = parseInt(row.querySelector('.js-item-qty').value) || 0;
                     const itemTotal = price * qty;
-                    
+
                     row.querySelector('.js-item-total-display').innerText = formatMoney(itemTotal);
                     subtotal += itemTotal;
                 });
@@ -433,17 +389,15 @@
                 document.getElementById('js-subtotal-display').innerText = formatMoney(subtotal);
             };
 
-            // Attach event listeners
             document.querySelectorAll('.js-item-price, .js-item-qty').forEach(el => {
                 el.addEventListener('input', calculateSubtotals);
             });
 
-            // Refund Modal Logic
             const statusSelect = document.querySelector('select[name="status"]');
             const refundModal = document.getElementById('refund-modal');
             let originalStatus = statusSelect.value;
-            
-            statusSelect.addEventListener('change', function(e) {
+
+            statusSelect.addEventListener('change', function() {
                 if (this.value === 'refunded') {
                     refundModal.style.display = 'flex';
                 }

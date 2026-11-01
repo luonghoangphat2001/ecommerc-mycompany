@@ -53,13 +53,20 @@ class ProductResource extends BaseResource
      */
     public function toArray($request)
     {
+        $featuredMedia = $this->relationLoaded('featuredImage') ? $this->featuredImage : null;
+        $gallery = $featuredMedia ? [new MediaResource($featuredMedia)] : [];
+
         return array_merge([
             'id' => $this->id,
             'name' => $this->translate('name'),
             'description' => $this->translate('description'),
             'slug' => $this->slug,
+            'sku' => $this->sku,
             'image' => new MediaResource($this->whenLoaded('featuredImage')),
+            'images' => $gallery,
+            'gallery' => $gallery,
             'price' => $this->price,
+            'old_price' => $this->old_price,
             'sale_price' => $this->sale_price,
             'effective_price' => $this->effective_price,
             'is_on_sale' => $this->is_on_sale,
@@ -74,8 +81,8 @@ class ProductResource extends BaseResource
             'categories' => ProductCategoryResource::collection($this->whenLoaded('categories')),
             'inventories' => InventoryResource::collection($this->whenLoaded('inventories')),
             'meta_seo' => [
-                'title' => $this->seo_title ?? $this->translate('name'),
-                'description' => $this->seo_description ?? $this->translate('description'),
+                'title' => $this->translate('seo_title') ?: $this->translate('name'),
+                'description' => $this->translate('seo_description') ?: $this->translate('description'),
             ],
             'og_image' => $this->relationLoaded('featuredImage') && $this->featuredImage 
                 ? \Illuminate\Support\Facades\Storage::url($this->featuredImage->path) 

@@ -148,12 +148,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('menu_id')->constrained()->cascadeOnDelete();
             $table->integer('parent_id')->nullable();
-            $table->string('type');
+            $table->string('type')->default('custom');
             $table->json('title');
             $table->string('url')->nullable();
             $table->string('target')->default('_self');
             $table->integer('order')->default(0);
-            $table->morphs('model');
+            $table->nullableMorphs('model');
             $table->timestamps();
         });
 

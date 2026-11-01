@@ -1,11 +1,11 @@
-import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import useSettingsStore from '../../../store/useSettingsStore';
 import { formatOrderDate } from '../../../utils/date';
 import { formatCurrency } from '../../../utils/formatters';
 
 const ThankYouPage = ({ order }) => {
-  const { translate } = useTranslation('checkout');
+  const { translate } = useSettingsStore();
   const navigate = useNavigate();
 
   const containerClass = "max-w-2xl mx-auto p-8 text-center";
@@ -32,7 +32,7 @@ const ThankYouPage = ({ order }) => {
       <div className={orderInfoClass}>
         <div className={infoRowClass}>
           <span className={labelClass}>{translate('order.order_id')}</span>
-          <span className={valueClass}>#{order.id}</span>
+          <span className={valueClass}>#{order.number || order.id}</span>
         </div>
         <div className={infoRowClass}>
           <span className={labelClass}>{translate('order.date')}</span>
@@ -40,7 +40,7 @@ const ThankYouPage = ({ order }) => {
         </div>
         <div className={infoRowClass}>
           <span className={labelClass}>{translate('order.status')}</span>
-          <span className={valueClass}>{translate(`order.${order.status}`)}</span>
+          <span className={valueClass}>{translate(`order.${order.status}`) || order.status}</span>
         </div>
         <div className={infoRowClass}>
           <span className={labelClass}>{translate('order.total')}</span>

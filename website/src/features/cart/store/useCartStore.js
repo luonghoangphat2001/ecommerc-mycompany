@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import useSettingsStore from '../../../store/useSettingsStore';
 
 const useCartStore = create(
   persist(
@@ -82,41 +83,59 @@ const useCartStore = create(
         await get().syncWithBackend([]);
       },
 
+      removeCoupon: async () => {
+        const currentSummary = get().summary;
+        if (currentSummary) {
+          set({
+            summary: {
+              ...currentSummary,
+              coupon: null,
+              coupon_code: null,
+              discount: { amount: 0 },
+              discount_amount: 0,
+            },
+          });
+        }
+        await get().syncWithBackend(get().items);
+      },
+
       syncWithBackend: async (items) => {
         try {
           const { default: cartApi } = await import('../services/cartApi');
-          // Map local items to the format expected by the API
-          const payload = items.map(item => ({
+          const payload = (items || []).map(item => ({
             product_id: item.id,
             quantity: item.quantity,
             variant_id: item.variant_id || null
           }));
 
-          const response = await cartApi.syncCart(payload);
-          // Assuming response structure has { summary: {...}, items: [...] }
-          if (response && response.data) {
-            const data = response.data;
-            // We can optionally update local items from backend if backend returns enriched items
+          const response = await cartApi.syncCart({ items: payload });
+          const data = response?.data || response;
+          if (data) {
             set({ summary: data.summary || data });
           }
         } catch (error) {
           console.error("Cart sync failed", error);
           const { default: toast } = await import('react-hot-toast');
-          toast.error("Không thể đồng bộ giỏ hàng với máy chủ.");
+          const msg =
+            useSettingsStore?.getState?.()?.translate?.('errors.cart_sync_failed') ||
+            "Không thể đồng bộ giỏ hàng với máy chủ.";
+          toast.error(msg);
         }
       },
 
       // Set full cart data from API (items + summary + notifications)
-      setCart: (data) => set({
-        items: data.items || get().items,
-        itemsById: data.items ? Object.fromEntries(data.items.map(i => [i.id, i])) : get().itemsById,
-        summary: data.summary || get().summary,
-        notifications: data.notifications || [],
-      }),
+      setCart: (data) => {
+        if (!data) return;
+        set({
+          items: data.items || get().items,
+          itemsById: data.items ? Object.fromEntries(data.items.map(i => [i.id, i])) : get().itemsById,
+          summary: data.summary || data || get().summary,
+          notifications: data.notifications || [],
+        });
+      },
 
       getCartTotal: () => {
-        // Use summary total if available, otherwise calculate locally
-        return get().summary?.total || Object.values(get().itemsById).reduce((total, item) => total + (item.price * item.quantity), 0);
+        return get().summary?.total ?? 0;
       },
 
       getCartCount: () => {
@@ -142,12 +161,10 @@ const useCartStore = create(
         });
       },
 
-      // Get notifications for a specific item
       getItemNotifications: (itemId) => {
         return get().notifications.filter(n => n.product_id === itemId);
       },
 
-      // Clear notifications
       clearNotifications: () => set({ notifications: [] }),
     }),
     {

@@ -5,16 +5,23 @@ import useSettingsStore from "../store/useSettingsStore"
 import useCheckoutForm from "../features/checkout/hooks/useCheckoutForm"
 import CheckoutForm from "../features/checkout/components/CheckoutForm"
 import OrderSummary from "../features/checkout/components/OrderSummary"
-import { PageHeading } from "../components/common"
+import { PageHeading, Alert } from "../components/common"
+import useSeo from "../utils/useSeo"
 
 const CheckoutPage = () => {
     const { items, summary, clearCart } = useCartStore()
     const { user } = useAuthStore()
     const translate = useSettingsStore((state) => state.translate)
 
+    useSeo({
+        title: translate("checkout.title") || translate("checkout.shipping_info") || "Checkout",
+        canonicalPath: "/checkout",
+    })
+
     const {
         formData,
         isSubmitting,
+        error,
         handleSubmit,
         handleInputChange,
         handlePaymentChange,
@@ -29,9 +36,16 @@ const CheckoutPage = () => {
             <div className="mb-6 pb-4 border-b border-slate-200/90">
                 <PageHeading size="lg">{translate("checkout.shipping_info")}</PageHeading>
                 <p className="text-sm text-slate-500 mt-1">
-                    Complete your delivery and payment details below to finalize your order.
+                    {translate("checkout.subtitle") ||
+                        "Complete your delivery and payment details below to finalize your order."}
                 </p>
             </div>
+
+            {error && (
+                <Alert variant="error" className="mb-6">
+                    {error}
+                </Alert>
+            )}
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <CheckoutForm

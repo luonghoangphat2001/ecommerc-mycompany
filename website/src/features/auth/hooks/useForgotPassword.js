@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import authService from '../services/authService';
+import useSettingsStore from '../../../store/useSettingsStore';
 
 const useForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const translate = useSettingsStore((state) => state.translate);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,9 +17,16 @@ const useForgotPassword = () => {
 
     try {
       await authService.forgotPassword(email);
-      setStatus('Chúng tôi đã gửi link đặt lại mật khẩu vào email của bạn.');
+      setStatus(
+        translate('auth.forgot_password_sent') ||
+          'We have emailed your password reset link.'
+      );
     } catch (err) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+      setError(
+        err.response?.data?.message ||
+          translate('auth.generic_error') ||
+          'An error occurred, please try again.'
+      );
     } finally {
       setIsLoading(false);
     }

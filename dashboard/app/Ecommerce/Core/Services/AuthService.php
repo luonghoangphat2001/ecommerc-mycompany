@@ -60,6 +60,41 @@ class AuthService
     }
 
     /**
+     * Register a new customer and return token.
+     *
+     * @param array $data
+     * @return array
+     */
+    public function register(array $data): array
+    {
+        /** @var User $user */
+        $user = $this->userRepository->create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+            'password' => $data['password'],
+        ]);
+
+        try {
+            if (method_exists($user, 'assignRole') && \Spatie\Permission\Models\Role::where('name', 'customer')->exists()) {
+                $user->assignRole('customer');
+            }
+        } catch (\Throwable $e) {
+            // Role table or customer role may not be seeded in all environments
+        }
+
+        $deviceName = $data['device_name'] ?? 'storefront_web';
+        $expiresIn = self::ACCESS_TOKEN_TTL_SECONDS;
+        $token = $user->createToken($deviceName, ['*'], now()->addSeconds($expiresIn));
+
+        return $this->buildTokenResponse(
+            $token->plainTextToken,
+            $user->load(['defaultShippingAddress', 'defaultBillingAddress']),
+            $expiresIn
+        );
+    }
+
+    /**
      * Refresh the current access token using the bearer token provided by the client.
      *
      * @param string $plainTextToken

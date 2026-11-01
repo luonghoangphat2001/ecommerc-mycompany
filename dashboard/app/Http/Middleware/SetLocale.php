@@ -15,20 +15,45 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->query('lang', $request->query('locale'));
+        $supported = ['vi', 'en'];
         $hasSession = $request->hasSession();
 
-        if (is_string($locale) && in_array($locale, ['en', 'vi'], true)) {
-            if ($hasSession) {
-                $request->session()->put('locale', $locale);
+        $queryLocale = $request->query('locale') ?? $request->query('lang');
+        if (is_string($queryLocale)) {
+            $queryLocale = strtolower(trim($queryLocale));
+        }
+
+        $xLocale = $request->header('X-Locale');
+        if (is_string($xLocale)) {
+            $xLocale = substr(strtolower(trim($xLocale)), 0, 2);
+        }
+
+        $acceptHeader = $request->header('Accept-Language');
+        $acceptLocale = is_string($acceptHeader) && trim($acceptHeader) !== ''
+            ? substr(strtolower(trim(explode(',', $acceptHeader)[0])), 0, 2)
+            : null;
+
+        $sessionLocale = $hasSession ? $request->session()->get('locale') : null;
+
+        $candidates = $request->is('api/*')
+            ? [$queryLocale, $xLocale, $acceptLocale, $sessionLocale]
+            : [$queryLocale, $xLocale, $sessionLocale, $acceptLocale];
+
+        $locale = null;
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && in_array($candidate, $supported, true)) {
+                $locale = $candidate;
+                break;
             }
-        } else {
-            $locale = $hasSession
-                ? $request->session()->get('locale', config('app.locale'))
-                : config('app.locale');
-            if (! in_array($locale, ['en', 'vi'], true)) {
-                $locale = config('app.locale');
-            }
+        }
+
+        if (! $locale) {
+            $defaultLocale = config('app.locale', 'vi');
+            $locale = in_array($defaultLocale, $supported, true) ? $defaultLocale : 'vi';
+        }
+
+        if ($hasSession && is_string($queryLocale) && in_array($queryLocale, $supported, true)) {
+            $request->session()->put('locale', $locale);
         }
 
         app()->setLocale($locale);

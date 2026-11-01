@@ -37,7 +37,115 @@ abstract class BaseCrudController extends Controller
                 $data[$name] = request()->file($name)->store('uploads', 'public');
             }
         }
+
+        $existingTranslations = $this->extractTranslations($record);
+        foreach ($this->translatableFields() as $field) {
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+
+            $existing = array_filter($existingTranslations[$field] ?? [], fn ($v) => $v !== null && $v !== '');
+
+            if (is_array($data[$field])) {
+                $vi = trim((string) ($data[$field]['vi'] ?? ''));
+                $en = trim((string) ($data[$field]['en'] ?? ''));
+
+                if ($vi === '' && isset($existing['vi'])) {
+                    $vi = (string) $existing['vi'];
+                }
+                if ($en === '' && isset($existing['en'])) {
+                    $en = (string) $existing['en'];
+                }
+                if ($vi === '' && $en !== '') {
+                    $vi = $en;
+                }
+                if ($en === '' && $vi !== '') {
+                    $en = $vi;
+                }
+
+                $clean = array_filter(['vi' => $vi, 'en' => $en], fn ($v) => $v !== '');
+                $data[$field] = !empty($clean) ? $clean : null;
+            } elseif (is_string($data[$field]) && trim($data[$field]) !== '') {
+                $val = trim($data[$field]);
+                $locale = app()->getLocale() ?: 'vi';
+                $merged = $existing;
+                $merged[$locale] = $val;
+                if (empty($merged['vi'])) {
+                    $merged['vi'] = $val;
+                }
+                if (empty($merged['en'])) {
+                    $merged['en'] = $val;
+                }
+                $data[$field] = $merged;
+            }
+        }
+
         return $data;
+    }
+
+    protected function translatableFields(): array
+    {
+        $modelClass = $this->modelClass();
+        $model = new $modelClass();
+        $translatable = method_exists($model, 'getTranslatableAttributes')
+            ? $model->getTranslatableAttributes()
+            : [];
+
+        foreach ($this->fields() as $name => $field) {
+            if (!empty($field['translatable']) && !in_array($name, $translatable, true)) {
+                $translatable[] = $name;
+            }
+        }
+
+        return array_values(array_unique($translatable));
+    }
+
+    protected function extractTranslations(?Model $record = null): array
+    {
+        $result = [];
+        foreach ($this->translatableFields() as $field) {
+            $vi = '';
+            $en = '';
+
+            if ($record) {
+                if (method_exists($record, 'getTranslations') && method_exists($record, 'isTranslatableAttribute') && $record->isTranslatableAttribute($field)) {
+                    $translations = $record->getTranslations($field);
+                    $vi = (string) ($translations['vi'] ?? '');
+                    $en = (string) ($translations['en'] ?? '');
+                } else {
+                    $raw = $record->{$field} ?? null;
+                    if (is_array($raw)) {
+                        $vi = (string) ($raw['vi'] ?? '');
+                        $en = (string) ($raw['en'] ?? '');
+                    } elseif (is_string($raw)) {
+                        $decoded = json_decode($raw, true);
+                        if (is_array($decoded)) {
+                            $vi = (string) ($decoded['vi'] ?? '');
+                            $en = (string) ($decoded['en'] ?? '');
+                        } else {
+                            $vi = $raw;
+                            $en = $raw;
+                        }
+                    }
+                }
+            }
+
+            $result[$field] = [
+                'vi' => $vi,
+                'en' => $en,
+            ];
+        }
+
+        return $result;
+    }
+
+    protected function flushStorefrontCaches(): void
+    {
+        foreach (['vi', 'en'] as $loc) {
+            \Illuminate\Support\Facades\Cache::forget("storefront_settings_v1_{$loc}");
+            \Illuminate\Support\Facades\Cache::forget("storefront_settings_v2_{$loc}");
+        }
+        \Illuminate\Support\Facades\Cache::forget('all_menus');
     }
 
     protected function afterSave(Model $record, Request $request): void
@@ -137,6 +245,16 @@ abstract class BaseCrudController extends Controller
         return $this->hasPermission('create');
     }
 
+    protected function tabs(): array
+    {
+        return [];
+    }
+
+    protected function activeTab(): ?string
+    {
+        return null;
+    }
+
     public function index(Request $request): View
     {
         $modelClass = $this->modelClass();
@@ -155,6 +273,8 @@ abstract class BaseCrudController extends Controller
             'canImportExport' => $this->canImportExport(),
             'headerActions' => $this->headerActions(),
             'filters' => $this->filters(),
+            'tabs' => $this->tabs(),
+            'activeTab' => $this->activeTab(),
         ]);
     }
 
@@ -166,6 +286,10 @@ abstract class BaseCrudController extends Controller
             'fields' => $this->visibleFields('form'),
             'routePrefix' => $this->routePrefix(),
             'formData' => $this->formData(),
+            'translatableFields' => $this->translatableFields(),
+            'translations' => $this->extractTranslations(null),
+            'tabs' => $this->tabs(),
+            'activeTab' => $this->activeTab(),
         ]);
     }
 
@@ -179,7 +303,7 @@ abstract class BaseCrudController extends Controller
         if (empty($groups)) {
             $groups = [
                 'general' => [
-                    'label' => 'Thông tin chung',
+                    'label' => __('admin.common.general_info'),
                     'fields' => array_keys($visibleFields),
                 ]
             ];
@@ -192,6 +316,10 @@ abstract class BaseCrudController extends Controller
             'groups' => $groups,
             'routePrefix' => $this->routePrefix(),
             'canEdit' => $this->canEdit(),
+            'translatableFields' => $this->translatableFields(),
+            'translations' => $this->extractTranslations($record),
+            'tabs' => $this->tabs(),
+            'activeTab' => $this->activeTab(),
         ]);
     }
 
@@ -202,6 +330,7 @@ abstract class BaseCrudController extends Controller
         $modelClass = $this->modelClass();
         $record = $modelClass::create($data);
         $this->afterSave($record, $request);
+        $this->flushStorefrontCaches();
 
         return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.created'));
     }
@@ -217,6 +346,10 @@ abstract class BaseCrudController extends Controller
             'fields' => $this->visibleFields('form'),
             'routePrefix' => $this->routePrefix(),
             'formData' => $this->formData($record),
+            'translatableFields' => $this->translatableFields(),
+            'translations' => $this->extractTranslations($record),
+            'tabs' => $this->tabs(),
+            'activeTab' => $this->activeTab(),
         ]);
     }
 
@@ -228,6 +361,7 @@ abstract class BaseCrudController extends Controller
         $data = $this->mutateData($data, $record);
         $record->update($data);
         $this->afterSave($record, $request);
+        $this->flushStorefrontCaches();
 
         return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.updated'));
     }
@@ -237,6 +371,7 @@ abstract class BaseCrudController extends Controller
         $modelClass = $this->modelClass();
         $record = $modelClass::findOrFail($id);
         $record->delete();
+        $this->flushStorefrontCaches();
 
         return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.deleted'));
     }
@@ -252,6 +387,7 @@ abstract class BaseCrudController extends Controller
         $hasParentId = \Illuminate\Support\Facades\Schema::hasColumn((new $modelClass)->getTable(), 'parent_id');
         
         $this->updateTreeOrder($tree, null, $modelClass, $hasParentId);
+        $this->flushStorefrontCaches();
 
         return response()->json(['success' => true]);
     }
@@ -358,8 +494,28 @@ abstract class BaseCrudController extends Controller
     protected function rules(?int $id = null): array
     {
         $rules = [];
+        $translatable = $this->translatableFields();
+
         foreach ($this->visibleFields('form') as $name => $field) {
-            $rules[$name] = $field['rules'] ?? ['nullable'];
+            $fieldRules = $field['rules'] ?? ['nullable'];
+            if (in_array($name, $translatable, true) && is_array(request()->input($name))) {
+                $isRequired = in_array('required', (array) $fieldRules, true);
+                $rules[$name] = array_values(array_filter([
+                    $isRequired ? 'required' : 'nullable',
+                    'array',
+                    $isRequired ? function (string $attribute, mixed $value, \Closure $fail) {
+                        $vi = trim((string) ($value['vi'] ?? ''));
+                        $en = trim((string) ($value['en'] ?? ''));
+                        if ($vi === '' && $en === '') {
+                            $fail(__('validation.required', ['attribute' => $attribute]));
+                        }
+                    } : null,
+                ]));
+                $rules["{$name}.vi"] = ['nullable', 'string'];
+                $rules["{$name}.en"] = ['nullable', 'string'];
+            } else {
+                $rules[$name] = $fieldRules;
+            }
         }
 
         return $rules;

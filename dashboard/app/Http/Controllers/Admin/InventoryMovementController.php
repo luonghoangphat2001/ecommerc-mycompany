@@ -3,10 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasInventoryTabs;
 use App\Models\InventoryMovement;
 
 class InventoryMovementController extends BaseCrudController
 {
+    use HasInventoryTabs;
+
+    protected function activeTab(): ?string
+    {
+        return 'inventory-movements';
+    }
     protected function modelClass(): string
     {
         return InventoryMovement::class;

@@ -1,5 +1,6 @@
 import React from "react"
 import { Link } from "react-router-dom"
+import { Package } from "lucide-react"
 import { useFormatters } from "../../../utils/useFormatters"
 
 const RelatedProducts = ({ products, title, icon: Icon }) => {
@@ -8,10 +9,7 @@ const RelatedProducts = ({ products, title, icon: Icon }) => {
     if (!products || products.length === 0) return null
 
     const getImageUrl = (product) => {
-        if (product.image?.url) return product.image.url
-        if (product.image) return product.image
-        if (product.og_image) return product.og_image
-        return "/placeholder-product.jpg"
+        return product.image?.url || product.image || product.og_image || null
     }
 
     return (
@@ -23,6 +21,7 @@ const RelatedProducts = ({ products, title, icon: Icon }) => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
                 {products.map((item) => {
                     const product = item.product || item
+                    const imgUrl = getImageUrl(product)
 
                     return (
                         <Link
@@ -30,15 +29,24 @@ const RelatedProducts = ({ products, title, icon: Icon }) => {
                             to={`/products/${product.slug || product.id}`}
                             className="group flex flex-col bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-card hover:border-[#004687]/60 hover:shadow-card-hover transition-all"
                         >
-                            <div className="aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100">
-                                <img
-                                    src={getImageUrl(product)}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                                    onError={(e) => {
-                                        e.target.src = "/placeholder-product.jpg"
-                                    }}
-                                />
+                            <div className="aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100 flex items-center justify-center text-slate-300">
+                                {imgUrl ? (
+                                    <img
+                                        src={imgUrl}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                                        onError={(e) => {
+                                            e.currentTarget.onerror = null
+                                            e.currentTarget.style.display = "none"
+                                            if (e.currentTarget.nextSibling) {
+                                                e.currentTarget.nextSibling.style.display = "flex"
+                                            }
+                                        }}
+                                    />
+                                ) : null}
+                                <div className={`w-full h-full items-center justify-center ${imgUrl ? "hidden" : "flex"}`}>
+                                    <Package size={32} />
+                                </div>
                             </div>
                             <div className="p-3.5 flex flex-col flex-1">
                                 <h4 className="text-xs sm:text-sm font-semibold text-[#09253E] line-clamp-2 mb-1.5 group-hover:text-[#004687] transition-colors">

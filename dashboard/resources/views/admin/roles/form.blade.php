@@ -28,8 +28,22 @@
 
                 <div class="form-grid compact-grid">
                     <div class="form-row">
-                        <label for="name">{{ __('admin.sidebar.roles') }}</label>
-                        <input id="name" type="text" name="name" value="{{ old('name', $record->name ?? '') }}" required>
+                        <label for="name">{{ __('admin.roles.role_name') }}</label>
+                        @php
+                            $roleOptions = \App\Enums\RoleEnum::options();
+                            $currentName = old('name', $record->name ?? '');
+                            if ($currentName && !array_key_exists($currentName, $roleOptions)) {
+                                $roleOptions[$currentName] = $currentName . ' (Hiện tại)';
+                            }
+                        @endphp
+                        <select id="name" name="name" class="form-select" required>
+                            <option value="">-- {{ __('admin.actions.select') }} --</option>
+                            @foreach ($roleOptions as $roleVal => $roleLabel)
+                                <option value="{{ $roleVal }}" @selected($currentName === $roleVal)>
+                                    {{ $roleLabel }} ({{ $roleVal }})
+                                </option>
+                            @endforeach
+                        </select>
                         @error('name')<div class="error">{{ $message }}</div>@enderror
                     </div>
                     <div class="form-row">
@@ -76,16 +90,14 @@
 
                         <div class="shield-action-grid">
                             @foreach ($actions as $action => $permissions)
-                                <div class="shield-action-cell">
-                                    <div class="shield-action-name">{{ \App\Support\AdminLabel::action($action) }}</div>
-                                    @foreach ($permissions as $permission)
-                                        @php($isChecked = in_array($permission, old('permissions', $selectedPermissions), true))
-                                        <label class="shield-permission-pill">
-                                            <input type="checkbox" name="permissions[]" value="{{ $permission }}" @checked($isChecked)>
-                                            <span>{{ \App\Support\AdminLabel::permission($permission) }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
+                                @foreach ($permissions as $permission)
+                                    @php($isChecked = in_array($permission, old('permissions', $selectedPermissions), true))
+                                    <label class="shield-permission-pill" title="{{ $permission }}">
+                                        <input type="checkbox" name="permissions[]" value="{{ $permission }}" @checked($isChecked)>
+                                        <span class="shield-action-tag">{{ \App\Support\AdminLabel::action($action) }}</span>
+                                        <code class="shield-perm-code">{{ $permission }}</code>
+                                    </label>
+                                @endforeach
                             @endforeach
                         </div>
                     </section>

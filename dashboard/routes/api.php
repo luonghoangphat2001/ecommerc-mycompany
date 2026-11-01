@@ -70,8 +70,14 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         // Auth (Public)
         Route::prefix('auth')->group(function () {
             Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
+            Route::post('register', [AuthController::class, 'register']);
+            Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+            Route::post('reset-password', [AuthController::class, 'resetPassword']);
             Route::post('refresh-token', [AuthController::class, 'refreshToken']);
         });
+
+        // Public Order Tracking
+        Route::get('orders/track/{number}', [OrderController::class, 'track']);
 
         // Address Metadata (Countries/States)
         Route::prefix('addresses')->group(function () {
@@ -84,6 +90,7 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         // Posts
         Route::prefix('posts')->group(function () {
             Route::get('/', [PostController::class, 'index']);
+            Route::get('featured', [PostController::class, 'featured']);
             Route::get('{post}', [PostController::class, 'show']);
         });
         Route::prefix('post-categories')->group(function () {
@@ -96,6 +103,8 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
             Route::get('/', [ProductController::class, 'index']);
             Route::get('by-slug/{slug}', [ProductController::class, 'showBySlug']);
             Route::get('{productId}/inventory', [ProductInventoryController::class, 'index']);
+            Route::get('{productId}/recommendations', [ProductController::class, 'recommendations']);
+            Route::get('{productId}/related', [ProductController::class, 'related']);
 
             Route::middleware('marketing.module:upsell_enabled')->get('{productId}/upsells', [UpsellController::class, 'index']);
             Route::middleware('marketing.module:cross_sell_enabled')->get('{productId}/cross-sells', [CrossSellController::class, 'index']);
@@ -103,8 +112,13 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
             Route::get('{product}', [ProductController::class, 'show']);
         });
 
-        Route::get('product-categories', [ProductCategoryController::class, 'index']);
+        Route::prefix('product-categories')->group(function () {
+            Route::get('/', [ProductCategoryController::class, 'index']);
+            Route::get('{category}/products', [ProductCategoryController::class, 'products']);
+            Route::get('{productCategory}', [ProductCategoryController::class, 'show']);
+        });
         Route::get('brands', [BrandController::class, 'index']);
+        Route::get('brands/{brand}', [BrandController::class, 'show']);
 
         // Combos
         Route::middleware('marketing.module:combo_enabled')->prefix('combos')->group(function () {
@@ -129,9 +143,15 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
                 Route::post('logout', [AuthController::class, 'logout']);
                 Route::get('profile', [AuthController::class, 'profile']);
                 Route::put('profile', [AuthController::class, 'updateProfile']);
+                Route::post('profile', [AuthController::class, 'updateProfile']);
+                Route::post('change-password', [AuthController::class, 'changePassword']);
             });
 
-            // User Addresses
+            // User Profile & Addresses Aliases
+            Route::get('user/profile', [AuthController::class, 'profile']);
+            Route::put('user/profile', [AuthController::class, 'updateProfile']);
+            Route::post('user/profile', [AuthController::class, 'updateProfile']);
+
             Route::prefix('user-addresses')->group(function () {
                 Route::get('/', [AddressController::class, 'index']);
                 Route::post('/', [AddressController::class, 'store']);
@@ -139,13 +159,26 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
                 Route::delete('{address}', [AddressController::class, 'destroy']);
             });
 
+            Route::prefix('user/addresses')->group(function () {
+                Route::get('/', [AddressController::class, 'index']);
+                Route::post('/', [AddressController::class, 'store']);
+                Route::put('{address}', [AddressController::class, 'update']);
+                Route::delete('{address}', [AddressController::class, 'destroy']);
+            });
+
             // Loyalty
-            Route::middleware('marketing.module:loyalty_enabled')->prefix('loyalty')->group(function () {
+            Route::prefix('loyalty')->group(function () {
                 Route::get('points', [LoyaltyController::class, 'getPoints']);
+                Route::get('balance', [LoyaltyController::class, 'getPoints']);
                 Route::get('history', [LoyaltyController::class, 'getHistory']);
             });
 
+            // Coupons (Protected)
+            Route::get('coupons', [CouponController::class, 'index']);
+            Route::get('coupons/my-usages', [CouponController::class, 'myUsages']);
+
             // Orders
+            Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
             Route::apiResource('orders', OrderController::class)->middleware('throttle:checkout');
         });
 

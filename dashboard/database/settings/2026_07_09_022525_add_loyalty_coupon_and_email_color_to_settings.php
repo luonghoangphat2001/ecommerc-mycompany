@@ -7,7 +7,7 @@ return new class extends SettingsMigration
     public function up(): void
     {
         // Marketing group additions (Loyalty and Coupon)
-        $this->migrator->add('marketing.loyalty_enabled', false);
+        $this->migrator->add('marketing.loyalty_enabled', true);
         $this->migrator->add('marketing.points_per_currency', 1);
         $this->migrator->add('marketing.point_conversion_rate', 1000);
         $this->migrator->add('marketing.enable_coupons', true);

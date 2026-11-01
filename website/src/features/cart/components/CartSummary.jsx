@@ -16,14 +16,19 @@ const CartSummary = ({ summary, total: propTotal, coupon, translate }) => {
     }
 
     const subtotal = resolvedSummary.subtotal ?? fallbackTotal
-    const shipping = resolvedSummary.shipping || { amount: 0 }
-    const tax = resolvedSummary.tax || { amount: 0 }
+    const shippingAmount = resolvedSummary.shipping?.amount ?? resolvedSummary.shipping_cost ?? 0
+    const taxAmount = resolvedSummary.tax?.amount ?? resolvedSummary.tax_amount ?? 0
+    const discountAmount =
+        resolvedSummary.discount?.amount ??
+        resolvedSummary.discount_amount ??
+        (typeof resolvedSummary.discount === "number" ? resolvedSummary.discount : 0) ??
+        coupon?.discount_amount ??
+        0
     const total = resolvedSummary.total ?? fallbackTotal
-    const discount = resolvedSummary.discount || 0
 
-    const hasShipping = shipping?.amount > 0
-    const hasTax = tax?.amount > 0
-    const hasDiscount = discount > 0 || coupon
+    const hasShipping = shippingAmount > 0
+    const hasTax = taxAmount > 0
+    const hasDiscount = discountAmount > 0 || Boolean(coupon)
 
     return (
         <Card shadow="sm" className="p-6 sticky top-28 tabular-nums">
@@ -40,10 +45,10 @@ const CartSummary = ({ summary, total: propTotal, coupon, translate }) => {
                 <div className="flex justify-between items-center text-slate-600">
                     <div className="flex items-center gap-1.5">
                         <Truck size={15} className="text-slate-400" />
-                        <span>{shipping?.method_name || translate("cart.shipping")}</span>
+                        <span>{resolvedSummary.shipping?.method_name || translate("cart.shipping")}</span>
                     </div>
                     <span className={`font-semibold ${hasShipping ? "text-slate-900" : "text-emerald-700"}`}>
-                        {hasShipping ? formatCurrency(shipping.amount) : translate("cart.free")}
+                        {hasShipping ? formatCurrency(shippingAmount) : translate("cart.free")}
                     </span>
                 </div>
 
@@ -51,9 +56,9 @@ const CartSummary = ({ summary, total: propTotal, coupon, translate }) => {
                     <div className="flex justify-between items-center text-slate-600">
                         <div className="flex items-center gap-1.5">
                             <Receipt size={15} className="text-slate-400" />
-                            <span>{tax?.rate_name || translate("cart.tax")}</span>
+                            <span>{resolvedSummary.tax?.rate_name || translate("cart.tax")}</span>
                         </div>
-                        <span className="font-semibold text-slate-900">{formatCurrency(tax.amount)}</span>
+                        <span className="font-semibold text-slate-900">{formatCurrency(taxAmount)}</span>
                     </div>
                 )}
 
@@ -61,10 +66,10 @@ const CartSummary = ({ summary, total: propTotal, coupon, translate }) => {
                     <div className="flex justify-between items-center text-emerald-700">
                         <div className="flex items-center gap-1.5">
                             <Tag size={15} />
-                            <span>{coupon?.code || translate("cart.discount")}</span>
+                            <span>{coupon?.code || resolvedSummary.coupon?.code || translate("cart.discount")}</span>
                         </div>
                         <span className="font-semibold">
-                            -{formatCurrency(discount || coupon?.discount_amount || 0)}
+                            -{formatCurrency(discountAmount)}
                         </span>
                     </div>
                 )}
@@ -119,7 +124,7 @@ const CartSummary = ({ summary, total: propTotal, coupon, translate }) => {
 
             <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
                 <ShieldCheck size={13} className="text-[#004687]" />
-                <span>Encrypted checkout & verified fulfillment</span>
+                <span>{translate("cart.encrypted_note") || "Encrypted checkout & verified fulfillment"}</span>
             </div>
         </Card>
     )

@@ -72,6 +72,27 @@ class PostCategory extends Model
         return $depth;
     }
 
+    public function getDisplayNameAttribute(): string
+    {
+        $locale = app()->getLocale() ?: 'vi';
+        $name = $this->getTranslation('name', $locale) ?: $this->getTranslation('name', 'vi');
+        if (empty($name) && is_array($this->name)) {
+            $name = $this->name['vi'] ?? $this->name['en'] ?? '';
+        }
+        return (string) ($name ?: ($this->slug ?: 'Danh mục #' . $this->id));
+    }
+
+    public function getBreadcrumbsAttribute(): string
+    {
+        $parts = [];
+        $curr = $this->parent;
+        while ($curr) {
+            array_unshift($parts, $curr->display_name);
+            $curr = $curr->parent;
+        }
+        return empty($parts) ? '—' : implode(' > ', $parts);
+    }
+
     public static function getTreeSortedIds(): array
     {
         $categories = self::all();

@@ -1,129 +1,106 @@
 @extends('admin.layouts.app', ['title' => $title])
 
 @section('content')
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">{{ $title }}</h1>
-            <p class="page-description">{{ __('admin.list.description') }}</p>
-        </div>
-        <div class="actions">
-            @foreach (($headerActions ?? []) as $action)
-                @if (($action['method'] ?? 'get') === 'post')
-                    <form method="post" action="{{ $action['url'] }}">
-                        @csrf
-                        <button class="btn {{ $action['class'] ?? 'btn-secondary' }}" type="submit">{{ $action['label'] }}</button>
-                    </form>
-                @else
-                    <a class="btn {{ $action['class'] ?? 'btn-secondary' }}" href="{{ $action['url'] }}">{{ $action['label'] }}</a>
-                @endif
-            @endforeach
-            @if ($canImportExport ?? false)
-                <a class="btn btn-secondary" href="{{ route($routePrefix . '.export', request()->query()) }}">{{ __('admin.actions.export_csv') }}</a>
+    <x-admin.page-header
+        :title="$title"
+        :description="__('admin.list.description')"
+        :exportUrl="($canImportExport ?? false) ? route($routePrefix . '.export', request()->query()) : null"
+        :importUrl="($canImportExport ?? false) ? route($routePrefix . '.import') : null"
+        :createUrl="($canCreate ?? true) ? route($routePrefix . '.create') : null"
+    >
+        @foreach (($headerActions ?? []) as $action)
+            @if (($action['method'] ?? 'get') === 'post')
+                <form method="post" action="{{ $action['url'] }}" style="margin: 0;">
+                    @csrf
+                    <button class="btn {{ $action['class'] ?? 'btn-secondary' }}" type="submit">{{ $action['label'] }}</button>
+                </form>
+            @else
+                <a class="btn {{ $action['class'] ?? 'btn-secondary' }}" href="{{ $action['url'] }}">{{ $action['label'] }}</a>
             @endif
-            @if ($canCreate ?? true)
-                <a class="btn" href="{{ route($routePrefix . '.create') }}">{{ __('admin.actions.create') }}</a>
-            @endif
-        </div>
-    </div>
+        @endforeach
+    </x-admin.page-header>
 
-    @if (session('status'))
-        <div class="status-message">{{ session('status') }}</div>
+    @if (!empty($tabs))
+        <div style="margin-bottom: var(--fi-space-4, 16px);">
+            <x-admin.tabs
+                mode="link"
+                :active="$activeTab ?? ''"
+                :tabs="$tabs"
+            />
+        </div>
     @endif
 
-    <div class="table-panel card">
-        <form method="get" class="list-filter-panel">
-            <div class="list-filter-grid">
-                <div>
-                    <label>{{ __('admin.actions.search') }}</label>
-                    <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __('admin.actions.search') }}...">
-                </div>
+    @if (session('status'))
+        <div class="status-message">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>{{ session('status') }}</span>
+        </div>
+    @endif
+
+    <x-admin.data-table :paginator="$items">
+        <x-slot:toolbar>
+            <x-admin.table-toolbar :resetUrl="route($routePrefix . '.index')">
+                <x-admin.search-input
+                    name="q"
+                    :label="__('admin.actions.search')"
+                    :placeholder="__('admin.actions.search') . '...'"
+                    width="240px"
+                />
 
                 @foreach (($filters ?? []) as $name => $filter)
-                    <div>
-                        <label>{{ $filter['label'] ?? $name }}</label>
-                        @if (($filter['type'] ?? 'select') === 'date')
-                            <input type="date" name="{{ $name }}" value="{{ request($name) }}">
-                        @else
-                            <select name="{{ $name }}">
-                                <option value="">{{ $filter['placeholder'] ?? '-- Tất cả --' }}</option>
-                                @foreach (($filter['options'] ?? []) as $value => $label)
-                                    <option value="{{ $value }}" @selected((string) request($name) === (string) $value)>{{ $label }}</option>
-                                @endforeach
-                            </select>
-                        @endif
-                    </div>
+                    @if (($filter['type'] ?? 'select') === 'date')
+                        <div class="admin-filter-item" style="min-width: 155px; max-width: 175px;">
+                            <label for="filter-{{ $name }}">{{ $filter['label'] ?? $name }}</label>
+                            <input id="filter-{{ $name }}" type="date" name="{{ $name }}" value="{{ request($name) }}">
+                        </div>
+                    @else
+                        <x-admin.filter-select
+                            :name="$name"
+                            :label="$filter['label'] ?? $name"
+                            :options="$filter['options'] ?? []"
+                            :placeholder="$filter['placeholder'] ?? '-- Tất cả --'"
+                        />
+                    @endif
                 @endforeach
-            </div>
+            </x-admin.table-toolbar>
+        </x-slot:toolbar>
 
-            <div class="list-filter-actions">
-                <a href="{{ route($routePrefix . '.index') }}" class="btn btn-secondary">{{ __('admin.actions.reset') }}</a>
-                <button class="btn btn-primary" type="submit">{{ __('admin.actions.filter_data') }}</button>
-            </div>
-        </form>
 
-        @if ($canImportExport ?? false)
-            <div class="crud-import-row">
-                <form method="post" action="{{ route($routePrefix . '.import') }}" class="import-form" enctype="multipart/form-data">
-                    @csrf
-                    <input type="file" name="file" accept=".csv,text/csv">
-                    <button class="btn btn-secondary" type="submit">{{ __('admin.actions.import_csv') }}</button>
-                </form>
-            </div>
-        @endif
 
-        @error('file')
-            <div class="error import-error">{{ $message }}</div>
-        @enderror
+        <x-slot:head>
+            <tr>
+                <th class="text-center" style="width: 72px;">ID</th>
+                @foreach ($fields as $name => $field)
+                    <th>{{ $field['label'] ?? $name }}</th>
+                @endforeach
+                <th class="text-right" style="width: 180px;">{{ __('admin.table_actions') }}</th>
+            </tr>
+        </x-slot:head>
 
-        <div class="table-wrap">
-            <table style="min-width: 980px;">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        @foreach ($fields as $name => $field)
-                            <th>{{ $field['label'] ?? $name }}</th>
-                        @endforeach
-                        <th>{{ __('admin.table_actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($items as $item)
-                        <tr>
-                            <td class="cell-muted">#{{ $item->id }}</td>
-                            @foreach ($fields as $name => $field)
-                                @php
-                                    $value = data_get($item, $name);
-                                    $type = $field['type'] ?? 'text';
-                                @endphp
-                                <td>
-                                    @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $item, 'compact' => true])
-                                </td>
-                            @endforeach
-                            <td>
-                                <div class="actions">
-                                    <a class="link-action" href="{{ route($routePrefix . '.show', $item->id) }}">{{ __('admin.actions.view') }}</a>
-                                    @if ($canEdit ?? true)
-                                        <a class="link-action" href="{{ route($routePrefix . '.edit', $item->id) }}">{{ __('admin.actions.edit') }}</a>
-                                    @endif
-                                    @if ($canDelete ?? true)
-                                        <form method="post" action="{{ route($routePrefix . '.destroy', $item->id) }}">
-                                            @csrf
-                                            @method('delete')
-                                            <button class="link-action link-danger" type="submit" onclick="return confirm('{{ __('admin.messages.confirm_delete') }}')">{{ __('admin.actions.delete') }}</button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="100%" class="empty-state">{{ __('admin.messages.empty_state') }}</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <div class="pagination">{{ $items->links('vendor.pagination.admin') }}</div>
-    </div>
+        @forelse ($items as $item)
+            <tr>
+                <td class="cell-muted mono text-center">#{{ $item->id }}</td>
+                @foreach ($fields as $name => $field)
+                    @php
+                        $value = data_get($item, $name);
+                        $type = $field['type'] ?? 'text';
+                    @endphp
+                    <td>
+                        @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $item, 'name' => $name, 'field' => $field, 'compact' => true])
+                    </td>
+                @endforeach
+                <td class="text-right">
+                    <x-admin.row-actions
+                        :viewUrl="route($routePrefix . '.show', $item->id)"
+                        :editUrl="($canEdit ?? true) ? route($routePrefix . '.edit', $item->id) : null"
+                        :deleteUrl="($canDelete ?? true) ? route($routePrefix . '.destroy', $item->id) : null"
+                    />
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="100%" class="empty-state">{{ __('admin.messages.empty_state') }}</td>
+            </tr>
+        @endforelse
+    </x-admin.data-table>
 @endsection

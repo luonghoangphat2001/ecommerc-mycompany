@@ -14,7 +14,7 @@ const postApi = {
   },
 
   getPostsByCategory: (categoryId) => {
-    return apiService.get(`posts/categories/${categoryId}`);
+    return apiService.get(`post-categories/${categoryId}/posts`);
   },
 
   getFeaturedPosts: () => {

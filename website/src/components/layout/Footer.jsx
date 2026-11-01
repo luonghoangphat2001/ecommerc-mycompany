@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { Mail, Phone, MapPin, ShieldCheck, Truck, CreditCard } from "lucide-react"
 import useSettingsStore from "../../store/useSettingsStore"
 import { useMenu } from "../../features/menu/hooks/useMenu"
+import { getLocalizedText } from "../../utils/formatters"
 
 const Footer = () => {
     const { settings, translate } = useSettingsStore()
@@ -15,7 +16,7 @@ const Footer = () => {
     const storeEmail = general?.store_email || "support@novastore.com"
     const storePhone = general?.store_phone || "1900 1234"
     const storeCountry = general?.store_country || "Vietnam"
-    const copyright = footer?.copyright || `© ${currentYear} ${storeName}. All rights reserved.`
+    const copyright = getLocalizedText(footer?.copyright) || `© ${currentYear} ${storeName}. All rights reserved.`
 
     return (
         <footer className="w-full bg-[#09253E] text-slate-300 border-t border-slate-800 mt-12">
@@ -106,7 +107,7 @@ const Footer = () => {
                                             to={item.url || `/${item.slug}`}
                                             className="text-slate-400 hover:text-white transition-colors"
                                         >
-                                            {item.label}
+                                            {getLocalizedText(item.label || item.title)}
                                         </Link>
                                     </li>
                                 ))
@@ -146,15 +147,15 @@ const Footer = () => {
                         <div className="space-y-2.5 text-xs text-slate-400">
                             <div className="flex items-center gap-2.5">
                                 <ShieldCheck size={15} className="text-[#FBAE17] flex-shrink-0" />
-                                <span>100% Quality-Inspected Inventory</span>
+                                <span>{translate?.("footer.quality_inspected") || "100% Quality-Inspected Inventory"}</span>
                             </div>
                             <div className="flex items-center gap-2.5">
                                 <Truck size={15} className="text-[#FBAE17] flex-shrink-0" />
-                                <span>Real-Time Multi-Warehouse Dispatch</span>
+                                <span>{translate?.("footer.multi_warehouse") || "Real-Time Multi-Warehouse Dispatch"}</span>
                             </div>
                             <div className="flex items-center gap-2.5">
                                 <CreditCard size={15} className="text-[#FBAE17] flex-shrink-0" />
-                                <span>Encrypted Payment Processing</span>
+                                <span>{translate?.("footer.encrypted_payment") || "Encrypted Payment Processing"}</span>
                             </div>
                         </div>
 
@@ -182,7 +183,7 @@ const Footer = () => {
                         <div className="flex items-center gap-3 tabular-nums">
                             <span>{translate?.("footer.currency") || "Currency"}: {general?.default_currency || "VND"}</span>
                             <span className="text-slate-600">•</span>
-                            <span>ISO-Standard E-Commerce Platform</span>
+                            <span>{translate?.("footer.iso_standard") || "ISO-Standard E-Commerce Platform"}</span>
                         </div>
                     </div>
                 </div>

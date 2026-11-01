@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCartStore from '../../cart/store/useCartStore';
 import useSettingsStore from '../../../store/useSettingsStore';
 import useUserAddress from '../../address/hooks/useUserAddress';
 import orderService from '../../order/services/orderService';
-import { unwrapApiObject } from '../../../api/apiResponse';
+import { unwrapApiList, unwrapApiObject } from '../../../api/apiResponse';
 
-const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
+const useCheckoutForm = (initialUser) => {
   const navigate = useNavigate();
   const { items, summary, clearCart } = useCartStore();
   const translate = useSettingsStore((state) => state.translate);
   const { getShippingFormData, getBillingFormData } = useUserAddress();
+  const [shippingMethods, setShippingMethods] = useState([]);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -25,7 +26,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
     subRegion: '',
     note: '',
     paymentMethod: 'cod',
-    shippingMethod: '',
+    shippingMethod: 'flat_rate',
     billingSameAsShipping: true,
     billingFirstName: '',
     billingLastName: '',
@@ -72,19 +73,39 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
     }
   }, [initialUser, getShippingFormData, getBillingFormData]);
 
-  // Fetch shipping methods when address changes
+  const lastSyncKeyRef = useRef('');
+
+  // Fetch shipping methods and sync cart when address changes
   useEffect(() => {
+    if (!items || items.length === 0 || !formData.country) {
+      return;
+    }
+
+    const itemsKey = items.map((i) => `${i.id}-${i.quantity}`).join(',');
+    const couponKey = summary?.coupon?.code || summary?.coupon_code || '';
+    const currentSyncKey = `${formData.country}|${formData.state}|${formData.city}|${formData.shippingMethod}|${couponKey}|${itemsKey}`;
+
+    if (lastSyncKeyRef.current === currentSyncKey) {
+      return;
+    }
+
     const fetchShipping = async () => {
       try {
         const { default: cartApi } = await import('../../cart/services/cartApi');
-        // Still fetch shipping methods to populate the UI (managed in useCheckoutAddress or similar if they use same endpoint)
-        await cartApi.getShippingMethods(items, formData.country, formData.state);
+        const methodsRes = await cartApi.getShippingMethods(items, formData.country, formData.state);
+        const methodsList = unwrapApiList(methodsRes, []);
+        if (methodsList.length > 0) {
+          setShippingMethods(methodsList);
+          if (!formData.shippingMethod) {
+            const firstId = methodsList[0].code || methodsList[0].type || methodsList[0].id || 'flat_rate';
+            setFormData((prev) => ({ ...prev, shippingMethod: firstId }));
+          }
+        }
 
-        // Sync cart to get updated totals including shipping and tax
-        const payload = items.map(item => ({
+        const payload = items.map((item) => ({
           product_id: item.id,
           quantity: item.quantity,
-          variant_id: item.variant_id || null
+          variant_id: item.variant_id || null,
         }));
 
         const syncRes = await cartApi.syncCart({
@@ -92,22 +113,31 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
           shipping_method: formData.shippingMethod,
           country: formData.country,
           state: formData.state,
-          coupon_code: summary?.coupon?.code || summary?.coupon_code || undefined
+          coupon_code: couponKey || undefined,
         });
 
-        if (syncRes && syncRes.data) {
-          useCartStore.getState().setCart({ summary: syncRes.data.summary || syncRes.data });
+        lastSyncKeyRef.current = currentSyncKey;
+
+        const syncedData = unwrapApiObject(syncRes);
+        if (syncedData?.summary) {
+          useCartStore.setState({ summary: syncedData.summary });
         }
       } catch (err) {
-        console.error("Failed to fetch shipping/sync", err);
+        console.error('Failed to fetch shipping/sync', err);
       }
     };
 
-    if (items.length > 0 && formData.country) {
-      const timeoutId = setTimeout(fetchShipping, 800); // debounce
-      return () => clearTimeout(timeoutId);
-    }
-  }, [formData.country, formData.state, formData.city, formData.shippingMethod, items, summary?.coupon?.code, summary?.coupon_code]);
+    const timeoutId = setTimeout(fetchShipping, 400);
+    return () => clearTimeout(timeoutId);
+  }, [
+    formData.country,
+    formData.state,
+    formData.city,
+    formData.shippingMethod,
+    items,
+    summary?.coupon?.code,
+    summary?.coupon_code,
+  ]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -155,15 +185,15 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
         items: items.map(item => ({
           product_id: item.id,
           qty: item.quantity,
-          price: item.price // 🛡️ Send price for Backend Integrity Check
+          price: item.effective_price ?? item.price
         })),
         shipping_method: formData.shippingMethod || 'flat_rate',
         payment_method: formData.paymentMethod || 'cod',
         notes: formData.note,
         coupon_code: summary?.coupon?.code || summary?.coupon_code || undefined,
-        shipping_fee: summary?.shipping?.amount || summary?.shipping_cost || 0,
-        tax_amount: summary?.tax?.amount || summary?.tax_amount || 0,
-        discount_amount: summary?.discount?.amount || summary?.discount_amount || 0,
+        shipping_fee: summary?.shipping?.amount ?? summary?.shipping_cost ?? 0,
+        tax_amount: summary?.tax?.amount ?? summary?.tax_amount ?? 0,
+        discount_amount: summary?.discount?.amount ?? summary?.discount_amount ?? 0,
         grand_total: summary?.total || 0,
       };
 
@@ -171,11 +201,12 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
       const order = unwrapApiObject(response);
 
       clearCart();
-      // Redirect to professional success page with order data
       navigate('/checkout/success', { state: { order } });
     } catch (err) {
       console.error('Checkout error:', err);
-      setError(err.response?.data?.message || translate('checkout.generic_error'));
+      const validationErrors = err.response?.data?.errors;
+      const firstErrorMessage = validationErrors ? Object.values(validationErrors).flat()[0] : null;
+      setError(firstErrorMessage || err.response?.data?.message || translate('checkout.generic_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -183,7 +214,6 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
-    // Handle number inputs properly
     if (type === 'number') {
       setFormData(prev => ({ ...prev, [name]: value === '' ? '' : parseFloat(value) }));
     } else {
@@ -203,7 +233,6 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
     const checked = e.target.checked;
     setFormData(prev => {
       const newState = { ...prev, billingSameAsShipping: checked };
-      // Auto-fill billing with shipping if checked
       if (checked) {
         newState.billingFirstName = prev.firstName;
         newState.billingLastName = prev.lastName;
@@ -222,6 +251,7 @@ const useCheckoutForm = (initialUser, onCheckoutSuccess) => {
 
   return {
     formData,
+    shippingMethods,
     isSubmitting,
     error,
     handleSubmit,

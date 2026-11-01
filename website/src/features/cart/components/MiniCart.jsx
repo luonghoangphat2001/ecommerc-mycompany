@@ -1,6 +1,6 @@
 import React from "react"
 import { Link } from "react-router-dom"
-import { X, ShoppingBag, Truck, MapPin, Minus, Plus, ArrowRight } from "lucide-react"
+import { X, ShoppingBag, Truck, MapPin, Minus, Plus, ArrowRight, Package } from "lucide-react"
 import { formatCurrency } from "../../../utils/formatters"
 import useCartStore from "../store/useCartStore"
 import { useCartActions } from "../hooks/useCartActions"
@@ -12,8 +12,8 @@ const MiniCart = ({ isOpen, onClose }) => {
     const { removeCartItem, updateCartItem } = useCartActions()
 
     const count = getCartCount?.() || items.length
-    const total = summary?.total || items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const subtotal = summary?.subtotal || total
+    const total = summary?.total ?? 0
+    const subtotal = summary?.subtotal ?? total
 
     if (!isOpen) return null
 
@@ -70,27 +70,37 @@ const MiniCart = ({ isOpen, onClose }) => {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {items.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="flex gap-3.5 p-3.5 bg-white border border-slate-200/90 rounded-xl shadow-card"
-                                >
-                                    <div className="w-16 h-16 bg-slate-100 rounded-lg border border-slate-200/60 overflow-hidden flex-shrink-0">
-                                        <img
-                                            src={
-                                                item.image?.url ||
-                                                item.image ||
-                                                item.image_url ||
-                                                "/placeholder-product.jpg"
-                                            }
-                                            alt={item.name}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                e.target.src = "/placeholder-product.jpg"
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
+                                {items.map((item) => {
+                                    const itemImage = item.image?.url || item.image || item.image_url
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            className="flex gap-3.5 p-3.5 bg-white border border-slate-200/90 rounded-xl shadow-card"
+                                        >
+                                            <div className="w-16 h-16 bg-slate-100 rounded-lg border border-slate-200/60 overflow-hidden flex-shrink-0 flex items-center justify-center text-slate-400">
+                                                {itemImage ? (
+                                                    <img
+                                                        src={itemImage}
+                                                        alt={item.name}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.currentTarget.onerror = null
+                                                            e.currentTarget.style.display = "none"
+                                                            if (e.currentTarget.nextSibling) {
+                                                                e.currentTarget.nextSibling.style.display = "flex"
+                                                            }
+                                                        }}
+                                                    />
+                                                ) : null}
+                                                <div
+                                                    className={`w-full h-full items-center justify-center text-slate-400 ${
+                                                        itemImage ? "hidden" : "flex"
+                                                    }`}
+                                                >
+                                                    <Package size={22} />
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
                                         <h3 className="text-sm font-semibold text-[#09253E] truncate">
                                             {item.name}
                                         </h3>
@@ -151,8 +161,9 @@ const MiniCart = ({ isOpen, onClose }) => {
                                             <X size={15} />
                                         </button>
                                     </div>
-                                </div>
-                            ))}
+                                        </div>
+                                    )
+                                })}
                         </div>
                     )}
                 </div>

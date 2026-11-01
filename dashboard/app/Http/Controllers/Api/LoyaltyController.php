@@ -31,20 +31,16 @@ class LoyaltyController extends BaseApiController
     )]
     public function getPoints(Request $request): JsonResponse
     {
-        if (!$this->settings->enabled) {
-            return $this->ok([
-                'enabled' => false,
-                'current_points' => 0,
-                'lifetime_points' => 0,
-            ]);
-        }
+        $marketingSettings = app(\App\Settings\MarketingSettings::class);
+        $isEnabled = (bool) ($this->settings->enabled || $marketingSettings->loyalty_enabled);
 
         $user = $request->user();
-
-        $loyaltyPoint = $user->loyaltyPoint;
+        $loyaltyPoint = $user?->loyaltyPoint;
 
         return $this->ok([
-            'enabled' => true,
+            'enabled' => $isEnabled,
+            'points' => $loyaltyPoint?->current_points ?? 0,
+            'balance' => $loyaltyPoint?->current_points ?? 0,
             'current_points' => $loyaltyPoint?->current_points ?? 0,
             'lifetime_points' => $loyaltyPoint?->lifetime_points ?? 0,
             'points_per_currency' => $this->settings->points_per_currency,
@@ -68,16 +64,15 @@ class LoyaltyController extends BaseApiController
     )]
     public function getHistory(Request $request): JsonResponse
     {
-        if (!$this->settings->enabled) {
-            return $this->ok([]);
-        }
-
         $validated = $request->validate([
             'per_page' => 'integer|min:1|max:100',
             'page' => 'integer|min:1',
         ]);
 
         $user = $request->user();
+        if (!$user) {
+            return $this->ok([]);
+        }
 
         $logs = $user->loyaltyLogs()
             ->orderBy('created_at', 'desc')

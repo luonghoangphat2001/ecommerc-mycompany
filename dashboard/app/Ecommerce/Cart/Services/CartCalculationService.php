@@ -68,9 +68,13 @@ class CartCalculationService implements CartCalculationServiceInterface
         );
 
         $calcResult = $this->calculator->calculate($request);
+        $discountTotal = $calcResult->discountTotal + $calcResult->loyaltyDiscountTotal;
 
         return [
             'subtotal' => $calcResult->subtotal,
+            'shipping_cost' => $calcResult->shippingTotal,
+            'tax_amount' => $calcResult->taxTotal,
+            'discount_amount' => $discountTotal,
             'shipping' => [
                 'amount' => $calcResult->shippingTotal,
             ],
@@ -78,7 +82,7 @@ class CartCalculationService implements CartCalculationServiceInterface
                 'amount' => $calcResult->taxTotal,
             ],
             'discount' => [
-                'amount' => $calcResult->discountTotal + $calcResult->loyaltyDiscountTotal,
+                'amount' => $discountTotal,
             ],
             'total' => $calcResult->total,
             'items_count' => collect($items)->sum('quantity'),

@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from "react"
-import { Package, ChevronRight } from "lucide-react"
+import { Package, ChevronRight, XCircle } from "lucide-react"
+import toast from "react-hot-toast"
 import { useFormatters } from "../../../utils/useFormatters"
+import useSettingsStore from "../../../store/useSettingsStore"
+import orderService from "../services/orderService"
 import Card from "../../../components/common/Card"
 
 const STATUS_BADGE = {
@@ -20,10 +23,14 @@ const PAYMENT_BADGE = {
     failed: "bg-red-50 text-red-700 border-red-200",
 }
 
-const OrderHistory = ({ orders = [], onViewOrder }) => {
-    const { formatCurrency } = useFormatters()
+const CANCELLABLE_STATUSES = ["pending", "new", "processing"]
+
+const OrderHistory = ({ orders = [], onViewOrder, onOrderCancelled }) => {
+    const translate = useSettingsStore((state) => state.translate)
+    const { formatCurrency, formatDate, getLocalizedText } = useFormatters()
     const [statusFilter, setStatusFilter] = useState("all")
     const [timeFilter, setTimeFilter] = useState("all")
+    const [cancellingId, setCancellingId] = useState(null)
 
     const filteredOrders = useMemo(() => {
         return orders.filter((order) => {
@@ -40,13 +47,43 @@ const OrderHistory = ({ orders = [], onViewOrder }) => {
         })
     }, [orders, statusFilter, timeFilter])
 
+    const handleCancelOrder = async (e, order) => {
+        e.stopPropagation()
+        if (!window.confirm(translate("order.cancel_confirm") || "Are you sure you want to cancel this order?")) {
+            return
+        }
+        const reason = window.prompt(
+            translate("order.cancel_reason_prompt") || "Please enter a reason for cancellation (optional):",
+            ""
+        )
+        if (reason === null) return
+
+        setCancellingId(order.id)
+        try {
+            await orderService.cancelOrder(order.id, reason)
+            toast.success(translate("order.cancel_success") || "Order has been cancelled successfully.")
+            onOrderCancelled?.()
+        } catch (err) {
+            toast.error(
+                err?.response?.data?.message ||
+                    translate("order.cancel_failed") ||
+                    "Unable to cancel this order."
+            )
+        } finally {
+            setCancellingId(null)
+        }
+    }
+
     return (
         <Card className="p-6 sm:p-8 tabular-nums">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-5 mb-6 border-b border-slate-100">
                 <div>
-                    <h2 className="text-lg font-bold text-[#09253E] tracking-tight">Order History</h2>
+                    <h2 className="text-lg font-bold text-[#09253E] tracking-tight">
+                        {translate("order.history_title") || "Order History"}
+                    </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                        Inspect past purchases, invoice totals, and fulfillment status.
+                        {translate("order.history_subtitle") ||
+                            "Inspect past purchases, invoice totals, and fulfillment status."}
                     </p>
                 </div>
 
@@ -56,12 +93,12 @@ const OrderHistory = ({ orders = [], onViewOrder }) => {
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium bg-white text-slate-800 focus:outline-none focus:border-[#004687]"
                     >
-                        <option value="all">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipping">Shipping</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="all">{translate("order.all_statuses") || "All Statuses"}</option>
+                        <option value="pending">{translate("order.pending") || "Pending"}</option>
+                        <option value="processing">{translate("order.processing") || "Processing"}</option>
+                        <option value="shipping">{translate("order.shipping") || "Shipping"}</option>
+                        <option value="completed">{translate("order.completed") || "Completed"}</option>
+                        <option value="cancelled">{translate("order.cancelled") || "Cancelled"}</option>
                     </select>
 
                     <select
@@ -69,10 +106,10 @@ const OrderHistory = ({ orders = [], onViewOrder }) => {
                         onChange={(e) => setTimeFilter(e.target.value)}
                         className="px-3 py-2 border border-slate-300 rounded-lg text-xs font-medium bg-white text-slate-800 focus:outline-none focus:border-[#004687]"
                     >
-                        <option value="all">All Time</option>
-                        <option value="30_days">Last 30 Days</option>
-                        <option value="6_months">Last 6 Months</option>
-                        <option value="1_year">Past Year</option>
+                        <option value="all">{translate("order.all_time") || "All Time"}</option>
+                        <option value="30_days">{translate("order.last_30_days") || "Last 30 Days"}</option>
+                        <option value="6_months">{translate("order.last_6_months") || "Last 6 Months"}</option>
+                        <option value="1_year">{translate("order.past_year") || "Past Year"}</option>
                     </select>
                 </div>
             </div>
@@ -81,6 +118,8 @@ const OrderHistory = ({ orders = [], onViewOrder }) => {
                 {filteredOrders.map((order) => {
                     const firstItem = order.items && order.items.length > 0 ? order.items[0] : null
                     const extraItemsCount = order.items ? order.items.length - 1 : 0
+                    const canCancel = CANCELLABLE_STATUSES.includes(String(order.status || "").toLowerCase())
+
                     return (
                         <div
                             key={order.id}
@@ -92,12 +131,23 @@ const OrderHistory = ({ orders = [], onViewOrder }) => {
                                     {firstItem?.product?.image?.url ? (
                                         <img
                                             src={firstItem.product.image.url}
-                                            alt={firstItem.product.name}
+                                            alt={getLocalizedText(firstItem.product.name)}
                                             className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = "none"
+                                                if (e.currentTarget.nextSibling) {
+                                                    e.currentTarget.nextSibling.style.display = "flex"
+                                                }
+                                            }}
                                         />
-                                    ) : (
+                                    ) : null}
+                                    <div
+                                        className={`w-full h-full items-center justify-center ${
+                                            firstItem?.product?.image?.url ? "hidden" : "flex"
+                                        }`}
+                                    >
                                         <Package size={22} />
-                                    )}
+                                    </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -110,7 +160,7 @@ const OrderHistory = ({ orders = [], onViewOrder }) => {
                                                 "bg-slate-100 text-slate-600 border-slate-200"
                                             }`}
                                         >
-                                            {order.status}
+                                            {translate(`order.${order.status}`) || order.status}
                                         </span>
                                         {order.payment_status && (
                                             <span
@@ -119,19 +169,19 @@ const OrderHistory = ({ orders = [], onViewOrder }) => {
                                                     "bg-slate-100 text-slate-600 border-slate-200"
                                                 }`}
                                             >
-                                                {order.payment_status}
+                                                {translate(`payments.${order.payment_status}`) || order.payment_status}
                                             </span>
                                         )}
                                     </div>
                                     <p className="text-xs text-slate-500 mb-1">
-                                        Placed on {new Date(order.created_at).toLocaleDateString("vi-VN")}
+                                        {translate("order.placed_on") || "Placed on"} {formatDate(order.created_at)}
                                     </p>
                                     {firstItem && (
                                         <p className="text-xs font-semibold text-slate-800 truncate">
-                                            {firstItem.product?.name || "Item"} (×{firstItem.qty})
+                                            {getLocalizedText(firstItem.product?.name || firstItem.name) || "Item"} (×{firstItem.qty})
                                             {extraItemsCount > 0 && (
                                                 <span className="text-slate-500 font-normal ml-1">
-                                                    + {extraItemsCount} more
+                                                    + {extraItemsCount}
                                                 </span>
                                             )}
                                         </p>
@@ -139,19 +189,36 @@ const OrderHistory = ({ orders = [], onViewOrder }) => {
                                 </div>
                             </div>
 
-                            <div className="flex sm:flex-col justify-between items-center sm:items-end pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
+                            <div className="flex sm:flex-col justify-between items-center sm:items-end pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0 gap-2">
                                 <div className="text-left sm:text-right">
                                     <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">
-                                        Total
+                                        {translate("order.total") || "Total"}
                                     </p>
                                     <p className="font-extrabold text-[#004687] text-base">
                                         {formatCurrency(order.total)}
                                     </p>
                                 </div>
-                                <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[#004687] group-hover:translate-x-0.5 transition-transform">
-                                    <span>Details</span>
-                                    <ChevronRight size={14} />
-                                </span>
+                                <div className="flex items-center gap-3">
+                                    {canCancel && (
+                                        <button
+                                            type="button"
+                                            disabled={cancellingId === order.id}
+                                            onClick={(e) => handleCancelOrder(e, order)}
+                                            className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
+                                        >
+                                            <XCircle size={13} />
+                                            <span>
+                                                {cancellingId === order.id
+                                                    ? translate("order.cancelling") || "Cancelling..."
+                                                    : translate("order.cancel_order") || "Cancel"}
+                                            </span>
+                                        </button>
+                                    )}
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#004687] group-hover:translate-x-0.5 transition-transform">
+                                        <span>{translate("order.details") || "Details"}</span>
+                                        <ChevronRight size={14} />
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     )
@@ -163,9 +230,12 @@ const OrderHistory = ({ orders = [], onViewOrder }) => {
                     <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mb-3">
                         <Package size={24} />
                     </div>
-                    <p className="text-[#09253E] font-bold text-sm mb-1">No matching orders found</p>
+                    <p className="text-[#09253E] font-bold text-sm mb-1">
+                        {translate("order.no_matching_orders") || "No matching orders found"}
+                    </p>
                     <p className="text-slate-500 text-xs">
-                        Adjust your filter selection or browse the catalog to place an order.
+                        {translate("order.no_matching_orders_desc") ||
+                            "Adjust your filter selection or browse the catalog to place an order."}
                     </p>
                 </div>
             )}

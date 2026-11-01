@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useSearchParams } from "react-router-dom"
 import useAuthStore from "../features/auth/store/useAuthStore"
 import withAuth from "../features/auth/hoc/withAuth"
@@ -12,6 +12,7 @@ import OrderDetail from "../features/order/components/OrderDetail"
 import orderService from "../features/order/services/orderService"
 import { unwrapApiList, unwrapApiObject } from "../api/apiResponse"
 import useSettingsStore from "../store/useSettingsStore"
+import useSeo from "../utils/useSeo"
 import {
     AccountDashboard,
     PaymentHistory,
@@ -29,20 +30,12 @@ const MyAccountPage = () => {
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [orders, setOrders] = useState([])
 
-    useEffect(() => {
-        const tabParam = searchParams.get("tab")
-        if (tabParam) {
-            setActiveTab(tabParam)
-        }
-    }, [searchParams])
+    useSeo({
+        title: translate("account.title") || "My Account",
+        canonicalPath: "/my-account",
+    })
 
-    useEffect(() => {
-        if (activeTab === "orders" || activeTab === "dashboard") {
-            fetchOrders()
-        }
-    }, [activeTab])
-
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             const response = await orderService.getAll({ include: "items,payments" })
             const ordersData = unwrapApiList(response, [])
@@ -51,7 +44,20 @@ const MyAccountPage = () => {
             console.error("Failed to fetch orders:", error)
             setOrders([])
         }
-    }
+    }, [])
+
+    useEffect(() => {
+        const tabParam = searchParams.get("tab")
+        if (tabParam) {
+            setActiveTab(tabParam)
+        }
+    }, [searchParams])
+
+    useEffect(() => {
+        if (["orders", "dashboard", "payments", "refunds", "coupons"].includes(activeTab)) {
+            fetchOrders()
+        }
+    }, [activeTab, fetchOrders])
 
     const handleViewOrder = async (order) => {
         try {
@@ -85,17 +91,33 @@ const MyAccountPage = () => {
                             translate={translate}
                         />
                     )}
-                    {activeTab === "orders" && <OrderHistory orders={orders} onViewOrder={handleViewOrder} />}
+                    {activeTab === "orders" && (
+                        <OrderHistory
+                            orders={orders}
+                            onViewOrder={handleViewOrder}
+                            onOrderCancelled={fetchOrders}
+                        />
+                    )}
                     {activeTab === "profile" && <ProfileDetails user={user} />}
                     {activeTab === "address" && <AddressBook />}
                     {activeTab === "password" && <ChangePassword />}
                     {activeTab === "tracking" && <OrderTracking />}
                     {activeTab === "order-detail" && (
-                        <OrderDetail order={selectedOrder} onBack={() => setActiveTab("orders")} />
+                        <OrderDetail
+                            order={selectedOrder}
+                            onBack={() => {
+                                fetchOrders()
+                                setActiveTab("orders")
+                            }}
+                            onOrderUpdated={(updated) => {
+                                setSelectedOrder(updated)
+                                fetchOrders()
+                            }}
+                        />
                     )}
-                    {activeTab === "payments" && <PaymentHistory translate={translate} />}
-                    {activeTab === "refunds" && <RefundHistory translate={translate} />}
-                    {activeTab === "coupons" && <CouponHistory translate={translate} />}
+                    {activeTab === "payments" && <PaymentHistory orders={orders} translate={translate} />}
+                    {activeTab === "refunds" && <RefundHistory orders={orders} translate={translate} />}
+                    {activeTab === "coupons" && <CouponHistory orders={orders} translate={translate} />}
                     {activeTab === "loyalty" && <LoyaltyPoints translate={translate} />}
                 </div>
             </div>

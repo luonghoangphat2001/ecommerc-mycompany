@@ -2,11 +2,13 @@ import React from "react"
 import { useLocation } from "react-router-dom"
 import NavLink from "../common/NavLink"
 import { useMenu } from "../../features/menu/hooks/useMenu"
+import { getLocalizedText } from "../../utils/formatters"
 import { ChevronDown } from "lucide-react"
 
 const MenuItem = ({ item, currentPath, onItemClick }) => {
     const hasChildren = item.children && item.children.length > 0
     const targetUrl = item.url || `/${item.slug}`
+    const itemLabel = getLocalizedText(item.label || item.title)
     const isActive =
         targetUrl === "/"
             ? currentPath === "/"
@@ -21,7 +23,7 @@ const MenuItem = ({ item, currentPath, onItemClick }) => {
                         isActive ? "text-[#004687]" : "text-slate-700 hover:text-[#004687]"
                     }`}
                 >
-                    <span>{item.label}</span>
+                    <span>{itemLabel}</span>
                     <ChevronDown size={15} className="text-slate-400 transition-transform duration-150 group-hover:rotate-180" />
                 </button>
                 <div className="absolute top-full left-0 pt-1.5 w-52 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-150 z-50">
@@ -33,7 +35,7 @@ const MenuItem = ({ item, currentPath, onItemClick }) => {
                                 onClick={onItemClick}
                                 className="block px-4 py-2 text-sm text-slate-600 hover:text-[#004687] hover:bg-slate-50 transition-colors"
                             >
-                                {child.label}
+                                {getLocalizedText(child.label || child.title)}
                             </NavLink>
                         ))}
                     </div>
@@ -52,7 +54,7 @@ const MenuItem = ({ item, currentPath, onItemClick }) => {
                     : "text-slate-700 hover:text-[#004687]"
             }`}
         >
-            {item.label}
+            {itemLabel}
         </NavLink>
     )
 }
@@ -89,7 +91,7 @@ const Navbar = ({ translate, mobile = false, onItemClick }) => {
                                         : "text-slate-700 hover:bg-slate-100"
                                 }`}
                             >
-                                {item.label}
+                                {getLocalizedText(item.label || item.title)}
                             </NavLink>
                             {item.children?.length > 0 && (
                                 <div className="pl-4 mt-1 space-y-1 border-l border-slate-200 ml-3">
@@ -100,7 +102,7 @@ const Navbar = ({ translate, mobile = false, onItemClick }) => {
                                             onClick={onItemClick}
                                             className="block px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-[#004687]"
                                         >
-                                            {child.label}
+                                            {getLocalizedText(child.label || child.title)}
                                         </NavLink>
                                     ))}
                                 </div>

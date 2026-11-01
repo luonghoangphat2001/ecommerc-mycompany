@@ -74,7 +74,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             $crud('permissions', PermissionController::class, 'permissions');
 
             $crud('products', ProductController::class, 'products');
+            Route::post('brands/{brand}/toggle-status', [BrandController::class, 'toggleStatus'])->name('brands.toggle-status');
             $crud('brands', BrandController::class, 'brands');
+            Route::post('product-categories/bulk-action', [ProductCategoryController::class, 'bulkAction'])->name('product-categories.bulk-action');
+            Route::post('product-categories/{product_category}/toggle-status', [ProductCategoryController::class, 'toggleStatus'])->name('product-categories.toggle-status');
             $crud('product-categories', ProductCategoryController::class, 'product-categories');
             $crud('tax-classes', TaxClassController::class, 'tax-classes');
             $crud('tax-rates', TaxRateController::class, 'tax-rates');
@@ -108,6 +111,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             $crud('refunds', RefundController::class, 'refunds');
 
             $crud('posts', PostController::class, 'posts');
+            Route::post('post-categories/{post_category}/toggle-status', [PostCategoryController::class, 'toggleStatus'])->name('post-categories.toggle-status');
             $crud('post-categories', PostCategoryController::class, 'post-categories');
             $crud('comments', CommentController::class, 'comments');
             $crud('pages', PageController::class, 'pages');
@@ -133,6 +137,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             });
             Route::post('language-lines/sync', [LanguageLineController::class, 'syncFromFiles'])->name('language-lines.sync');
             $crud('language-lines', LanguageLineController::class, 'language-lines');
+            Route::post('upload-media', [MediaController::class, 'upload'])->name('media.upload');
             $crud('media', MediaController::class, 'media');
 
             Route::post('settings/update-group', [SettingController::class, 'updateGroup'])->name('settings.update-group');

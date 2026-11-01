@@ -12,7 +12,9 @@ const Hero = ({ translate }) => {
                     <div>
                         <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#004687] mb-4">
                             <span className="w-2 h-2 rounded-full bg-[#FBAE17]" />
-                            <span>VERIFIED RETAIL & FULFILLMENT NETWORK</span>
+                            <span>
+                                {translate?.("home.hero.network_label") || "VERIFIED RETAIL & FULFILLMENT NETWORK"}
+                            </span>
                         </div>
 
                         <h1 className="text-2xl sm:text-4xl lg:text-[40px] font-extrabold text-[#09253E] mb-4 leading-[1.15] tracking-tight">
@@ -35,7 +37,11 @@ const Hero = ({ translate }) => {
                                 size="lg"
                                 className="gap-2 group"
                             >
-                                <span>{translate?.("home.hero.cta_primary") || translate?.("header.shop") || "Browse Catalog"}</span>
+                                <span>
+                                    {translate?.("home.hero.cta_primary") ||
+                                        translate?.("header.shop") ||
+                                        "Browse Catalog"}
+                                </span>
                                 <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
                             </Button>
                             <Link
@@ -51,15 +57,21 @@ const Hero = ({ translate }) => {
                     <div className="pt-6 border-t border-slate-200/80 grid grid-cols-3 gap-4 tabular-nums">
                         <div>
                             <div className="text-lg sm:text-xl font-extrabold text-[#09253E]">100%</div>
-                            <div className="text-xs text-slate-500 font-medium">Origin Verified</div>
+                            <div className="text-xs text-slate-500 font-medium">
+                                {translate?.("home.hero.metric_origin") || "Origin Verified"}
+                            </div>
                         </div>
                         <div className="border-l border-slate-200/80 pl-4">
                             <div className="text-lg sm:text-xl font-extrabold text-[#004687]">24h</div>
-                            <div className="text-xs text-slate-500 font-medium">Order Dispatch SLA</div>
+                            <div className="text-xs text-slate-500 font-medium">
+                                {translate?.("home.hero.metric_dispatch") || "Order Dispatch SLA"}
+                            </div>
                         </div>
                         <div className="border-l border-slate-200/80 pl-4">
                             <div className="text-lg sm:text-xl font-extrabold text-[#09253E]">30-Day</div>
-                            <div className="text-xs text-slate-500 font-medium">Protected Returns</div>
+                            <div className="text-xs text-slate-500 font-medium">
+                                {translate?.("home.hero.metric_returns") || "Protected Returns"}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -78,11 +90,11 @@ const Hero = ({ translate }) => {
                     <div className="relative z-10">
                         <div className="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
                             <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                                Live Inventory & Fulfillment
+                                {translate?.("home.hero.live_inventory") || "Live Inventory & Fulfillment"}
                             </span>
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-400/20">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                Operational
+                                {translate?.("home.hero.operational") || "Operational"}
                             </span>
                         </div>
 
@@ -90,9 +102,13 @@ const Hero = ({ translate }) => {
                             <div className="p-3.5 rounded-lg bg-white/[0.06] border border-white/10 flex items-start gap-3">
                                 <Layers size={18} className="text-[#FBAE17] mt-0.5 flex-shrink-0" />
                                 <div>
-                                    <div className="text-xs font-bold text-white">Multi-Warehouse Stock Visibility</div>
+                                    <div className="text-xs font-bold text-white">
+                                        {translate?.("home.hero.feature_1_title") ||
+                                            "Multi-Warehouse Stock Visibility"}
+                                    </div>
                                     <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                                        Check exact unit availability by distribution hub before placing your order.
+                                        {translate?.("home.hero.feature_1_desc") ||
+                                            "Check exact unit availability by distribution hub before placing your order."}
                                     </p>
                                 </div>
                             </div>
@@ -100,9 +116,12 @@ const Hero = ({ translate }) => {
                             <div className="p-3.5 rounded-lg bg-white/[0.06] border border-white/10 flex items-start gap-3">
                                 <Truck size={18} className="text-[#FBAE17] mt-0.5 flex-shrink-0" />
                                 <div>
-                                    <div className="text-xs font-bold text-white">End-to-End Order Tracking</div>
+                                    <div className="text-xs font-bold text-white">
+                                        {translate?.("home.hero.feature_2_title") || "End-to-End Order Tracking"}
+                                    </div>
                                     <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                                        Real-time status updates from warehouse packing to doorstep handover.
+                                        {translate?.("home.hero.feature_2_desc") ||
+                                            "Real-time status updates from warehouse packing to doorstep handover."}
                                     </p>
                                 </div>
                             </div>
@@ -110,9 +129,12 @@ const Hero = ({ translate }) => {
                             <div className="p-3.5 rounded-lg bg-white/[0.06] border border-white/10 flex items-start gap-3">
                                 <ShieldCheck size={18} className="text-[#FBAE17] mt-0.5 flex-shrink-0" />
                                 <div>
-                                    <div className="text-xs font-bold text-white">Official Warranty & Invoice</div>
+                                    <div className="text-xs font-bold text-white">
+                                        {translate?.("home.hero.feature_3_title") || "Official Warranty & Invoice"}
+                                    </div>
                                     <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                                        Every purchase includes digital invoice documentation and manufacturer coverage.
+                                        {translate?.("home.hero.feature_3_desc") ||
+                                            "Every purchase includes digital invoice documentation and manufacturer coverage."}
                                     </p>
                                 </div>
                             </div>
@@ -122,10 +144,13 @@ const Hero = ({ translate }) => {
                     <div className="relative z-10 pt-5 mt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-300">
                         <span className="inline-flex items-center gap-1.5">
                             <CheckCircle2 size={14} className="text-[#FBAE17]" />
-                            <span>Free shipping on orders over 500,000₫</span>
+                            <span>
+                                {translate?.("home.hero.free_shipping_note") ||
+                                    "Free shipping on orders over 500,000₫"}
+                            </span>
                         </span>
                         <Link to="/shop" className="text-[#FBAE17] hover:underline font-semibold">
-                            View All →
+                            {translate?.("home.hero.view_all") || "View All →"}
                         </Link>
                     </div>
                 </div>

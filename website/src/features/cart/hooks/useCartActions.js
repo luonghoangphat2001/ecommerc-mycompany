@@ -4,14 +4,14 @@ import useCartStore from '../store/useCartStore';
 
 export const useCartActions = () => {
   const queryClient = useQueryClient();
-  const { setCart, clearCart: clearLocalCart } = useCartStore();
+  const { items, setCart, clearCart: clearLocalCart, removeCoupon: removeLocalCoupon } = useCartStore();
 
   const addToCartMutation = useMutation({
     mutationFn: ({ productId, variantId, quantity }) =>
-      cartApi.addToCart(productId, variantId, quantity),
+      cartApi.addToCart(productId, quantity, variantId),
     onSuccess: (data) => {
-      setCart(data.data);
-      queryClient.invalidateQueries(['cart']);
+      setCart(data?.data || data);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
   });
 
@@ -19,24 +19,27 @@ export const useCartActions = () => {
     mutationFn: ({ itemId, quantity }) =>
       cartApi.updateCartItem(itemId, quantity),
     onSuccess: (data) => {
-      setCart(data.data);
-      queryClient.invalidateQueries(['cart']);
+      setCart(data?.data || data);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
   });
 
   const removeCartItemMutation = useMutation({
     mutationFn: (itemId) => cartApi.removeCartItem(itemId),
     onSuccess: (data) => {
-      setCart(data.data);
-      queryClient.invalidateQueries(['cart']);
+      setCart(data?.data || data);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
   });
 
   const syncCartMutation = useMutation({
-    mutationFn: (cartItems) => cartApi.syncCart(cartItems),
+    mutationFn: (cartItems) => {
+      const payload = Array.isArray(cartItems) ? { items: cartItems } : cartItems;
+      return cartApi.syncCart(payload);
+    },
     onSuccess: (data) => {
-      setCart(data.data);
-      queryClient.invalidateQueries(['cart']);
+      setCart(data?.data || data);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
   });
 
@@ -44,23 +47,26 @@ export const useCartActions = () => {
     mutationFn: () => cartApi.clearCart(),
     onSuccess: () => {
       clearLocalCart();
-      queryClient.invalidateQueries(['cart']);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
   });
 
   const applyCouponMutation = useMutation({
-    mutationFn: (couponCode) => cartApi.applyCoupon(couponCode),
+    mutationFn: (couponCode) => cartApi.applyCoupon(couponCode, items),
     onSuccess: (data) => {
-      setCart(data.data);
-      queryClient.invalidateQueries(['cart']);
+      setCart(data?.data || data);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
   });
 
   const removeCouponMutation = useMutation({
-    mutationFn: () => cartApi.removeCoupon(),
+    mutationFn: async () => {
+      await removeLocalCoupon();
+      return cartApi.removeCoupon(items);
+    },
     onSuccess: (data) => {
-      setCart(data.data);
-      queryClient.invalidateQueries(['cart']);
+      setCart(data?.data || data);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
     },
   });
 
@@ -72,8 +78,9 @@ export const useCartActions = () => {
     clearCart: clearCartMutation.mutate,
     applyCoupon: applyCouponMutation.mutate,
     removeCoupon: removeCouponMutation.mutate,
-    isLoading: addToCartMutation.isLoading ||
-      updateCartItemMutation.isLoading ||
-      removeCartItemMutation.isLoading,
+    isLoading:
+      addToCartMutation.isPending ||
+      updateCartItemMutation.isPending ||
+      removeCartItemMutation.isPending,
   };
 };

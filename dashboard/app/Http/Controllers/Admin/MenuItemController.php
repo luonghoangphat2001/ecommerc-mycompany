@@ -13,6 +13,11 @@ use Illuminate\Validation\Rule;
 
 class MenuItemController extends BaseCrudController
 {
+    public function index(\Illuminate\Http\Request $request): \Illuminate\View\View
+    {
+        return app(MenuController::class)->index($request);
+    }
+
     protected function modelClass(): string
     {
         return MenuItem::class;
@@ -56,12 +61,20 @@ class MenuItemController extends BaseCrudController
             ];
         }
 
+        if (Schema::hasColumn('menu_items', 'title')) {
+            $fields['title'] = [
+                'label' => __('admin.fields.title'),
+                'rules' => ['required', 'string', 'max:255'],
+                'translatable' => true,
+            ];
+        }
+
         if (Schema::hasColumn('menu_items', 'label')) {
-            $fields['label'] = ['label' => 'Label', 'rules' => ['required', 'string', 'max:255']];
+            $fields['label'] = ['label' => __('admin.fields.label'), 'rules' => ['required', 'string', 'max:255']];
         }
 
         if (Schema::hasColumn('menu_items', 'name')) {
-            $fields['name'] = ['label' => 'Name', 'rules' => ['required', 'string', 'max:255']];
+            $fields['name'] = ['label' => __('admin.fields.name'), 'rules' => ['required', 'string', 'max:255']];
         }
 
         $fields['type'] = ['label' => 'Type', 'rules' => ['required', 'string', 'max:50']];
@@ -131,6 +144,16 @@ class MenuItemController extends BaseCrudController
             ];
         }
 
+        if (Schema::hasColumn('menu_items', 'title')) {
+            if (is_array(request()->input('title'))) {
+                $rules['title'] = ['required', 'array'];
+                $rules['title.vi'] = ['nullable', 'string', 'max:255'];
+                $rules['title.en'] = ['nullable', 'string', 'max:255'];
+            } else {
+                $rules['title'] = ['required', 'string', 'max:255'];
+            }
+        }
+
         if (Schema::hasColumn('menu_items', 'label')) {
             $rules['label'] = ['required', 'string', 'max:255'];
         }
@@ -187,10 +210,114 @@ class MenuItemController extends BaseCrudController
         return $rules;
     }
 
+    public function store(\Illuminate\Http\Request $request): RedirectResponse
+    {
+        $data = $request->validate($this->rules());
+        $data = $this->mutateData($data);
+        $record = MenuItem::create($data);
+        $this->afterSave($record, $request);
+        $this->flushStorefrontCaches();
+
+        $menuId = $record->menu_id;
+
+        return redirect()->route('admin.menus.index', ['menu_id' => $menuId])
+            ->with('status', __('admin.messages.created'));
+    }
+
+    public function update(\Illuminate\Http\Request $request, int $id): RedirectResponse
+    {
+        $record = MenuItem::findOrFail($id);
+        $data = $request->validate($this->rules($id));
+        $data = $this->mutateData($data, $record);
+        $record->update($data);
+        $this->afterSave($record, $request);
+        $this->flushStorefrontCaches();
+
+        $menuId = $record->menu_id;
+
+        return redirect()->route('admin.menus.index', ['menu_id' => $menuId])
+            ->with('status', __('admin.messages.updated'));
+    }
+
+    public function destroy(int $id): RedirectResponse
+    {
+        $record = MenuItem::findOrFail($id);
+        $menuId = $record->menu_id;
+        $record->delete();
+        Cache::forget('all_menus');
+        $this->flushStorefrontCaches();
+
+        return redirect()->route('admin.menus.index', ['menu_id' => $menuId])
+            ->with('status', __('admin.messages.deleted'));
+    }
+
+    public function reorder(\Illuminate\Http\Request $request)
+    {
+        $tree = $request->input('tree', []);
+        if (empty($tree)) {
+            return response()->json(['success' => true]);
+        }
+
+        $this->updateMenuItemTree($tree, null);
+        Cache::forget('all_menus');
+        $this->flushStorefrontCaches();
+
+        return response()->json(['success' => true]);
+    }
+
+    protected function updateMenuItemTree(array $tree, ?int $parentId): void
+    {
+        $hasOrder = Schema::hasColumn('menu_items', 'order');
+        $hasOrderCol = Schema::hasColumn('menu_items', 'order_column');
+        $hasParentId = Schema::hasColumn('menu_items', 'parent_id');
+
+        foreach ($tree as $index => $item) {
+            $record = MenuItem::find($item['id'] ?? null);
+            if ($record) {
+                if ($hasParentId) {
+                    $record->parent_id = $parentId;
+                }
+                if ($hasOrder) {
+                    $record->order = $index + 1;
+                }
+                if ($hasOrderCol) {
+                    $record->order_column = $index + 1;
+                }
+                $record->save();
+            }
+
+            if (isset($item['children']) && is_array($item['children'])) {
+                $this->updateMenuItemTree($item['children'], (int) ($item['id'] ?? 0));
+            }
+        }
+    }
+
     protected function mutateData(array $data, ?Model $record = null): array
     {
+        $data = parent::mutateData($data, $record);
+
         if (array_key_exists('parent_id', $data) && empty($data['parent_id'])) {
             $data['parent_id'] = null;
+        }
+
+        if (empty($data['type'])) {
+            $data['type'] = 'custom';
+        }
+
+        if (empty($data['target'])) {
+            $data['target'] = '_self';
+        }
+
+        if (isset($data['title']) && is_array($data['title'])) {
+            $vi = trim((string)($data['title']['vi'] ?? ''));
+            $en = trim((string)($data['title']['en'] ?? ''));
+            if ($vi === '' && $en !== '') {
+                $vi = $en;
+            }
+            if ($en === '' && $vi !== '') {
+                $en = $vi;
+            }
+            $data['title'] = ['vi' => $vi, 'en' => $en];
         }
 
         foreach (['route_parameters', 'parameters'] as $jsonField) {
@@ -212,13 +339,5 @@ class MenuItemController extends BaseCrudController
     protected function afterSave(Model $record, \Illuminate\Http\Request $request): void
     {
         Cache::forget('all_menus');
-    }
-
-    public function destroy(int $id): RedirectResponse
-    {
-        $response = parent::destroy($id);
-        Cache::forget('all_menus');
-
-        return $response;
     }
 }

@@ -118,7 +118,7 @@ class SettingController extends BaseCrudController
 
         return redirect()
             ->route('admin.settings.index', ['tab' => $group])
-            ->with('status', 'Đã lưu nhóm setting ' . ($schema[$group]['label'] ?? $group));
+            ->with('status', __('admin.settings.saved_group', ['group' => __($schema[$group]['label'] ?? $group)]));
     }
 
     protected function fields(): array
@@ -217,6 +217,23 @@ class SettingController extends BaseCrudController
     private function settingsSchema(): array
     {
         return [
+            'general' => [
+                'label' => 'admin.sidebar.general_settings',
+                'description' => 'admin.settings.general_description',
+                'fields' => [
+                    'store_name' => ['label' => __('admin.settings.field_labels.store_name'), 'default' => 'My E-commerce Store'],
+                    'store_email' => ['label' => __('admin.settings.field_labels.store_email'), 'type' => 'email', 'default' => 'admin@example.com'],
+                    'store_phone' => ['label' => __('admin.settings.field_labels.store_phone'), 'default' => '0123456789'],
+                    'store_country' => ['label' => __('admin.settings.field_labels.store_country'), 'default' => 'VN'],
+                    'logo' => ['label' => __('admin.settings.field_labels.logo'), 'type' => 'image', 'default' => null],
+                    'favicon' => ['label' => __('admin.settings.field_labels.favicon'), 'type' => 'image', 'default' => null],
+                    'default_currency' => ['label' => __('admin.settings.field_labels.default_currency'), 'default' => 'VND'],
+                    'currency_position' => ['label' => __('admin.settings.field_labels.currency_position'), 'type' => 'select', 'default' => 'right_space', 'options' => ['left' => 'Left', 'right' => 'Right', 'left_space' => 'Left space', 'right_space' => 'Right space']],
+                    'decimal_places' => ['label' => __('admin.settings.field_labels.decimal_places'), 'type' => 'number', 'default' => 0],
+                    'weight_unit' => ['label' => __('admin.settings.field_labels.weight_unit'), 'default' => 'kg'],
+                    'dimension_unit' => ['label' => __('admin.settings.field_labels.dimension_unit'), 'default' => 'cm'],
+                ],
+            ],
             'settings' => [
                 'label' => 'admin.sidebar.storefront_settings',
                 'description' => 'admin.settings.storefront_description',
@@ -239,14 +256,6 @@ class SettingController extends BaseCrudController
                     ['label' => 'admin.sidebar.permissions', 'route' => 'admin.permissions.index'],
                 ],
             ],
-            'departments' => [
-                'label' => 'department.sidebar.title',
-                'description' => 'department.sidebar.departments_agents',
-                'fields' => [],
-                'management_actions' => [
-                    ['label' => 'department.sidebar.departments_agents', 'route' => 'admin.departments.index'],
-                ],
-            ],
             'ecommerce' => [
                 'label' => 'admin.sidebar.ecommerce_settings',
                 'description' => 'admin.settings.ecommerce_description',
@@ -263,23 +272,6 @@ class SettingController extends BaseCrudController
                 'management_actions' => [
                     ['label' => 'admin.sidebar.classes', 'route' => 'admin.tax-classes.index', 'visible_when' => 'tax_enabled'],
                     ['label' => 'admin.sidebar.rates', 'route' => 'admin.tax-rates.index', 'visible_when' => 'tax_enabled'],
-                ],
-            ],
-            'general' => [
-                'label' => 'admin.sidebar.general_settings',
-                'description' => 'admin.settings.general_description',
-                'fields' => [
-                    'store_name' => ['label' => __('admin.settings.field_labels.store_name'), 'default' => 'My E-commerce Store'],
-                    'store_email' => ['label' => __('admin.settings.field_labels.store_email'), 'type' => 'email', 'default' => 'admin@example.com'],
-                    'store_phone' => ['label' => __('admin.settings.field_labels.store_phone'), 'default' => '0123456789'],
-                    'store_country' => ['label' => __('admin.settings.field_labels.store_country'), 'default' => 'VN'],
-                    'logo' => ['label' => __('admin.settings.field_labels.logo'), 'type' => 'image', 'default' => null],
-                    'favicon' => ['label' => __('admin.settings.field_labels.favicon'), 'type' => 'image', 'default' => null],
-                    'default_currency' => ['label' => __('admin.settings.field_labels.default_currency'), 'default' => 'VND'],
-                    'currency_position' => ['label' => __('admin.settings.field_labels.currency_position'), 'type' => 'select', 'default' => 'right_space', 'options' => ['left' => 'Left', 'right' => 'Right', 'left_space' => 'Left space', 'right_space' => 'Right space']],
-                    'decimal_places' => ['label' => __('admin.settings.field_labels.decimal_places'), 'type' => 'number', 'default' => 0],
-                    'weight_unit' => ['label' => __('admin.settings.field_labels.weight_unit'), 'default' => 'kg'],
-                    'dimension_unit' => ['label' => __('admin.settings.field_labels.dimension_unit'), 'default' => 'cm'],
                 ],
             ],
             'products' => [
@@ -443,11 +435,13 @@ class SettingController extends BaseCrudController
         };
     }
 
-    private function flushStorefrontCaches(): void
+    protected function flushStorefrontCaches(): void
     {
         foreach (config('app.supported_locales', ['vi', 'en']) as $localeConfig) {
             $locale = is_array($localeConfig) ? ($localeConfig['code'] ?? 'vi') : (string) $localeConfig;
             Cache::forget('storefront_settings_v1_' . $locale);
+            Cache::forget('storefront_settings_v2_' . $locale);
         }
+        Cache::forget('all_menus');
     }
 }

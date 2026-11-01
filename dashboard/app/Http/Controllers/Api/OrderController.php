@@ -151,9 +151,107 @@ class OrderController extends BaseApiController
 
         $this->authorize('update', $order);
 
-        $this->orderService->updateOrder($order, $request->validated());
+        $validated = $request->validated();
+        $updatePayload = [];
+        if (array_key_exists('notes', $validated)) {
+            $updatePayload['notes'] = $validated['notes'];
+        }
+
+        if (!empty($updatePayload)) {
+            $this->orderService->updateOrder($order, $updatePayload);
+        }
 
         return $this->ok(new OrderResource($order->fresh(['items', 'shippingAddress', 'billingAddress'])));
+    }
+
+    public function cancel(Request $request, $id)
+    {
+        $order = $this->orderService->find($id);
+
+        if (!$order) {
+            return $this->notFound(__('admin.api.order_not_found'));
+        }
+
+        $this->authorize('update', $order);
+
+        $statusVal = $order->status instanceof \BackedEnum ? $order->status->value : (string) $order->status;
+        if (!in_array(strtolower($statusVal), ['pending', 'new', 'processing'], true)) {
+            return $this->error(__('storefront.errors.validation_failed'), 422);
+        }
+
+        $reason = (string) $request->input('reason', 'Cancelled by customer');
+        $this->orderService->cancel($order, $reason);
+
+        return $this->ok(
+            new OrderResource($order->fresh(['items', 'shippingAddress', 'billingAddress', 'payments', 'shipping'])),
+            __('storefront.order.cancelled_success')
+        );
+    }
+
+    public function track(Request $request, string $number)
+    {
+        $cleanNumber = trim(ltrim(urldecode($number), '#'));
+
+        $order = Order::with(['shippingAddress', 'items', 'payments', 'shipping', 'activities'])
+            ->where('number', $cleanNumber)
+            ->when(is_numeric($cleanNumber), fn ($q) => $q->orWhere('id', (int) $cleanNumber))
+            ->first();
+
+        if (!$order) {
+            return $this->notFound(__('storefront.order.track_not_found'));
+        }
+
+        $statusVal = $order->status instanceof \BackedEnum ? $order->status->value : (string) $order->status;
+        $latestPayment = $order->payments->sortByDesc('id')->first();
+        $paymentStatus = $latestPayment?->status instanceof \BackedEnum
+            ? $latestPayment->status->value
+            : ($latestPayment?->status ?? 'pending');
+
+        $productItems = $order->items->whereNotIn('type', ['tax', 'shipping', 'fee'])->values();
+
+        $timeline = [
+            [
+                'status' => 'placed',
+                'label' => __('storefront.order.placed_on'),
+                'timestamp' => $order->created_at?->toIso8601String(),
+                'completed' => true,
+            ],
+            [
+                'status' => $statusVal,
+                'label' => __("storefront.order.status.{$statusVal}"),
+                'timestamp' => $order->updated_at?->toIso8601String(),
+                'completed' => true,
+            ],
+        ];
+
+        return $this->ok([
+            'id' => $order->id,
+            'number' => $order->number,
+            'status' => $statusVal,
+            'payment_status' => $paymentStatus,
+            'total_price' => (float) $order->total,
+            'total' => (float) $order->total,
+            'subtotal' => (float) $order->subtotal,
+            'tax_amount' => (float) $order->tax_amount,
+            'shipping_cost' => (float) ($order->shipping?->amount ?? 0),
+            'currency' => $order->currency ?? 'VND',
+            'created_at' => $order->created_at?->toIso8601String(),
+            'updated_at' => $order->updated_at?->toIso8601String(),
+            'shipping_address' => $order->shippingAddress ? [
+                'name' => trim(($order->shippingAddress->first_name ?? '') . ' ' . ($order->shippingAddress->last_name ?? '')),
+                'city' => $order->shippingAddress->city_id,
+                'country_code' => $order->shippingAddress->country_code,
+            ] : null,
+            'items_count' => (int) $productItems->sum('qty'),
+            'items' => $productItems->map(fn ($item) => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'qty' => (int) $item->qty,
+                'unit_price' => (float) $item->unit_price,
+                'total' => (float) $item->total,
+            ])->all(),
+            'timeline' => $timeline,
+        ]);
     }
 
     #[ApiDelete(

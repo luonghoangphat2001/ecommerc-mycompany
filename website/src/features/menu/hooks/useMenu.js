@@ -1,13 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import menuApi from '../services/menuApi';
 import { unwrapApiList, unwrapApiObject } from '../../../api/apiResponse';
+import useSettingsStore from '../../../store/useSettingsStore';
 
 /**
  * Hook to fetch menu data from API
  */
 export const useMenu = (slug = 'main-menu') => {
+  const language = useSettingsStore((state) => state.language);
   const { data, isLoading, error } = useQuery({
-    queryKey: ['menu', slug],
+    queryKey: ['menu', slug, language],
     queryFn: async () => {
       try {
         const response = await menuApi.getMenuBySlug(slug);
@@ -33,8 +35,9 @@ export const useMenu = (slug = 'main-menu') => {
  * Hook to fetch all menus
  */
 export const useAllMenus = () => {
+  const language = useSettingsStore((state) => state.language);
   const { data, isLoading, error } = useQuery({
-    queryKey: ['menus'],
+    queryKey: ['menus', language],
     queryFn: async () => {
       try {
         const response = await menuApi.getAllMenus();

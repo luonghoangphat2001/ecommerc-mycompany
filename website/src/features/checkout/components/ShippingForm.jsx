@@ -80,28 +80,31 @@ const ShippingForm = ({ form, shippingMethods = [], selectedShippingMethod, onSh
                         {translate("checkout.shipping_method")}
                     </h2>
                     <div className="space-y-2.5">
-                        {shippingMethods.map((method) => (
-                            <label
-                                key={method.id}
-                                className={`flex items-center gap-3 p-3.5 border rounded-xl cursor-pointer transition-colors ${
-                                    selectedShippingMethod === method.id
-                                        ? "border-[#004687] bg-[#004687]/[0.03]"
-                                        : "border-slate-200 hover:bg-slate-50"
-                                }`}
-                            >
-                                <input
-                                    type="radio"
-                                    value={method.id}
-                                    {...register("shipping_method_id")}
-                                    onChange={() => onShippingMethodChange(method.id)}
-                                    className="accent-[#004687]"
-                                />
-                                <div className="flex-1 flex justify-between text-sm">
-                                    <span className="font-semibold text-slate-900">{method.name}</span>
-                                    <span className="text-slate-600 tabular-nums">{method.price}</span>
-                                </div>
-                            </label>
-                        ))}
+                        {shippingMethods.map((method, index) => {
+                            const methodId = method.id ?? method.method_id ?? method.code ?? method.type ?? index
+                            return (
+                                <label
+                                    key={methodId}
+                                    className={`flex items-center gap-3 p-3.5 border rounded-xl cursor-pointer transition-colors ${
+                                        selectedShippingMethod === methodId
+                                            ? "border-[#004687] bg-[#004687]/[0.03]"
+                                            : "border-slate-200 hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        value={methodId}
+                                        {...register("shipping_method_id")}
+                                        onChange={() => onShippingMethodChange(methodId)}
+                                        className="accent-[#004687]"
+                                    />
+                                    <div className="flex-1 flex justify-between text-sm">
+                                        <span className="font-semibold text-slate-900">{method.name}</span>
+                                        <span className="text-slate-600 tabular-nums">{method.price || method.cost}</span>
+                                    </div>
+                                </label>
+                            )
+                        })}
                     </div>
                     {errors.shipping_method_id && (
                         <p className={errorClass}>{errors.shipping_method_id.message}</p>

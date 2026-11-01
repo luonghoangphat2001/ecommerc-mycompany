@@ -1,175 +1,143 @@
 @extends('admin.layouts.app', ['title' => $title])
 
 @section('content')
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">{{ $title }}</h1>
-            <p class="page-description">{{ __('admin.list.description') }}</p>
-        </div>
-        <div class="actions">
-            @foreach (($headerActions ?? []) as $action)
-                @if (($action['method'] ?? 'get') === 'post')
-                    <form method="post" action="{{ $action['url'] }}">
-                        @csrf
-                        <button class="btn {{ $action['class'] ?? 'btn-secondary' }}" type="submit">{{ $action['label'] }}</button>
-                    </form>
-                @else
-                    <a class="btn {{ $action['class'] ?? 'btn-secondary' }}" href="{{ $action['url'] }}">{{ $action['label'] }}</a>
-                @endif
-            @endforeach
-            @if ($canImportExport ?? false)
-                <a class="btn btn-secondary" href="{{ route($routePrefix . '.export', request()->query()) }}">{{ __('admin.actions.export_csv') }}</a>
+    <x-admin.page-header
+        :title="$title"
+        :description="__('admin.list.description')"
+        :exportUrl="($canImportExport ?? false) ? route($routePrefix . '.export', request()->query()) : null"
+        :importUrl="($canImportExport ?? false) ? route($routePrefix . '.import') : null"
+        :createUrl="($canCreate ?? true) ? route($routePrefix . '.create') : null"
+    >
+        @foreach (($headerActions ?? []) as $action)
+            @if (($action['method'] ?? 'get') === 'post')
+                <form method="post" action="{{ $action['url'] }}" style="margin: 0;">
+                    @csrf
+                    <button class="btn {{ $action['class'] ?? 'btn-secondary' }}" type="submit">{{ $action['label'] }}</button>
+                </form>
+            @else
+                <a class="btn {{ $action['class'] ?? 'btn-secondary' }}" href="{{ $action['url'] }}">{{ $action['label'] }}</a>
             @endif
-            @if ($canCreate ?? true)
-                <a class="btn" href="{{ route($routePrefix . '.create') }}">{{ __('admin.actions.create') }}</a>
-            @endif
-        </div>
-    </div>
+        @endforeach
+    </x-admin.page-header>
 
     @if (session('status'))
-        <div class="status-message">{{ session('status') }}</div>
+        <div class="status-message">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>{{ session('status') }}</span>
+        </div>
     @endif
 
-    <div class="table-panel card">
-        <form method="get" style="background: #f8fafc; border-bottom: 1px solid var(--fi-border); padding: 20px; border-radius: 8px 8px 0 0; margin: -22px -22px 22px -22px;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                <!-- Search -->
-                <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.number') }}</label>
-                    <input type="text" name="q" value="{{ request('q') }}" placeholder="VD: 10001...">
+    @php
+        $orderStatusOptions = [];
+        foreach (['pending', 'new', 'processing', 'delivering', 'completed', 'cancelled', 'refunded'] as $s) {
+            $orderStatusOptions[$s] = \App\Support\AdminLabel::orderStatus($s);
+        }
+        $paymentStatusOptions = [];
+        foreach (['pending', 'paid', 'failed', 'refunded'] as $ps) {
+            $paymentStatusOptions[$ps] = \App\Support\AdminLabel::paymentStatus($ps);
+        }
+        $currency = app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class);
+    @endphp
+
+    <x-admin.data-table :paginator="$items">
+        <x-slot:toolbar>
+            <x-admin.table-toolbar :resetUrl="route($routePrefix . '.index')">
+                <x-admin.search-input
+                    name="q"
+                    :label="__('admin.order.number')"
+                    placeholder="VD: 10001..."
+                    width="190px"
+                />
+
+                <x-admin.search-input
+                    name="customer"
+                    :label="__('admin.order.customer')"
+                    :placeholder="__('admin.order.customer_search_placeholder')"
+                    width="220px"
+                />
+
+                <x-admin.filter-select
+                    name="status"
+                    :label="__('admin.order.order_status')"
+                    :options="$orderStatusOptions"
+                    :placeholder="__('admin.order.all')"
+                    width="170px"
+                />
+
+                <x-admin.filter-select
+                    name="payment_status"
+                    :label="__('admin.order.payment')"
+                    :options="$paymentStatusOptions"
+                    :placeholder="__('admin.order.all')"
+                    width="170px"
+                />
+
+                <div class="admin-filter-item" style="min-width: 148px; max-width: 165px;">
+                    <label for="order-date-from">{{ __('admin.order.date_from') }}</label>
+                    <input id="order-date-from" type="date" name="date_from" value="{{ request('date_from') }}">
                 </div>
 
-                <!-- Customer -->
-                <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.customer') }}</label>
-                    <input type="text" name="customer" value="{{ request('customer') }}" placeholder="{{ __('admin.order.customer_search_placeholder') }}">
+                <div class="admin-filter-item" style="min-width: 148px; max-width: 165px;">
+                    <label for="order-date-to">{{ __('admin.order.date_to') }}</label>
+                    <input id="order-date-to" type="date" name="date_to" value="{{ request('date_to') }}">
                 </div>
-                
-                <!-- Status -->
-                <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.order_status') }}</label>
-                    <select name="status">
-                        <option value="">{{ __('admin.order.all') }}</option>
-                        @foreach(['pending', 'new', 'processing', 'delivering', 'completed', 'cancelled', 'refunded'] as $s)
-                            <option value="{{ $s }}" @selected(request('status') === $s)>{{ \App\Support\AdminLabel::orderStatus($s) }}</option>
-                        @endforeach
-                    </select>
-                </div>
+            </x-admin.table-toolbar>
+        </x-slot:toolbar>
 
-                <!-- Payment Status -->
-                <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.payment') }}</label>
-                    <select name="payment_status">
-                        <option value="">{{ __('admin.order.all') }}</option>
-                        @foreach(['pending', 'paid', 'failed', 'refunded'] as $ps)
-                            <option value="{{ $ps }}" @selected(request('payment_status') === $ps)>{{ \App\Support\AdminLabel::paymentStatus($ps) }}</option>
-                        @endforeach
-                    </select>
-                </div>
+        <x-slot:head>
+            <tr>
+                <th style="width: 130px;">{{ __('admin.order.order_code') }}</th>
+                <th>{{ __('admin.order.customer') }}</th>
+                <th style="width: 150px;">{{ __('admin.order.status') }}</th>
+                <th style="width: 170px;">{{ __('admin.order.payment') }}</th>
+                <th class="text-right" style="width: 150px;">{{ __('admin.order.total_price') }}</th>
+                <th style="width: 155px;">{{ __('admin.order.created_at') }}</th>
+                <th class="text-right" style="width: 180px;">{{ __('admin.table_actions') }}</th>
+            </tr>
+        </x-slot:head>
 
-                <!-- Date range -->
-                <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.date_from') }}</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}">
-                </div>
-                <div>
-                    <label style="font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; display: block;">{{ __('admin.order.date_to') }}</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}">
-                </div>
-            </div>
-            
-            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; align-items: center; border-top: 1px solid #e2e8f0; padding-top: 16px;">
-                <a href="{{ route($routePrefix . '.index') }}" class="btn btn-secondary" style="padding: 8px 16px; font-weight: 600; min-height: 38px; color: #475569;">{{ __('admin.actions.reset') }}</a>
-                <button class="btn btn-primary" type="submit" style="padding: 8px 24px; font-weight: 600; min-height: 38px;">{{ __('admin.actions.filter_data') }}</button>
-            </div>
-        </form>
-
-        @if ($canImportExport ?? false)
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-            <form method="post" action="{{ route($routePrefix . '.import') }}" class="import-form" enctype="multipart/form-data">
-                @csrf
-                <input type="file" name="file" accept=".csv,text/csv" style="height: 38px; max-width: 250px;">
-                <button class="btn btn-secondary" type="submit">{{ __('admin.actions.import_csv') }}</button>
-            </form>
-        </div>
-        @endif
-
-        @error('file')
-            <div class="error import-error">{{ $message }}</div>
-        @enderror
-
-        <div class="table-wrap">
-            <table style="min-width: 980px;">
-                <thead>
-                    <tr>
-                        <th>{{ __('admin.order.order_code') }}</th>
-                        <th>{{ __('admin.order.customer') }}</th>
-                        <th>{{ __('admin.order.status') }}</th>
-                        <th>{{ __('admin.order.payment') }}</th>
-                        <th>{{ __('admin.order.total_price') }}</th>
-                        <th>{{ __('admin.order.created_at') }}</th>
-                        <th>{{ __('admin.table_actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
+        @forelse ($items as $item)
+            <tr>
+                <td>
+                    <a href="{{ route($routePrefix . '.show', $item->id) }}" class="mono" style="font-weight: 700; color: var(--fi-primary);">
+                        #{{ $item->number }}
+                    </a>
+                </td>
+                <td>
+                    <div style="font-weight: 600; color: var(--fi-text);">{{ $item->customer_display_name }}</div>
+                    <div class="cell-muted">
+                        {{ $item->user_id ? __('admin.order.member') : __('admin.order.guest') }}
+                    </div>
+                </td>
+                <td>
                     @php
-                        $currency = app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class);
+                        $orderStatus = $item->status instanceof \BackedEnum ? $item->status->value : $item->status;
                     @endphp
-                    @forelse ($items as $item)
-                        <tr>
-                            <td><strong>#{{ $item->number }}</strong></td>
-                            <td>
-                                <div>{{ $item->customer_display_name }}</div>
-                                @if($item->user_id)
-                                    <div class="cell-muted" style="font-size:0.85em;">{{ __('admin.order.member') }}</div>
-                                @else
-                                    <div class="cell-muted" style="font-size:0.85em;">{{ __('admin.order.guest') }}</div>
-                                @endif
-                            </td>
-                            <td>
-                                    @php
-                                        $orderStatus = $item->status instanceof \BackedEnum ? $item->status->value : $item->status;
-                                    @endphp
-                                    <span class="badge badge-{{ $orderStatus }}">{{ \App\Support\AdminLabel::orderStatus($orderStatus) }}</span>
-                            </td>
-                            <td>
-                                @if($item->payments->count() > 0)
-                                    @php
-                                        $latestPayment = $item->payments->last();
-                                    @endphp
-                                    <span class="badge badge-{{ $latestPayment->status }}">{{ \App\Support\AdminLabel::paymentStatus($latestPayment->status) }}</span>
-                                    <div class="cell-muted" style="font-size:0.85em;">{{ $latestPayment->method }}</div>
-                                @else
-                                    <span class="badge badge-pending">{{ \App\Support\AdminLabel::paymentStatus('pending') }}</span>
-                                @endif
-                            </td>
-                            <td>{{ $currency->format($item->total, true) }}</td>
-                            <td>{{ $item->created_at?->format('Y-m-d H:i') }}</td>
-                            <td>
-                                <div class="actions">
-                                    <a class="link-action" href="{{ route($routePrefix . '.show', $item->id) }}">{{ __('admin.actions.view') }}</a>
-                                    @if ($canEdit ?? true)
-                                        <a class="link-action" href="{{ route($routePrefix . '.edit', $item->id) }}">{{ __('admin.actions.edit') }}</a>
-                                    @endif
-                                    @if ($canDelete ?? true)
-                                        <form method="post" action="{{ route($routePrefix . '.destroy', $item->id) }}">
-                                            @csrf
-                                            @method('delete')
-                                            <button class="link-action link-danger" type="submit" onclick="return confirm('{{ __('admin.messages.confirm_delete') }}')">{{ __('admin.actions.delete') }}</button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="100%" class="empty-state">{{ __('admin.messages.empty_state') }}</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <div class="pagination">{{ $items->links('vendor.pagination.admin') }}</div>
-    </div>
+                    <x-admin.status-badge :status="$orderStatus" :label="\App\Support\AdminLabel::orderStatus($orderStatus)" />
+                </td>
+                <td>
+                    @if($item->payments->count() > 0)
+                        @php($latestPayment = $item->payments->last())
+                        <x-admin.status-badge :status="$latestPayment->status" :label="\App\Support\AdminLabel::paymentStatus($latestPayment->status)" />
+                        <span class="cell-muted mono" style="margin-left: 4px; text-transform: uppercase;">{{ $latestPayment->method }}</span>
+                    @else
+                        <x-admin.status-badge status="pending" :label="\App\Support\AdminLabel::paymentStatus('pending')" />
+                    @endif
+                </td>
+                <td class="text-right font-bold mono">{{ $currency->format($item->total, true) }}</td>
+                <td class="cell-muted mono">{{ $item->created_at?->format('Y-m-d H:i') }}</td>
+                <td class="text-right">
+                    <x-admin.row-actions
+                        :viewUrl="route($routePrefix . '.show', $item->id)"
+                        :editUrl="($canEdit ?? true) ? route($routePrefix . '.edit', $item->id) : null"
+                        :deleteUrl="($canDelete ?? true) ? route($routePrefix . '.destroy', $item->id) : null"
+                    />
+                </td>
+            </tr>
+        @empty
+            <tr>
+                <td colspan="7" class="empty-state">{{ __('admin.messages.empty_state') }}</td>
+            </tr>
+        @endforelse
+    </x-admin.data-table>
 @endsection

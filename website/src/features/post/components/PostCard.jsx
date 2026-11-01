@@ -2,7 +2,7 @@ import React from "react"
 import { Link } from "react-router-dom"
 import { Calendar, User, Clock, Tag, ArrowRight, Eye, FileText } from "lucide-react"
 import { formatDate } from "../../../utils/date"
-import { truncateText } from "../../../utils/formatters"
+import { truncateText, getLocalizedText } from "../../../utils/formatters"
 import useSettingsStore from "../../../store/useSettingsStore"
 
 const PostCard = ({ post, variant = "default" }) => {
@@ -11,10 +11,7 @@ const PostCard = ({ post, variant = "default" }) => {
     if (!post) return null
 
     const {
-        title,
         slug,
-        excerpt,
-        content,
         author,
         tags = [],
         published_at,
@@ -24,8 +21,13 @@ const PostCard = ({ post, variant = "default" }) => {
         is_featured = false,
     } = post
 
+    const title = getLocalizedText(post.title)
+    const excerpt = getLocalizedText(post.excerpt)
+    const content = getLocalizedText(post.content)
+
     const postImage = post.image_url || post.image?.url || post.featured_image || null
     const postCategory = post.category || post.categories?.[0]
+    const categoryName = getLocalizedText(postCategory?.name)
     const estimatedReadTime = read_time || Math.ceil((content?.split(/\s+/)?.length || 0) / 200)
 
     const isHorizontal = variant === "horizontal"
@@ -52,9 +54,9 @@ const PostCard = ({ post, variant = "default" }) => {
                     </div>
                 )}
                 <div className="flex-1 min-w-0">
-                    {postCategory && (
+                    {categoryName && (
                         <span className="text-[11px] text-[#004687] font-semibold uppercase tracking-wider">
-                            {postCategory.name}
+                            {categoryName}
                         </span>
                     )}
                     <h4 className="text-sm font-bold text-[#09253E] line-clamp-2 group-hover:text-[#004687] transition-colors">
@@ -101,12 +103,12 @@ const PostCard = ({ post, variant = "default" }) => {
                 </div>
 
                 <div className="md:w-3/5 p-6 sm:p-7 flex flex-col">
-                    {postCategory && (
+                    {categoryName && (
                         <Link
                             to={`/posts?category=${postCategory.slug}`}
                             className="text-xs text-[#004687] font-semibold uppercase tracking-wider mb-2"
                         >
-                            {postCategory.name}
+                            {categoryName}
                         </Link>
                     )}
 
@@ -126,7 +128,7 @@ const PostCard = ({ post, variant = "default" }) => {
                                     className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-md"
                                 >
                                     <Tag size={10} className="inline mr-1" />
-                                    {tag.name || tag}
+                                    {getLocalizedText(tag.name || tag)}
                                 </span>
                             ))}
                         </div>
@@ -147,7 +149,7 @@ const PostCard = ({ post, variant = "default" }) => {
                             {estimatedReadTime > 0 && (
                                 <span className="flex items-center gap-1.5">
                                     <Clock size={13} />
-                                    {estimatedReadTime} min
+                                    {estimatedReadTime} {translate?.("blog.min_read") || "min"}
                                 </span>
                             )}
                         </div>
@@ -156,7 +158,7 @@ const PostCard = ({ post, variant = "default" }) => {
                             to={`/posts/${slug}`}
                             className="inline-flex items-center gap-1 text-xs font-bold text-[#004687] hover:text-[#09253E] transition-colors"
                         >
-                            <span>Read Article</span>
+                            <span>{translate?.("blog.read_article") || "Read Article"}</span>
                             <ArrowRight size={14} />
                         </Link>
                     </div>
@@ -187,18 +189,18 @@ const PostCard = ({ post, variant = "default" }) => {
                     <FileText size={32} />
                 </div>
 
-                {postCategory && (
+                {categoryName && (
                     <Link
                         to={`/posts?category=${postCategory.slug}`}
                         className="absolute top-3 left-3 px-2.5 py-0.5 bg-white/95 text-[#004687] text-[11px] font-semibold rounded-md shadow-card"
                     >
-                        {postCategory.name}
+                        {categoryName}
                     </Link>
                 )}
 
                 {is_featured && (
                     <span className="absolute top-3 right-3 px-2.5 py-0.5 bg-[#09253E] text-white text-[11px] font-semibold rounded-md">
-                        Featured
+                        {translate?.("product.featured") || "Featured"}
                     </span>
                 )}
 

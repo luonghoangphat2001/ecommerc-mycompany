@@ -30,6 +30,9 @@ class BrandResource extends BaseResource
             'slug' => $this->slug,
             'website' => $this->website,
             'description' => $this->translate('description'),
+            'parent_id' => $this->parent_id ?? null,
+            'children' => self::collection($this->whenLoaded('children')),
+            'products_count' => $this->whenCounted('products', $this->products_count ?? null),
         ], $this->getVisibility(), $this->getTimestamps());
     }
 }

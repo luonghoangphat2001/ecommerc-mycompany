@@ -5,10 +5,17 @@ import { Lock, Mail, ArrowLeft } from "lucide-react"
 import useSettingsStore from "../../store/useSettingsStore"
 import useLoginForm from "../../features/auth/hooks/useLoginForm"
 import { FormInput, Button, Alert, Logo } from "../../components/common"
+import useSeo from "../../utils/useSeo"
 
 const LoginPage = () => {
     const translate = useSettingsStore((state) => state.translate)
     const { email, setEmail, password, setPassword, error, handleLogin } = useLoginForm()
+
+    useSeo({
+        title: translate("auth.login_title") || translate("auth.login_button") || "Sign In",
+        description: translate("auth.login_subtitle"),
+        canonicalPath: "/login",
+    })
 
     const forgotLink = (
         <Link
@@ -28,7 +35,7 @@ const LoginPage = () => {
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#004687] transition-colors"
                 >
                     <ArrowLeft size={14} />
-                    <span>Storefront</span>
+                    <span>{translate("common.back_to_storefront") || "Storefront"}</span>
                 </Link>
             </div>
 

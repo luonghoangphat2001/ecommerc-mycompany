@@ -38,7 +38,8 @@ class ShippingService implements ShippingServiceInterface
         ];
 
         return $zone->methods()->where('is_enabled', true)->get()->map(function ($method) use ($subtotal, $country, $state, $postcode, $drivers) {
-            $driverClass = $drivers[$method->type] ?? null;
+            $type = $method->type instanceof \BackedEnum ? $method->type->value : (string) $method->type;
+            $driverClass = $drivers[$type] ?? null;
 
             if (!$driverClass) {
                 return [
@@ -56,13 +57,15 @@ class ShippingService implements ShippingServiceInterface
             ], ['cost' => $method->settings['cost'] ?? 0]);
 
             return [
+                'id' => $method->id,
                 'method_id' => $method->id,
                 'name' => $method->name,
-                'type' => $method->type,
+                'code' => $type,
+                'type' => $type,
                 'cost' => $cost,
                 'is_available' => $cost !== null
             ];
-        })->where('is_available', true);
+        })->where('is_available', true)->values();
     }
 
     /**

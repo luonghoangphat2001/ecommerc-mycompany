@@ -8,7 +8,8 @@ const cartApi = {
 
   // Sync and validate cart
   syncCart: (data = {}) => {
-    return apiService.post('cart/sync', data);
+    const payload = Array.isArray(data) ? { items: data } : data;
+    return apiService.post('cart/sync', payload);
   },
 
   // Add item to cart
@@ -37,7 +38,12 @@ const cartApi = {
 
   // Get shipping methods for current cart
   getShippingMethods: (items = [], country = 'VN', state = null) => {
-    return apiService.post('cart/shipping-methods', { items, country, state });
+    const formattedItems = (items || []).map((item) => ({
+      product_id: item.product_id || item.id,
+      quantity: item.quantity || item.qty || 1,
+      variant_id: item.variant_id || null,
+    }));
+    return apiService.post('cart/shipping-methods', { items: formattedItems, country, state });
   },
 
   // Get cart suggestions (cross-sell)
@@ -48,6 +54,16 @@ const cartApi = {
   // Apply coupon
   applyCoupon: (code, items = [], subtotal = 0) => {
     return apiService.post('coupons/apply', { code, items, subtotal });
+  },
+
+  // Remove coupon and resync cart
+  removeCoupon: (items = []) => {
+    const formattedItems = (items || []).map((item) => ({
+      product_id: item.product_id || item.id,
+      quantity: item.quantity || item.qty || 1,
+      variant_id: item.variant_id || null,
+    }));
+    return apiService.post('cart/sync', { items: formattedItems, coupon_code: null });
   },
 };
 

@@ -16,6 +16,14 @@ class DepartmentIncident extends Model
         'status',
     ];
 
+    public function getTypeLabelAttribute(): string
+    {
+        $key = 'workspace.ops.incident_types.' . $this->type;
+        $label = __($key);
+
+        return $label !== $key ? $label : ucwords(str_replace('_', ' ', (string) $this->type));
+    }
+
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);

@@ -32,7 +32,6 @@ const useAuthStore = create(
             isLoading: false
           });
 
-          // Trigger cart merge if user has a saved cart on backend (once API is ready)
           if (user?.cart_items) {
             useCartStore.getState().mergeCart(user.cart_items);
           }
@@ -61,7 +60,12 @@ const useAuthStore = create(
         }
       },
 
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
+      setUser: (user, token) =>
+        set((state) => ({
+          user,
+          access_token: token !== undefined ? token : state.access_token,
+          isAuthenticated: !!user,
+        })),
 
       refreshUser: async () => {
         try {

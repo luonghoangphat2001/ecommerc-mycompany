@@ -1,8 +1,8 @@
-import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
+import useSettingsStore from '../../../store/useSettingsStore';
 
 const ProductInventoryStatus = ({ inventoryStatus }) => {
-  const { translate } = useTranslation('product');
+  const { translate } = useSettingsStore();
 
   if (!inventoryStatus) return null;
 
@@ -19,7 +19,9 @@ const ProductInventoryStatus = ({ inventoryStatus }) => {
   return (
     <div className={containerClass}>
       <span className={`${dotClass} ${statusColors[inventoryStatus.status] || 'bg-gray-500'}`} />
-      <span className={textClass}>{inventoryStatus.message}</span>
+      <span className={textClass}>
+        {inventoryStatus.message || translate(`product.${inventoryStatus.status}`) || inventoryStatus.status}
+      </span>
     </div>
   );
 };

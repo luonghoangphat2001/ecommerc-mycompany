@@ -24,13 +24,34 @@ class ResolveShippingFeePipe
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        if (!$request->shippingMethod || !$request->shippingAddress) {
+        if (!$request->shippingAddress) {
             return $next($passable);
         }
 
         try {
             /** @var ShippingMethod $method */
-            $method = ShippingMethod::query()->find($request->shippingMethod);
+            $method = null;
+            if (is_numeric($request->shippingMethod)) {
+                $method = ShippingMethod::query()->find($request->shippingMethod);
+            }
+
+            if (!$method && !empty($request->shippingMethod)) {
+                $method = ShippingMethod::query()
+                    ->where('type', $request->shippingMethod)
+                    ->where('is_enabled', true)
+                    ->first();
+            }
+
+            if (!$method && !empty($request->shippingMethod)) {
+                $method = ShippingMethod::query()
+                    ->where('name', $request->shippingMethod)
+                    ->where('is_enabled', true)
+                    ->first();
+            }
+
+            if (!$method) {
+                $method = ShippingMethod::query()->where('is_enabled', true)->first();
+            }
 
             if (!$method || !$method->is_enabled) {
                 return $next($passable);

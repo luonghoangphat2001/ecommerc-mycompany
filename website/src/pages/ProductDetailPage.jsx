@@ -11,19 +11,31 @@ import RelatedProducts from "../features/product/components/RelatedProducts"
 import Loading from "../components/common/Loading"
 import Error from "../components/common/Error"
 import useSettingsStore from "../store/useSettingsStore"
+import { getLocalizedText } from "../utils/formatters"
+import useSeo from "../utils/useSeo"
 
 const ProductDetailPage = () => {
     const { slug } = useParams()
     const navigate = useNavigate()
     const translate = useSettingsStore((state) => state.translate)
+    const language = useSettingsStore((state) => state.language)
 
     const { data: productData, isLoading, isError, error } = useQuery({
-        queryKey: ["product-by-slug", slug],
+        queryKey: ["product-by-slug", slug, language],
         queryFn: () => productApi.getProductBySlug(slug),
         enabled: !!slug,
     })
 
     const product = productData?.data
+    const productName = getLocalizedText(product?.name)
+    const productDescription = getLocalizedText(product?.description)
+
+    useSeo({
+        title: productName || translate("products.title"),
+        description: productDescription,
+        ogImage: product?.image?.url || product?.image || product?.image_url,
+        canonicalPath: slug ? `/products/${slug}` : undefined,
+    })
 
     const {
         stock,
@@ -38,7 +50,7 @@ const ProductDetailPage = () => {
         setSelectedWarehouse,
     } = useProductDetail(product)
 
-    if (isLoading || !product) return <Loading />
+    if (isLoading) return <Loading />
     if (isError || !product) return <Error message={error?.message || translate("product.not_found")} />
 
     return (
@@ -54,7 +66,7 @@ const ProductDetailPage = () => {
                         {translate("header.shop") || "Catalog"}
                     </Link>
                     <ChevronRight size={13} className="text-slate-400 shrink-0" />
-                    <span className="text-slate-800 font-semibold truncate">{product.name}</span>
+                    <span className="text-slate-800 font-semibold truncate">{productName}</span>
                 </nav>
 
                 <button
@@ -71,7 +83,7 @@ const ProductDetailPage = () => {
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-card p-6 sm:p-8 lg:p-10">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
                     <div className="md:col-span-6">
-                        <ProductImage src={product.image?.url || product.image} alt={product.name} />
+                        <ProductImage src={product.image?.url || product.image} alt={productName} />
                     </div>
 
                     <div className="md:col-span-6">
@@ -92,9 +104,17 @@ const ProductDetailPage = () => {
                     </div>
                 </div>
 
-                <RelatedProducts products={upsells} title="Recommended Upgrades" icon={TrendingUp} />
+                <RelatedProducts
+                    products={upsells}
+                    title={translate("product.recommended_upgrades") || "Recommended Upgrades"}
+                    icon={TrendingUp}
+                />
 
-                <RelatedProducts products={crossSells} title="Frequently Bought Together" icon={ShoppingBag} />
+                <RelatedProducts
+                    products={crossSells}
+                    title={translate("product.frequently_bought_together") || "Frequently Bought Together"}
+                    icon={ShoppingBag}
+                />
             </div>
         </div>
     )

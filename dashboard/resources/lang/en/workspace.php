@@ -3,6 +3,8 @@
 return [
     
     'default' => [
+        'title' => 'Workspace',
+        'description' => 'Department overview and operations tasks',
         'statuses' => [
             'active' => 'Active',
             'suspended' => 'Suspended',

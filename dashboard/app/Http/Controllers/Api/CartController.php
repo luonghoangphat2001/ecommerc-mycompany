@@ -55,7 +55,7 @@ class CartController extends BaseApiController
     )]
     public function index(Request $request): JsonResponse
     {
-        $items = $request->input('items', []);
+        $items = $this->extractCartItems($request);
         $validated = $this->cartService->syncAndValidate($items);
         
         $summary = $this->calculationService->calculate(
@@ -71,6 +71,44 @@ class CartController extends BaseApiController
             'summary' => $summary,
             'notifications' => $validated['notifications'] ?? [],
         ]);
+    }
+
+    protected function extractCartItems(Request $request): array
+    {
+        $items = $request->input('items');
+        if (is_array($items)) {
+            return $items;
+        }
+
+        $all = $request->all();
+        if (is_array($all) && isset($all[0]) && is_array($all[0])) {
+            return $all;
+        }
+
+        return [];
+    }
+
+    public function suggestions(Request $request): JsonResponse
+    {
+        $items = $this->extractCartItems($request);
+        $excludeIds = collect($items)
+            ->map(fn ($item) => $item['product_id'] ?? $item['id'] ?? null)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+
+        $limit = (int) $request->input('limit', 4);
+
+        $products = \App\Models\Product::with(['categories', 'brand', 'featuredImage', 'inventories'])
+            ->where('is_visible', true)
+            ->when(!empty($excludeIds), fn ($q) => $q->whereNotIn('id', $excludeIds))
+            ->orderByDesc('featured')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+
+        return $this->ok(\App\Http\Resources\Api\ProductResource::collection($products));
     }
 
     #[ApiPost(
@@ -249,7 +287,7 @@ class CartController extends BaseApiController
     )]
     public function shippingMethods(Request $request): JsonResponse
     {
-        $items = $request->input('items', []);
+        $items = $this->extractCartItems($request);
         $subtotal = collect($items)->sum(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 0));
         
         $methods = $this->shippingService->getAvailableMethods(

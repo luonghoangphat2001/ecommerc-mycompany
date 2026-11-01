@@ -1,23 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/useAuthStore';
-
-const DEFAULT_ADMIN_EMAIL =
-  process.env.REACT_APP_ADMIN_EMAIL ||
-  process.env.REACT_APP_ADMIN_USER ||
-  'admin@admin.com';
-
-const DEFAULT_ADMIN_PASSWORD =
-  process.env.REACT_APP_ADMIN_PASSWORD ||
-  process.env.REACT_APP_ADMIN_PASS ||
-  'password';
+import useSettingsStore from '../../../store/useSettingsStore';
 
 const useLoginForm = () => {
-  const [email, setEmail] = useState(DEFAULT_ADMIN_EMAIL);
-  const [password, setPassword] = useState(DEFAULT_ADMIN_PASSWORD);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const translate = useSettingsStore((state) => state.translate);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -27,7 +19,7 @@ const useLoginForm = () => {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || translate('auth.login_failed') || 'Login failed');
     }
   };
 
@@ -37,7 +29,7 @@ const useLoginForm = () => {
     password,
     setPassword,
     error,
-    handleLogin
+    handleLogin,
   };
 };
 

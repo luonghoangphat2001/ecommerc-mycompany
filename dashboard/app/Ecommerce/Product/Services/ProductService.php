@@ -98,8 +98,16 @@ class ProductService implements ProductServiceInterface
     /**
      * @inheritDoc
      */
-    public function paginate(int $perPage = 15, array $columns = ['*'], array $relations = []): LengthAwarePaginator
+    public function paginate(int $perPage = 15, array $columns = ['*'], array $relations = [], array $filters = []): LengthAwarePaginator
     {
+        if (!empty($filters) && method_exists($this->productRepository, 'paginateFiltered')) {
+            return $this->productRepository->paginateFiltered($perPage, $columns, $relations, $filters);
+        }
+
+        if (method_exists($this->productRepository, 'paginateFiltered')) {
+            return $this->productRepository->paginateFiltered($perPage, $columns, $relations, []);
+        }
+
         return $this->productRepository->paginate($perPage, $columns, $relations);
     }
 

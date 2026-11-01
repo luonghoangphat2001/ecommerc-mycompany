@@ -1,7 +1,13 @@
-import React from "react"
-import { ArrowLeft, Package, Calendar, CreditCard, MapPin } from "lucide-react"
+import React, { useState } from "react"
+import { ArrowLeft, Package, Calendar, CreditCard, MapPin, XCircle } from "lucide-react"
+import toast from "react-hot-toast"
 import { useFormatters } from "../../../utils/useFormatters"
+import { formatOrderDate } from "../../../utils/date"
+import useSettingsStore from "../../../store/useSettingsStore"
+import orderService from "../services/orderService"
+import { unwrapApiObject } from "../../../api/apiResponse"
 import Card from "../../../components/common/Card"
+import Button from "../../../components/common/Button"
 
 const STATUS_BADGE = {
     pending: "bg-amber-50 text-amber-800 border-amber-200",
@@ -19,13 +25,20 @@ const PAYMENT_BADGE = {
     failed: "bg-red-50 text-red-700 border-red-200",
 }
 
-const OrderDetail = ({ order, onBack }) => {
-    const { formatCurrency } = useFormatters()
+const CANCELLABLE_STATUSES = ["pending", "new", "processing"]
+
+const OrderDetail = ({ order: initialOrder, onBack, onOrderUpdated }) => {
+    const translate = useSettingsStore((state) => state.translate)
+    const { formatCurrency, getLocalizedText } = useFormatters()
+    const [order, setOrder] = useState(initialOrder)
+    const [cancelling, setCancelling] = useState(false)
+
     if (!order) return null
 
     const items = order.items || []
     const shippingAddress = order.shipping_address || {}
     const billingAddress = order.billing_address || {}
+    const canCancel = CANCELLABLE_STATUSES.includes(String(order.status || "").toLowerCase())
 
     const formatAddress = (addr) => {
         const parts = []
@@ -37,18 +50,47 @@ const OrderDetail = ({ order, onBack }) => {
         return parts.join(", ")
     }
 
+    const handleCancelOrder = async () => {
+        if (!window.confirm(translate("order.cancel_confirm") || "Are you sure you want to cancel this order?")) {
+            return
+        }
+        const reason = window.prompt(
+            translate("order.cancel_reason_prompt") || "Please enter a reason for cancellation (optional):",
+            ""
+        )
+        if (reason === null) return
+
+        setCancelling(true)
+        try {
+            const response = await orderService.cancelOrder(order.id, reason)
+            const updated = unwrapApiObject(response)
+            const nextOrder = updated?.id ? updated : { ...order, status: "cancelled" }
+            setOrder(nextOrder)
+            onOrderUpdated?.(nextOrder)
+            toast.success(translate("order.cancel_success") || "Order has been cancelled successfully.")
+        } catch (error) {
+            toast.error(
+                error?.response?.data?.message ||
+                    translate("order.cancel_failed") ||
+                    "Unable to cancel this order."
+            )
+        } finally {
+            setCancelling(false)
+        }
+    }
+
     return (
         <div className="space-y-6 tabular-nums animate-fade-up">
-            <div className="flex items-center justify-between bg-white border border-slate-200/90 rounded-xl px-5 py-3.5 shadow-card">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-200/90 rounded-xl px-5 py-3.5 shadow-card">
                 <button
                     type="button"
                     onClick={onBack}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#004687] transition-colors"
                 >
                     <ArrowLeft size={16} />
-                    <span>Back to Orders</span>
+                    <span>{translate("order.back_to_orders") || "Back to Orders"}</span>
                 </button>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <span className="font-mono text-xs font-bold text-[#09253E]">
                         #{order.number || order.id}
                     </span>
@@ -57,8 +99,25 @@ const OrderDetail = ({ order, onBack }) => {
                             STATUS_BADGE[order.status] || "bg-slate-100 text-slate-600 border-slate-200"
                         }`}
                     >
-                        {order.status}
+                        {translate(`order.${order.status}`) || order.status}
                     </span>
+                    {canCancel && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={cancelling}
+                            onClick={handleCancelOrder}
+                            className="text-red-600 border-red-200 hover:bg-red-50 gap-1.5"
+                        >
+                            <XCircle size={14} />
+                            <span>
+                                {cancelling
+                                    ? translate("order.cancelling") || "Cancelling..."
+                                    : translate("order.cancel_order") || "Cancel Order"}
+                            </span>
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -68,9 +127,9 @@ const OrderDetail = ({ order, onBack }) => {
                     <Card>
                         <Card.Header>
                             <div className="flex justify-between items-center">
-                                <Card.Title>Order Line Items</Card.Title>
+                                <Card.Title>{translate("order.line_items") || "Order Line Items"}</Card.Title>
                                 <span className="text-xs font-semibold text-slate-500">
-                                    {items.length} item(s)
+                                    {items.length} {translate("cart.items") || "items"}
                                 </span>
                             </div>
                         </Card.Header>
@@ -82,18 +141,31 @@ const OrderDetail = ({ order, onBack }) => {
                                             {item.product?.image?.url ? (
                                                 <img
                                                     src={item.product.image.url}
-                                                    alt={item.product?.name || "Product"}
+                                                    alt={getLocalizedText(item.product?.name) || "Product"}
                                                     className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = "none"
+                                                        if (e.currentTarget.nextSibling) {
+                                                            e.currentTarget.nextSibling.style.display = "flex"
+                                                        }
+                                                    }}
                                                 />
-                                            ) : (
+                                            ) : null}
+                                            <div
+                                                className={`w-full h-full items-center justify-center ${
+                                                    item.product?.image?.url ? "hidden" : "flex"
+                                                }`}
+                                            >
                                                 <Package size={24} />
-                                            )}
+                                            </div>
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-bold text-sm text-[#09253E]">
-                                                {item.product?.name || item.name || "Product"}
+                                                {getLocalizedText(item.product?.name || item.name) || "Product"}
                                             </h4>
-                                            <p className="text-xs text-slate-500 mt-0.5">Quantity: {item.qty}</p>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                {translate("order.quantity") || "Quantity"}: {item.qty}
+                                            </p>
                                             <p className="text-[#004687] font-bold text-sm mt-1">
                                                 {formatCurrency(item.unit_price)}
                                             </p>
@@ -101,7 +173,10 @@ const OrderDetail = ({ order, onBack }) => {
                                             {item.metadata?.inventory_name && (
                                                 <div className="flex items-center gap-1 text-xs text-slate-500 mt-1">
                                                     <MapPin size={12} />
-                                                    <span>Dispatched from: {item.metadata.inventory_name}</span>
+                                                    <span>
+                                                        {translate("order.dispatched_from") || "Dispatched from"}:{" "}
+                                                        {item.metadata.inventory_name}
+                                                    </span>
                                                 </div>
                                             )}
                                         </div>
@@ -117,7 +192,7 @@ const OrderDetail = ({ order, onBack }) => {
                             <Card.Header>
                                 <div className="flex items-center gap-2 text-[#09253E] font-bold text-sm">
                                     <CreditCard size={16} className="text-[#004687]" />
-                                    <span>Billing Address</span>
+                                    <span>{translate("order.billing_address") || "Billing Address"}</span>
                                 </div>
                             </Card.Header>
                             <Card.Body className="text-xs text-slate-600 leading-relaxed space-y-1">
@@ -131,7 +206,9 @@ const OrderDetail = ({ order, onBack }) => {
                                         <p>{formatAddress(billingAddress)}</p>
                                     </>
                                 ) : (
-                                    <p className="text-slate-400">Same as shipping address</p>
+                                    <p className="text-slate-400">
+                                        {translate("order.same_as_shipping") || "Same as shipping address"}
+                                    </p>
                                 )}
                             </Card.Body>
                         </Card>
@@ -140,7 +217,7 @@ const OrderDetail = ({ order, onBack }) => {
                             <Card.Header>
                                 <div className="flex items-center gap-2 text-[#09253E] font-bold text-sm">
                                     <MapPin size={16} className="text-[#004687]" />
-                                    <span>Shipping Address</span>
+                                    <span>{translate("order.shipping_address") || "Shipping Address"}</span>
                                 </div>
                             </Card.Header>
                             <Card.Body className="text-xs text-slate-600 leading-relaxed space-y-1">
@@ -153,7 +230,9 @@ const OrderDetail = ({ order, onBack }) => {
                                         <p>{formatAddress(shippingAddress)}</p>
                                     </>
                                 ) : (
-                                    <p className="text-slate-400">No shipping address provided</p>
+                                    <p className="text-slate-400">
+                                        {translate("order.no_shipping_address") || "No shipping address provided"}
+                                    </p>
                                 )}
                             </Card.Body>
                         </Card>
@@ -164,12 +243,12 @@ const OrderDetail = ({ order, onBack }) => {
                         <Card.Header>
                             <div className="flex items-center gap-2 text-[#09253E] font-bold text-sm">
                                 <CreditCard size={16} className="text-[#004687]" />
-                                <span>Financial Summary</span>
+                                <span>{translate("order.financial_summary") || "Financial Summary"}</span>
                             </div>
                         </Card.Header>
                         <Card.Body className="space-y-3 text-sm">
                             <div className="flex justify-between text-slate-600">
-                                <span>Subtotal</span>
+                                <span>{translate("cart.subtotal") || "Subtotal"}</span>
                                 <span className="font-semibold text-slate-900">
                                     {formatCurrency(order.subtotal || 0)}
                                 </span>
@@ -178,7 +257,7 @@ const OrderDetail = ({ order, onBack }) => {
                             {order.discount_total > 0 && (
                                 <div className="flex justify-between text-emerald-700">
                                     <span>
-                                        Discount{" "}
+                                        {translate("cart.discount") || "Discount"}{" "}
                                         {order.coupons?.length > 0
                                             ? `(${order.coupons.map((c) => c.code).join(", ")})`
                                             : ""}
@@ -189,14 +268,14 @@ const OrderDetail = ({ order, onBack }) => {
 
                             {order.loyalty_discount > 0 && (
                                 <div className="flex justify-between text-emerald-700">
-                                    <span>Loyalty Redemption</span>
+                                    <span>{translate("order.loyalty_redemption") || "Loyalty Redemption"}</span>
                                     <span className="font-semibold">-{formatCurrency(order.loyalty_discount)}</span>
                                 </div>
                             )}
 
                             {order.tax_amount > 0 && (
                                 <div className="flex justify-between text-slate-600">
-                                    <span>Tax</span>
+                                    <span>{translate("cart.tax") || "Tax"}</span>
                                     <span className="font-semibold text-slate-900">
                                         {formatCurrency(order.tax_amount)}
                                     </span>
@@ -205,19 +284,24 @@ const OrderDetail = ({ order, onBack }) => {
 
                             <div className="flex justify-between text-slate-600">
                                 <span>
-                                    Shipping {order.shipping_method ? `(${order.shipping_method})` : ""}
+                                    {translate("cart.shipping") || "Shipping"}{" "}
+                                    {order.shipping_method ? `(${order.shipping_method})` : ""}
                                 </span>
                                 <span
                                     className={`font-semibold ${
                                         order.shipping_cost > 0 ? "text-slate-900" : "text-emerald-700"
                                     }`}
                                 >
-                                    {order.shipping_cost > 0 ? formatCurrency(order.shipping_cost) : "Free"}
+                                    {order.shipping_cost > 0
+                                        ? formatCurrency(order.shipping_cost)
+                                        : translate("cart.free") || "Free"}
                                 </span>
                             </div>
 
                             <div className="pt-3.5 border-t border-slate-200 flex justify-between items-baseline">
-                                <span className="font-bold text-[#09253E] text-base">Total</span>
+                                <span className="font-bold text-[#09253E] text-base">
+                                    {translate("cart.total") || "Total"}
+                                </span>
                                 <span className="font-extrabold text-[#004687] text-lg">
                                     {formatCurrency(order.total)}
                                 </span>
@@ -232,27 +316,26 @@ const OrderDetail = ({ order, onBack }) => {
                         <Card.Header>
                             <div className="flex items-center gap-2 text-[#09253E] font-bold text-sm">
                                 <Calendar size={16} className="text-[#004687]" />
-                                <span>Order Metadata</span>
+                                <span>{translate("order.metadata") || "Order Metadata"}</span>
                             </div>
                         </Card.Header>
                         <Card.Body className="space-y-4 text-xs">
                             <div>
                                 <p className="uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                                    Placed At
+                                    {translate("order.placed_at") || "Placed At"}
                                 </p>
                                 <p className="font-semibold text-slate-900">
-                                    {new Date(order.created_at).toLocaleDateString("vi-VN")}{" "}
-                                    {new Date(order.created_at).toLocaleTimeString("vi-VN")}
+                                    {formatOrderDate(order.created_at)}
                                 </p>
                             </div>
 
                             {order.payment_method && (
                                 <div>
                                     <p className="uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                                        Payment Method
+                                        {translate("order.payment_method") || "Payment Method"}
                                     </p>
                                     <p className="font-semibold text-slate-900 uppercase">
-                                        {order.payment_method}
+                                        {translate(`checkout.${order.payment_method}`) || order.payment_method}
                                     </p>
                                 </div>
                             )}
@@ -260,7 +343,7 @@ const OrderDetail = ({ order, onBack }) => {
                             {order.payment_status && (
                                 <div>
                                     <p className="uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                                        Payment Status
+                                        {translate("order.payment_status") || "Payment Status"}
                                     </p>
                                     <span
                                         className={`inline-block px-2.5 py-0.5 rounded border text-[11px] font-bold uppercase ${
@@ -268,7 +351,7 @@ const OrderDetail = ({ order, onBack }) => {
                                             "bg-slate-100 text-slate-600 border-slate-200"
                                         }`}
                                     >
-                                        {order.payment_status}
+                                        {translate(`payments.${order.payment_status}`) || order.payment_status}
                                     </span>
                                 </div>
                             )}
@@ -276,7 +359,7 @@ const OrderDetail = ({ order, onBack }) => {
                             {order.customer_notes && (
                                 <div>
                                     <p className="uppercase font-semibold text-slate-400 tracking-wider mb-1">
-                                        Delivery Notes
+                                        {translate("order.delivery_notes") || "Delivery Notes"}
                                     </p>
                                     <div className="bg-slate-50 p-3 rounded-lg text-xs text-slate-700 border border-slate-200/80">
                                         {order.customer_notes}
@@ -291,7 +374,7 @@ const OrderDetail = ({ order, onBack }) => {
                             <Card.Header>
                                 <div className="flex items-center gap-2 text-red-600 font-bold text-sm">
                                     <Package size={16} />
-                                    <span>Refund Ledger</span>
+                                    <span>{translate("order.refund_ledger") || "Refund Ledger"}</span>
                                 </div>
                             </Card.Header>
                             <Card.Body className="space-y-3 text-xs">
@@ -315,14 +398,13 @@ const OrderDetail = ({ order, onBack }) => {
                                             </span>
                                         </div>
                                         <p className="text-slate-600">
-                                            Amount:{" "}
                                             <span className="font-bold text-red-600">
                                                 {formatCurrency(refund.amount)}
                                             </span>
                                         </p>
                                         {refund.reason && (
                                             <p className="text-slate-500 mt-1 line-clamp-2">
-                                                Reason: {refund.reason}
+                                                {refund.reason}
                                             </p>
                                         )}
                                     </div>

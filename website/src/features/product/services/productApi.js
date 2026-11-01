@@ -13,6 +13,14 @@ const productApi = {
     return apiService.get(`products/by-slug/${slug}`);
   },
 
+  getCategories: (params) => {
+    return apiService.get('product-categories', { params });
+  },
+
+  getBrands: (params) => {
+    return apiService.get('brands', { params });
+  },
+
   getProductsByCategory: (categoryId) => {
     return apiService.get(`product-categories/${categoryId}/products`);
   },
@@ -38,6 +46,5 @@ const productApi = {
     return apiService.get(`products/${productId}/related`);
   }
 };
-
 
 export default productApi;

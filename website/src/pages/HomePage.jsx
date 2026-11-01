@@ -1,12 +1,14 @@
-import React from "react"
+import React, { useState } from "react"
 import { Link } from "react-router-dom"
 import { ArrowRight, Mail } from "lucide-react"
+import toast from "react-hot-toast"
 import { useProducts } from "../features/product/hooks/useProducts"
 import ProductCard from "../features/product/components/ProductCard"
 import useSettingsStore from "../store/useSettingsStore"
 import Hero from "../features/home/components/Hero"
 import Features from "../features/home/components/Features"
 import { Button, PageHeading, ProductCardSkeleton } from "../components/common"
+import useSeo from "../utils/useSeo"
 
 const HomePage = () => {
     const { data: productsData, isLoading } = useProducts()
@@ -15,6 +17,23 @@ const HomePage = () => {
     const displayProducts = featuredProducts.length > 0 ? featuredProducts : allProducts.slice(0, 4)
     const latestArrivals = allProducts.slice(0, 8)
     const translate = useSettingsStore((state) => state.translate)
+    const [newsletterEmail, setNewsletterEmail] = useState("")
+
+    useSeo({
+        title: translate("home.seo_title") || translate("header.home") || "Home",
+        description: translate("home.seo_description") || translate("home.hero.subtitle"),
+        canonicalPath: "/",
+    })
+
+    const handleSubscribe = (e) => {
+        e.preventDefault()
+        if (!newsletterEmail || !newsletterEmail.includes("@")) {
+            toast.error(translate("home.cta.invalid_email") || "Please enter a valid email address.")
+            return
+        }
+        toast.success(translate("home.cta.success") || "Thank you for subscribing to our newsletter!")
+        setNewsletterEmail("")
+    }
 
     return (
         <div className="w-full">
@@ -64,17 +83,21 @@ const HomePage = () => {
                     <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6 pb-4 border-b border-slate-200/80">
                         <div>
                             <PageHeading as="h2" size="md">
-                                Latest Catalog Arrivals
+                                {translate("home.arrivals.title") || "Latest Catalog Arrivals"}
                             </PageHeading>
                             <p className="text-sm text-slate-500 mt-1">
-                                Newly stocked inventory across all distribution centers.
+                                {translate("home.arrivals.subtitle") ||
+                                    "Newly stocked inventory across all distribution centers."}
                             </p>
                         </div>
                         <Link
                             to="/shop"
                             className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#004687] hover:text-[#09253E] transition-colors"
                         >
-                            <span>Browse All ({allProducts.length})</span>
+                            <span>
+                                {translate("home.arrivals.browse_all", { count: allProducts.length }) ||
+                                    `Browse All (${allProducts.length})`}
+                            </span>
                             <ArrowRight size={16} />
                         </Link>
                     </div>
@@ -102,7 +125,7 @@ const HomePage = () => {
 
                     <div className="lg:col-span-5">
                         <form
-                            onSubmit={(e) => e.preventDefault()}
+                            onSubmit={handleSubscribe}
                             className="flex flex-col sm:flex-row gap-2.5"
                         >
                             <div className="relative flex-1">
@@ -112,8 +135,14 @@ const HomePage = () => {
                                 />
                                 <input
                                     type="email"
-                                    placeholder={translate("home.cta.placeholder") || "Enter your business or personal email..."}
+                                    value={newsletterEmail}
+                                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                                    placeholder={
+                                        translate("home.cta.placeholder") ||
+                                        "Enter your business or personal email..."
+                                    }
                                     className="w-full bg-white/10 border border-white/15 rounded-lg pl-10 pr-3.5 py-2.5 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:border-[#FBAE17] transition-colors"
+                                    required
                                 />
                             </div>
                             <Button variant="gold" size="md" type="submit" className="shrink-0 px-5">

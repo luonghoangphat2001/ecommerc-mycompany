@@ -38,26 +38,26 @@ class PostController extends BaseCrudController
     {
         return [
             'post_type' => [
-                'label' => 'Loại bài viết',
-                'placeholder' => 'Tất cả loại',
+                'label' => __('admin.post.fields.post_type'),
+                'placeholder' => __('admin.filters.all_types'),
                 'options' => ['blog' => 'Blog', 'news' => 'News', 'page' => 'Page'],
             ],
             'is_visible' => [
-                'label' => 'Hiển thị',
-                'placeholder' => 'Tất cả trạng thái',
-                'options' => ['1' => 'Có', '0' => 'Không'],
+                'label' => __('admin.fields.is_visible'),
+                'placeholder' => __('admin.filters.all_statuses'),
+                'options' => ['1' => __('admin.common.yes'), '0' => __('admin.common.no')],
             ],
             'category_id' => [
-                'label' => 'Danh mục',
-                'placeholder' => 'Tất cả danh mục',
-                'options' => PostCategory::orderBy('name')->pluck('name', 'id')->toArray(),
+                'label' => __('admin.fields.category'),
+                'placeholder' => __('admin.filters.all_categories'),
+                'options' => PostCategory::orderBy('id')->get()->pluck('name', 'id')->toArray(),
             ],
             'published_from' => [
-                'label' => 'Đăng từ ngày',
+                'label' => __('admin.filters.published_from'),
                 'type' => 'date',
             ],
             'published_to' => [
-                'label' => 'Đến ngày',
+                'label' => __('admin.filters.published_to'),
                 'type' => 'date',
             ],
         ];
@@ -130,7 +130,7 @@ class PostController extends BaseCrudController
             'content' => ['label' => __('admin.post.fields.content'), 'type' => 'editor', 'rules' => ['nullable', 'string'], 'hideOnIndex' => true],
             'post_type' => ['label' => __('admin.post.fields.post_type'), 'type' => 'select', 'rules' => ['required', 'string', 'max:50'], 'options' => ['blog' => 'blog', 'news' => 'news', 'page' => 'page']],
             'published_at' => ['label' => __('admin.post.fields.published_at'), 'type' => 'date', 'rules' => ['nullable', 'date']],
-            'is_visible' => ['label' => __('admin.post.fields.is_visible'), 'type' => 'select', 'rules' => ['required', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
+            'is_visible' => ['label' => __('admin.post.fields.is_visible'), 'type' => 'select', 'rules' => ['required', 'boolean'], 'options' => ['1' => __('admin.common.yes'), '0' => __('admin.common.no')]],
             'seo_title' => ['label' => __('admin.post.fields.seo_title'), 'rules' => ['nullable', 'string', 'max:255'], 'colspan' => 'full', 'hideOnIndex' => true],
             'seo_description' => ['label' => __('admin.post.fields.seo_description'), 'type' => 'textarea', 'rules' => ['nullable', 'string', 'max:255'], 'hideOnIndex' => true],
             'categories' => [
@@ -195,7 +195,7 @@ class PostController extends BaseCrudController
             'author_id' => ['nullable', 'integer', 'exists:users,id'],
             'title' => ['required'],
             'slug' => ['required', 'string', 'max:255', Rule::unique('posts', 'slug')->ignore($id)],
-            'content' => ['nullable', 'string'],
+            'content' => ['nullable'],
             'post_type' => ['required', 'string', 'max:50'],
             'published_at' => ['nullable', 'date'],
             'is_visible' => ['required', 'boolean'],

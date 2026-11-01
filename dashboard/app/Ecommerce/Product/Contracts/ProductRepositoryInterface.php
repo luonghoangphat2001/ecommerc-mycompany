@@ -50,4 +50,6 @@ interface ProductRepositoryInterface extends BaseRepositoryInterface
      * @return \App\Models\Product|null
      */
     public function findBySlug(string $slug, array $relations = []): ?\App\Models\Product;
+
+    public function paginateFiltered(int $perPage = 15, array $columns = ['*'], array $relations = [], array $filters = []);
 }

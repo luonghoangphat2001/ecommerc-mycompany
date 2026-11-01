@@ -2,12 +2,23 @@ import React from "react"
 import { useParams } from "react-router-dom"
 import PostDetail from "../features/post/components/PostDetail"
 import { usePostDetail } from "../features/post/hooks/usePostDetail"
+import useSettingsStore from "../store/useSettingsStore"
+import { getLocalizedText } from "../utils/formatters"
+import useSeo from "../utils/useSeo"
 
 const PostDetailPage = () => {
     const { slug } = useParams()
+    const translate = useSettingsStore((state) => state.translate)
     const { data: postData, isLoading, error } = usePostDetail(slug)
 
     const post = postData?.data
+
+    useSeo({
+        title: getLocalizedText(post?.title) || translate("blog.title"),
+        description: getLocalizedText(post?.excerpt || post?.content),
+        ogImage: post?.image_url || post?.image?.url || post?.featured_image,
+        canonicalPath: slug ? `/posts/${slug}` : undefined,
+    })
 
     if (isLoading) {
         return (
@@ -29,7 +40,9 @@ const PostDetailPage = () => {
     if (error || !post) {
         return (
             <div className="max-w-3xl mx-auto py-16 text-center bg-white border border-slate-200/90 rounded-xl">
-                <p className="text-sm font-medium text-slate-500">Article not found.</p>
+                <p className="text-sm font-medium text-slate-500">
+                    {translate("blog.article_not_found") || "Article not found."}
+                </p>
             </div>
         )
     }

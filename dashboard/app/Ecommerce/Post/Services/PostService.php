@@ -28,11 +28,41 @@ class PostService implements PostServiceInterface
      * Get all posts with relations.
      *
      * @param int $perPage
+     * @param array $filters
      * @return LengthAwarePaginator
      */
-    public function getPaginatedPosts(int $perPage = 10): LengthAwarePaginator
+    public function getPaginatedPosts(int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
-        return $this->postRepository->paginate($perPage, ['*'], ['author', 'categories', 'comments', 'featuredImage']);
+        $query = $this->postRepository->query()
+            ->with(['author', 'categories', 'comments', 'featuredImage']);
+
+        if (!array_key_exists('is_visible', $filters)) {
+            $query->where('is_visible', true);
+        } elseif ($filters['is_visible'] !== 'all' && $filters['is_visible'] !== null && $filters['is_visible'] !== '') {
+            $query->where('is_visible', filter_var($filters['is_visible'], FILTER_VALIDATE_BOOLEAN));
+        }
+
+        $search = trim((string) ($filters['search'] ?? $filters['q'] ?? $filters['keyword'] ?? ''));
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%")
+                    ->orWhere('content', 'like', "%{$search}%");
+            });
+        }
+
+        $categoryFilter = $filters['category_id'] ?? $filters['category'] ?? null;
+        if ($categoryFilter !== null && $categoryFilter !== '' && $categoryFilter !== 'all') {
+            $query->whereHas('categories', function ($q) use ($categoryFilter) {
+                if (is_numeric($categoryFilter)) {
+                    $q->where('categories.id', (int) $categoryFilter);
+                } else {
+                    $q->where('categories.slug', (string) $categoryFilter);
+                }
+            });
+        }
+
+        return $query->orderByDesc('published_at')->orderByDesc('id')->paginate($perPage);
     }
 
     /**

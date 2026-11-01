@@ -1,5 +1,6 @@
 import React, { useEffect } from "react"
 import { Outlet } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import Header from "./Header"
 import Footer from "./Footer"
 import MiniCart from "../../features/cart/components/MiniCart"
@@ -7,7 +8,9 @@ import useSettingsStore from "../../store/useSettingsStore"
 import useHeader from "../../hooks/useHeader"
 
 const Layout = () => {
+    const queryClient = useQueryClient()
     const settings = useSettingsStore((state) => state.settings)
+    const language = useSettingsStore((state) => state.language)
     const favicon = useSettingsStore((state) => state.getSetting("general.favicon"))
     const siteName = useSettingsStore(
         (state) => state.getSetting("general.site_name") || state.getSetting("general.store_name") || "NovaStore"
@@ -15,6 +18,13 @@ const Layout = () => {
     const { isCartOpen, closeCart } = useHeader()
     const customCss = settings?.custom?.custom_css || ""
     const customJs = settings?.custom?.custom_js || ""
+
+    useEffect(() => {
+        if (typeof document !== "undefined" && language) {
+            document.documentElement.lang = language
+        }
+        queryClient.invalidateQueries()
+    }, [language, queryClient])
 
     useEffect(() => {
         if (favicon) {
@@ -26,8 +36,6 @@ const Layout = () => {
             }
             link.href = favicon
         }
-
-        document.title = siteName
     }, [favicon, siteName])
 
     useEffect(() => {

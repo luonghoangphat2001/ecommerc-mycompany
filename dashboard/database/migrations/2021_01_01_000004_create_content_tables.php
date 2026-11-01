@@ -11,10 +11,10 @@ return new class extends Migration
         // Categories
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->json('name');
             $table->string('slug')->unique();
             $table->foreignId('parent_id')->nullable()->constrained('categories')->nullOnDelete();
-            $table->text('description')->nullable();
+            $table->json('description')->nullable();
             $table->string('type')->default('post')->index(); // 'post', 'product', etc.
             $table->boolean('is_visible')->default(true);
             $table->softDeletes();
@@ -25,9 +25,9 @@ return new class extends Migration
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->string('title');
+            $table->json('title');
             $table->string('slug')->unique();
-            $table->longText('content')->nullable();
+            $table->json('content')->nullable();
             $table->string('post_type')->default('blog')->index(); // 'blog', 'news', 'page', etc.
             $table->string('image')->nullable();
             $table->date('published_at')->nullable();

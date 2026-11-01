@@ -32,9 +32,22 @@ class PostController extends BaseApiController
     )]
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
-        $posts = $this->postService->getPaginatedPosts($perPage);
+        $perPage = (int) $request->get('per_page', 10);
+        $posts = $this->postService->getPaginatedPosts($perPage, $request->all());
         
+        return $this->ok(PostResource::collection($posts));
+    }
+
+    public function featured(Request $request)
+    {
+        $limit = (int) $request->get('limit', 4);
+        $posts = Post::with(['author', 'categories', 'comments', 'featuredImage'])
+            ->where('is_visible', true)
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+
         return $this->ok(PostResource::collection($posts));
     }
 
@@ -72,9 +85,18 @@ class PostController extends BaseApiController
             new OAT\Parameter(name: 'post', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Post ID')
         ]
     )]
-    public function show(Post $post)
+    public function show($post)
     {
-        return $this->ok(new PostResource($post->load(['author', 'categories', 'comments', 'featuredImage'])));
+        $relations = ['author', 'categories', 'comments', 'featuredImage'];
+        $model = is_numeric($post)
+            ? Post::with($relations)->find($post)
+            : Post::with($relations)->where('slug', (string) $post)->first();
+
+        if (!$model) {
+            return $this->notFound('Post not found');
+        }
+
+        return $this->ok(new PostResource($model));
     }
 
     #[ApiUpdate(

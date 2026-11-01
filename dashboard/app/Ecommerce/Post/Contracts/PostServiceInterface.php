@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 interface PostServiceInterface
 {
-    public function getPaginatedPosts(int $perPage = 10): LengthAwarePaginator;
+    public function getPaginatedPosts(int $perPage = 10, array $filters = []): LengthAwarePaginator;
 
     public function createPost(array $data): Post;
 

@@ -68,6 +68,32 @@ class Brand extends Model implements HasMedia
         return $this->hasMany(Brand::class, 'parent_id');
     }
 
+    public function directProducts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Product::class, 'shop_brand_id');
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        $locale = app()->getLocale() ?: 'vi';
+        $name = $this->getTranslation('name', $locale) ?: $this->getTranslation('name', 'vi');
+        if (empty($name) && is_array($this->name)) {
+            $name = $this->name['vi'] ?? $this->name['en'] ?? '';
+        }
+        return (string) ($name ?: ($this->slug ?: 'Thương hiệu #' . $this->id));
+    }
+
+    public function getBreadcrumbsAttribute(): string
+    {
+        $parts = [];
+        $curr = $this->parent;
+        while ($curr) {
+            array_unshift($parts, $curr->display_name);
+            $curr = $curr->parent;
+        }
+        return empty($parts) ? '—' : implode(' > ', $parts);
+    }
+
     /** @return MorphToMany<Address> */
     public function addresses(): MorphToMany
     {

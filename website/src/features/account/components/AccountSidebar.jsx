@@ -11,18 +11,20 @@ import {
     RotateCcw,
     Ticket,
     Award,
+    Truck,
 } from "lucide-react"
 import useSettingsStore from "../../../store/useSettingsStore"
 
 const AccountSidebar = ({ user, onLogout, activeTab, setActiveTab }) => {
     const translate = useSettingsStore((state) => state.translate)
     const { getSetting } = useSettingsStore()
-    const couponsEnabled = getSetting("marketing.enable_coupons")
-    const loyaltyEnabled = getSetting("marketing.enable_loyalty")
+    const couponsEnabled = getSetting("marketing.enable_coupons") !== false
+    const loyaltyEnabled = getSetting("marketing.enable_loyalty") !== false
 
     const menuItems = [
         { id: "dashboard", label: translate("account.dashboard_title") || "Overview", icon: LayoutDashboard },
         { id: "orders", label: translate("account.orders_title") || "Order History", icon: Package },
+        { id: "tracking", label: translate("account.tracking_title") || "Order Tracking", icon: Truck },
         { id: "profile", label: translate("account.profile_title") || "Profile Details", icon: User },
         { id: "address", label: translate("account.addresses_title") || "Address Book", icon: MapPin },
         { id: "payments", label: translate("account.payments_title") || "Payment History", icon: CreditCard },

@@ -1,8 +1,9 @@
-import useSettingsStore from '../../../store/useSettingsStore';
 import React from 'react';
+import useSettingsStore from '../../../store/useSettingsStore';
+import { getLocalizedText } from '../../../utils/formatters';
 
 const ProductVariantSelector = ({ variants, selectedVariant, onVariantChange }) => {
-  const { translate } = useTranslation('product');
+  const { translate } = useSettingsStore();
 
   const containerClass = "space-y-4";
   const sectionTitleClass = "text-sm font-medium text-gray-700";
@@ -17,7 +18,9 @@ const ProductVariantSelector = ({ variants, selectedVariant, onVariantChange }) 
     <div className={containerClass}>
       {variants.map((variant) => (
         <div key={variant.id}>
-          <h3 className={sectionTitleClass}>{variant.name}</h3>
+          <h3 className={sectionTitleClass}>
+            {getLocalizedText(variant.name) || translate('product.select_variant')}
+          </h3>
           <div className={optionsContainerClass}>
             {variant.options.map((option) => {
               const isSelected = selectedVariant?.[variant.id] === option.id;
@@ -26,11 +29,12 @@ const ProductVariantSelector = ({ variants, selectedVariant, onVariantChange }) 
               return (
                 <button
                   key={option.id}
+                  type="button"
                   className={`${optionClass} ${isSelected ? selectedClass : ''} ${isDisabled ? disabledClass : ''}`}
                   onClick={() => !isDisabled && onVariantChange(variant.id, option.id)}
                   disabled={isDisabled}
                 >
-                  {option.label}
+                  {getLocalizedText(option.label)}
                 </button>
               );
             })}

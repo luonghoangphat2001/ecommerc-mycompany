@@ -1,4 +1,3 @@
-// src/services/orderService.js
 import apiService from '../../../api/apiService';
 
 const API_URL = 'orders';
@@ -27,13 +26,34 @@ const orderService = {
     return apiService.delete(url);
   },
 
-  // -- MOCK DATA DỰ PHÒNG NẾU SERVER JSON LỖI HOẶC CHƯA CHẠY -- //
-  getAllMock: async () => {
-    return new Promise((resolve) => setTimeout(() => resolve([
-      { id: 'ORD-001', customer: 'Nguyễn Văn A', date: '2024-04-05', total: 1200, status: 'Hoàn thành' },
-      { id: 'ORD-002', customer: 'Trần Thị B', date: '2024-04-04', total: 1099, status: 'Đang xử lý' },
-    ]), 500));
-  }
+  cancelOrder: (id, reason = '') => {
+    return apiService.post(`${API_URL}/${id}/cancel`, { reason });
+  },
+
+  trackOrder: async (code) => {
+    const cleanCode = String(code || '').trim().replace(/^#/, '');
+    try {
+      return await apiService.get(`${API_URL}/track/${encodeURIComponent(cleanCode)}`);
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        const listRes = await apiService.get(API_URL, {
+          params: { include: 'items,payments' },
+        });
+        const list = listRes?.data?.data || listRes?.data || [];
+        const matched = Array.isArray(list)
+          ? list.find(
+              (o) =>
+                String(o.number || '').toLowerCase() === cleanCode.toLowerCase() ||
+                String(o.id) === cleanCode
+            )
+          : null;
+        if (matched) {
+          return { data: matched };
+        }
+      }
+      throw error;
+    }
+  },
 };
 
 export default orderService;

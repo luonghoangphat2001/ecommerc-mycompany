@@ -36,8 +36,10 @@ class ProductCategoryController extends BaseApiController
     )]
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
-        $categories = $this->categoryService->paginate($perPage, ['*'], []);
+        $perPage = (int) $request->get('per_page', 50);
+        $categories = ProductCategory::with(['children'])
+            ->withCount('products')
+            ->paginate($perPage);
         
         return $this->ok(ProductCategoryResource::collection($categories));
     }
@@ -78,9 +80,34 @@ class ProductCategoryController extends BaseApiController
         ],
         responseData: '#/components/schemas/ProductCategoryResource'
     )]
-    public function show(ProductCategory $productCategory)
+    public function show($productCategory)
     {
-        return $this->ok(new ProductCategoryResource($productCategory));
+        $category = is_numeric($productCategory)
+            ? ProductCategory::with(['children'])->withCount('products')->findOrFail($productCategory)
+            : ProductCategory::with(['children'])->withCount('products')->where('slug', (string) $productCategory)->firstOrFail();
+
+        return $this->ok(new ProductCategoryResource($category));
+    }
+
+    public function products(Request $request, $category)
+    {
+        $categoryModel = is_numeric($category)
+            ? ProductCategory::find($category)
+            : ProductCategory::where('slug', (string) $category)->first();
+
+        if (!$categoryModel) {
+            return $this->notFound('Category not found');
+        }
+
+        $filters = array_merge($request->all(), ['category_id' => $categoryModel->id]);
+        $productService = app(\App\Ecommerce\Product\Contracts\ProductServiceInterface::class);
+        $products = $productService->paginate(
+            perPage: (int) $request->get('per_page', 15),
+            relations: ['categories', 'brand', 'featuredImage', 'inventories'],
+            filters: $filters
+        );
+
+        return $this->ok(\App\Http\Resources\Api\ProductResource::collection($products));
     }
 
     #[ApiUpdate(

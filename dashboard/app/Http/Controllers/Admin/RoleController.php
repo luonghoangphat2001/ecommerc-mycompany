@@ -50,7 +50,7 @@ class RoleController extends BaseCrudController
     public function create(): View
     {
         return view('admin.roles.form', [
-            'title' => 'Tạo mới - Roles',
+            'title' => __('admin.roles.create_title'),
             'record' => null,
             'routePrefix' => $this->routePrefix(),
             'selectedPermissions' => [],
@@ -63,7 +63,7 @@ class RoleController extends BaseCrudController
         $record = Role::findOrFail($id);
 
         return view('admin.roles.form', [
-            'title' => 'Chỉnh sửa - Roles',
+            'title' => __('admin.roles.edit_title'),
             'record' => $record,
             'routePrefix' => $this->routePrefix(),
             'selectedPermissions' => $record->permissions()->pluck('name')->toArray(),

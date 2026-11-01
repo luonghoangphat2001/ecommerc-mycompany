@@ -6,78 +6,74 @@
 @section('kpis')
     <div class="stat">
         <div class="label">{{ __('workspace.ops.kpis.active_orders') }}</div>
-        <div class="value" style="color: #10b981;">{{ number_format($metrics['active_orders'] ?? 0) }}</div>
+        <div class="value" style="color: #047857;">{{ number_format($metrics['active_orders'] ?? 0) }}</div>
     </div>
     <div class="stat">
         <div class="label">{{ __('workspace.ops.kpis.processing_time') }}</div>
-        <div class="value" style="color: #3b82f6;">{{ $metrics['processing_time'] ?? '0' }}</div>
+        <div class="value" style="color: var(--fi-primary);">{{ $metrics['processing_time'] ?? '0' }}</div>
     </div>
-    <div class="stat" style="{{ ($metrics['open_issues'] ?? 0) > 0 ? 'border-color: #ef4444; background: #fef2f2;' : '' }}">
+    <div class="stat" style="{{ ($metrics['open_issues'] ?? 0) > 0 ? 'border-color: #fecaca; background: #fef2f2;' : '' }}">
         <div class="label">{{ __('workspace.ops.kpis.open_issues') }}</div>
-        <div class="value" style="color: {{ ($metrics['open_issues'] ?? 0) > 0 ? '#ef4444' : '#f59e0b' }};">
+        <div class="value" style="color: {{ ($metrics['open_issues'] ?? 0) > 0 ? '#b91c1c' : '#b45309' }};">
             {{ number_format($metrics['open_issues'] ?? 0) }}
         </div>
     </div>
     <div class="stat">
         <div class="label">{{ __('workspace.ops.kpis.ops_health') }}</div>
-        <div class="value" style="color: {{ (int)$metrics['ops_health'] < 90 ? '#ef4444' : '#10b981' }};">
+        <div class="value" style="color: {{ (int)($metrics['ops_health'] ?? 100) < 90 ? '#b91c1c' : '#047857' }};">
             {{ $metrics['ops_health'] ?? '100%' }}
         </div>
     </div>
 @endsection
 
 @section('tab_contents')
-    <!-- 2 Column Parallel Layout for Ops -->
-    <div style="display: grid; grid-template-columns: 60% 38%; gap: 2%;">
-        
+    <div class="split-grid-2col">
         <!-- Left: Live Orders -->
         <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="margin: 0;">{{ __('workspace.ops.content.live_orders_title') }}</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; min-height: 36px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 14px; font-weight: 700;">{{ __('workspace.ops.content.live_orders_title') }}</h3>
+                    <p style="color: var(--fi-muted); font-size: 12.5px; margin: 3px 0 0;">{{ __('workspace.ops.content.live_orders_desc') }}</p>
+                </div>
             </div>
-            <p style="color: #64748b; font-size: 13px; margin-top: 0;">{{ __('workspace.ops.content.live_orders_desc') }}</p>
-            
-            <div class="table-wrap" style="max-height: 500px; overflow-y: auto;">
+
+            <div class="table-wrap" style="max-height: 480px; overflow-y: auto;">
                 <table>
                     <thead>
                         <tr>
-                            <th>{{ __('workspace.ops.tables.orders.order_id') }}</th>
+                            <th style="width: 115px;">{{ __('workspace.ops.tables.orders.order_id') }}</th>
                             <th>{{ __('workspace.ops.tables.orders.customer') }}</th>
-                            <th>{{ __('workspace.ops.tables.orders.total') }}</th>
-                            <th>{{ __('workspace.ops.tables.orders.status') }}</th>
-                            <th>{{ __('admin.table_actions') }}</th>
+                            <th class="text-right" style="width: 130px;">{{ __('workspace.ops.tables.orders.total') }}</th>
+                            <th style="width: 130px;">{{ __('workspace.ops.tables.orders.status') }}</th>
+                            <th class="text-right" style="width: 90px;">{{ __('admin.table_actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($liveOrders as $order)
-                        <tr>
-                            <td><strong>#{{ $order->id }}</strong><br><span style="font-size: 11px; color: #94a3b8;">{{ $order->created_at->format('H:i d/m/Y') }}</span></td>
-                            <td>{{ $order->customer_display_name ?? 'N/A' }}</td>
-                            <td>{{ number_format($order->total ?? 0) }}</td>
-                            <td>
-                                @php
-                                    $statusVal = $order->status instanceof \BackedEnum ? $order->status->value : $order->status;
-                                @endphp
-                                @if($statusVal === 'pending')
-                                    <span class="badge badge-secondary">{{ __('workspace.ops.statuses.pending') }}</span>
-                                @elseif($statusVal === 'processing' || $statusVal === 'new')
-                                    <span class="badge badge-warning">{{ __('workspace.ops.statuses.processing') }}</span>
-                                @elseif($statusVal === 'shipping' || $statusVal === 'delivering')
-                                    <span class="badge badge-info">{{ __('workspace.ops.statuses.shipping') }}</span>
-                                @else
-                                    <span class="badge badge-{{ $statusVal }}">{{ __('workspace.ops.statuses.' . $statusVal) }}</span>
-                                @endif
-                            </td>
-                            <td>
-                                <div class="actions">
-                                    <a href="{{ route('admin.orders.show', $order->id) }}" class="link-action">{{ __('admin.actions.view') }}</a>
-                                </div>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td>
+                                    <span class="mono" style="font-weight: 700;">#{{ $order->id }}</span><br>
+                                    <span class="mono cell-muted" style="font-size: 11px;">{{ $order->created_at->format('H:i d/m/Y') }}</span>
+                                </td>
+                                <td style="font-weight: 600;">{{ $order->customer_display_name ?? 'N/A' }}</td>
+                                <td class="mono text-right" style="font-weight: 600;">{{ number_format($order->total ?? 0) }}</td>
+                                <td>
+                                    @php
+                                        $statusVal = $order->status instanceof \BackedEnum ? $order->status->value : $order->status;
+                                    @endphp
+                                    <x-admin.status-badge
+                                        :status="$statusVal"
+                                        :label="__('workspace.ops.statuses.' . ($statusVal === 'new' ? 'processing' : ($statusVal === 'delivering' ? 'shipping' : $statusVal)))"
+                                    />
+                                </td>
+                                <td class="text-right">
+                                    <x-admin.row-actions :viewUrl="route('admin.orders.show', $order->id)" />
+                                </td>
+                            </tr>
                         @empty
-                        <tr>
-                            <td colspan="5" style="text-align: center; color: #94a3b8;">{{ __('workspace.ops.tables.empty_orders') }}</td>
-                        </tr>
+                            <tr>
+                                <td colspan="5" class="empty-state">{{ __('workspace.ops.tables.empty_orders') }}</td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -86,55 +82,49 @@
 
         <!-- Right: Incidents -->
         <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="margin: 0;">{{ __('workspace.ops.content.issues_title') }}</h3>
-                <a href="{{ route('admin.incidents.create') }}" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;">+ Thêm Sự cố</a>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; min-height: 36px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 14px; font-weight: 700;">{{ __('workspace.ops.content.issues_title') }}</h3>
+                    <p style="color: var(--fi-muted); font-size: 12.5px; margin: 3px 0 0;">{{ __('workspace.ops.content.issues_desc') }}</p>
+                </div>
+                <a href="{{ route('admin.incidents.create') }}" class="btn btn-primary btn-sm">+ Thêm Sự cố</a>
             </div>
-            <p style="color: #64748b; font-size: 13px; margin-top: 0;">{{ __('workspace.ops.content.issues_desc') }}</p>
 
-            <div style="display: flex; flex-direction: column; gap: 10px; max-height: 500px; overflow-y: auto; padding-right: 5px;">
+            <div style="display: flex; flex-direction: column; gap: 10px; max-height: 480px; overflow-y: auto;">
                 @forelse($incidents as $incident)
-                    <div style="background: #fff; border: 1px solid {{ $incident->status === 'open' ? '#fecaca' : ($incident->status === 'in_progress' ? '#fde68a' : '#e2e8f0') }}; border-radius: 8px; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <span style="font-weight: 700; font-size: 14px; color: #0f172a; display: inline-flex; align-items: center; gap: 6px;">
+                    <div style="background: #fff; border: 1px solid {{ $incident->status === 'open' ? '#fecaca' : ($incident->status === 'in_progress' ? '#fde68a' : 'var(--fi-border-strong)') }}; border-radius: var(--fi-radius-md); padding: 13px 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px;">
+                            <span style="font-weight: 700; font-size: 13px; color: var(--fi-text); display: inline-flex; align-items: center; gap: 6px;">
                                 <span style="width: 7px; height: 7px; border-radius: 50%; background: {{ $incident->status === 'open' ? '#ef4444' : ($incident->status === 'in_progress' ? '#f59e0b' : '#10b981') }}; display: inline-block;"></span>
-                                {{ __('workspace.ops.incident_types.' . $incident->type) }}
+                                {{ $incident->type_label }}
                             </span>
-                            <span style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; background: #f1f5f9; color: #475569;">
-                                {{ __('workspace.ops.statuses.' . $incident->status) }}
-                            </span>
+                            <x-admin.status-badge :status="$incident->status" :label="__('workspace.ops.statuses.' . $incident->status)" />
                         </div>
-                        <p style="margin: 0 0 10px 0; font-size: 13px; color: #475569;">
+                        <p style="margin: 0 0 10px 0; font-size: 12.5px; color: var(--fi-text-secondary);">
                             {{ $incident->description }}
                         </p>
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #94a3b8;">
-                            <span>Đơn hàng: <strong>#{{ $incident->order_id ?? 'N/A' }}</strong></span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--fi-muted); flex-wrap: wrap; gap: 8px;">
+                            <span>Đơn hàng: <strong class="mono">#{{ $incident->order_id ?? 'N/A' }}</strong></span>
                             @if($incident->status === 'open')
-                                <span style="font-size: 11px; color: #64748b;">Chưa có người xử lý</span>
+                                <span style="font-size: 11.5px; color: var(--fi-muted);">Chưa có người xử lý</span>
                             @else
-                                <span style="color: #10b981;">
-                                    <svg style="width: 14px; height: 14px; display: inline; vertical-align: text-bottom;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                <span style="color: #047857; font-weight: 600;">
                                     {{ $incident->assignee->name ?? 'N/A' }}
                                 </span>
                             @endif
-                            <div class="actions">
-                                <a href="{{ route('admin.incidents.show', $incident->id) }}" class="link-action">{{ __('admin.actions.view') }}</a>
-                                <a href="{{ route('admin.incidents.edit', $incident->id) }}" class="link-action">Sửa</a>
-                                <form action="{{ route('admin.incidents.destroy', $incident->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn xóa?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="link-action link-danger">Xóa</button>
-                                </form>
-                            </div>
+                            <x-admin.row-actions
+                                :viewUrl="route('admin.incidents.show', $incident->id)"
+                                :editUrl="route('admin.incidents.edit', $incident->id)"
+                                :deleteUrl="route('admin.incidents.destroy', $incident->id)"
+                            />
                         </div>
                     </div>
                 @empty
-                    <div style="text-align: center; color: #94a3b8; padding: 20px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                    <div class="empty-state" style="border: 1px dashed var(--fi-border-strong); border-radius: var(--fi-radius-md);">
                         {{ __('workspace.ops.tables.empty_incidents') }}
                     </div>
                 @endforelse
             </div>
         </div>
-
     </div>
 @endsection
