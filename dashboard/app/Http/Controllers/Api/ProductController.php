@@ -34,7 +34,7 @@ class ProductController extends BaseApiController
     {
         $products = $this->productService->paginate(
             perPage: (int) $request->get('per_page', 15),
-            relations: ['categories', 'brand', 'featuredImage', 'inventories'],
+            relations: ['categories', 'brand', 'featuredImage', 'inventories', 'variants', 'productAttributes', 'comboComponents.product', 'comboComponents.variant'],
             filters: $request->all()
         );
         
@@ -55,7 +55,7 @@ class ProductController extends BaseApiController
     {
         $product = $this->productService->findBySlug(
             $slug,
-            ['categories', 'brand', 'featuredImage', 'comments', 'inventories']
+            ['categories', 'brand', 'featuredImage', 'comments', 'inventories', 'variants', 'productAttributes', 'comboComponents.product', 'comboComponents.variant']
         );
         
         if (!$product) {
@@ -77,7 +77,7 @@ class ProductController extends BaseApiController
     )]
     public function show($id)
     {
-        $relations = ['categories', 'brand', 'featuredImage', 'comments', 'inventories'];
+        $relations = ['categories', 'brand', 'featuredImage', 'comments', 'inventories', 'variants', 'productAttributes', 'comboComponents.product', 'comboComponents.variant'];
 
         if (is_numeric($id)) {
             $product = $this->productService->findOrFail($id, ['*'], $relations);

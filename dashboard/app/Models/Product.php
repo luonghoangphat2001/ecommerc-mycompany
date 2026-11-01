@@ -51,6 +51,25 @@ class Product extends Model implements HasMedia
 
     protected $table = 'shop_products';
 
+    protected static function booted(): void
+    {
+        static::updating(function (Product $product) {
+            if ($product->isDirty('price') || $product->isDirty('sale_price')) {
+                try {
+                    app(\App\Ecommerce\Audit\Contracts\FinancialAuditServiceInterface::class)->logProductPriceChange(
+                        $product,
+                        (float) ($product->getOriginal('price') ?? 0),
+                        (float) ($product->price ?? 0),
+                        $product->getOriginal('sale_price') !== null ? (float) $product->getOriginal('sale_price') : null,
+                        $product->sale_price !== null ? (float) $product->sale_price : null
+                    );
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+        });
+    }
+
     protected $fillable = [
         'shop_brand_id',
         'author_id',
@@ -172,8 +191,103 @@ class Product extends Model implements HasMedia
         return $query->where('type', $type);
     }
 
+    public function productAttributes(): HasMany
+    {
+        return $this->hasMany(ProductAttribute::class, 'product_id')->orderBy('position');
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class, 'product_id');
+    }
+
+    public function activeVariants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class, 'product_id')->where('is_active', true);
+    }
+
+    public function comboComponents(): HasMany
+    {
+        return $this->hasMany(ComboProductItem::class, 'parent_product_id')->orderBy('sort_order');
+    }
+
+    public function comboProduct(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ComboProduct::class, 'product_id');
+    }
+
+    public function isSimple(): bool
+    {
+        return $this->type === null || $this->type->isSimple();
+    }
+
+    public function isVariable(): bool
+    {
+        return $this->type !== null && $this->type->isVariable();
+    }
+
+    public function isCombo(): bool
+    {
+        return $this->type !== null && $this->type->isCombo();
+    }
+
+    public function calculateComboStock(array $visitedIds = []): int
+    {
+        if (in_array($this->id, $visitedIds)) {
+            return 0; // Prevent circular reference
+        }
+
+        $components = $this->relationLoaded('comboComponents')
+            ? $this->comboComponents
+            : $this->comboComponents()->with(['product', 'variant'])->get();
+
+        if ($components->isEmpty()) {
+            return (int) ($this->qty ?? 0);
+        }
+
+        $visitedIds[] = $this->id;
+        $maxCombos = PHP_INT_MAX;
+
+        foreach ($components as $item) {
+            $requiredPerCombo = max(1, (int) $item->quantity);
+            $componentStock = 0;
+
+            if ($item->product_variant_id) {
+                $variant = $item->variant ?: ProductVariant::find($item->product_variant_id);
+                $componentStock = $variant ? (int) $variant->available_stock : 0;
+            } elseif ($item->shop_product_id) {
+                $product = $item->product ?: Product::find($item->shop_product_id);
+                if ($product) {
+                    if ($product->isCombo()) {
+                        $componentStock = $product->calculateComboStock($visitedIds);
+                    } else {
+                        $componentStock = (int) $product->available_stock;
+                    }
+                }
+            }
+
+            $availableCombos = intdiv($componentStock, $requiredPerCombo);
+            if ($availableCombos < $maxCombos) {
+                $maxCombos = $availableCombos;
+            }
+        }
+
+        return $maxCombos === PHP_INT_MAX ? 0 : max(0, $maxCombos);
+    }
+
     public function getAvailableStockAttribute(): int
     {
+        if ($this->isVariable()) {
+            if ($this->relationLoaded('activeVariants')) {
+                return (int) $this->activeVariants->sum('qty');
+            }
+            return (int) $this->variants()->where('is_active', true)->sum('qty');
+        }
+
+        if ($this->isCombo()) {
+            return $this->calculateComboStock();
+        }
+
         if ($this->relationLoaded('inventories')) {
             $sum = (int) $this->inventories->sum('pivot.stock_quantity');
             if ($sum > 0 || $this->inventories->isNotEmpty()) {
@@ -230,12 +344,19 @@ class Product extends Model implements HasMedia
 
     public function getEffectivePriceAttribute(): int
     {
+        if ($this->isVariable() && ((int)$this->price <= 0)) {
+            $minPrice = $this->variants()->where('is_active', true)->min('price');
+            if ($minPrice !== null && (int)$minPrice > 0) {
+                return (int) $minPrice;
+            }
+        }
+
         if (
             is_null($this->sale_price) || 
             $this->sale_price < 0 || 
             $this->sale_price >= $this->price
         ) {
-            return (int) $this->price;
+            return (int) ($this->price ?? 0);
         }
 
         $now = now();

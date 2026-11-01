@@ -14,8 +14,7 @@ use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use OpenApi\Attributes as OAT;
 
-use App\Http\Requests\API\Auth\LoginRequest;
-use App\Http\Requests\API\Auth\UpdateProfileRequest;
+use App\Http\Requests\API\AuthRequest;
 use App\Http\Resources\Api\UserResource;
 
 class AuthController extends BaseApiController
@@ -51,7 +50,7 @@ class AuthController extends BaseApiController
             new OAT\Property(property: 'user', ref: '#/components/schemas/UserResource')
         ]
     )]
-    public function login(LoginRequest $request)
+    public function login(AuthRequest $request)
     {
         $validated = $request->validated();
 
@@ -300,7 +299,7 @@ class AuthController extends BaseApiController
         ),
         responseData: '#/components/schemas/UserResource'
     )]
-    public function updateProfile(UpdateProfileRequest $request)
+    public function updateProfile(AuthRequest $request)
     {
         $user = $request->user();
         if (!$user) {

@@ -1,13 +1,33 @@
 import React from "react"
-import { ShoppingCart, ShieldCheck, CheckCircle2, AlertCircle, Minus, Plus } from "lucide-react"
+import { ShoppingCart, ShieldCheck, CheckCircle2, AlertCircle, Minus, Plus, Package, Layers } from "lucide-react"
 import { Button } from "../../../components/common"
 import { useFormatters } from "../../../utils/useFormatters"
 
-const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAddToCart, translate }) => {
+const ProductInfo = ({
+    product,
+    stock,
+    currentPrice,
+    oldPrice,
+    discountPercent,
+    isVariable,
+    isCombo,
+    attributes = [],
+    selectedAttributes = {},
+    onAttributeChange,
+    selectedVariant,
+    comboComponents = [],
+    sku,
+    quantity,
+    onIncrement,
+    onDecrement,
+    onAddToCart,
+    translate,
+}) => {
     const { formatCurrency, getLocalizedText } = useFormatters()
     const isAvailable = stock > 0
     const productName = getLocalizedText(product.name)
     const productDescription = getLocalizedText(product.description)
+    const displayPrice = currentPrice !== undefined ? currentPrice : (product.effective_price || product.price)
 
     return (
         <div className="flex flex-col">
@@ -16,6 +36,12 @@ const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAdd
                 {product.is_featured && (
                     <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-[#004687] bg-[#004687]/10 rounded-md">
                         {translate("product.featured") || "Featured"}
+                    </span>
+                )}
+                {isCombo && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-200 rounded-md">
+                        <Layers size={13} />
+                        Combo Bundle
                     </span>
                 )}
                 <span
@@ -42,11 +68,16 @@ const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAdd
             {/* Pricing Block */}
             <div className="flex items-baseline gap-3 pb-5 mb-5 border-b border-slate-200/80 tabular-nums">
                 <span className="text-2xl sm:text-3xl font-extrabold text-[#004687]">
-                    {formatCurrency(product.effective_price || product.price)}
+                    {formatCurrency(displayPrice)}
                 </span>
-                {product.is_on_sale && (
+                {oldPrice && oldPrice > displayPrice && (
                     <span className="text-base text-slate-400 line-through font-medium">
-                        {formatCurrency(product.price)}
+                        {formatCurrency(oldPrice)}
+                    </span>
+                )}
+                {discountPercent > 0 && (
+                    <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
+                        -{discountPercent}%
                     </span>
                 )}
             </div>
@@ -56,13 +87,85 @@ const ProductInfo = ({ product, stock, quantity, onIncrement, onDecrement, onAdd
                 <p>{productDescription || translate("product.no_description")}</p>
             </div>
 
+            {/* Variable Product: Attributes Selector */}
+            {isVariable && attributes && attributes.length > 0 && (
+                <div className="flex flex-col gap-4 mb-6 p-4 bg-slate-50/70 rounded-xl border border-slate-200/80">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Chọn phân loại hàng:
+                    </h3>
+                    {attributes.map((attr) => {
+                        const options = Array.isArray(attr.options) ? attr.options : []
+                        const selectedVal = selectedAttributes[attr.name]
+
+                        return (
+                            <div key={attr.id || attr.name} className="flex flex-col gap-1.5">
+                                <span className="text-xs font-semibold text-slate-700">
+                                    {attr.name}: <span className="font-normal text-[#004687]">{selectedVal}</span>
+                                </span>
+                                <div className="flex flex-wrap gap-2">
+                                    {options.map((opt) => {
+                                        const isSelected = String(selectedVal) === String(opt)
+                                        return (
+                                            <button
+                                                key={opt}
+                                                type="button"
+                                                onClick={() => onAttributeChange && onAttributeChange(attr.name, opt)}
+                                                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition border ${
+                                                    isSelected
+                                                        ? "border-[#004687] bg-[#004687] text-white shadow-sm"
+                                                        : "border-slate-300 bg-white text-slate-700 hover:border-[#004687]/70"
+                                                }`}
+                                            >
+                                                {opt}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+
+            {/* Combo Product: Components List */}
+            {isCombo && comboComponents && comboComponents.length > 0 && (
+                <div className="flex flex-col gap-3 mb-6 p-4 bg-purple-50/50 rounded-xl border border-purple-200/80">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
+                        <Package size={14} />
+                        Các sản phẩm có trong Combo:
+                    </h3>
+                    <div className="flex flex-col divide-y divide-purple-100 text-xs">
+                        {comboComponents.map((item) => (
+                            <div key={item.id} className="py-2 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <span className="w-5 h-5 rounded-full bg-purple-200 text-purple-800 text-[11px] font-bold flex items-center justify-center shrink-0">
+                                        {item.quantity}x
+                                    </span>
+                                    <span className="font-semibold text-slate-800 truncate">
+                                        {item.name}
+                                        {item.variant?.attributes && (
+                                            <span className="text-slate-500 font-normal ml-1">
+                                                ({Object.values(item.variant.attributes).join(', ')})
+                                            </span>
+                                        )}
+                                    </span>
+                                </div>
+                                <span className="font-medium text-slate-600 shrink-0">
+                                    {formatCurrency(item.unit_price)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Specifications Meta Table */}
-            {(product.brand || (product.categories && product.categories.length > 0) || product.sku) && (
+            {(product.brand || (product.categories && product.categories.length > 0) || sku) && (
                 <div className="flex flex-col gap-2.5 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200/80 text-xs">
-                    {product.sku && (
+                    {sku && (
                         <div className="flex items-center justify-between">
                             <span className="text-slate-500 font-medium">{translate("product.sku") || "SKU"}:</span>
-                            <span className="text-slate-900 font-mono font-semibold">{product.sku}</span>
+                            <span className="text-slate-900 font-mono font-semibold">{sku}</span>
                         </div>
                     )}
                     {product.brand && (

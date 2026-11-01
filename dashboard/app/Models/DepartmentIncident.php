@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\IncidentStatus;
+use App\Enums\IncidentType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -16,12 +18,18 @@ class DepartmentIncident extends Model
         'status',
     ];
 
+    protected $casts = [
+        'status' => IncidentStatus::class,
+        'type' => IncidentType::class,
+    ];
+
     public function getTypeLabelAttribute(): string
     {
-        $key = 'workspace.ops.incident_types.' . $this->type;
+        $val = $this->type instanceof IncidentType ? $this->type->value : (string) $this->type;
+        $key = 'workspace.ops.incident_types.' . $val;
         $label = __($key);
 
-        return $label !== $key ? $label : ucwords(str_replace('_', ' ', (string) $this->type));
+        return $label !== $key ? $label : ucwords(str_replace('_', ' ', $val));
     }
 
     public function department(): BelongsTo

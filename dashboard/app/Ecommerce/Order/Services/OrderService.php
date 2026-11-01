@@ -355,6 +355,14 @@ class OrderService implements OrderServiceInterface
                 ['value' => now()->toDateTimeString()]
             );
 
+            // Revert stock for all product items (simple, variable, combo)
+            $revertStockAction = app(\App\Ecommerce\Inventory\Actions\RevertStockAction::class);
+            foreach ($order->items as $item) {
+                if ($item->type === \App\Enums\OrderItemType::Product) {
+                    $revertStockAction->revertOrderItem($item);
+                }
+            }
+
             return $order->update(['status' => OrderStatus::Cancelled]);
         });
     }

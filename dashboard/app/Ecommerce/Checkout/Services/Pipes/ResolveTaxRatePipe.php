@@ -9,12 +9,9 @@ use Closure;
 
 class ResolveTaxRatePipe
 {
-    protected $taxRateRepository;
-
-    public function __construct(TaxRateRepositoryInterface $taxRateRepository)
-    {
-        $this->taxRateRepository = $taxRateRepository;
-    }
+    public function __construct(
+        protected TaxRateRepositoryInterface $taxRateRepository
+    ) {}
 
     public function handle(array $passable, Closure $next)
     {
@@ -29,20 +26,33 @@ class ResolveTaxRatePipe
             return $next($passable);
         }
 
-        // Store resolved rates in the result or passable to be used by CalculateTax
         $passable['resolved_tax_rates'] = [];
 
         foreach ($request->items as $item) {
-            if (isset($item['tax_class_id'])) {
-                $rate = $this->taxRateRepository->findMatchingRate(
-                    $item['tax_class_id'],
-                    $address->country_code,
-                    $address->state_id,
-                    $address->city_id
-                );
+            $classIds = [];
+            if (!empty($item['tax_class_id'])) {
+                $classIds[] = $item['tax_class_id'];
+            }
+            if (!empty($item['tax_breakdown']) && is_array($item['tax_breakdown'])) {
+                foreach ($item['tax_breakdown'] as $part) {
+                    if (!empty($part['tax_class_id'])) {
+                        $classIds[] = $part['tax_class_id'];
+                    }
+                }
+            }
 
-                if ($rate) {
-                    $passable['resolved_tax_rates'][$item['tax_class_id']] = $rate;
+            foreach (array_unique($classIds) as $classId) {
+                if (!isset($passable['resolved_tax_rates'][$classId])) {
+                    $rate = $this->taxRateRepository->findMatchingRate(
+                        $classId,
+                        $address->country_code,
+                        $address->state_id,
+                        $address->city_id
+                    );
+
+                    if ($rate) {
+                        $passable['resolved_tax_rates'][$classId] = $rate;
+                    }
                 }
             }
         }

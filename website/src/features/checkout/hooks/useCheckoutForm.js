@@ -96,10 +96,15 @@ const useCheckoutForm = (initialUser) => {
         const methodsList = unwrapApiList(methodsRes, []);
         if (methodsList.length > 0) {
           setShippingMethods(methodsList);
-          if (!formData.shippingMethod) {
-            const firstId = methodsList[0].code || methodsList[0].type || methodsList[0].id || 'flat_rate';
+          const hasCurrentMethod = methodsList.some(
+            (m) => m.id === formData.shippingMethod || m.code === formData.shippingMethod || m.method_id === formData.shippingMethod
+          );
+          if (!hasCurrentMethod) {
+            const firstId = methodsList[0].id ?? methodsList[0].method_id ?? methodsList[0].code ?? 'flat_rate';
             setFormData((prev) => ({ ...prev, shippingMethod: firstId }));
           }
+        } else {
+          setShippingMethods([]);
         }
 
         const payload = items.map((item) => ({

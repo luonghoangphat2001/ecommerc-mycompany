@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Support\Facades\Hash;
+use App\Enums\Gender;
 use App\Models\LoyaltyLog;
 use App\Models\LoyaltyPoint;
 use App\Models\Post;
@@ -59,6 +60,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<string, string>
      */
     protected $casts = [
+        'gender' => Gender::class,
         'email_verified_at' => 'datetime',
         'birthday' => 'date',
         'meta_data' => 'array',

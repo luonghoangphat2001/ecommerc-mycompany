@@ -66,14 +66,24 @@ function App() {
               {/* Blog & Static Pages */}
               <Route path="posts" element={<PostsPage />} />
               <Route path="posts/:slug" element={<PostDetailPage />} />
-              <Route path="about" element={<StaticPage />} />
-              <Route path="contact" element={<StaticPage />} />
-              <Route path="shipping" element={<StaticPage />} />
-              <Route path="returns" element={<StaticPage />} />
-              <Route path="faq" element={<StaticPage />} />
-              <Route path="privacy" element={<StaticPage />} />
-              <Route path="terms" element={<StaticPage />} />
-              <Route path="p/:page" element={<StaticPage />} />
+              <Route path="blog" element={<PostsPage />} />
+              <Route path="blog/:slug" element={<PostDetailPage />} />
+
+              <Route path="pages/:slug" element={<StaticPage />} />
+              <Route path="p/:slug" element={<StaticPage />} />
+              <Route path="pages" element={<Navigate to="/pages/about" replace />} />
+
+              {/* Direct Aliases */}
+              <Route path="about" element={<StaticPage slug="about" />} />
+              <Route path="contact" element={<StaticPage slug="contact" />} />
+              <Route path="shipping" element={<StaticPage slug="shipping" />} />
+              <Route path="returns" element={<StaticPage slug="returns" />} />
+              <Route path="faq" element={<StaticPage slug="faq" />} />
+              <Route path="privacy" element={<StaticPage slug="privacy" />} />
+              <Route path="terms" element={<StaticPage slug="terms" />} />
+
+              {/* Catch-all fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
         </Suspense>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\CustomerReviewSentiment;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\DepartmentCustomerReview;
 use App\Models\User;
@@ -63,11 +64,7 @@ class DepartmentCustomerReviewController extends BaseCrudController
                 'label' => 'Thái độ',
                 'type' => 'select',
                 'rules' => ['required', 'in:positive,neutral,negative'],
-                'options' => [
-                    'positive' => 'Tích cực',
-                    'neutral' => 'Bình thường',
-                    'negative' => 'Tiêu cực',
-                ],
+                'options' => CustomerReviewSentiment::options(),
             ],
             'coupon_id' => [
                 'label' => 'Mã đền bù (Coupon)',

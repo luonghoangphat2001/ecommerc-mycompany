@@ -18,9 +18,15 @@ const ProductCard = ({ product }) => {
     )
     const isAvailable = product.is_available !== false && (stock > 0 || totalWarehouseStock > 0)
 
+    const isVariable = product.type === "variable" || product.product_type === "variable"
+
     const handleAddToCart = (e) => {
         e.preventDefault()
         e.stopPropagation()
+        if (isVariable) {
+            window.location.href = `/products/${product.slug || product.id}`
+            return
+        }
         if (isAvailable) {
             addToCart(product, 1)
         }

@@ -7,6 +7,7 @@ enum LoyaltyActionType: string
     case Earn = 'earn';
     case Redeem = 'redeem';
     case Refund = 'refund';
+    case Adjustment = 'adjustment';
 
     /**
      * Default label (English).
@@ -17,6 +18,7 @@ enum LoyaltyActionType: string
             self::Earn => 'Earn Points',
             self::Redeem => 'Redeem Points',
             self::Refund => 'Points Refunded',
+            self::Adjustment => 'Points Adjusted',
         };
     }
 
@@ -29,6 +31,7 @@ enum LoyaltyActionType: string
             self::Earn => 'Tích điểm',
             self::Redeem => 'Đổi điểm',
             self::Refund => 'Hoàn điểm',
+            self::Adjustment => 'Điều chỉnh điểm',
         };
     }
 

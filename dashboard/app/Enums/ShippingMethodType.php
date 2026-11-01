@@ -7,6 +7,8 @@ enum ShippingMethodType: string
     case FlatRate = 'flat_rate';
     case FreeShipping = 'free_shipping';
     case LocalPickup = 'local_pickup';
+    case WeightBased = 'weight_based';
+    case Carrier = 'carrier';
 
     /**
      * Default label (English).
@@ -17,6 +19,8 @@ enum ShippingMethodType: string
             self::FlatRate => 'Flat rate',
             self::FreeShipping => 'Free shipping',
             self::LocalPickup => 'Local pickup',
+            self::WeightBased => 'Weight based',
+            self::Carrier => 'Carrier API',
         };
     }
 
@@ -29,6 +33,8 @@ enum ShippingMethodType: string
             self::FlatRate => 'Đồng giá',
             self::FreeShipping => 'Miễn phí vận chuyển',
             self::LocalPickup => 'Nhận hàng tại cửa hàng',
+            self::WeightBased => 'Theo khối lượng',
+            self::Carrier => 'API Hãng vận chuyển',
         };
     }
 

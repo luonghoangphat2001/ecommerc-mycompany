@@ -70,6 +70,8 @@ return array_merge(
             'shipping_settings' => 'Shipping Settings',
             'shipping_zones' => 'Shipping Zones',
             'shipping_methods' => 'Shipping Methods',
+            'shipping_carriers' => 'Shipping Carriers (API)',
+            'shipping_orders' => 'Shipping Orders & Tracking',
             'tax' => 'Taxes & Duties',
             'tax_classes' => 'Tax Classes',
             'tax_rates' => 'Tax Rates',

@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Ecommerce\Loyalty\Contracts\LoyaltyRepositoryInterface;
 use App\Ecommerce\Loyalty\Contracts\LoyaltyServiceInterface;
+use App\Enums\LoyaltyActionType;
 use Carbon\Carbon;
 
 use Exception;
@@ -37,7 +38,7 @@ class LoyaltyService implements LoyaltyServiceInterface
 
         return DB::transaction(function () use ($userId, $orderId, $points) {
             $this->loyaltyRepository->incrementPoints($userId, $points, $points);
-            $this->loyaltyRepository->recordLog($userId, $points, trans('admin.loyalty.earn'), $orderId);
+            $this->loyaltyRepository->recordLog($userId, $points, LoyaltyActionType::Earn->value, $orderId);
 
             return true;
         }, 3);
@@ -56,7 +57,7 @@ class LoyaltyService implements LoyaltyServiceInterface
     {
         return DB::transaction(function () use ($userId, $points) {
             $this->loyaltyRepository->incrementPoints($userId, $points, 0);
-            $this->loyaltyRepository->recordLog($userId, $points, trans('admin.loyalty.adjustment'));
+            $this->loyaltyRepository->recordLog($userId, $points, LoyaltyActionType::Adjustment->value);
 
             return true;
         }, 3);

@@ -2,10 +2,12 @@
 
 namespace App\Ecommerce\Shipping\Services;
 
-use Illuminate\Support\Manager;
+use App\Ecommerce\Shipping\Carriers\CarrierManager;
+use App\Ecommerce\Shipping\Services\Drivers\CarrierDriver;
 use App\Ecommerce\Shipping\Services\Drivers\FlatRateDriver;
 use App\Ecommerce\Shipping\Services\Drivers\FreeShippingDriver;
-use InvalidArgumentException;
+use App\Ecommerce\Shipping\Services\Drivers\WeightBasedDriver;
+use Illuminate\Support\Manager;
 
 class ShippingManager extends Manager
 {
@@ -40,14 +42,32 @@ class ShippingManager extends Manager
     }
 
     /**
-     * Create Ahamove driver.
+     * Create Weight Based driver.
      *
-     * @return mixed
+     * @return WeightBasedDriver
      */
-    public function createAhamoveDriver()
+    public function createWeightBasedDriver()
     {
-        // Placeholder for future implementation
-        // return new AhamoveDriver();
-        throw new InvalidArgumentException("Ahamove driver not yet implemented.");
+        return new WeightBasedDriver();
+    }
+
+    /**
+     * Create Local Pickup driver.
+     *
+     * @return FlatRateDriver
+     */
+    public function createLocalPickupDriver()
+    {
+        return new FlatRateDriver();
+    }
+
+    /**
+     * Create Carrier driver.
+     *
+     * @return CarrierDriver
+     */
+    public function createCarrierDriver()
+    {
+        return new CarrierDriver($this->container->make(CarrierManager::class));
     }
 }

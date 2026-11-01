@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PurchaseOrderStatus;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\DepartmentPurchaseOrder;
 use Illuminate\Http\Request;
@@ -58,13 +59,8 @@ class DepartmentPurchaseOrderController extends BaseCrudController
             'status' => [
                 'label' => 'Trạng thái',
                 'type' => 'select',
-                'rules' => ['required', 'in:shipping,partial,completed,defective_return'],
-                'options' => [
-                    'shipping' => 'Đang giao',
-                    'partial' => 'Giao 1 phần',
-                    'completed' => 'Hoàn thành',
-                    'defective_return' => 'Trả hàng lỗi',
-                ],
+                'rules' => ['required', 'in:pending,shipping,partial,completed,defective_return'],
+                'options' => PurchaseOrderStatus::options(),
             ],
         ];
     }

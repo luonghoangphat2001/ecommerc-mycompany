@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\BaseApiController;
-use App\Http\Requests\API\Post\StorePostRequest;
-use App\Http\Requests\API\Post\UpdatePostRequest;
+use App\Http\Requests\API\PostRequest;
 use App\Http\Resources\Api\PostResource;
 use App\Models\Post;
 use App\Ecommerce\Post\Contracts\PostServiceInterface;
@@ -68,7 +67,7 @@ class PostController extends BaseApiController
             )
         )
     )]
-    public function store(StorePostRequest $request)
+    public function store(PostRequest $request)
     {
         $dto = PostDTO::fromRequest($request);
         $post = $this->postService->createPost($dto->toArray());
@@ -116,7 +115,7 @@ class PostController extends BaseApiController
             )
         )
     )]
-    public function update(UpdatePostRequest $request, Post $post)
+    public function update(PostRequest $request, Post $post)
     {
         $dto = PostDTO::fromRequest($request);
         $updatedPost = $this->postService->updatePost($post, $dto->toArray());

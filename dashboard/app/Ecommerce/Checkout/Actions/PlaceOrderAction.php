@@ -13,7 +13,10 @@ use App\Traits\HandleTransactions;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Ecommerce\Address\DTOs\Address\AddressDTO;
+use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Settings\LoyaltySettings;
 use App\Ecommerce\Loyalty\Services\LoyaltyService;
 use App\Ecommerce\Inventory\Actions\DeductStockAction;
@@ -72,6 +75,9 @@ class PlaceOrderAction
             // 6. Create addresses
             $this->createOrderAddresses($order, $dto);
 
+            // 6.5. Create shipping snapshot
+            $this->createOrderShipping($order, $dto, $calcResult);
+
             // 7. Finalize order
             return $this->finalizeOrder($order, $dto);
         });
@@ -83,35 +89,132 @@ class PlaceOrderAction
     private function prepareItems(OrderDataDTO $dto): array
     {
         $itemsForCalc = [];
+        $taxService = app(TaxServiceInterface::class);
 
         foreach ($dto->items as $item) {
-            $product = $this->productRepository->find($item['product_id']);
+            $product = Product::with(['comboComponents.product', 'comboComponents.variant', 'variants'])->find($item['product_id']);
             if (!$product) {
                 continue;
             }
 
-            $this->validateProductPrice($item, $product);
-            $this->validateProductStock($product, $item['qty']);
+            $variantId = $item['variant_id'] ?? null;
+            $qty = max(1, (int) $item['qty']);
+            $variant = null;
 
-            $effectivePrice = $product->effective_price;
+            if ($product->isVariable()) {
+                if (!$variantId) {
+                    throw ValidationException::withMessages([
+                        'order' => ["Vui lòng chọn phiên bản cho sản phẩm {$product->name}."],
+                    ]);
+                }
+
+                $variant = $product->variants->firstWhere('id', $variantId) ?: ProductVariant::find($variantId);
+                if (!$variant || $variant->product_id != $product->id || !$variant->is_active) {
+                    throw ValidationException::withMessages([
+                        'order' => ['Phiên bản sản phẩm đã chọn không hợp lệ hoặc đã ngừng bán.'],
+                    ]);
+                }
+
+                $this->validateVariantPrice($item, $variant);
+                $this->validateVariantStock($variant, $qty);
+
+                $effectivePrice = (int) $variant->effective_price;
+                $originalPrice = (int) $variant->price;
+                $salePrice = $variant->is_on_sale ? (int) $variant->sale_price : null;
+                $taxClassId = $variant->tax_class_id ?? ($product->apply_tax ? $product->tax_class_id : null);
+                $taxBreakdown = null;
+            } elseif ($product->isCombo()) {
+                $this->validateComboPrice($item, $product);
+                $this->validateComboStock($product, $qty);
+
+                $effectivePrice = (int) $product->effective_price;
+                $originalPrice = (int) $product->price;
+                $salePrice = $product->is_on_sale ? (int) $product->sale_price : null;
+                $taxClassId = $product->apply_tax ? $product->tax_class_id : null;
+
+                $taxCalc = $taxService->calculateProductTax($product, null, $effectivePrice * $qty, $dto->shippingAddress['country'] ?? 'VN', $dto->shippingAddress['state'] ?? null);
+                $taxBreakdown = null;
+                if (!empty($taxCalc['breakdown']) && count($taxCalc['breakdown']) > 1) {
+                    $taxBreakdown = collect($taxCalc['breakdown'])->map(function ($b) {
+                        $cProduct = Product::find($b['product_id']);
+                        $cVariant = $b['variant_id'] ? ProductVariant::find($b['variant_id']) : null;
+                        return [
+                            'name' => $b['name'],
+                            'tax_class_id' => $cVariant?->tax_class_id ?? $cProduct?->tax_class_id,
+                            'allocated_amount' => $b['allocated_amount'],
+                        ];
+                    })->toArray();
+                }
+            } else {
+                $this->validateProductPrice($item, $product);
+                $this->validateProductStock($product, $qty);
+
+                $effectivePrice = (int) $product->effective_price;
+                $originalPrice = (int) $product->price;
+                $salePrice = $product->is_on_sale ? (int) $product->sale_price : null;
+                $taxClassId = $product->apply_tax ? $product->tax_class_id : null;
+                $taxBreakdown = null;
+            }
+
             $discountAmount = 0;
-            if ($product->is_on_sale) {
-                $discountAmount = ($product->price - $effectivePrice) * $item['qty'];
+            if ($originalPrice > $effectivePrice) {
+                $discountAmount = ($originalPrice - $effectivePrice) * $qty;
             }
 
             $itemsForCalc[] = [
                 'product_id' => $product->id,
-                'qty' => $item['qty'],
+                'variant_id' => $variantId,
+                'qty' => $qty,
                 'unit_price' => $effectivePrice,
-                'total' => $effectivePrice * $item['qty'],
-                'tax_class_id' => $product->apply_tax ? $product->tax_class_id : null,
-                'original_price' => $product->price,
-                'sale_price' => $product->is_on_sale ? $product->sale_price : null,
+                'total' => $effectivePrice * $qty,
+                'tax_class_id' => $taxClassId,
+                'tax_breakdown' => $taxBreakdown,
+                'original_price' => $originalPrice,
+                'sale_price' => $salePrice,
                 'discount_amount' => $discountAmount,
             ];
         }
 
         return $itemsForCalc;
+    }
+
+    private function validateVariantPrice(array $item, ProductVariant $variant): void
+    {
+        if (isset($item['price']) && (float)$item['price'] !== (float)$variant->effective_price) {
+            \App\Services\Logging\ModuleLogger::order()->warning('price_mismatch', "Price mismatch for variant #{$variant->id}: Client sent {$item['price']}, DB has {$variant->effective_price}", ['variant_id' => $variant->id, 'client_price' => $item['price'], 'db_price' => $variant->effective_price]);
+            throw ValidationException::withMessages([
+                'order' => [__('messages.price_mismatch')],
+            ]);
+        }
+    }
+
+    private function validateVariantStock(ProductVariant $variant, int $qty): void
+    {
+        if ($variant->available_stock < $qty) {
+            throw ValidationException::withMessages([
+                'order' => [__('messages.insufficient_stock')],
+            ]);
+        }
+    }
+
+    private function validateComboPrice(array $item, Product $product): void
+    {
+        if (isset($item['price']) && (float)$item['price'] !== (float)$product->effective_price) {
+            \App\Services\Logging\ModuleLogger::order()->warning('price_mismatch', "Price mismatch for combo #{$product->id}: Client sent {$item['price']}, DB has {$product->effective_price}", ['product_id' => $product->id, 'client_price' => $item['price'], 'db_price' => $product->effective_price]);
+            throw ValidationException::withMessages([
+                'order' => [__('messages.price_mismatch')],
+            ]);
+        }
+    }
+
+    private function validateComboStock(Product $product, int $qty): void
+    {
+        $comboStock = $product->calculateComboStock();
+        if ($comboStock < $qty) {
+            throw ValidationException::withMessages([
+                'order' => [__('messages.insufficient_stock')],
+            ]);
+        }
     }
 
     /**
@@ -287,6 +390,7 @@ class PlaceOrderAction
             $order->items()->create([
                 'type' => OrderItemType::Product->value,
                 'shop_product_id' => $item['product_id'],
+                'variant_id' => $item['variant_id'] ?? null,
                 'qty' => $item['qty'],
                 'unit_price' => $item['unit_price'],
                 'original_price' => $item['original_price'] ?? $item['unit_price'],
@@ -304,7 +408,7 @@ class PlaceOrderAction
     private function deductInventoryAndBuildMetadata(array $item): array
     {
         $itemMetadata = [];
-        $product = $this->productRepository->find($item['product_id']);
+        $product = Product::with(['comboComponents.product', 'comboComponents.variant', 'variants'])->find($item['product_id']);
 
         if (!$product) {
             return $itemMetadata;
@@ -315,20 +419,74 @@ class PlaceOrderAction
             $itemMetadata['image_url'] = $imageUrl;
         }
 
+        $qty = (int) $item['qty'];
+
+        // 1. Variable Product inventory deduction
+        if ($product->isVariable() && !empty($item['variant_id'])) {
+            $variant = $product->variants->firstWhere('id', $item['variant_id']) ?: ProductVariant::find($item['variant_id']);
+            if ($variant) {
+                $variant->decrement('qty', $qty);
+                $product->decrement('total_stock', $qty);
+
+                $itemMetadata['product_type'] = 'variable';
+                $itemMetadata['variant_id'] = $variant->id;
+                $itemMetadata['variant_sku'] = $variant->sku;
+                $itemMetadata['attributes'] = $variant->attributes;
+                return $itemMetadata;
+            }
+        }
+
+        // 2. Combo Product inventory deduction from components
+        if ($product->isCombo()) {
+            $componentSnapshots = [];
+
+            foreach ($product->comboComponents as $component) {
+                $componentQty = max(1, (int) $component->quantity);
+                $totalDeductQty = $componentQty * $qty;
+                $cProduct = $component->product;
+                $cVariant = $component->variant;
+
+                if ($cVariant) {
+                    $cVariant->decrement('qty', $totalDeductQty);
+                    $cProduct?->decrement('total_stock', $totalDeductQty);
+                } elseif ($cProduct) {
+                    $cProduct->decrement('qty', $totalDeductQty);
+                    $cProduct->decrement('total_stock', $totalDeductQty);
+                }
+
+                $componentSnapshots[] = [
+                    'component_id' => $component->id,
+                    'product_id' => $component->shop_product_id,
+                    'variant_id' => $component->product_variant_id,
+                    'name' => $cProduct?->name ?? 'Component',
+                    'qty_per_combo' => $componentQty,
+                    'total_qty' => $totalDeductQty,
+                    'unit_price' => $component->unit_price,
+                    'tax_class_id' => $cVariant?->tax_class_id ?? $cProduct?->tax_class_id,
+                ];
+            }
+
+            $itemMetadata['product_type'] = 'combo';
+            $itemMetadata['combo_components'] = $componentSnapshots;
+            return $itemMetadata;
+        }
+
+        // 3. Simple Product inventory deduction
+        $itemMetadata['product_type'] = 'simple';
         if ($this->inventorySettings->multi_warehouse_enabled) {
-            $inventory = $this->findAndDeductFromInventory($product, $item['qty']);
+            $inventory = $this->findAndDeductFromInventory($product, $qty);
             if ($inventory) {
                 $itemMetadata['inventory_id'] = $inventory->id;
                 $itemMetadata['inventory_name'] = $inventory->name;
             } else {
-                $product->decrement('qty', $item['qty']);
-                $product->decrement('total_stock', $item['qty']);
+                $product->decrement('qty', $qty);
+                $product->decrement('total_stock', $qty);
                 $itemMetadata['inventory_id'] = null;
                 $itemMetadata['inventory_name'] = 'Default Stock';
             }
         } else {
-            $product->decrement('qty', $item['qty']);
-            $product->decrement('total_stock', $item['qty']);
+            $product->decrement('qty', $qty);
+            $product->decrement('total_stock', $qty);
             $itemMetadata['inventory_id'] = null;
             $itemMetadata['inventory_name'] = 'Default Stock';
         }
@@ -481,6 +639,51 @@ class PlaceOrderAction
     }
 
     /**
+     * Create order shipping record and snapshot.
+     */
+    private function createOrderShipping(Order $order, OrderDataDTO $dto, CheckoutResultDTO $calcResult): void
+    {
+        $shippingMethodModel = null;
+        if (is_numeric($dto->shippingMethod)) {
+            $shippingMethodModel = \App\Models\ShippingMethod::find((int) $dto->shippingMethod);
+        } elseif (!empty($dto->shippingMethod)) {
+            $shippingMethodModel = \App\Models\ShippingMethod::where('type', $dto->shippingMethod)
+                ->orWhere('name', $dto->shippingMethod)
+                ->first();
+        }
+
+        $zone = app(\App\Ecommerce\Shipping\Contracts\ShippingServiceInterface::class)->resolveMatchingZone(
+            $dto->shippingAddress['country'] ?? 'VN',
+            $dto->shippingAddress['state'] ?? null
+        );
+
+        $trackingNumber = 'TRK-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
+
+        $order->shipping()->create([
+            'shop_shipping_method_id' => $shippingMethodModel?->id,
+            'method' => $shippingMethodModel?->name ?? (string) $dto->shippingMethod,
+            'amount' => $calcResult->shippingTotal,
+            'tax_amount' => 0,
+            'tracking_number' => $trackingNumber,
+            'metadata' => [
+                'carrier' => $shippingMethodModel?->settings['carrier'] ?? 'standard',
+                'zone_id' => $zone?->id,
+                'zone_name' => $zone?->name,
+                'zone_code' => $zone?->code,
+                'estimated_days' => $shippingMethodModel?->settings['estimated_days'] ?? 3,
+                'status' => 'pending',
+                'status_text' => 'Chờ xử lý và giao cho đơn vị vận chuyển',
+                'destination' => [
+                    'country' => $dto->shippingAddress['country'] ?? 'VN',
+                    'state' => $dto->shippingAddress['state'] ?? null,
+                    'city' => $dto->shippingAddress['city'] ?? null,
+                    'street' => $dto->shippingAddress['street'] ?? null,
+                ],
+            ],
+        ]);
+    }
+
+    /**
      * Finalize order: load relations, dispatch event, log activity.
      */
     private function finalizeOrder(Order $order, OrderDataDTO $dto): Order
@@ -499,6 +702,18 @@ class PlaceOrderAction
         activity('order')
             ->performedOn($order)
             ->log('Order placed successfully via API');
+
+        try {
+            app(\App\Ecommerce\Audit\Contracts\FinancialAuditServiceInterface::class)->logOrderFinalized($order, [
+                'subtotal' => $order->subtotal,
+                'shipping_total' => $order->shipping_total,
+                'tax_total' => $order->tax_total,
+                'discount_total' => $order->discount_total,
+                'total' => $order->total,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
 
         return $order;
     }

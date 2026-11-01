@@ -39,6 +39,18 @@ const ProductDetailPage = () => {
 
     const {
         stock,
+        currentPrice,
+        oldPrice,
+        discountPercent,
+        isVariable,
+        isCombo,
+        attributes,
+        selectedAttributes,
+        handleAttributeChange,
+        selectedVariant,
+        comboComponents,
+        sku: displaySku,
+        images,
         inventory,
         upsells,
         crossSells,
@@ -83,13 +95,24 @@ const ProductDetailPage = () => {
             <div className="bg-white rounded-xl border border-slate-200/90 shadow-card p-6 sm:p-8 lg:p-10">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
                     <div className="md:col-span-6">
-                        <ProductImage src={product.image?.url || product.image} alt={productName} />
+                        <ProductImage src={images?.[0] || product.image?.url || product.image} alt={productName} />
                     </div>
 
                     <div className="md:col-span-6">
                         <ProductInfo
                             product={product}
                             stock={stock}
+                            currentPrice={currentPrice}
+                            oldPrice={oldPrice}
+                            discountPercent={discountPercent}
+                            isVariable={isVariable}
+                            isCombo={isCombo}
+                            attributes={attributes}
+                            selectedAttributes={selectedAttributes}
+                            onAttributeChange={handleAttributeChange}
+                            selectedVariant={selectedVariant}
+                            comboComponents={comboComponents}
+                            sku={displaySku}
                             quantity={quantity}
                             onIncrement={incrementQuantity}
                             onDecrement={decrementQuantity}

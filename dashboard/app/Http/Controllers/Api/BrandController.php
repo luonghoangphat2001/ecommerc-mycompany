@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\BaseApiController;
-use App\Http\Requests\API\Brand\StoreBrandRequest;
-use App\Http\Requests\API\Brand\UpdateBrandRequest;
+use App\Http\Requests\API\BrandRequest;
 use App\Http\Resources\Api\BrandResource;
 use App\Models\Brand;
 use App\Ecommerce\Product\Contracts\BrandServiceInterface;
@@ -56,7 +55,7 @@ class BrandController extends BaseApiController
         ),
         responseData: '#/components/schemas/BrandResource'
     )]
-    public function store(StoreBrandRequest $request)
+    public function store(BrandRequest $request)
     {
         $dto = BrandDTO::fromRequest($request);
         $brand = $this->brandService->createBrand($dto->toArray());
@@ -99,7 +98,7 @@ class BrandController extends BaseApiController
         ),
         responseData: '#/components/schemas/BrandResource'
     )]
-    public function update(UpdateBrandRequest $request, Brand $brand)
+    public function update(BrandRequest $request, Brand $brand)
     {
         $dto = BrandDTO::fromRequest($request);
         $this->brandService->updateBrand($brand->id, $dto->toArray());

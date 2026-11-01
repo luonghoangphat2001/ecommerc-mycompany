@@ -7,7 +7,7 @@ use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 use App\Ecommerce\Order\DTOs\Order\OrderDataDTO;
 
 use App\Http\Controllers\Api\BaseApiController;
-use App\Http\Requests\API\StoreOrderRequest;
+use App\Http\Requests\API\OrderRequest;
 use App\Http\Resources\Api\OrderResource;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -87,7 +87,7 @@ class OrderController extends BaseApiController
         ),
         responseData: '#/components/schemas/OrderResource'
     )]
-    public function store(StoreOrderRequest $request)
+    public function store(OrderRequest $request)
     {
         $dto = OrderDataDTO::fromRequest($request->validated());
 
@@ -141,7 +141,7 @@ class OrderController extends BaseApiController
         ),
         responseData: '#/components/schemas/OrderResource'
     )]
-    public function update(\App\Http\Requests\API\UpdateOrderRequest $request, $id)
+    public function update(OrderRequest $request, $id)
     {
         $order = $this->orderService->find($id);
 
@@ -234,6 +234,15 @@ class OrderController extends BaseApiController
             'subtotal' => (float) $order->subtotal,
             'tax_amount' => (float) $order->tax_amount,
             'shipping_cost' => (float) ($order->shipping?->amount ?? 0),
+            'shipping' => $order->shipping ? [
+                'method' => $order->shipping->method,
+                'amount' => (int) $order->shipping->amount,
+                'tracking_number' => $order->shipping->tracking_number,
+                'carrier' => $order->shipping->metadata['carrier'] ?? null,
+                'status' => $order->shipping->metadata['status'] ?? 'processing',
+                'status_text' => $order->shipping->metadata['status_text'] ?? 'Đang xử lý vận chuyển',
+                'estimated_days' => $order->shipping->metadata['estimated_days'] ?? null,
+            ] : null,
             'currency' => $order->currency ?? 'VND',
             'created_at' => $order->created_at?->toIso8601String(),
             'updated_at' => $order->updated_at?->toIso8601String(),

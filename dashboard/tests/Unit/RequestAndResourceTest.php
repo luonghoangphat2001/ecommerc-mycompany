@@ -2,8 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Http\Requests\API\Auth\LoginRequest;
-use App\Http\Requests\API\Auth\UpdateProfileRequest;
+use App\Http\Requests\API\AuthRequest;
 use App\Http\Resources\Api\InventoryResource;
 use App\Http\Resources\Api\UserResource;
 use App\Models\Inventory;
@@ -15,7 +14,7 @@ class RequestAndResourceTest extends TestCase
 {
     public function test_login_request_validation(): void
     {
-        $request = new LoginRequest();
+        $request = new AuthRequest();
         $rules = $request->rules();
 
         $invalidData = ['email' => 'invalid-email', 'password' => ''];
@@ -33,7 +32,8 @@ class RequestAndResourceTest extends TestCase
 
     public function test_update_profile_request_validation(): void
     {
-        $request = new UpdateProfileRequest();
+        $request = new AuthRequest();
+        $request->setMethod('PUT');
         $rules = $request->rules();
 
         $invalidData = [

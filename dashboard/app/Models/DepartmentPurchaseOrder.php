@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PurchaseOrderStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -17,6 +18,7 @@ class DepartmentPurchaseOrder extends Model
     ];
 
     protected $casts = [
+        'status' => PurchaseOrderStatus::class,
         'expected_delivery_date' => 'date',
     ];
 

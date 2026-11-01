@@ -6,8 +6,8 @@ use App\Http\Controllers\Api\BaseApiController;
 use App\Ecommerce\Cart\Contracts\CartServiceInterface;
 use App\Ecommerce\Cart\Contracts\CartCalculationServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
-use App\Http\Requests\API\Cart\AddToCartRequest;
-use App\Http\Requests\API\Cart\UpdateCartItemRequest;
+use App\Http\Requests\API\CartRequest;
+use App\Http\Resources\Api\CartResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
@@ -53,7 +53,7 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'notifications', type: 'array', items: new OAT\Items(type: 'string'))
         ]
     )]
-    public function index(Request $request): JsonResponse
+    public function index(CartRequest $request): JsonResponse
     {
         $items = $this->extractCartItems($request);
         $validated = $this->cartService->syncAndValidate($items);
@@ -66,11 +66,11 @@ class CartController extends BaseApiController
             $request->input('coupon_code')
         );
 
-        return $this->success([
+        return $this->success(new CartResource([
             'items' => $validated['items'] ?? [],
             'summary' => $summary,
             'notifications' => $validated['notifications'] ?? [],
-        ]);
+        ]));
     }
 
     protected function extractCartItems(Request $request): array
@@ -137,7 +137,7 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'notifications', type: 'array', items: new OAT\Items(type: 'string'))
         ]
     )]
-    public function sync(Request $request): JsonResponse
+    public function sync(CartRequest $request): JsonResponse
     {
         return $this->index($request);
     }
@@ -166,7 +166,7 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'available', type: 'boolean', example: true),
         ]
     )]
-    public function addItem(AddToCartRequest $request): JsonResponse
+    public function addItem(CartRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $product = $this->productRepository->find((int)$validated['product_id']);
@@ -208,7 +208,7 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'available', type: 'boolean', example: true),
         ]
     )]
-    public function updateItem(UpdateCartItemRequest $request, $itemId): JsonResponse
+    public function updateItem(CartRequest $request, $itemId): JsonResponse
     {
         $validated = $request->validated();
         $product = $this->productRepository->find((int)$itemId);
@@ -289,13 +289,15 @@ class CartController extends BaseApiController
     {
         $items = $this->extractCartItems($request);
         $subtotal = collect($items)->sum(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 0));
-        
+        $package = app(\App\Ecommerce\Shipping\Services\PackageCalculator::class)->calculatePackage($items);
+
         $methods = $this->shippingService->getAvailableMethods(
             $request->input('country', 'VN'),
             $request->input('state'),
-            null,
-            null,
-            $subtotal
+            $request->input('postal_code') ?? $request->input('zip'),
+            $request->input('ward') ?? $request->input('region'),
+            $subtotal,
+            $package
         );
 
         return $this->success($methods);

@@ -11,6 +11,7 @@ class ComboProduct extends Model
     protected $table = 'shop_combo_products';
 
     protected $fillable = [
+        'product_id',
         'name',
         'slug',
         'description',
@@ -24,6 +25,7 @@ class ComboProduct extends Model
     ];
 
     protected $casts = [
+        'product_id' => 'integer',
         'is_active' => 'boolean',
         'combo_price' => 'integer',
         'original_price' => 'integer',
@@ -33,6 +35,11 @@ class ComboProduct extends Model
         'sort_order' => 'integer',
     ];
 
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(ComboProductItem::class, 'combo_product_id');
@@ -40,6 +47,6 @@ class ComboProduct extends Model
 
     public function getTotalValueAttribute(): int
     {
-        return $this->items->sum(fn($item) => $item->product?->price ?? 0);
+        return $this->items->sum(fn($item) => $item->subtotal);
     }
 }

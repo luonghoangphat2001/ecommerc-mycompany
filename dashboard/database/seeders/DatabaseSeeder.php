@@ -66,6 +66,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PermissionSeeder::class,
             ContentSeeder::class,
+            ShippingZoneSeeder::class,
             UnifiedShopSeeder::class,
             EngagementSeeder::class,
             SystemSeeder::class,

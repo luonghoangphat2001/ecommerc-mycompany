@@ -17,19 +17,23 @@ const useCartStore = create(
 
       addToCart: async (product, quantity = 1) => {
         const currentById = get().itemsById || {};
-        const existingItem = currentById[product.id];
+        const variantId = product.variant_id || product.variant?.id || null;
+        const cartKey = variantId ? `${product.id}-v${variantId}` : `${product.id}`;
+        const existingItem = currentById[cartKey];
 
         let updatedById;
         if (existingItem) {
           updatedById = {
             ...currentById,
-            [product.id]: { ...existingItem, quantity: existingItem.quantity + quantity }
+            [cartKey]: { ...existingItem, quantity: existingItem.quantity + quantity }
           };
         } else {
           updatedById = {
             ...currentById,
-            [product.id]: {
+            [cartKey]: {
               ...product,
+              cart_key: cartKey,
+              variant_id: variantId,
               quantity,
               selectedWarehouse: product.selectedWarehouse || null
             }
@@ -44,9 +48,9 @@ const useCartStore = create(
         await get().syncWithBackend(Object.values(updatedById));
       },
 
-      removeFromCart: async (productId) => {
+      removeFromCart: async (cartKey) => {
         const currentById = { ...get().itemsById };
-        delete currentById[productId];
+        delete currentById[cartKey];
         const newItems = Object.values(currentById);
 
         set({
@@ -57,15 +61,15 @@ const useCartStore = create(
         await get().syncWithBackend(newItems);
       },
 
-      updateQuantity: async (productId, quantity) => {
+      updateQuantity: async (cartKey, quantity) => {
         if (quantity <= 0) {
-          get().removeFromCart(productId);
+          get().removeFromCart(cartKey);
           return;
         }
 
         const currentById = { ...get().itemsById };
-        if (currentById[productId]) {
-          currentById[productId] = { ...currentById[productId], quantity };
+        if (currentById[cartKey]) {
+          currentById[cartKey] = { ...currentById[cartKey], quantity };
         }
 
         const newItems = Object.values(currentById);
@@ -103,9 +107,10 @@ const useCartStore = create(
         try {
           const { default: cartApi } = await import('../services/cartApi');
           const payload = (items || []).map(item => ({
-            product_id: item.id,
+            product_id: item.product_id || item.id,
             quantity: item.quantity,
-            variant_id: item.variant_id || null
+            variant_id: item.variant_id || item.variant?.id || null,
+            price: item.price,
           }));
 
           const response = await cartApi.syncCart({ items: payload });

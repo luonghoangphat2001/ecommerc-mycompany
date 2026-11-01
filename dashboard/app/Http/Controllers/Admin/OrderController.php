@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Order\Enums\OrderStatus;
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
+use App\Enums\RefundType;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\OrderRefund;
 use App\Models\Payment;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\View\View;
 
 class OrderController extends BaseCrudController
@@ -127,13 +132,14 @@ class OrderController extends BaseCrudController
     public function updateStatus(Request $request, int $id): RedirectResponse
     {
         $data = $request->validate([
-            'status' => ['required', 'in:pending,new,processing,delivering,completed,cancelled,refunded'],
+            'status' => ['required', new Enum(OrderStatus::class)],
         ]);
 
         $order = Order::findOrFail($id);
         
         $orderService = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class);
-        $orderService->updateStatus($order, \App\Ecommerce\Order\Enums\OrderStatus::from($data['status']));
+        $statusEnum = $data['status'] instanceof OrderStatus ? $data['status'] : OrderStatus::from($data['status']);
+        $orderService->updateStatus($order, $statusEnum);
 
         return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.order.status_updated'));
     }
@@ -141,9 +147,9 @@ class OrderController extends BaseCrudController
     public function storePayment(Request $request, int $id): RedirectResponse
     {
         $data = $request->validate([
-            'method' => ['required', 'string', 'max:50'],
+            'method' => ['required', new Enum(PaymentMethod::class)],
             'amount' => ['required', 'integer', 'min:0'],
-            'status' => ['required', 'string', 'max:50'],
+            'status' => ['required', new Enum(PaymentStatus::class)],
             'provider' => ['nullable', 'string', 'max:100'],
             'reference' => ['nullable', 'string', 'max:255'],
         ]);
@@ -199,7 +205,7 @@ class OrderController extends BaseCrudController
         $order = Order::findOrFail($id);
         
         $data = $request->validate([
-            'status' => ['required', 'string'],
+            'status' => ['required', new Enum(OrderStatus::class)],
             'items' => ['array'],
             'items.*.id' => ['required', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
@@ -211,7 +217,7 @@ class OrderController extends BaseCrudController
             'manual_tax_amount' => ['nullable', 'integer', 'min:0'],
             
             // Refund Flow Fields
-            'refund_type' => ['nullable', 'string', 'in:full,partial'],
+            'refund_type' => ['nullable', new Enum(RefundType::class)],
             'refund_amount' => ['nullable', 'integer', 'min:0'],
             'refund_reason' => ['nullable', 'string'],
 

@@ -2,59 +2,95 @@
 
 namespace App\Ecommerce\Shipping\Services;
 
-use App\Models\ShippingZone;
-use App\Models\ShippingMethod;
-
+use App\Ecommerce\Shipping\Carriers\CarrierManager;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingZoneRepositoryInterface;
+use App\Models\ShippingMethod;
+use App\Models\ShippingZone;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class ShippingService implements ShippingServiceInterface
 {
-    protected $shippingZoneRepository;
+    protected array $driverClasses = [
+        'flat_rate' => \App\Ecommerce\Shipping\Services\Drivers\FlatRateDriver::class,
+        'free_shipping' => \App\Ecommerce\Shipping\Services\Drivers\FreeShippingDriver::class,
+        'weight_based' => \App\Ecommerce\Shipping\Services\Drivers\WeightBasedDriver::class,
+        'local_pickup' => \App\Ecommerce\Shipping\Services\Drivers\FlatRateDriver::class,
+        'carrier' => \App\Ecommerce\Shipping\Services\Drivers\CarrierDriver::class,
+    ];
 
-    public function __construct(ShippingZoneRepositoryInterface $shippingZoneRepository)
-    {
-        $this->shippingZoneRepository = $shippingZoneRepository;
+    public function __construct(
+        protected ShippingZoneRepositoryInterface $shippingZoneRepository,
+        protected CarrierManager $carrierManager,
+        protected PackageCalculator $packageCalculator
+    ) {
     }
 
-    public function getAvailableMethods(?string $country = null, ?string $state = null, ?string $postcode = null, ?string $ward = null, int $subtotal = 0)
-    {
-        // Find zone that best matches the location using the repository
+    /**
+     * @inheritDoc
+     */
+    public function resolveMatchingZone(
+        ?string $country = null,
+        ?string $state = null,
+        ?string $postcode = null,
+        ?string $ward = null
+    ): ?ShippingZone {
         $zone = $this->shippingZoneRepository->findMatchingZone($country, $state, $postcode, $ward);
 
-        // Fallback to "Rest of World" zone if not found (getting the first one with no specific country restriction)
         if (!$zone) {
             $zone = $this->shippingZoneRepository->all()->first();
         }
+
+        return $zone;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getAvailableMethods(
+        ?string $country = null,
+        ?string $state = null,
+        ?string $postcode = null,
+        ?string $ward = null,
+        int $subtotal = 0,
+        array $package = []
+    ): Collection {
+        $country = $country ?: 'VN';
+        $zone = $this->resolveMatchingZone($country, $state, $postcode, $ward);
 
         if (!$zone) {
             return collect();
         }
 
-        $drivers = [
-            'flat_rate' => \App\Ecommerce\Shipping\Services\Drivers\FlatRateDriver::class,
-            'free_shipping' => \App\Ecommerce\Shipping\Services\Drivers\FreeShippingDriver::class,
+        $destination = [
+            'country' => $country,
+            'state' => $state,
+            'postcode' => $postcode,
+            'ward' => $ward,
+            'subtotal' => $subtotal,
         ];
 
-        return $zone->methods()->where('is_enabled', true)->get()->map(function ($method) use ($subtotal, $country, $state, $postcode, $drivers) {
+        // 1. Calculate manual & configured shipping methods for this zone
+        $methods = $zone->methods()->where('is_enabled', true)->get()->map(function (ShippingMethod $method) use ($subtotal, $destination, $package, $zone) {
             $type = $method->type instanceof \BackedEnum ? $method->type->value : (string) $method->type;
-            $driverClass = $drivers[$type] ?? null;
+            $driverClass = $this->driverClasses[$type] ?? null;
 
             if (!$driverClass) {
-                return [
-                    'method_id' => $method->id,
-                    'name' => $method->name,
-                    'is_available' => false
-                ];
+                return null;
             }
 
             $driver = app($driverClass);
-            $cost = $driver->calculateFee($subtotal, [
-                'country' => $country,
-                'state' => $state,
-                'postcode' => $postcode,
-            ], ['cost' => $method->settings['cost'] ?? 0]);
+            $options = array_merge(
+                $method->settings ?? [],
+                $package,
+                ['currency' => $method->settings['currency'] ?? 'VND']
+            );
+
+            $cost = $driver->calculateFee($subtotal, $destination, $options);
+            if ($cost === null || $cost < 0) {
+                return null;
+            }
 
             return [
                 'id' => $method->id,
@@ -63,9 +99,102 @@ class ShippingService implements ShippingServiceInterface
                 'code' => $type,
                 'type' => $type,
                 'cost' => $cost,
-                'is_available' => $cost !== null
+                'price' => $cost,
+                'amount' => $cost,
+                'currency' => $method->settings['currency'] ?? 'VND',
+                'estimated_days' => $method->settings['estimated_days'] ?? null,
+                'description' => $method->description ?? ($method->settings['description'] ?? null),
+                'is_available' => true,
+                'zone_id' => $zone->id,
+                'zone_name' => $zone->name,
             ];
-        })->where('is_available', true)->values();
+        })->filter()->values();
+
+        // 2. Dynamic Carrier rates if carrier API is enabled for this zone
+        $enabledCarriers = $this->carrierManager->getCarriersForDestination($country, $state);
+        foreach ($enabledCarriers as $carrier) {
+            if (!$carrier->isConfigured()) {
+                continue;
+            }
+
+            $services = $carrier->getAvailableServices($destination, $package);
+            foreach ($services as $service) {
+                $serviceCode = (string) ($service['service_id'] ?? 'standard');
+                $quote = $carrier->calculateRate($serviceCode, $destination, $package);
+
+                if ($quote && isset($quote['amount'])) {
+                    $methods->push([
+                        'id' => 'carrier_' . $carrier->getId() . '_' . $serviceCode,
+                        'method_id' => 'carrier_' . $carrier->getId() . '_' . $serviceCode,
+                        'carrier' => $carrier->getId(),
+                        'carrier_name' => $carrier->getName(),
+                        'name' => $carrier->getName() . ' - ' . ($service['service_name'] ?? $quote['service_name']),
+                        'code' => 'carrier_' . $carrier->getId(),
+                        'type' => 'carrier',
+                        'cost' => (int) $quote['amount'],
+                        'price' => (int) $quote['amount'],
+                        'amount' => (int) $quote['amount'],
+                        'currency' => $quote['currency'] ?? 'VND',
+                        'estimated_days' => $quote['estimated_days'] ?? $service['estimated_days'] ?? 2,
+                        'description' => 'Báo giá động theo thời gian thực từ hãng vận chuyển.',
+                        'is_available' => true,
+                        'zone_id' => $zone->id,
+                        'zone_name' => $zone->name,
+                    ]);
+                }
+            }
+        }
+
+        return $methods;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function calculateMethodFee(
+        ShippingMethod|int|string $method,
+        array $destination,
+        int $subtotal = 0,
+        array $package = []
+    ): ?int {
+        if (!$method instanceof ShippingMethod) {
+            if (is_numeric($method)) {
+                $method = ShippingMethod::find($method);
+            } elseif (is_string($method) && str_starts_with($method, 'carrier_')) {
+                // Parse dynamic carrier
+                $parts = explode('_', $method, 3);
+                $carrierId = $parts[1] ?? 'ghn';
+                $serviceCode = $parts[2] ?? 'standard';
+                $carrier = $this->carrierManager->getAdapter($carrierId);
+                if ($carrier && $carrier->isEnabled()) {
+                    $quote = $carrier->calculateRate($serviceCode, $destination, $package);
+                    return $quote ? (int) $quote['amount'] : null;
+                }
+                return null;
+            } else {
+                $method = ShippingMethod::where('type', $method)->first();
+            }
+        }
+
+        if (!$method || !$method->is_enabled) {
+            return null;
+        }
+
+        $type = $method->type instanceof \BackedEnum ? $method->type->value : (string) $method->type;
+        $driverClass = $this->driverClasses[$type] ?? null;
+        if (!$driverClass) {
+            return null;
+        }
+
+        $driver = app($driverClass);
+        $options = array_merge(
+            $method->settings ?? [],
+            $package,
+            ['currency' => $method->settings['currency'] ?? 'VND']
+        );
+
+        $fee = $driver->calculateFee($subtotal, $destination, $options);
+        return ($fee !== null && $fee >= 0) ? $fee : null;
     }
 
     /**
@@ -82,21 +211,16 @@ class ShippingService implements ShippingServiceInterface
     public function validateAddress(array $addressData): array
     {
         $errors = [];
-        
-        // Basic required fields validation
-        $requiredFields = ['first_name', 'last_name', 'phone', 'address_detail', 'country_code', 'city_id'];
+        $requiredFields = ['first_name', 'last_name', 'phone', 'address_detail', 'country_code'];
         foreach ($requiredFields as $field) {
             if (empty($addressData[$field])) {
                 $errors[$field] = "Trường {$field} là bắt buộc.";
             }
         }
 
-        // In the future, this can call an external API (like GHN/Ahamove/ViettelPost)
-        // to verify if the ward/district/city combination is strictly valid.
-
         return [
             'is_valid' => empty($errors),
-            'errors' => $errors
+            'errors' => $errors,
         ];
     }
 
@@ -105,8 +229,6 @@ class ShippingService implements ShippingServiceInterface
      */
     public function getLocationInfo(string $postcode): ?array
     {
-        // Placeholder for future API integration (e.g. Google Maps API, or local Postal Code DB)
-        // Currently we don't have a local postcode lookup DB, so we return null or a mock.
         return null;
     }
 }

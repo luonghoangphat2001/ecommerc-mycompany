@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\BaseApiController;
-use App\Http\Requests\API\PostCategory\StorePostCategoryRequest;
-use App\Http\Requests\API\PostCategory\UpdatePostCategoryRequest;
+use App\Http\Requests\API\PostCategoryRequest;
 use App\Http\Resources\Api\PostCategoryResource;
 use App\Http\Resources\Api\PostResource;
 use App\Models\PostCategory;
@@ -57,7 +56,7 @@ class PostCategoryController extends BaseApiController
             )
         )
     )]
-    public function store(StorePostCategoryRequest $request)
+    public function store(PostCategoryRequest $request)
     {
         $dto = PostCategoryDTO::fromRequest($request);
         $category = $this->postCategoryService->createCategory($dto->toArray());
@@ -95,7 +94,7 @@ class PostCategoryController extends BaseApiController
             )
         )
     )]
-    public function update(UpdatePostCategoryRequest $request, PostCategory $postCategory)
+    public function update(PostCategoryRequest $request, PostCategory $postCategory)
     {
         $dto = PostCategoryDTO::fromRequest($request);
         $category = $this->postCategoryService->updateCategory($postCategory, $dto->toArray());

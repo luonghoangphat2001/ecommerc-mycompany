@@ -4,7 +4,8 @@ namespace App\Ecommerce\Checkout\Services\Pipes;
 
 use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
-use App\Ecommerce\Shipping\Services\ShippingManager;
+use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
+use App\Ecommerce\Shipping\Services\PackageCalculator;
 use App\Models\ShippingMethod;
 use Illuminate\Support\Facades\DB;
 use App\Settings\InventorySettings;
@@ -13,7 +14,8 @@ use Closure;
 class ResolveShippingFeePipe
 {
     public function __construct(
-        protected ShippingManager $shippingManager,
+        protected ShippingServiceInterface $shippingService,
+        protected PackageCalculator $packageCalculator,
         protected InventorySettings $inventorySettings
     ) {}
 
@@ -29,24 +31,44 @@ class ResolveShippingFeePipe
         }
 
         try {
-            /** @var ShippingMethod $method */
+            $destArray = $request->shippingAddress->toArray();
+            $country = $destArray['country_code'] ?? $destArray['country'] ?? 'VN';
+            $state = $destArray['state_id'] ?? $destArray['state'] ?? null;
+            $ward = $destArray['ward_id'] ?? $destArray['ward'] ?? null;
+            $postcode = $destArray['postal_code'] ?? $destArray['zip'] ?? null;
+
+            // 1. Resolve matching zone for customer destination
+            $zone = $this->shippingService->resolveMatchingZone($country, $state, $postcode, $ward);
+
+            /** @var ShippingMethod|null $method */
             $method = null;
-            if (is_numeric($request->shippingMethod)) {
-                $method = ShippingMethod::query()->find($request->shippingMethod);
+            $reqMethod = $request->shippingMethod;
+
+            if ($zone) {
+                if (is_numeric($reqMethod)) {
+                    $method = $zone->methods()->where('id', (int) $reqMethod)->where('is_enabled', true)->first();
+                }
+
+                if (!$method && !empty($reqMethod)) {
+                    $method = $zone->methods()->where('type', $reqMethod)->where('is_enabled', true)->first();
+                }
+
+                if (!$method && !empty($reqMethod)) {
+                    $method = $zone->methods()->where('name', $reqMethod)->where('is_enabled', true)->first();
+                }
+
+                if (!$method) {
+                    $method = $zone->methods()->where('is_enabled', true)->first();
+                }
             }
 
-            if (!$method && !empty($request->shippingMethod)) {
-                $method = ShippingMethod::query()
-                    ->where('type', $request->shippingMethod)
-                    ->where('is_enabled', true)
-                    ->first();
+            // Fallback global method if zone has none or not found
+            if (!$method && is_numeric($reqMethod)) {
+                $method = ShippingMethod::query()->where('id', (int) $reqMethod)->where('is_enabled', true)->first();
             }
 
-            if (!$method && !empty($request->shippingMethod)) {
-                $method = ShippingMethod::query()
-                    ->where('name', $request->shippingMethod)
-                    ->where('is_enabled', true)
-                    ->first();
+            if (!$method && !empty($reqMethod)) {
+                $method = ShippingMethod::query()->where('type', $reqMethod)->where('is_enabled', true)->first();
             }
 
             if (!$method) {
@@ -57,36 +79,48 @@ class ResolveShippingFeePipe
                 return $next($passable);
             }
 
-            $driverName = $method->type instanceof \BackedEnum ? $method->type->value : (string) $method->type;
-            $driver = $this->shippingManager->driver($driverName);
+            // 2. Calculate package weight and dimensions
+            $package = $this->packageCalculator->calculatePackage($request->items ?? []);
 
+            // 3. Count participating inventories if split shipping is enabled
             $totalPackages = 1;
-
-            // 1. Split shipping logic: count participating inventories if enabled
             if ($this->inventorySettings->split_shipping_enabled) {
-                $productIds = collect($request->items)->pluck('product_id')->toArray();
-                $inventoriesCount = DB::table('shop_product_inventory_stocks')
-                    ->whereIn('shop_product_id', $productIds)
-                    ->where('stock_quantity', '>', 0)
-                    ->distinct()
-                    ->pluck('warehouse_id')
-                    ->count();
+                $productIds = collect($request->items)->pluck('product_id')->filter()->toArray();
+                if (!empty($productIds)) {
+                    $inventoriesCount = DB::table('shop_product_inventory_stocks')
+                        ->whereIn('shop_product_id', $productIds)
+                        ->where('stock_quantity', '>', 0)
+                        ->distinct()
+                        ->pluck('warehouse_id')
+                        ->count();
 
-                $totalPackages = max(1, $inventoriesCount);
+                    $totalPackages = max(1, $inventoriesCount);
+                }
             }
 
-            $shippingCost = $driver->calculateFee(
+            // 4. Calculate fee using centralized shipping service
+            $destination = array_merge($destArray, [
+                'country' => $country,
+                'state' => $state,
+                'ward' => $ward,
+                'postcode' => $postcode,
+                'subtotal' => $result->subtotal,
+            ]);
+
+            $shippingCost = $this->shippingService->calculateMethodFee(
+                $method,
+                $destination,
                 $result->subtotal,
-                $request->shippingAddress->toArray(),
-                array_merge($method->settings ?? [], ['currency' => $request->currency])
+                $package
             );
 
-            $finalShippingTotal = (int) ($shippingCost * $totalPackages);
-
-            $result->shippingTotal = $finalShippingTotal;
-            $result->total += $finalShippingTotal;
+            if ($shippingCost !== null && $shippingCost >= 0) {
+                $finalShippingTotal = (int) ($shippingCost * $totalPackages);
+                $result->shippingTotal = $finalShippingTotal;
+                $result->total += $finalShippingTotal;
+            }
         } catch (\Exception $e) {
-            // Log or handle error
+            \Illuminate\Support\Facades\Log::warning('ResolveShippingFeePipe error: ' . $e->getMessage());
         }
 
         return $next($passable);

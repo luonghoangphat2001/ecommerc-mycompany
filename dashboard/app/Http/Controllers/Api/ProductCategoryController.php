@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\BaseApiController;
-use App\Http\Requests\API\ProductCategory\StoreProductCategoryRequest;
-use App\Http\Requests\API\ProductCategory\UpdateProductCategoryRequest;
+use App\Http\Requests\API\ProductCategoryRequest;
 use App\Http\Resources\Api\ProductCategoryResource;
 use App\Models\ProductCategory;
 use App\Ecommerce\Product\Contracts\ProductCategoryServiceInterface;
@@ -62,7 +61,7 @@ class ProductCategoryController extends BaseApiController
         ),
         responseData: '#/components/schemas/ProductCategoryResource'
     )]
-    public function store(StoreProductCategoryRequest $request)
+    public function store(ProductCategoryRequest $request)
     {
         $dto = ProductCategoryDTO::fromRequest($request);
         $category = $this->categoryService->createCategory($dto->toArray());
@@ -130,7 +129,7 @@ class ProductCategoryController extends BaseApiController
         ),
         responseData: '#/components/schemas/ProductCategoryResource'
     )]
-    public function update(UpdateProductCategoryRequest $request, ProductCategory $productCategory)
+    public function update(ProductCategoryRequest $request, ProductCategory $productCategory)
     {
         $dto = ProductCategoryDTO::fromRequest($request);
         $category = $this->categoryService->updateCategory($productCategory, $dto->toArray());

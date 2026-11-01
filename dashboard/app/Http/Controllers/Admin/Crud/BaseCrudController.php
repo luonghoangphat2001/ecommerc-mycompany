@@ -44,6 +44,14 @@ abstract class BaseCrudController extends Controller
                 continue;
             }
 
+            // If incoming value is a JSON string e.g. {"vi":"...", "en":"..."}, decode it
+            if (is_string($data[$field]) && str_starts_with(trim($data[$field]), '{')) {
+                $decoded = json_decode(trim($data[$field]), true);
+                if (is_array($decoded) && (isset($decoded['vi']) || isset($decoded['en']))) {
+                    $data[$field] = $decoded;
+                }
+            }
+
             $existing = array_filter($existingTranslations[$field] ?? [], fn ($v) => $v !== null && $v !== '');
 
             if (is_array($data[$field])) {
@@ -278,9 +286,14 @@ abstract class BaseCrudController extends Controller
         ]);
     }
 
+    protected function formView(): string
+    {
+        return 'admin.crud.form';
+    }
+
     public function create(): View
     {
-        return view('admin.crud.form', [
+        return view($this->formView(), [
             'title' => __('admin.actions.create') . ' - ' . __($this->title()),
             'record' => null,
             'fields' => $this->visibleFields('form'),
@@ -340,7 +353,7 @@ abstract class BaseCrudController extends Controller
         $modelClass = $this->modelClass();
         $record = $modelClass::findOrFail($id);
 
-        return view('admin.crud.form', [
+        return view($this->formView(), [
             'title' => __('admin.actions.edit') . ' - ' . __($this->title()),
             'record' => $record,
             'fields' => $this->visibleFields('form'),
@@ -417,17 +430,42 @@ abstract class BaseCrudController extends Controller
         $this->applySearch($query, $request);
 
         $fields = $this->visibleFields('export');
+        $translatable = $this->translatableFields();
         $filename = Str::slug($this->title()) . '-' . now()->format('Ymd-His') . '.csv';
 
-        return response()->streamDownload(function () use ($query, $fields): void {
+        return response()->streamDownload(function () use ($query, $fields, $translatable): void {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, array_merge(['id'], array_keys($fields)));
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM for Excel
 
-            $query->latest('id')->chunk(200, function ($records) use ($handle, $fields): void {
+            $headers = ['id'];
+            foreach ($fields as $name => $field) {
+                if (in_array($name, $translatable, true)) {
+                    $headers[] = "{$name}_vi";
+                    $headers[] = "{$name}_en";
+                } else {
+                    $headers[] = $name;
+                }
+            }
+            fputcsv($handle, $headers);
+
+            $query->latest('id')->chunk(200, function ($records) use ($handle, $fields, $translatable): void {
                 foreach ($records as $record) {
                     $row = [$record->id];
                     foreach ($fields as $name => $field) {
-                        $row[] = AdminValue::format(data_get($record, $name), true);
+                        if (in_array($name, $translatable, true)) {
+                            if (method_exists($record, 'getTranslation')) {
+                                $row[] = $record->getTranslation($name, 'vi', false) ?: '';
+                                $row[] = $record->getTranslation($name, 'en', false) ?: '';
+                            } elseif (is_array($record->{$name})) {
+                                $row[] = $record->{$name}['vi'] ?? '';
+                                $row[] = $record->{$name}['en'] ?? '';
+                            } else {
+                                $row[] = (string) $record->{$name};
+                                $row[] = (string) $record->{$name};
+                            }
+                        } else {
+                            $row[] = AdminValue::format(data_get($record, $name), true);
+                        }
                     }
                     fputcsv($handle, $row);
                 }
@@ -458,6 +496,7 @@ abstract class BaseCrudController extends Controller
 
         $headers = array_map(fn ($header) => trim((string) $header), $headers);
         $allowed = $this->importableColumns();
+        $translatable = $this->translatableFields();
         $created = 0;
         $skipped = 0;
         $modelClass = $this->modelClass();
@@ -468,10 +507,33 @@ abstract class BaseCrudController extends Controller
                 if (! in_array($header, $allowed, true)) {
                     continue;
                 }
-                $payload[$header] = $row[$index] ?? null;
+                $val = $row[$index] ?? null;
+
+                $isLangSuffix = false;
+                foreach ($translatable as $transField) {
+                    if ($header === "{$transField}_vi" || $header === "{$transField}[vi]") {
+                        if (!isset($payload[$transField]) || !is_array($payload[$transField])) {
+                            $payload[$transField] = is_array($payload[$transField] ?? null) ? $payload[$transField] : [];
+                        }
+                        $payload[$transField]['vi'] = $val;
+                        $isLangSuffix = true;
+                        break;
+                    } elseif ($header === "{$transField}_en" || $header === "{$transField}[en]") {
+                        if (!isset($payload[$transField]) || !is_array($payload[$transField])) {
+                            $payload[$transField] = is_array($payload[$transField] ?? null) ? $payload[$transField] : [];
+                        }
+                        $payload[$transField]['en'] = $val;
+                        $isLangSuffix = true;
+                        break;
+                    }
+                }
+
+                if (!$isLangSuffix) {
+                    $payload[$header] = $val;
+                }
             }
 
-            $payload = array_filter($payload, fn ($value) => $value !== '');
+            $payload = array_filter($payload, fn ($value) => $value !== '' && $value !== null);
             if ($payload === []) {
                 $skipped++;
                 continue;
@@ -549,12 +611,22 @@ abstract class BaseCrudController extends Controller
     {
         $modelClass = $this->modelClass();
         $table = (new $modelClass())->getTable();
+        $translatable = $this->translatableFields();
 
-        return array_values(array_filter(array_keys($this->visibleFields('import')), function (string $column) use ($table): bool {
+        $columns = array_values(array_filter(array_keys($this->visibleFields('import')), function (string $column) use ($table): bool {
             $field = $this->fields()[$column] ?? [];
 
             return Schema::hasColumn($table, $column) || ($field['virtual'] ?? false) === true;
         }));
+
+        foreach ($translatable as $field) {
+            $columns[] = "{$field}_vi";
+            $columns[] = "{$field}_en";
+            $columns[] = "{$field}[vi]";
+            $columns[] = "{$field}[en]";
+        }
+
+        return array_values(array_unique($columns));
     }
 
     protected function applySearch(Builder $query, Request $request): void

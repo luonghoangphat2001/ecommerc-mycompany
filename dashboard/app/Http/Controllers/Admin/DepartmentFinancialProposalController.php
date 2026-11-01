@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\FinancialProposalStatus;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\DepartmentFinancialProposal;
 use App\Models\User;
@@ -62,11 +63,7 @@ class DepartmentFinancialProposalController extends BaseCrudController
                 'label' => 'Trạng thái',
                 'type' => 'select',
                 'rules' => ['required', 'in:pending,approved,rejected'],
-                'options' => [
-                    'pending' => 'Chờ duyệt',
-                    'approved' => 'Đã duyệt',
-                    'rejected' => 'Từ chối',
-                ],
+                'options' => FinancialProposalStatus::options(),
             ],
             'is_urgent' => [
                 'label' => 'Đề xuất khẩn',

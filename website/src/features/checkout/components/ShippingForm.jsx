@@ -1,8 +1,10 @@
 import React from "react"
 import useSettingsStore from "../../../store/useSettingsStore"
+import useFormatters from "../../../utils/useFormatters"
 
 const ShippingForm = ({ form, shippingMethods = [], selectedShippingMethod, onShippingMethodChange }) => {
     const translate = useSettingsStore((state) => state.translate)
+    const { formatCurrency } = useFormatters()
     const {
         register,
         formState: { errors },
@@ -98,9 +100,20 @@ const ShippingForm = ({ form, shippingMethods = [], selectedShippingMethod, onSh
                                         onChange={() => onShippingMethodChange(methodId)}
                                         className="accent-[#004687]"
                                     />
-                                    <div className="flex-1 flex justify-between text-sm">
-                                        <span className="font-semibold text-slate-900">{method.name}</span>
-                                        <span className="text-slate-600 tabular-nums">{method.price || method.cost}</span>
+                                    <div className="flex-1 flex justify-between items-center text-sm">
+                                        <div>
+                                            <span className="font-semibold text-slate-900 block">{method.name}</span>
+                                            {method.estimated_days && (
+                                                <span className="text-xs text-slate-500">
+                                                    Dự kiến: {method.estimated_days} ngày
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="text-slate-800 font-semibold tabular-nums">
+                                            {(method.cost === 0 || method.amount === 0)
+                                                ? (translate("cart.free") || "Miễn phí")
+                                                : formatCurrency(method.cost ?? method.amount ?? method.price ?? 0)}
+                                        </span>
                                     </div>
                                 </label>
                             )

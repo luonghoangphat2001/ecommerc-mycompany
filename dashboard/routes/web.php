@@ -83,6 +83,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             $crud('tax-rates', TaxRateController::class, 'tax-rates');
             $crud('shipping-zones', ShippingZoneController::class, 'shipping-zones');
             $crud('shipping-methods', ShippingMethodController::class, 'shipping-methods');
+            Route::get('shipping-carriers', [\App\Http\Controllers\Admin\ShippingCarrierController::class, 'index'])->name('shipping-carriers.index');
+            Route::post('shipping-carriers/{carrier}/test', [\App\Http\Controllers\Admin\ShippingCarrierController::class, 'testConnection'])->name('shipping-carriers.test');
+            Route::put('shipping-carriers/{carrier}', [\App\Http\Controllers\Admin\ShippingCarrierController::class, 'update'])->name('shipping-carriers.update');
+            Route::get('shipping-orders', [\App\Http\Controllers\Admin\ShippingOrderController::class, 'index'])->name('shipping-orders.index');
+            Route::get('shipping-orders/{orderShipping}/track', [\App\Http\Controllers\Admin\ShippingOrderController::class, 'track'])->name('shipping-orders.track');
             $crud('inventories', InventoryController::class, 'inventories');
             Route::post('inventory-records/{inventory_record}/process', [InventoryRecordController::class, 'process'])->name('inventory-records.process');
             $crud('inventory-records', InventoryRecordController::class, 'inventory-records');

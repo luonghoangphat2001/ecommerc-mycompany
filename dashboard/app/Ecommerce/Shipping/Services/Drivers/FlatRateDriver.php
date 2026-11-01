@@ -12,8 +12,12 @@ class FlatRateDriver implements ShippingProviderInterface
      */
     public function calculateFee(int $subtotal, array $destination, array $options = []): int
     {
-        // For Flat Rate, we usually take the cost from the options/method settings
-        return (int) ($options['cost'] ?? 0);
+        $freeShippingThreshold = (int) ($options['free_shipping_threshold'] ?? 0);
+        if ($freeShippingThreshold > 0 && $subtotal >= $freeShippingThreshold) {
+            return 0;
+        }
+
+        return max(0, (int) ($options['cost'] ?? 0));
     }
 
     /**
@@ -21,7 +25,6 @@ class FlatRateDriver implements ShippingProviderInterface
      */
     public function createOrder(Order $order): string
     {
-        // Flat rate is usually self-fulfilled, return a local reference
         return 'LOCAL-' . $order->number . '-' . uniqid();
     }
 

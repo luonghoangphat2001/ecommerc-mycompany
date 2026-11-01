@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MailLogStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,6 +31,7 @@ class MailLog extends Model
     ];
 
     protected $casts = [
+        'status' => MailLogStatus::class,
         'attachments' => 'array',
         'data' => 'array',
         'opened' => 'boolean',

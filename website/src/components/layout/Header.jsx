@@ -33,7 +33,7 @@ const Header = () => {
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-card">
             {/* Top Corporate Utility Bar */}
             <div className="bg-[#09253E] text-slate-300 text-xs border-b border-white/10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between">
+                <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between">
                     <div className="flex items-center gap-5">
                         <span className="inline-flex items-center gap-1.5 text-slate-200 font-medium">
                             <ShieldCheck size={13} className="text-[#FBAE17]" />
@@ -76,7 +76,7 @@ const Header = () => {
             </div>
 
             {/* Main Navigation Header */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-8">
                     <Logo />
                     <Navbar translate={translate} />

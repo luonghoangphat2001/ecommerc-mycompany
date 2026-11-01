@@ -14,7 +14,11 @@ class FreeShippingDriver implements ShippingProviderInterface
     {
         $minAmount = (int) ($options['min_amount'] ?? 0);
 
-        return ($subtotal >= $minAmount) ? 0 : 0; // Or handle as "not available" if negative
+        if ($minAmount > 0 && $subtotal < $minAmount) {
+            return -1; // -1 represents not eligible/unavailable
+        }
+
+        return 0;
     }
 
     /**

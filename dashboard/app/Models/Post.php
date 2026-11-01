@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Spatie\Tags\HasTags;
 use Spatie\Translatable\HasTranslations;
 use App\Models\User;
+use App\Enums\PostType;
 
 /**
  *     schema="Post",
@@ -55,6 +56,7 @@ class Post extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'post_type' => PostType::class,
         'published_at' => 'date',
         'is_visible' => 'boolean',
     ];

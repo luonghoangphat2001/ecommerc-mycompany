@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Api\BaseApiController;
-use App\Http\Requests\API\Page\StorePageRequest;
-use App\Http\Requests\API\Page\UpdatePageRequest;
+use App\Http\Requests\API\PageRequest;
 use App\Http\Resources\Api\PageResource;
 use App\Ecommerce\Page\Contracts\PageServiceInterface;
 use App\Ecommerce\Page\DTOs\Page\PageDTO;
@@ -53,7 +52,7 @@ class PageController extends BaseApiController
             )
         )
     )]
-    public function store(StorePageRequest $request)
+    public function store(PageRequest $request)
     {
         $dto = PageDTO::fromRequest($request);
         $page = $this->pageService->createPage($dto->toArray());
@@ -99,7 +98,7 @@ class PageController extends BaseApiController
             )
         )
     )]
-    public function update(UpdatePageRequest $request, $id)
+    public function update(PageRequest $request, $id)
     {
         $dto = PageDTO::fromRequest($request);
         $page = $this->pageService->updatePage($id, $dto->toArray());

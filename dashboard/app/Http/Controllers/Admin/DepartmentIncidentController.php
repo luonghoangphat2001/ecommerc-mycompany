@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\IncidentStatus;
+use App\Enums\IncidentType;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\DepartmentIncident;
 use App\Models\Order;
@@ -54,7 +56,7 @@ class DepartmentIncidentController extends BaseCrudController
                 'label' => 'Loại sự cố',
                 'type' => 'select',
                 'rules' => ['required', 'string', 'max:255'],
-                'options' => __('workspace.ops.incident_types'),
+                'options' => IncidentType::options(),
             ],
             'description' => [
                 'label' => 'Mô tả chi tiết',
@@ -65,11 +67,7 @@ class DepartmentIncidentController extends BaseCrudController
                 'label' => 'Trạng thái',
                 'type' => 'select',
                 'rules' => ['required', 'in:open,in_progress,resolved'],
-                'options' => [
-                    'open' => 'Mới (Open)',
-                    'in_progress' => 'Đang xử lý',
-                    'resolved' => 'Đã giải quyết',
-                ],
+                'options' => IncidentStatus::options(),
             ],
         ];
     }

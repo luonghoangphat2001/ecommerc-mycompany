@@ -2,7 +2,10 @@
 
 namespace App\Ecommerce\Shipping\Contracts;
 
+use App\Models\ShippingMethod;
+use App\Models\ShippingZone;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 interface ShippingServiceInterface
 {
@@ -14,14 +17,42 @@ interface ShippingServiceInterface
      * @param string|null $postcode
      * @param string|null $ward
      * @param int $subtotal
-     * @return \Illuminate\Support\Collection
+     * @param array $package
+     * @return Collection
      */
-    public function getAvailableMethods(?string $country = null, ?string $state = null, ?string $postcode = null, ?string $ward = null, int $subtotal = 0);
+    public function getAvailableMethods(
+        ?string $country = null,
+        ?string $state = null,
+        ?string $postcode = null,
+        ?string $ward = null,
+        int $subtotal = 0,
+        array $package = []
+    ): Collection;
+
+    /**
+     * Calculate fee for a specific shipping method.
+     */
+    public function calculateMethodFee(
+        ShippingMethod|int|string $method,
+        array $destination,
+        int $subtotal = 0,
+        array $package = []
+    ): ?int;
+
+    /**
+     * Resolve the shipping zone matching a destination.
+     */
+    public function resolveMatchingZone(
+        ?string $country = null,
+        ?string $state = null,
+        ?string $postcode = null,
+        ?string $ward = null
+    ): ?ShippingZone;
 
     /**
      * Get query for ShippingZone table.
      *
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return Builder
      */
     public function getShippingZoneTableQuery(): Builder;
 

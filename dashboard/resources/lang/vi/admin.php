@@ -70,6 +70,8 @@ return array_merge(
             'shipping_settings' => 'Cấu hình vận chuyển',
             'shipping_zones' => 'Khu vực giao hàng',
             'shipping_methods' => 'Phương thức vận chuyển',
+            'shipping_carriers' => 'Hãng vận chuyển (API)',
+            'shipping_orders' => 'Đơn vận chuyển (Tracking)',
             'tax' => 'Thuế & Thuế suất',
             'tax_classes' => 'Nhóm thuế',
             'tax_rates' => 'Mức thuế suất',

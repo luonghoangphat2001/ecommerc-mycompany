@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CustomerReviewSentiment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -16,6 +17,11 @@ class DepartmentCustomerReview extends Model
         'sentiment',
         'coupon_id',
         'reply_content',
+    ];
+
+    protected $casts = [
+        'sentiment' => CustomerReviewSentiment::class,
+        'rating' => 'integer',
     ];
 
     public function department(): BelongsTo

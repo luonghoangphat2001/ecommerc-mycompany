@@ -131,6 +131,8 @@
         ['label' => 'admin.sidebar.checkout_settings', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'query' => ['tab' => 'checkout'], 'icon' => 'credit-card', 'permission' => 'view_settings'],
         ['label' => 'admin.sidebar.shipping_zones', 'route' => 'admin.shipping-zones.index', 'match' => 'admin.shipping-zones.*', 'icon' => 'truck', 'permission' => 'view_shipping-zones'],
         ['label' => 'admin.sidebar.shipping_methods', 'route' => 'admin.shipping-methods.index', 'match' => 'admin.shipping-methods.*', 'icon' => 'truck', 'permission' => 'view_shipping-methods'],
+        ['label' => 'admin.sidebar.shipping_carriers', 'route' => 'admin.shipping-carriers.index', 'match' => 'admin.shipping-carriers.*', 'icon' => 'truck', 'permission' => 'view_shipping-zones'],
+        ['label' => 'admin.sidebar.shipping_orders', 'route' => 'admin.shipping-orders.index', 'match' => 'admin.shipping-orders.*', 'icon' => 'truck', 'permission' => 'view_orders'],
         ['label' => 'admin.sidebar.tax_classes', 'route' => 'admin.tax-classes.index', 'match' => 'admin.tax-classes.*', 'icon' => 'percent', 'permission' => 'view_tax-classes'],
         ['label' => 'admin.sidebar.tax_rates', 'route' => 'admin.tax-rates.index', 'match' => 'admin.tax-rates.*', 'icon' => 'percent', 'permission' => 'view_tax-rates'],
         ['label' => 'admin.sidebar.roles', 'route' => 'admin.roles.index', 'match' => 'admin.roles.*', 'icon' => 'lock', 'permission' => 'view_roles'],

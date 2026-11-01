@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Requests\API\Coupon\ApplyCouponRequest;
+use App\Http\Requests\API\CouponRequest;
 use App\Http\Controllers\Api\BaseApiController;
 use App\Ecommerce\Coupon\Contracts\CouponServiceInterface;
 use App\Exceptions\CouponValidationException;
@@ -40,7 +40,7 @@ class CouponController extends BaseApiController
             new OAT\Property(property: 'type', type: 'string', example: 'fixed')
         ]
     )]
-    public function apply(ApplyCouponRequest $request): JsonResponse
+    public function apply(CouponRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $code = $validated['code'];

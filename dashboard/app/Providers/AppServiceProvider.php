@@ -34,6 +34,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(LocationManager::class, function ($app) {
             return new LocationManager($app);
         });
+
+        $this->app->singleton(
+            \App\Ecommerce\Audit\Contracts\FinancialAuditServiceInterface::class,
+            \App\Ecommerce\Audit\Services\FinancialAuditService::class
+        );
     }
 
     /**

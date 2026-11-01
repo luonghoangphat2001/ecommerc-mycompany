@@ -21,7 +21,7 @@ const Footer = () => {
     return (
         <footer className="w-full bg-[#09253E] text-slate-300 border-t border-slate-800 mt-12">
             {/* Main Footer Grid */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-14">
+            <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-14">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10">
                     {/* Brand & Contact Column */}
                     <div className="lg:col-span-4 space-y-4">
@@ -177,7 +177,7 @@ const Footer = () => {
 
             {/* Bottom Legal Bar */}
             <div className="border-t border-white/10 bg-[#061A2C]">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
                         <p>{copyright}</p>
                         <div className="flex items-center gap-3 tabular-nums">

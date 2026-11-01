@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Api\BaseApiController;
 use App\Ecommerce\Address\Services\Contracts\AddressServiceInterface;
 use App\Ecommerce\Address\Contracts\AddressBookServiceInterface;
+use App\Http\Requests\API\AddressRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
@@ -163,7 +164,7 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'country', type: 'string', example: 'VN')
         ]
     )]
-    public function store(\App\Http\Requests\API\StoreAddressRequest $request): JsonResponse
+    public function store(AddressRequest $request): JsonResponse
     {
         $user = $request->user();
         $validated = $request->validated();
@@ -209,7 +210,7 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'country', type: 'string', example: 'VN')
         ]
     )]
-    public function update(\App\Http\Requests\API\UpdateAddressRequest $request, $addressId): JsonResponse
+    public function update(AddressRequest $request, $addressId): JsonResponse
     {
         $user = $request->user();
         $validated = $request->validated();

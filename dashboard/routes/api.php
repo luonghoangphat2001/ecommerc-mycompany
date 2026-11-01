@@ -186,6 +186,18 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
         Route::middleware([VerifyAgentToken::class])->prefix('agents')->name('agents.')->group(function () {
             Route::get('health', [AgentDashboardController::class, 'health'])->name('health');
             Route::get('metrics', [AgentDashboardController::class, 'metrics'])->name('metrics');
+            Route::get('products', [\App\Http\Controllers\Api\Agent\AgentProductController::class, 'index'])->name('products.index');
+            Route::get('products/{product}', [\App\Http\Controllers\Api\Agent\AgentProductController::class, 'show'])->name('products.show');
+            Route::get('products/{product}/tax', [\App\Http\Controllers\Api\Agent\AgentProductController::class, 'tax'])->name('products.tax');
+
+            // Agent Shipping Endpoints
+            Route::prefix('shipping')->name('shipping.')->group(function () {
+                Route::get('zones', [\App\Http\Controllers\Api\Agent\AgentShippingController::class, 'zones'])->name('zones');
+                Route::get('destinations', [\App\Http\Controllers\Api\Agent\AgentShippingController::class, 'destinations'])->name('destinations');
+                Route::post('estimate', [\App\Http\Controllers\Api\Agent\AgentShippingController::class, 'estimate'])->name('estimate');
+                Route::get('track/{trackingNumber}', [\App\Http\Controllers\Api\Agent\AgentShippingController::class, 'track'])->name('track');
+                Route::get('policies', [\App\Http\Controllers\Api\Agent\AgentShippingController::class, 'policies'])->name('policies');
+            });
         });
     });
 });

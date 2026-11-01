@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\Brand;
+use App\Models\ComboProduct;
+use App\Models\ComboProductItem;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\ProductVariant;
+use App\Models\TaxClass;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -28,6 +32,11 @@ class ProductController extends BaseCrudController
         return 'admin.products';
     }
 
+    protected function formView(): string
+    {
+        return 'admin.products.form';
+    }
+
     protected function searchable(): array
     {
         return ['name', 'sku', 'slug', 'type'];
@@ -45,9 +54,10 @@ class ProductController extends BaseCrudController
                 'label' => __('admin.fields.type'),
                 'placeholder' => __('admin.filters.all_types'),
                 'options' => [
-                    'deliverable' => 'Deliverable',
-                    'downloadable' => 'Downloadable',
-                    'service' => 'Service',
+                    'simple' => 'Simple Product',
+                    'variable' => 'Variable Product',
+                    'combo' => 'Combo Product',
+                    'deliverable' => 'Deliverable (Simple)',
                 ],
             ],
             'is_visible' => [
@@ -99,7 +109,7 @@ class ProductController extends BaseCrudController
         return [
             'general' => [
                 'label' => __('admin.common.general_info'),
-                'fields' => ['name', 'sku', 'slug', 'shop_brand_id', 'type', 'is_visible', 'featured', 'published_at', 'apply_tax'],
+                'fields' => ['name', 'sku', 'slug', 'shop_brand_id', 'type', 'is_visible', 'featured', 'published_at', 'apply_tax', 'tax_class_id'],
             ],
             'pricing' => [
                 'label' => __('admin.product.groups.pricing'),
@@ -142,7 +152,7 @@ class ProductController extends BaseCrudController
                 'hideOnIndex' => true,
             ],
 
-            'price' => ['label' => __('admin.fields.price'), 'type' => 'number', 'rules' => ['required', 'numeric', 'min:0']],
+            'price' => ['label' => __('admin.fields.price'), 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0']],
             'old_price' => ['label' => __('admin.fields.old_price'), 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
             'cost' => ['label' => 'Cost', 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
             'sale_price' => ['label' => __('admin.fields.sale_price'), 'type' => 'number', 'rules' => ['nullable', 'numeric', 'min:0'], 'hideOnIndex' => true],
@@ -157,10 +167,19 @@ class ProductController extends BaseCrudController
                 'type' => 'select',
                 'rules' => ['required', 'string', 'max:50'],
                 'options' => [
-                    'deliverable' => 'deliverable',
-                    'downloadable' => 'downloadable',
-                    'service' => 'service',
+                    'simple' => 'Simple Product',
+                    'variable' => 'Variable Product',
+                    'combo' => 'Combo Product',
+                    'deliverable' => 'Deliverable',
                 ],
+                'hideOnIndex' => true,
+            ],
+
+            'tax_class_id' => [
+                'label' => 'Thuế suất (Tax Class)',
+                'type' => 'select',
+                'rules' => ['nullable', 'integer', 'exists:shop_tax_classes,id'],
+                'options' => ['' => '-- Mặc định / Không thuế --'] + TaxClass::pluck('name', 'id')->toArray(),
                 'hideOnIndex' => true,
             ],
 
@@ -199,17 +218,111 @@ class ProductController extends BaseCrudController
     protected function mutateData(array $data, ?Model $record = null): array
     {
         $data = parent::mutateData($data, $record);
-        unset($data['categories'], $data['tags']);
-        // Do not unset image, let Product mutator handle creating Media and assigning product_images
+        unset($data['categories'], $data['tags'], $data['attributes_json'], $data['variants_json'], $data['combo_items_json']);
+
+        if (!isset($data['price']) || $data['price'] === '' || $data['price'] === null) {
+            $data['price'] = 0;
+        }
+
         return $data;
     }
 
     protected function afterSave(Model $record, Request $request): void
     {
+        // 1. Sync Categories & Tags
         $record->categories()->sync((array) $request->input('categories', []));
         $tagsInput = $request->input('tags', []);
         $tags = is_array($tagsInput) ? $tagsInput : collect(explode(',', (string) $tagsInput))->map(fn($tag) => trim($tag))->filter()->values()->all();
         $record->syncTagsWithType($tags, 'Product');
+
+        // 2. Variable Product handling
+        if ($record->isVariable()) {
+            $attributes = json_decode((string) $request->input('attributes_json', '[]'), true) ?: [];
+            $record->productAttributes()->delete();
+            foreach ($attributes as $pos => $attr) {
+                if (!empty($attr['name'])) {
+                    $record->productAttributes()->create([
+                        'name' => $attr['name'],
+                        'options' => is_array($attr['options']) ? $attr['options'] : explode(',', (string) $attr['options']),
+                        'position' => $pos,
+                        'is_variation' => true,
+                    ]);
+                }
+            }
+
+            $variants = json_decode((string) $request->input('variants_json', '[]'), true) ?: [];
+            $record->variants()->delete();
+            $totalStock = 0;
+            $minPrice = null;
+
+            foreach ($variants as $v) {
+                $vPrice = (int) ($v['price'] ?? 0);
+                $vQty = (int) ($v['qty'] ?? 0);
+                $isActive = (bool) ($v['is_active'] ?? true);
+
+                if ($isActive) {
+                    $totalStock += $vQty;
+                    if ($minPrice === null || ($vPrice > 0 && $vPrice < $minPrice)) {
+                        $minPrice = $vPrice;
+                    }
+                }
+
+                $record->variants()->create([
+                    'sku' => $v['sku'] ?? null,
+                    'price' => $vPrice,
+                    'sale_price' => !empty($v['sale_price']) ? (int) $v['sale_price'] : null,
+                    'qty' => $vQty,
+                    'attributes' => $v['attributes'] ?? [],
+                    'is_active' => $isActive,
+                    'tax_class_id' => $record->tax_class_id,
+                ]);
+            }
+
+            $record->updateQuietly([
+                'total_stock' => $totalStock,
+                'qty' => $totalStock,
+                'price' => ((int)$record->price > 0) ? $record->price : ($minPrice ?? 0),
+            ]);
+        }
+
+        // 3. Combo Product handling
+        if ($record->isCombo()) {
+            $comboItems = json_decode((string) $request->input('combo_items_json', '[]'), true) ?: [];
+            $record->comboComponents()->delete();
+
+            $comboProduct = ComboProduct::updateOrCreate(
+                ['product_id' => $record->id],
+                [
+                    'name' => is_array($record->name) ? ($record->name['vi'] ?? '') : (string) $record->name,
+                    'slug' => $record->slug,
+                    'description' => is_array($record->description) ? ($record->description['vi'] ?? '') : (string) $record->description,
+                    'combo_price' => (int) $record->price,
+                    'original_price' => (int) ($record->old_price ?? $record->price),
+                    'is_active' => (bool) $record->is_visible,
+                ]
+            );
+
+            $comboProduct->items()->delete();
+
+            foreach ($comboItems as $idx => $item) {
+                if (!empty($item['shop_product_id'])) {
+                    ComboProductItem::create([
+                        'combo_product_id' => $comboProduct->id,
+                        'parent_product_id' => $record->id,
+                        'shop_product_id' => (int) $item['shop_product_id'],
+                        'product_variant_id' => !empty($item['product_variant_id']) ? (int) $item['product_variant_id'] : null,
+                        'quantity' => max(1, (int) ($item['quantity'] ?? 1)),
+                        'sort_order' => $idx,
+                    ]);
+                }
+            }
+
+            $calculatedStock = $record->calculateComboStock();
+            $record->updateQuietly([
+                'qty' => $calculatedStock,
+                'total_stock' => $calculatedStock,
+            ]);
+        }
     }
 
     protected function rules(?int $id = null): array
@@ -219,7 +332,7 @@ class ProductController extends BaseCrudController
             'sku' => ['required', 'string', 'max:100'],
             'slug' => ['required', 'string', 'max:255'],
             'shop_brand_id' => ['nullable', 'integer', 'exists:shop_brands,id'],
-            'price' => ['required', 'numeric', 'min:0'],
+            'price' => ['nullable', 'numeric', 'min:0'],
             'old_price' => ['nullable', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0'],
             'sale_start_date' => ['nullable', 'date'],
@@ -228,6 +341,7 @@ class ProductController extends BaseCrudController
             'qty' => ['nullable', 'integer', 'min:0'],
             'security_stock' => ['nullable', 'integer', 'min:0'],
             'type' => ['required'],
+            'tax_class_id' => ['nullable', 'integer', 'exists:shop_tax_classes,id'],
             'featured' => ['nullable', 'boolean'],
             'is_visible' => ['nullable', 'boolean'],
             'apply_tax' => ['nullable', 'boolean'],
@@ -242,13 +356,24 @@ class ProductController extends BaseCrudController
             'categories.*' => ['integer', 'exists:shop_categories,id'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string'],
+            'attributes_json' => ['nullable', 'string'],
+            'variants_json' => ['nullable', 'string'],
+            'combo_items_json' => ['nullable', 'string'],
         ];
     }
 
     protected function formData(?Model $record = null): array
     {
         if (! $record) {
-            return [];
+            return [
+                'type' => 'simple',
+                'attributes_json' => '[]',
+                'variants_json' => '[]',
+                'combo_items_json' => '[]',
+                'categories' => [],
+                'tags' => [],
+                'image' => null,
+            ];
         }
 
         $imagePath = null;
@@ -261,7 +386,15 @@ class ProductController extends BaseCrudController
             }
         }
 
+        $attributes = $record->productAttributes()->get(['name', 'options'])->toArray();
+        $variants = $record->variants()->get(['id', 'sku', 'price', 'sale_price', 'qty', 'attributes', 'is_active'])->toArray();
+        $comboItems = $record->comboComponents()->get(['shop_product_id', 'product_variant_id', 'quantity'])->toArray();
+
         return [
+            'type' => $record->type?->value ?? 'simple',
+            'attributes_json' => json_encode($attributes, JSON_UNESCAPED_UNICODE),
+            'variants_json' => json_encode($variants, JSON_UNESCAPED_UNICODE),
+            'combo_items_json' => json_encode($comboItems, JSON_UNESCAPED_UNICODE),
             'categories' => $record->categories()->pluck('shop_categories.id')->toArray(),
             'tags' => $record->tags->pluck('name')->toArray(),
             'image' => $imagePath,

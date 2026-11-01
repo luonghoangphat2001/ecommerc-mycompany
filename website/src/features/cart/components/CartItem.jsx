@@ -48,6 +48,15 @@ const CartItem = ({ item, onUpdateQuantity, onRemove, notification }) => {
                 {/* Product Info */}
                 <div className="flex-1 min-w-0 tabular-nums">
                     <h3 className="font-bold text-[#09253E] text-sm sm:text-base mb-1 truncate">{item.name}</h3>
+                    {item.attributes && (
+                        <div className="flex flex-wrap gap-1.5 mb-1.5">
+                            {Object.entries(item.attributes).map(([k, v]) => (
+                                <span key={k} className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 bg-slate-100 text-slate-700 rounded">
+                                    {k}: {v}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                     <p className="text-[#004687] font-bold text-sm">{formatCurrency(item.price)}</p>
 
                     {selectedWarehouse && (
@@ -94,7 +103,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove, notification }) => {
                 <div className="inline-flex items-center bg-white rounded-lg border border-slate-300 h-9 px-0.5 tabular-nums">
                     <button
                         type="button"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => onUpdateQuantity(item.cart_key || item.id, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                         className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-[#004687] hover:bg-slate-100 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
@@ -103,7 +112,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove, notification }) => {
                     <span className="w-9 text-center font-bold text-slate-900 text-xs">{item.quantity}</span>
                     <button
                         type="button"
-                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => onUpdateQuantity(item.cart_key || item.id, item.quantity + 1)}
                         disabled={item.stock !== undefined && item.quantity >= item.stock}
                         className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-[#004687] hover:bg-slate-100 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
@@ -113,7 +122,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove, notification }) => {
 
                 <button
                     type="button"
-                    onClick={() => onRemove(item.id)}
+                    onClick={() => onRemove(item.cart_key || item.id)}
                     aria-label="Remove item"
                     className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >

@@ -5,12 +5,12 @@ namespace App\Ecommerce\Order\DTOs\Order;
 class OrderDataDTO
 {
     public function __construct(
-        public ?int $customerId = null,
         public string $email,
         public string $phone,
         public array $shippingAddress,
         public array $billingAddress,
         public array $items, // [['product_id' => 1, 'qty' => 2, 'price' => 100], ...]
+        public ?int $customerId = null,
         public ?string $shippingMethod = null,
         public ?string $paymentMethod = null,
         public ?string $couponCode = null,

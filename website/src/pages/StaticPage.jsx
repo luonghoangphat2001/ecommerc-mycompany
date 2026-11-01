@@ -1,5 +1,5 @@
 import React from "react"
-import { useLocation } from "react-router-dom"
+import { useLocation, useParams } from "react-router-dom"
 import { usePageBySlug } from "../features/home/hooks/useHomeData"
 import { PageHeading } from "../components/common"
 import useSettingsStore from "../store/useSettingsStore"
@@ -203,11 +203,12 @@ const renderBlock = (block, index, language) => {
     }
 }
 
-const StaticPage = () => {
+const StaticPage = ({ slug: propSlug }) => {
     const location = useLocation()
+    const { slug: paramSlug } = useParams()
     const language = useSettingsStore((state) => state.language) || "vi"
     const translate = useSettingsStore((state) => state.translate)
-    const pageSlug = (location.pathname.replace(/^\/+/, "") || "about").replace(/^p\//, "")
+    const pageSlug = propSlug || paramSlug || "about"
     const { data } = usePageBySlug(pageSlug)
     const page = data?.data || data || null
 

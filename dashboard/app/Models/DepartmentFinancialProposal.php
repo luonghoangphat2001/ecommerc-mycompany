@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FinancialProposalStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,6 +16,11 @@ class DepartmentFinancialProposal extends Model
         'amount',
         'status',
         'is_urgent',
+    ];
+
+    protected $casts = [
+        'status' => FinancialProposalStatus::class,
+        'is_urgent' => 'boolean',
     ];
 
     public function department(): BelongsTo
