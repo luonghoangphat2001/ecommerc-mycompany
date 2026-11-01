@@ -62,6 +62,7 @@ class ShippingIntegrationTest extends TestCase
         $resHanoi->assertOk();
         $methodsHanoi = $resHanoi->json('data') ?? $resHanoi->json();
         $this->assertNotEmpty($methodsHanoi);
+        fwrite(STDERR, json_encode(collect($methodsHanoi)->pluck("name"), JSON_UNESCAPED_UNICODE));
         $this->assertTrue(collect($methodsHanoi)->contains(fn($m) => str_contains($m['name'], 'Miền Bắc')));
 
         // Domestic: Ho Chi Minh (Miền Nam)
