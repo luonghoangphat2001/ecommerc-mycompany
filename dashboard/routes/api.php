@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AddressController;
 use App\Http\Controllers\Api\Agent\AgentDashboardController;
+use App\Http\Controllers\Api\AttributeController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CartController;
@@ -132,6 +133,13 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
             Route::get('{page}', [PageController::class, 'show']);
         });
 
+        // Global Attributes
+        Route::prefix('attributes')->group(function () {
+            Route::get('/', [AttributeController::class, 'index']);
+            Route::post('generate-variants', [AttributeController::class, 'generateVariants']);
+            Route::get('{id}', [AttributeController::class, 'show']);
+        });
+
         // Authenticated Routes
         Route::middleware([
             'auth:sanctum',
@@ -164,6 +172,14 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
                 Route::post('/', [AddressController::class, 'store']);
                 Route::put('{address}', [AddressController::class, 'update']);
                 Route::delete('{address}', [AddressController::class, 'destroy']);
+            });
+
+            // Global Attributes (Authenticated Write)
+            Route::prefix('attributes')->group(function () {
+                Route::post('/', [AttributeController::class, 'store']);
+                Route::put('{id}', [AttributeController::class, 'update']);
+                Route::delete('{id}', [AttributeController::class, 'destroy']);
+                Route::post('{id}/values', [AttributeController::class, 'addValues']);
             });
 
             // Loyalty

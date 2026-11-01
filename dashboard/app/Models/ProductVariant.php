@@ -19,6 +19,8 @@ class ProductVariant extends Model
         'sku',
         'price',
         'sale_price',
+        'sale_start_date',
+        'sale_end_date',
         'cost',
         'qty',
         'attributes',
@@ -32,6 +34,8 @@ class ProductVariant extends Model
     protected $casts = [
         'price' => 'integer',
         'sale_price' => 'integer',
+        'sale_start_date' => 'datetime',
+        'sale_end_date' => 'datetime',
         'cost' => 'integer',
         'qty' => 'integer',
         'attributes' => 'array',
@@ -83,6 +87,13 @@ class ProductVariant extends Model
             $this->sale_price > 0 &&
             $this->sale_price < $this->price
         ) {
+            $now = now();
+            if ($this->sale_start_date && $now->lt($this->sale_start_date)) {
+                return (int) $this->price;
+            }
+            if ($this->sale_end_date && $now->gt($this->sale_end_date)) {
+                return (int) $this->price;
+            }
             return (int) $this->sale_price;
         }
 

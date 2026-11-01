@@ -8,6 +8,9 @@ import { useFormatters } from "../../../utils/useFormatters"
 const ProductCard = ({ product }) => {
     const addToCart = useCartStore((state) => state.addToCart)
     const translate = useSettingsStore((state) => state.translate)
+    const manageStock = useSettingsStore((state) => state.settings?.inventory?.manage_stock ?? true)
+    const catalogMode = useSettingsStore((state) => state.settings?.ecommerce?.catalog_mode ?? false)
+    const ecommerceEnabled = useSettingsStore((state) => state.settings?.ecommerce?.enabled ?? true)
     const { formatCurrency, getLocalizedText } = useFormatters()
 
     const stock = product.stock || product.qty || 0
@@ -16,20 +19,21 @@ const ProductCard = ({ product }) => {
         (sum, inv) => sum + (inv.stock_quantity || inv.pivot?.quantity || 0),
         0
     )
-    const isAvailable = product.is_available !== false && (stock > 0 || totalWarehouseStock > 0)
+    const isStockAvailable = !manageStock || (stock > 0 || totalWarehouseStock > 0 || product.is_available === true)
+    const isAvailable = product.is_available !== false && isStockAvailable
+    const canAddToCart = isAvailable && !catalogMode && ecommerceEnabled
 
     const isVariable = product.type === "variable" || product.product_type === "variable"
 
     const handleAddToCart = (e) => {
         e.preventDefault()
         e.stopPropagation()
+        if (!canAddToCart) return
         if (isVariable) {
             window.location.href = `/products/${product.slug || product.id}`
             return
         }
-        if (isAvailable) {
-            addToCart(product, 1)
-        }
+        addToCart(product, 1)
     }
 
     const imageSrc = product.image?.url || product.image || product.image_url
@@ -142,20 +146,22 @@ const ProductCard = ({ product }) => {
                         )}
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={handleAddToCart}
-                        disabled={!isAvailable}
-                        aria-label={isAvailable ? translate("product.add_to_cart") : translate("product.out_of_stock")}
-                        title={isAvailable ? translate("product.add_to_cart") : translate("product.out_of_stock")}
-                        className={`h-9 px-3 rounded-lg inline-flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors shrink-0 ${
-                            isAvailable
-                                ? "bg-[#004687]/10 text-[#004687] hover:bg-[#004687] hover:text-white"
-                                : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                        }`}
-                    >
-                        {isAvailable ? <ShoppingCart size={15} /> : <AlertCircle size={15} />}
-                    </button>
+                    {!catalogMode && ecommerceEnabled && (
+                        <button
+                            type="button"
+                            onClick={handleAddToCart}
+                            disabled={!canAddToCart}
+                            aria-label={canAddToCart ? translate("product.add_to_cart") : translate("product.out_of_stock")}
+                            title={canAddToCart ? translate("product.add_to_cart") : translate("product.out_of_stock")}
+                            className={`h-9 px-3 rounded-lg inline-flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors shrink-0 ${
+                                canAddToCart
+                                    ? "bg-[#004687]/10 text-[#004687] hover:bg-[#004687] hover:text-white"
+                                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                            }`}
+                        >
+                            {canAddToCart ? <ShoppingCart size={15} /> : <AlertCircle size={15} />}
+                        </button>
+                    )}
                 </div>
             </div>
         </Link>

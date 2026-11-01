@@ -38,13 +38,16 @@
                 </thead>
                 <tbody>
                     @forelse($agents ?? [] as $agent)
+                        @php
+                            $agentStatusVal = $agent->status instanceof \BackedEnum ? $agent->status->value : $agent->status;
+                        @endphp
                         <tr>
                             <td class="mono cell-muted" style="font-weight: 600;">{{ $agent->agent_code }}</td>
                             <td style="font-weight: 600;">{{ $agent->name }}</td>
                             <td>
                                 <x-admin.status-badge
-                                    :status="$agent->status"
-                                    :label="__('workspace.default.statuses.' . ($agent->status === 'active' ? 'active' : ($agent->status === 'suspended' ? 'suspended' : 'inactive')))"
+                                    :status="$agentStatusVal"
+                                    :label="__('workspace.default.statuses.' . ($agentStatusVal === 'active' ? 'active' : ($agentStatusVal === 'suspended' ? 'suspended' : 'inactive')))"
                                 />
                             </td>
                             <td class="text-right">

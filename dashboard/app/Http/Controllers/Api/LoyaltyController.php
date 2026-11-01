@@ -31,8 +31,7 @@ class LoyaltyController extends BaseApiController
     )]
     public function getPoints(Request $request): JsonResponse
     {
-        $marketingSettings = app(\App\Settings\MarketingSettings::class);
-        $isEnabled = (bool) ($this->settings->enabled || $marketingSettings->loyalty_enabled);
+        $isEnabled = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isLoyaltyEnabled();
 
         $user = $request->user();
         $loyaltyPoint = $user?->loyaltyPoint;
@@ -45,6 +44,10 @@ class LoyaltyController extends BaseApiController
             'lifetime_points' => $loyaltyPoint?->lifetime_points ?? 0,
             'points_per_currency' => $this->settings->points_per_currency,
             'point_conversion_rate' => $this->settings->point_conversion_rate,
+            'spending_amount_per_point' => $this->settings->spending_amount_per_point ?? 10000,
+            'minimum_points_to_redeem' => $this->settings->minimum_points_to_redeem ?? 10,
+            'max_redeem_percentage' => $this->settings->max_redeem_percentage ?? 50,
+            'exclude_sale_items' => (bool) ($this->settings->exclude_sale_items ?? false),
         ]);
     }
 

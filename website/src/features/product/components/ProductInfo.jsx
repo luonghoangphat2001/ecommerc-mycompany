@@ -2,6 +2,7 @@ import React from "react"
 import { ShoppingCart, ShieldCheck, CheckCircle2, AlertCircle, Minus, Plus, Package, Layers } from "lucide-react"
 import { Button } from "../../../components/common"
 import { useFormatters } from "../../../utils/useFormatters"
+import useSettingsStore from "../../../store/useSettingsStore"
 
 const ProductInfo = ({
     product,
@@ -24,7 +25,12 @@ const ProductInfo = ({
     translate,
 }) => {
     const { formatCurrency, getLocalizedText } = useFormatters()
-    const isAvailable = stock > 0
+    const manageStock = useSettingsStore((state) => state.settings?.inventory?.manage_stock ?? true)
+    const catalogMode = useSettingsStore((state) => state.settings?.ecommerce?.catalog_mode ?? false)
+    const ecommerceEnabled = useSettingsStore((state) => state.settings?.ecommerce?.enabled ?? true)
+
+    const isAvailable = !manageStock || stock > 0
+    const canAddToCart = isAvailable && !catalogMode && ecommerceEnabled
     const productName = getLocalizedText(product.name)
     const productDescription = getLocalizedText(product.description)
     const displayPrice = currentPrice !== undefined ? currentPrice : (product.effective_price || product.price)
@@ -54,7 +60,9 @@ const ProductInfo = ({
                     {isAvailable ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
                     <span className="tabular-nums">
                         {isAvailable
-                            ? translate("product.in_stock_units", { count: stock }) || `In Stock (${stock} units)`
+                            ? manageStock
+                                ? translate("product.in_stock_units", { count: stock }) || `In Stock (${stock} units)`
+                                : translate("product.in_stock") || "In Stock"
                             : translate("product.out_of_stock") || "Out of Stock"}
                     </span>
                 </span>
@@ -193,44 +201,50 @@ const ProductInfo = ({
             )}
 
             {/* Quantity & Add to Cart Row */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
-                <div className="inline-flex items-center justify-between bg-white rounded-lg border border-slate-300 h-11 px-1 shrink-0">
-                    <button
-                        type="button"
-                        onClick={onDecrement}
-                        aria-label="Decrease quantity"
-                        className="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#004687] hover:bg-slate-100 rounded-md transition-colors"
-                    >
-                        <Minus size={15} />
-                    </button>
-                    <span className="w-10 text-center text-sm font-bold text-slate-900 tabular-nums">
-                        {quantity}
-                    </span>
-                    <button
-                        type="button"
-                        onClick={onIncrement}
-                        aria-label="Increase quantity"
-                        className="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#004687] hover:bg-slate-100 rounded-md transition-colors"
-                    >
-                        <Plus size={15} />
-                    </button>
-                </div>
+            {!catalogMode && ecommerceEnabled ? (
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
+                    <div className="inline-flex items-center justify-between bg-white rounded-lg border border-slate-300 h-11 px-1 shrink-0">
+                        <button
+                            type="button"
+                            onClick={onDecrement}
+                            aria-label="Decrease quantity"
+                            className="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#004687] hover:bg-slate-100 rounded-md transition-colors"
+                        >
+                            <Minus size={15} />
+                        </button>
+                        <span className="w-10 text-center text-sm font-bold text-slate-900 tabular-nums">
+                            {quantity}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={onIncrement}
+                            aria-label="Increase quantity"
+                            className="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-[#004687] hover:bg-slate-100 rounded-md transition-colors"
+                        >
+                            <Plus size={15} />
+                        </button>
+                    </div>
 
-                <Button
-                    onClick={() => onAddToCart()}
-                    disabled={!isAvailable}
-                    variant="primary"
-                    size="block"
-                    className="h-11 gap-2.5 flex-1"
-                >
-                    <ShoppingCart size={18} />
-                    <span>
-                        {isAvailable
-                            ? translate("product.add_to_cart")
-                            : translate("product.out_of_stock") || "Out of Stock"}
-                    </span>
-                </Button>
-            </div>
+                    <Button
+                        onClick={() => onAddToCart()}
+                        disabled={!canAddToCart}
+                        variant="primary"
+                        size="block"
+                        className="h-11 gap-2.5 flex-1"
+                    >
+                        <ShoppingCart size={18} />
+                        <span>
+                            {canAddToCart
+                                ? translate("product.add_to_cart")
+                                : translate("product.out_of_stock") || "Out of Stock"}
+                        </span>
+                    </Button>
+                </div>
+            ) : (
+                <div className="p-3.5 mb-5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">
+                    {translate("product.catalog_mode_notice") || "Sản phẩm hiện chỉ trưng bày catalog. Vui lòng liên hệ trực tiếp để đặt hàng."}
+                </div>
+            )}
 
             {/* Service Guarantee Note */}
             <div className="flex items-center gap-2 text-xs text-slate-500 pt-2">

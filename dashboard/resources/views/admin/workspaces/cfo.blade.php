@@ -74,14 +74,17 @@
                 </thead>
                 <tbody>
                     @forelse($proposals as $proposal)
+                        @php
+                            $proposalStatusVal = $proposal->status instanceof \BackedEnum ? $proposal->status->value : $proposal->status;
+                        @endphp
                         <tr>
                             <td style="font-weight: 600;">{{ $proposal->title }}</td>
                             <td>{{ $proposal->user->name ?? 'N/A' }}</td>
                             <td class="mono text-right" style="font-weight: 700;">{{ number_format($proposal->amount) }}</td>
                             <td>
                                 <x-admin.status-badge
-                                    :status="$proposal->status"
-                                    :label="__('workspace.cfo.statuses.' . ($proposal->status === 'pending' ? 'pending' : ($proposal->status === 'approved' ? 'approved' : 'rejected')))"
+                                    :status="$proposalStatusVal"
+                                    :label="__('workspace.cfo.statuses.' . ($proposalStatusVal === 'pending' ? 'pending' : ($proposalStatusVal === 'approved' ? 'approved' : 'rejected')))"
                                 />
                             </td>
                             <td>

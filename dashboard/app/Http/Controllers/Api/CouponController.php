@@ -68,6 +68,10 @@ class CouponController extends BaseApiController
 
     public function index(Request $request): JsonResponse
     {
+        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isCouponsEnabled()) {
+            return $this->ok([]);
+        }
+
         $coupons = \App\Models\Coupon::query()
             ->where('is_active', true)
             ->where(function ($q) {

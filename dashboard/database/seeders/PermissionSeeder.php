@@ -22,6 +22,7 @@ class PermissionSeeder extends Seeder
             'roles',
             'permissions',
             'products',
+            'attributes',
             'brands',
             'product-categories',
             'tax-classes',

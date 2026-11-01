@@ -27,7 +27,9 @@ class CalculateTax
         $checkoutSettings = app(CheckoutSettings::class);
         $couponSettings = app(CouponSettings::class);
 
-        if (!($checkoutSettings->enable_tax ?? true)) {
+        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
+
+        if (!$policy->isTaxCalculationEnabled()) {
             $result->taxTotal = 0;
             return $next($passable);
         }

@@ -28,6 +28,10 @@ class CouponService implements CouponServiceInterface
      */
     public function validateCoupon(string $code, array $items, float $subtotal, ?int $userId = null): CouponValidationDTO
     {
+        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isCouponsEnabled()) {
+            throw new CouponValidationException(trans('messages.coupon_disabled') ?: 'Mã giảm giá hiện đang bị tắt bởi hệ thống.');
+        }
+
         $coupon = $this->couponRepository->findByCode($code);
 
         if (!$coupon) {

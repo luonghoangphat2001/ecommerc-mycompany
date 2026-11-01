@@ -39,7 +39,10 @@ class AgentProductController extends BaseApiController
 
         $products = $query->paginate((int) $request->get('per_page', 20));
 
-        $data = $products->getCollection()->map(function (Product $p) {
+        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
+        $trackStock = $policy->isInventoryTrackingEnabled();
+
+        $data = $products->getCollection()->map(function (Product $p) use ($trackStock) {
             return [
                 'id' => $p->id,
                 'name' => $p->name,
@@ -51,7 +54,7 @@ class AgentProductController extends BaseApiController
                 'sale_price' => $p->is_on_sale ? (int) $p->sale_price : null,
                 'effective_price' => (int) $p->effective_price,
                 'available_stock' => (int) $p->available_stock,
-                'is_available' => $p->available_stock > 0 && $p->is_visible,
+                'is_available' => $p->is_visible && (!$trackStock || $p->available_stock > 0),
                 'tax_class_id' => $p->tax_class_id,
             ];
         });
@@ -92,6 +95,8 @@ class AgentProductController extends BaseApiController
             $country
         );
 
+        $trackStock = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isInventoryTrackingEnabled();
+
         $payload = [
             'id' => $product->id,
             'name' => $product->name,
@@ -103,7 +108,7 @@ class AgentProductController extends BaseApiController
             'sale_price' => $product->is_on_sale ? (int) $product->sale_price : null,
             'effective_price' => (int) $product->effective_price,
             'available_stock' => (int) $product->available_stock,
-            'is_available' => $product->available_stock > 0 && $product->is_visible,
+            'is_available' => (bool) $product->is_visible && (!$trackStock || $product->available_stock > 0),
             'apply_tax' => (bool) $product->apply_tax,
             'tax_class' => $product->taxClass ? [
                 'id' => $product->taxClass->id,
@@ -121,7 +126,7 @@ class AgentProductController extends BaseApiController
                 'options' => $attr->options,
             ])->toArray();
 
-            $payload['variants'] = $product->variants->map(function (ProductVariant $v) use ($country) {
+            $payload['variants'] = $product->variants->map(function (ProductVariant $v) use ($country, $trackStock) {
                 $variantTax = $this->taxService->calculateProductTax($v->product_id, $v->id, $v->effective_price, $country);
                 return [
                     'id' => $v->id,
@@ -131,7 +136,7 @@ class AgentProductController extends BaseApiController
                     'effective_price' => (int) $v->effective_price,
                     'qty' => (int) $v->qty,
                     'available_stock' => (int) $v->available_stock,
-                    'is_available' => $v->is_active && $v->available_stock > 0,
+                    'is_available' => (bool) $v->is_active && (!$trackStock || $v->available_stock > 0),
                     'attributes' => $v->attributes,
                     'tax_class_id' => $v->tax_class_id ?? $v->product?->tax_class_id,
                     'tax_rate_percent' => $variantTax['rate_percent'] ?? 0,
@@ -154,9 +159,10 @@ class AgentProductController extends BaseApiController
                 ];
             })->toArray();
 
+            $comboStock = (int) $product->calculateComboStock();
             $payload['combo_stock_breakdown'] = [
-                'available_combos' => (int) $product->calculateComboStock(),
-                'is_limited_by_stock' => $product->calculateComboStock() <= 0,
+                'available_combos' => $trackStock ? $comboStock : 999999,
+                'is_limited_by_stock' => $trackStock && $comboStock <= 0,
             ];
         }
 

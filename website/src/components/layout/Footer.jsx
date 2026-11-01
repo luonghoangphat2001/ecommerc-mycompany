@@ -7,9 +7,14 @@ import { getLocalizedText } from "../../utils/formatters"
 
 const Footer = () => {
     const { settings, translate } = useSettingsStore()
-    const { menuItems: footerMenuItems } = useMenu("footer-menu")
-
     const { general, footer } = settings || {}
+    const footerMenuHandle = footer?.menu_handle || "footer-menu"
+    const { menuItems: footerMenuItems } = useMenu(footerMenuHandle)
+
+    const activeFooterLinks = (footerMenuItems && footerMenuItems.length > 0)
+        ? footerMenuItems
+        : (Array.isArray(footer?.links) && footer.links.length > 0 ? footer.links : [])
+
     const currentYear = new Date().getFullYear()
 
     const storeName = general?.site_name || general?.store_name || "NovaStore"
@@ -100,9 +105,9 @@ const Footer = () => {
                             {translate?.("footer.customer_service") || "Customer Support"}
                         </h4>
                         <ul className="space-y-2 text-sm">
-                            {footerMenuItems?.length > 0 ? (
-                                footerMenuItems.map((item) => (
-                                    <li key={item.id}>
+                            {activeFooterLinks.length > 0 ? (
+                                activeFooterLinks.map((item, idx) => (
+                                    <li key={item.id || idx}>
                                         <Link
                                             to={item.url || `/${item.slug}`}
                                             className="text-slate-400 hover:text-white transition-colors"

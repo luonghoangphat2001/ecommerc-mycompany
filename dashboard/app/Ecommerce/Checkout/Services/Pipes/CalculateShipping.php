@@ -30,7 +30,8 @@ class CalculateShipping
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        if (!$request->shippingMethod) {
+        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isShippingEnabled() || !$request->shippingMethod) {
+            $result->shippingTotal = 0;
             return $next($passable);
         }
 

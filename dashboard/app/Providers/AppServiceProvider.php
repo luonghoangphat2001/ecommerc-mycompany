@@ -39,6 +39,11 @@ class AppServiceProvider extends ServiceProvider
             \App\Ecommerce\Audit\Contracts\FinancialAuditServiceInterface::class,
             \App\Ecommerce\Audit\Services\FinancialAuditService::class
         );
+
+        $this->app->singleton(
+            \App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class,
+            \App\Ecommerce\Settings\Services\FeaturePolicyService::class
+        );
     }
 
     /**

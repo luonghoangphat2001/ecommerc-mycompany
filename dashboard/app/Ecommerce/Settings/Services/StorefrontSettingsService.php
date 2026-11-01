@@ -2,12 +2,16 @@
 
 namespace App\Ecommerce\Settings\Services;
 
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Settings\Contracts\StorefrontSettingsServiceInterface;
+use App\Settings\EcommerceSettings;
 use App\Settings\GeneralSettings;
+use App\Settings\InventorySettings;
 use App\Settings\ProductSettings;
 use App\Settings\CheckoutSettings;
 use App\Settings\FooterSettings;
 use App\Settings\CustomSettings;
+use App\Models\Menu;
 use App\Models\ShippingMethod;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -15,9 +19,10 @@ use Illuminate\Support\Facades\Storage;
 
 class StorefrontSettingsService implements StorefrontSettingsServiceInterface
 {
-    public function __construct()
-    {
-        // No dependencies needed - uses Spatie Settings directly
+    public function __construct(
+        protected ?FeaturePolicyServiceInterface $featurePolicy = null
+    ) {
+        $this->featurePolicy = $this->featurePolicy ?: app(FeaturePolicyServiceInterface::class);
     }
 
     public function getStorefrontSettings(): array
@@ -53,6 +58,14 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
             $custom = app(CustomSettings::class);
             /** @var \App\Settings\MarketingSettings $marketing */
             $marketing = app(\App\Settings\MarketingSettings::class);
+            /** @var EcommerceSettings $ecommerce */
+            $ecommerce = app(EcommerceSettings::class);
+            /** @var InventorySettings $inventory */
+            $inventory = app(InventorySettings::class);
+            /** @var \App\Settings\LoyaltySettings $loyaltySettings */
+            $loyaltySettings = app(\App\Settings\LoyaltySettings::class);
+
+            $policy = $this->featurePolicy ?: app(FeaturePolicyServiceInterface::class);
 
             $locales = config('app.supported_locales', ['vi', 'en']);
             $languages = [];
@@ -74,6 +87,29 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                 ['code' => 'USD', 'symbol' => '$', 'name' => 'USD ($)'],
             ];
 
+            $shippingMethods = $policy->isShippingEnabled()
+                ? ShippingMethod::where('is_enabled', true)->get()->map(fn($m) => [
+                    'id' => $m->id,
+                    'name' => $this->localizeShippingMethodName($m),
+                    'type' => $m->type instanceof \BackedEnum ? $m->type->value : $m->type,
+                    'settings' => $m->settings,
+                ])->values()
+                : [];
+
+            $footerMenuHandle = $footer->menu_handle ?: 'footer-menu';
+            $footerMenu = Menu::where('handle', $footerMenuHandle)->with('items')->first();
+            $footerLinks = ($footerMenu && $footerMenu->items->isNotEmpty())
+                ? $footerMenu->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => $item->title,
+                        'url' => $item->url,
+                        'target' => $item->target ?? '_self',
+                        'order' => $item->order ?? 0,
+                    ];
+                })->values()->all()
+                : ($footer->links ?? []);
+
             return [
                 'general' => [
                     'site_name' => $general->store_name,
@@ -92,6 +128,15 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                     'primary_color' => app(\App\Settings\DBSettings::class)->primary_color,
                     'currencies' => $currencies,
                 ],
+                'ecommerce' => [
+                    'enabled' => $policy->isEcommerceEnabled(),
+                    'catalog_mode' => $policy->isCatalogMode(),
+                    'tax_enabled' => $policy->isTaxCalculationEnabled(),
+                    'shipping_enabled' => $policy->isShippingEnabled(),
+                    'inventory_tracking' => $policy->isInventoryTrackingEnabled(),
+                    'enable_wishlist' => (bool) ($ecommerce->enable_wishlist ?? true),
+                    'enable_compare' => (bool) ($ecommerce->enable_compare ?? false),
+                ],
                 'header' => [
                     'site_name' => $general->store_name,
                     'logo' => $general->logo ? Storage::url($general->logo) : null,
@@ -99,32 +144,44 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                 ],
                 'products' => [
                     'add_to_cart_behavior' => $product->add_to_cart_behavior,
-                    'enable_reviews' => $product->enable_reviews,
+                    'enable_reviews' => $policy->isReviewsEnabled(),
+                ],
+                'inventory' => [
+                    'manage_stock' => $policy->isInventoryTrackingEnabled(),
+                    'multi_warehouse_enabled' => $policy->isMultiWarehouseEnabled(),
                 ],
                 'marketing' => [
-                    'enable_coupons' => (bool) ($marketing->enable_coupons ?? true),
-                    'enable_loyalty' => (bool) ($marketing->loyalty_enabled ?? true),
-                    'loyalty_enabled' => (bool) ($marketing->loyalty_enabled ?? true),
-                    'upsell_enabled' => (bool) ($marketing->upsell_enabled ?? true),
-                    'cross_sell_enabled' => (bool) ($marketing->cross_sell_enabled ?? true),
-                    'combo_enabled' => (bool) ($marketing->combo_enabled ?? true),
-                    'points_per_currency' => $marketing->points_per_currency ?? 1,
-                    'point_conversion_rate' => $marketing->point_conversion_rate ?? 1000,
+                    'enable_coupons' => $policy->isCouponsEnabled(),
+                    'enable_loyalty' => $policy->isLoyaltyEnabled(),
+                    'loyalty_enabled' => $policy->isLoyaltyEnabled(),
+                    'upsell_enabled' => $policy->isUpsellEnabled(),
+                    'cross_sell_enabled' => $policy->isCrossSellEnabled(),
+                    'combo_enabled' => $policy->isComboEnabled(),
+                    'points_per_currency' => $loyaltySettings->points_per_currency ?? 1,
+                    'point_conversion_rate' => $loyaltySettings->point_conversion_rate ?? 1000,
+                    'spending_amount_per_point' => $loyaltySettings->spending_amount_per_point ?? 10000,
+                ],
+                'loyalty' => [
+                    'enabled' => $policy->isLoyaltyEnabled(),
+                    'spending_amount_per_point' => $loyaltySettings->spending_amount_per_point ?? 10000,
+                    'point_conversion_rate' => $loyaltySettings->point_conversion_rate ?? 1000,
+                    'minimum_points_to_redeem' => $loyaltySettings->minimum_points_to_redeem ?? 10,
+                    'max_redeem_percentage' => $loyaltySettings->max_redeem_percentage ?? 50,
+                    'exclude_sale_items' => (bool) ($loyaltySettings->exclude_sale_items ?? false),
                 ],
                 'checkout' => [
-                    'enable_guest_checkout' => $checkout->enable_guest_checkout,
-                    'enabled_payment_gateways' => $checkout->enabled_payment_gateways,
+                    'enable_tax' => $policy->isTaxCalculationEnabled(),
+                    'enable_shipping' => $policy->isShippingEnabled(),
+                    'enable_guest_checkout' => $policy->isGuestCheckoutAllowed(),
+                    'prices_include_tax' => (bool) ($checkout->prices_include_tax ?? false),
+                    'enabled_payment_gateways' => $checkout->enabled_payment_gateways ?? ['cod'],
                     'payment_gateways' => $this->getPaymentGatewaysConfig($checkout),
-                    'shipping_methods' => ShippingMethod::where('is_enabled', true)->get()->map(fn($m) => [
-                        'id' => $m->id,
-                        'name' => $this->localizeShippingMethodName($m),
-                        'type' => $m->type instanceof \BackedEnum ? $m->type->value : $m->type,
-                        'settings' => $m->settings,
-                    ]),
+                    'shipping_methods' => $shippingMethods,
                 ],
                 'footer' => [
                     'copyright' => $footer->copyright,
-                    'links' => $footer->links,
+                    'menu_handle' => $footerMenuHandle,
+                    'links' => $footerLinks,
                 ],
                 'custom' => [
                     'custom_css' => $custom->custom_css,

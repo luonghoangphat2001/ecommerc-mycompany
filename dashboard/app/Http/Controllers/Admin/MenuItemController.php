@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\Menu;
 use App\Models\MenuItem;
+use App\Settings\FooterSettings;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Schema;
@@ -219,6 +220,7 @@ class MenuItemController extends BaseCrudController
         $this->flushStorefrontCaches();
 
         $menuId = $record->menu_id;
+        $this->syncFooterMenuIfNeeded($menuId);
 
         return redirect()->route('admin.menus.index', ['menu_id' => $menuId])
             ->with('status', __('admin.messages.created'));
@@ -234,6 +236,7 @@ class MenuItemController extends BaseCrudController
         $this->flushStorefrontCaches();
 
         $menuId = $record->menu_id;
+        $this->syncFooterMenuIfNeeded($menuId);
 
         return redirect()->route('admin.menus.index', ['menu_id' => $menuId])
             ->with('status', __('admin.messages.updated'));
@@ -246,6 +249,7 @@ class MenuItemController extends BaseCrudController
         $record->delete();
         Cache::forget('all_menus');
         $this->flushStorefrontCaches();
+        $this->syncFooterMenuIfNeeded($menuId);
 
         return redirect()->route('admin.menus.index', ['menu_id' => $menuId])
             ->with('status', __('admin.messages.deleted'));
@@ -258,11 +262,49 @@ class MenuItemController extends BaseCrudController
             return response()->json(['success' => true]);
         }
 
+        $firstId = $tree[0]['id'] ?? null;
+        $menuId = $firstId ? MenuItem::find($firstId)?->menu_id : null;
+
         $this->updateMenuItemTree($tree, null);
         Cache::forget('all_menus');
         $this->flushStorefrontCaches();
 
+        if ($menuId) {
+            $this->syncFooterMenuIfNeeded($menuId);
+        }
+
         return response()->json(['success' => true]);
+    }
+
+    protected function syncFooterMenuIfNeeded(?int $menuId): void
+    {
+        if (! $menuId) {
+            return;
+        }
+
+        try {
+            $footerSettings = app(FooterSettings::class);
+            $footerMenuHandle = $footerSettings->menu_handle ?: 'footer-menu';
+            $footerMenu = Menu::where('handle', $footerMenuHandle)->first();
+
+            if ($footerMenu && (int) $footerMenu->id === (int) $menuId) {
+                $footerMenu->load('items');
+                $syncedLinks = $footerMenu->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => is_array($item->title) ? ($item->title['vi'] ?? reset($item->title)) : $item->title,
+                        'url' => $item->url,
+                        'target' => $item->target ?? '_self',
+                        'order' => $item->order ?? 0,
+                    ];
+                })->values()->all();
+
+                $footerSettings->links = $syncedLinks;
+                $footerSettings->save();
+            }
+        } catch (\Throwable $e) {
+            // Silently ignore if settings not initialized
+        }
     }
 
     protected function updateMenuItemTree(array $tree, ?int $parentId): void

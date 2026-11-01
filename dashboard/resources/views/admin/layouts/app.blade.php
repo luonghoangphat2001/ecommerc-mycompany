@@ -21,6 +21,7 @@
             'icon' => 'package',
             'items' => [
                 ['label' => 'admin.sidebar.products', 'route' => 'admin.products.index', 'match' => 'admin.products.*', 'icon' => 'package'],
+                ['label' => 'admin.sidebar.attributes', 'route' => 'admin.attributes.index', 'match' => 'admin.attributes.*', 'icon' => 'tags'],
                 ['label' => 'admin.sidebar.product_categories', 'route' => 'admin.product-categories.index', 'match' => 'admin.product-categories.*', 'icon' => 'folder-tree'],
                 ['label' => 'admin.sidebar.brands', 'route' => 'admin.brands.index', 'match' => 'admin.brands.*', 'icon' => 'award'],
                 [
@@ -1299,7 +1300,7 @@
             font-weight: 600;
             margin-bottom: 5px;
         }
-        input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+        input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
         select,
         textarea,
         .input,

@@ -26,7 +26,8 @@ class ResolveShippingFeePipe
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        if (!$request->shippingAddress) {
+        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isShippingEnabled() || !$request->shippingAddress) {
+            $result->shippingTotal = 0;
             return $next($passable);
         }
 

@@ -2,9 +2,10 @@ import React from 'react';
 import useSettingsStore from '../../../store/useSettingsStore';
 
 const ProductInventoryStatus = ({ inventoryStatus }) => {
-  const { translate } = useSettingsStore();
+  const { translate, settings } = useSettingsStore();
+  const manageStock = settings?.inventory?.manage_stock ?? true;
 
-  if (!inventoryStatus) return null;
+  if (!inventoryStatus || !manageStock) return null;
 
   const containerClass = "flex items-center gap-2";
   const dotClass = "w-2 h-2 rounded-full";

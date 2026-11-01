@@ -22,7 +22,8 @@ class ResolveTaxRatePipe
 
         $address = $request->shippingAddress;
 
-        if (!$address) {
+        if (!$address || !app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isTaxCalculationEnabled()) {
+            $passable['resolved_tax_rates'] = [];
             return $next($passable);
         }
 

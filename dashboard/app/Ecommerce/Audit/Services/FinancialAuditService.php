@@ -203,4 +203,55 @@ class FinancialAuditService implements FinancialAuditServiceInterface
             report($e);
         }
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function logSettingChange(
+        string $group,
+        string $key,
+        mixed $oldValue,
+        mixed $newValue,
+        ?string $reason = null
+    ): void {
+        try {
+            $user = Auth::user();
+            $actorId = $user?->id ?? 'system';
+            $actorRole = $user?->role ?? ($user ? 'admin' : 'system');
+
+            $isSensitive = preg_match('/(secret|password|token|key|hash)/i', $key);
+            $maskVal = fn($val) => $isSensitive && !empty($val) ? '••••••••' : $val;
+
+            $context = [
+                'event' => 'setting.changed',
+                'group' => $group,
+                'key' => $key,
+                'full_key' => "{$group}.{$key}",
+                'old_value' => $maskVal($oldValue),
+                'new_value' => $maskVal($newValue),
+                'actor_id' => $actorId,
+                'actor_role' => $actorRole,
+                'reason' => $reason,
+                'request_id' => request()->header('X-Request-ID') ?? request()->header('X-Correlation-ID') ?? null,
+                'ip_address' => request()->ip() ?? '127.0.0.1',
+                'user_agent' => substr(request()->userAgent() ?? 'CLI/System', 0, 255),
+            ];
+
+            if (function_exists('activity')) {
+                $act = activity('financial')
+                    ->event('setting.changed')
+                    ->withProperties($context);
+
+                if ($user) {
+                    $act->causedBy($user);
+                }
+
+                $act->log("Setting [{$group}.{$key}] updated by {$actorRole} #{$actorId}");
+            }
+
+            ModuleLogger::order()->info('setting_changed', "Financial setting [{$group}.{$key}] adjusted", $context);
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
 }

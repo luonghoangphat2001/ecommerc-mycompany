@@ -1,10 +1,13 @@
 import React, { useState } from "react"
 import { Warehouse, CheckCircle, AlertCircle, MapPin, ChevronDown } from "lucide-react"
+import useSettingsStore from "../../../store/useSettingsStore"
 
 const ProductInventoryDetail = ({ inventory, onSelectWarehouse }) => {
     const [isExpanded, setIsExpanded] = useState(false)
+    const manageStock = useSettingsStore((state) => state.settings?.inventory?.manage_stock ?? true)
+    const multiWarehouse = useSettingsStore((state) => state.settings?.inventory?.multi_warehouse ?? true)
 
-    if (!inventory || inventory.length === 0) return null
+    if (!inventory || inventory.length === 0 || !manageStock || !multiWarehouse) return null
 
     const totalStock = inventory.reduce((sum, inv) => sum + (inv.quantity || 0), 0)
     const availableWarehouses = inventory.filter((inv) => inv.quantity > 0)

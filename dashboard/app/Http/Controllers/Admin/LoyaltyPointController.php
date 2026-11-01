@@ -22,6 +22,17 @@ class LoyaltyPointController extends BaseCrudController
         return 'admin.loyalty-points';
     }
 
+    protected function headerActions(): array
+    {
+        return [
+            [
+                'label' => __('admin.sidebar.loyalty_settings'),
+                'url' => route('admin.settings.index', ['tab' => 'loyalty']),
+                'class' => 'btn-secondary',
+            ],
+        ];
+    }
+
     protected function fields(): array
     {
         return [

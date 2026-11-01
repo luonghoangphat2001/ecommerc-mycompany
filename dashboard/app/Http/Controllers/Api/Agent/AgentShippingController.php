@@ -26,6 +26,14 @@ class AgentShippingController extends Controller
      */
     public function zones(Request $request): JsonResponse
     {
+        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isShippingEnabled()) {
+            return response()->json([
+                'success' => true,
+                'shipping_enabled' => false,
+                'data' => [],
+            ]);
+        }
+
         $zones = ShippingZone::with(['methods' => fn($q) => $q->where('is_enabled', true)])
             ->when(
                 \Illuminate\Support\Facades\Schema::hasColumn('shop_shipping_zones', 'is_active'),
@@ -100,6 +108,21 @@ class AgentShippingController extends Controller
             : ['weight' => (int) ($validated['weight'] ?? 500), 'length' => 20, 'width' => 15, 'height' => 10];
 
         $subtotal = (int) ($validated['subtotal'] ?? 0);
+
+        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isShippingEnabled()) {
+            return response()->json([
+                'success' => true,
+                'shipping_enabled' => false,
+                'destination' => [
+                    'country' => $validated['country'] ?? 'VN',
+                    'state' => $validated['state'] ?? null,
+                ],
+                'subtotal' => $subtotal,
+                'package' => $package,
+                'shipping_options' => [],
+            ]);
+        }
+
         $methods = $this->shippingService->getAvailableMethods(
             $validated['country'] ?? 'VN',
             $validated['state'] ?? null,

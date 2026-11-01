@@ -155,15 +155,22 @@
                                                 <option value="{{ $value }}" @selected((string) old($name, $displayValue) === (string) $value)>{{ $label }}</option>
                                             @endforeach
                                         </select>
+                                    @elseif ($type === 'boolean')
+                                        <select id="{{ $name }}" name="{{ $name }}" class="form-control">
+                                            <option value="1" @selected((string) old($name, (int) $displayValue) === '1')>{{ __('admin.common.yes') }} (Hiển thị)</option>
+                                            <option value="0" @selected((string) old($name, (int) $displayValue) === '0')>{{ __('admin.common.no') }} (Tạm ẩn)</option>
+                                        </select>
                                     @elseif ($type === 'multiselect')
                                         @php
                                             $selected = old($name, isset($formData[$name]) ? $formData[$name] : (is_iterable(data_get($record, $name)) ? collect(data_get($record, $name))->pluck('name')->toArray() : []));
                                         @endphp
-                                        <select id="{{ $name }}" name="{{ $name }}[]" multiple size="6" style="min-height: 130px;" class="form-control">
-                                            @foreach (($field['options'] ?? []) as $value => $label)
-                                                <option value="{{ $value }}" @selected(in_array((string) $value, array_map('strval', (array) $selected), true))>{{ $label }}</option>
-                                            @endforeach
-                                        </select>
+                                        <x-admin.multi-select
+                                            :name="$name"
+                                            :id="$name"
+                                            :options="$field['options'] ?? []"
+                                            :selected="(array) $selected"
+                                            :placeholder="'Chọn ' . strtolower($field['label'] ?? $name) . '...'"
+                                        />
                                     @elseif ($type === 'checkboxgroup')
                                         @php
                                             $selected = old($name, $formData[$name] ?? []);
@@ -618,6 +625,11 @@
                                                 @foreach (($field['options'] ?? []) as $value => $label)
                                                     <option value="{{ $value }}" @selected((string) old($name, $displayValue) === (string) $value)>{{ $label }}</option>
                                                 @endforeach
+                                            </select>
+                                        @elseif ($type === 'boolean')
+                                            <select id="{{ $name }}" name="{{ $name }}" class="form-control">
+                                                <option value="1" @selected((string) old($name, (int) $displayValue) === '1')>{{ __('admin.common.yes') }} (Hiển thị)</option>
+                                                <option value="0" @selected((string) old($name, (int) $displayValue) === '0')>{{ __('admin.common.no') }} (Tạm ẩn)</option>
                                             </select>
                                         @elseif ($type === 'date' || $type === 'datetime-local')
                                             <input id="{{ $name }}" type="{{ $type }}" name="{{ $name }}" value="{{ old($name, $displayValue) }}" class="form-control">

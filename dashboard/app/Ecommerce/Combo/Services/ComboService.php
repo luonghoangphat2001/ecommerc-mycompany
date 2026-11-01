@@ -44,6 +44,6 @@ class ComboService implements ComboServiceInterface
      */
     public function isEnabled(): bool
     {
-        return app(\App\Settings\MarketingSettings::class)->combo_enabled ?? false;
+        return app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isComboEnabled();
     }
 }

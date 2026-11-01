@@ -58,6 +58,9 @@ class ProductResource extends BaseResource
         $stock = $this->available_stock;
         $productType = $this->isVariable() ? 'variable' : ($this->isCombo() ? 'combo' : 'simple');
 
+        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
+        $trackStock = $policy->isInventoryTrackingEnabled();
+
         $attributesData = [];
         if ($this->relationLoaded('productAttributes')) {
             $attributesData = $this->productAttributes->map(fn($attr) => [
@@ -79,7 +82,7 @@ class ProductResource extends BaseResource
                 'is_on_sale' => (bool) $v->is_on_sale,
                 'qty' => (int) $v->qty,
                 'stock' => (int) $v->available_stock,
-                'is_available' => (bool) ($v->is_active && $v->available_stock > 0),
+                'is_available' => (bool) ($v->is_active && (!$trackStock || $v->available_stock > 0)),
                 'attributes' => is_array($v->attributes) ? $v->attributes : (json_decode($v->attributes, true) ?: []),
                 'image' => $v->image,
                 'weight' => $v->weight,
@@ -143,11 +146,14 @@ class ProductResource extends BaseResource
             'sale_start_at' => $this->sale_start_date ? $this->sale_start_date->toIso8601String() : null,
             'sale_end_at' => $this->sale_end_date ? $this->sale_end_date->toIso8601String() : null,
             'apply_tax' => (bool)$this->apply_tax,
+            'is_loyalty_earnable' => (bool) ($this->is_loyalty_earnable ?? true),
+            'is_loyalty_redeemable' => (bool) ($this->is_loyalty_redeemable ?? true),
+            'loyalty_points_reward' => $this->loyalty_points_reward ? (int) $this->loyalty_points_reward : null,
             'tax_class_id' => $this->tax_class_id,
             'qty' => $stock,
             'stock' => $stock,
             'featured' => $this->featured,
-            'is_available' => $stock > 0 && $this->is_visible,
+            'is_available' => (bool) ($this->is_visible && (!$trackStock || $stock > 0)),
             'brand' => new BrandResource($this->whenLoaded('brand')),
             'categories' => ProductCategoryResource::collection($this->whenLoaded('categories')),
             'inventories' => InventoryResource::collection($this->whenLoaded('inventories')),

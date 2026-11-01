@@ -92,20 +92,23 @@
 
             <div style="display: flex; flex-direction: column; gap: 10px; max-height: 480px; overflow-y: auto;">
                 @forelse($incidents as $incident)
-                    <div style="background: #fff; border: 1px solid {{ $incident->status === 'open' ? '#fecaca' : ($incident->status === 'in_progress' ? '#fde68a' : 'var(--fi-border-strong)') }}; border-radius: var(--fi-radius-md); padding: 13px 16px;">
+                    @php
+                        $incidentStatusVal = $incident->status instanceof \BackedEnum ? $incident->status->value : $incident->status;
+                    @endphp
+                    <div style="background: #fff; border: 1px solid {{ $incidentStatusVal === 'open' ? '#fecaca' : ($incidentStatusVal === 'in_progress' ? '#fde68a' : 'var(--fi-border-strong)') }}; border-radius: var(--fi-radius-md); padding: 13px 16px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px;">
                             <span style="font-weight: 700; font-size: 13px; color: var(--fi-text); display: inline-flex; align-items: center; gap: 6px;">
-                                <span style="width: 7px; height: 7px; border-radius: 50%; background: {{ $incident->status === 'open' ? '#ef4444' : ($incident->status === 'in_progress' ? '#f59e0b' : '#10b981') }}; display: inline-block;"></span>
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: {{ $incidentStatusVal === 'open' ? '#ef4444' : ($incidentStatusVal === 'in_progress' ? '#f59e0b' : '#10b981') }}; display: inline-block;"></span>
                                 {{ $incident->type_label }}
                             </span>
-                            <x-admin.status-badge :status="$incident->status" :label="__('workspace.ops.statuses.' . $incident->status)" />
+                            <x-admin.status-badge :status="$incidentStatusVal" :label="__('workspace.ops.statuses.' . $incidentStatusVal)" />
                         </div>
                         <p style="margin: 0 0 10px 0; font-size: 12.5px; color: var(--fi-text-secondary);">
                             {{ $incident->description }}
                         </p>
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--fi-muted); flex-wrap: wrap; gap: 8px;">
                             <span>Đơn hàng: <strong class="mono">#{{ $incident->order_id ?? 'N/A' }}</strong></span>
-                            @if($incident->status === 'open')
+                            @if($incidentStatusVal === 'open')
                                 <span style="font-size: 11.5px; color: var(--fi-muted);">Chưa có người xử lý</span>
                             @else
                                 <span style="color: #047857; font-weight: 600;">

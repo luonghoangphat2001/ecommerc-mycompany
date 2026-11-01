@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Ecommerce\Audit\Contracts\FinancialAuditServiceInterface;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Settings\ApiSettings;
 use App\Settings\AdvancedSettings;
+use App\Settings\CheckoutSettings;
 use App\Settings\CouponSettings;
 use App\Settings\CustomSettings;
 use App\Settings\DBSettings;
+use App\Settings\EcommerceSettings;
 use App\Settings\EmailSettings;
 use App\Settings\FooterSettings;
 use App\Settings\GeneralSettings;
@@ -18,7 +22,9 @@ use App\Settings\MaintenanceSettings;
 use App\Settings\MarketingSettings;
 use App\Settings\ProductSettings;
 use App\Settings\WebhookSettings;
+use App\Models\Menu;
 use App\Models\Setting;
+use Spatie\Permission\Models\Role;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,10 +57,8 @@ class SettingController extends BaseCrudController
     {
         $schema = $this->settingsSchema();
         
-        $ecommerceSettings = app(\App\Settings\DBSettings::class); 
-        // Note: ecommerce settings are actually stored via Setting model, let's fetch it via query to be safe
-        $shippingEnabled = \App\Models\Setting::where('group', 'ecommerce')->where('name', 'shipping_enabled')->value('payload');
-        if (isset($shippingEnabled) && !(bool) $shippingEnabled) {
+        $policy = app(FeaturePolicyServiceInterface::class);
+        if (!$policy->isShippingEnabled()) {
             unset($schema['shipping']);
         }
 
@@ -82,6 +86,9 @@ class SettingController extends BaseCrudController
         $submitted = (array) $request->input('settings', []);
         $settingsClass = $this->settingsClassForGroup($group);
 
+        $financialGroups = ['ecommerce', 'checkout', 'inventory', 'marketing', 'coupon', 'loyalty', 'settings'];
+        $auditService = app(FinancialAuditServiceInterface::class);
+
         if ($settingsClass) {
             $settings = app($settingsClass);
 
@@ -95,6 +102,10 @@ class SettingController extends BaseCrudController
                 $currentValue = data_get($settings, $name);
                 $value = $this->normalizeSettingValue($submitted[$name] ?? null, $field, $request, $group, $name, $currentValue);
 
+                if (in_array($group, $financialGroups, true) && $currentValue !== $value) {
+                    $auditService->logSettingChange($group, $name, $currentValue, $value);
+                }
+
                 data_set($settings, $name, $value);
             }
 
@@ -105,7 +116,13 @@ class SettingController extends BaseCrudController
                     continue;
                 }
 
+                $existingSetting = Setting::where('group', $group)->where('name', $name)->first();
+                $currentValue = $existingSetting?->payload;
                 $value = $this->normalizeSettingValue($submitted[$name] ?? null, $field, $request, $group, $name);
+
+                if (in_array($group, $financialGroups, true) && $currentValue !== $value) {
+                    $auditService->logSettingChange($group, $name, $currentValue, $value);
+                }
 
                 Setting::updateOrCreate(
                     ['group' => $group, 'name' => $name],
@@ -114,11 +131,84 @@ class SettingController extends BaseCrudController
             }
         }
 
+        // Cross-module settings synchronization
+        $this->syncRelatedSettings($group, $submitted);
+
+        // Flush caches
+        app(FeaturePolicyServiceInterface::class)->flushCache();
         $this->flushStorefrontCaches();
 
         return redirect()
             ->route('admin.settings.index', ['tab' => $group])
             ->with('status', __('admin.settings.saved_group', ['group' => __($schema[$group]['label'] ?? $group)]));
+    }
+
+    protected function syncRelatedSettings(string $group, array $submitted): void
+    {
+        if ($group === 'ecommerce') {
+            if (array_key_exists('tax_enabled', $submitted)) {
+                $taxVal = (bool) $submitted['tax_enabled'];
+                $checkout = app(CheckoutSettings::class);
+                $checkout->enable_tax = $taxVal;
+                $checkout->save();
+            }
+            if (array_key_exists('shipping_enabled', $submitted)) {
+                $shipVal = (bool) $submitted['shipping_enabled'];
+                $checkout = app(CheckoutSettings::class);
+                $checkout->enable_shipping = $shipVal;
+                $checkout->save();
+            }
+        }
+
+        if ($group === 'loyalty') {
+            $marketing = app(MarketingSettings::class);
+            if (array_key_exists('enabled', $submitted)) {
+                $marketing->loyalty_enabled = (bool) $submitted['enabled'];
+            }
+            if (array_key_exists('point_conversion_rate', $submitted)) {
+                $marketing->point_conversion_rate = (int) $submitted['point_conversion_rate'];
+            }
+            $marketing->save();
+        }
+
+        if ($group === 'marketing') {
+            if (array_key_exists('enable_coupons', $submitted)) {
+                $couponVal = (bool) $submitted['enable_coupons'];
+                $coupon = app(CouponSettings::class);
+                $coupon->enable_coupons = $couponVal;
+                $coupon->save();
+            }
+            if (array_key_exists('loyalty_enabled', $submitted)) {
+                $loyaltyVal = (bool) $submitted['loyalty_enabled'];
+                $loyalty = app(LoyaltySettings::class);
+                $loyalty->enabled = $loyaltyVal;
+                if (array_key_exists('point_conversion_rate', $submitted)) {
+                    $loyalty->point_conversion_rate = (int) $submitted['point_conversion_rate'];
+                }
+                $loyalty->save();
+            }
+        }
+
+        if ($group === 'footer') {
+            $footerSettings = app(FooterSettings::class);
+            $menuHandle = $submitted['menu_handle'] ?? ($footerSettings->menu_handle ?: 'footer-menu');
+            $menu = Menu::where('handle', $menuHandle)->with('items')->first();
+            $syncedLinks = [];
+            if ($menu) {
+                $syncedLinks = $menu->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => is_array($item->title) ? ($item->title['vi'] ?? reset($item->title)) : $item->title,
+                        'url' => $item->url,
+                        'target' => $item->target ?? '_self',
+                        'order' => $item->order ?? 0,
+                    ];
+                })->values()->all();
+            }
+            $footerSettings->links = $syncedLinks;
+            $footerSettings->menu_handle = $menuHandle;
+            $footerSettings->save();
+        }
     }
 
     protected function fields(): array
@@ -184,7 +274,7 @@ class SettingController extends BaseCrudController
             'boolean' => (bool) $value,
             'number' => $value === null || $value === '' ? null : (int) $value,
             'decimal' => $value === null || $value === '' ? null : (float) $value,
-            'payment_gateways', 'checkboxes', 'array' => is_array($value) ? array_values(array_filter($value)) : ($this->decodeJsonSetting($value) ?: []),
+            'payment_gateways', 'checkboxes', 'multiselect', 'multi_select', 'array' => is_array($value) ? array_values(array_filter($value)) : ($this->decodeJsonSetting($value) ?: []),
             'exchange_rates' => is_array($value) ? array_filter($value, fn($v) => is_numeric($v)) : ($this->decodeJsonSetting($value) ?: []),
             'json' => $this->decodeJsonSetting($value),
             default => $value === '' ? null : $value,
@@ -314,15 +404,18 @@ class SettingController extends BaseCrudController
                 'label' => 'admin.sidebar.inventory_settings',
                 'description' => 'admin.settings.inventory_description',
                 'fields' => [
+                    'manage_stock' => ['label' => __('admin.settings.field_labels.manage_stock'), 'type' => 'boolean', 'default' => true],
+                    'low_stock_threshold' => ['label' => __('admin.settings.field_labels.low_stock_threshold'), 'type' => 'number', 'default' => 10],
+                    'notify_low_stock' => ['label' => __('admin.settings.field_labels.notify_low_stock'), 'type' => 'boolean', 'default' => true],
                     'multi_warehouse_enabled' => ['label' => __('admin.settings.field_labels.multi_warehouse_enabled'), 'type' => 'boolean', 'default' => false],
                     'split_shipping_enabled' => ['label' => __('admin.settings.field_labels.split_shipping_enabled'), 'type' => 'boolean', 'default' => false],
                     'warehouse_selection_strategy' => ['label' => __('admin.settings.field_labels.warehouse_selection_strategy'), 'type' => 'select', 'default' => 'stock_volume', 'options' => ['stock_volume' => 'Stock volume', 'proximity' => 'Proximity']],
                     'reservation_expiry_minutes' => ['label' => __('admin.settings.field_labels.reservation_expiry_minutes'), 'type' => 'number', 'default' => 15],
                 ],
                 'management_actions' => [
-                    ['label' => 'admin.settings.manage_inventories', 'route' => 'admin.inventories.index'],
-                    ['label' => 'admin.settings.manage_inventory_records', 'route' => 'admin.inventory-records.index'],
-                    ['label' => 'admin.settings.view_inventory_movements', 'route' => 'admin.inventory-movements.index'],
+                    ['label' => 'admin.settings.manage_inventories', 'route' => 'admin.inventories.index', 'visible_when' => 'manage_stock'],
+                    ['label' => 'admin.settings.manage_inventory_records', 'route' => 'admin.inventory-records.index', 'visible_when' => 'manage_stock'],
+                    ['label' => 'admin.settings.view_inventory_movements', 'route' => 'admin.inventory-movements.index', 'visible_when' => 'manage_stock'],
                 ],
             ],
             'marketing' => [
@@ -347,12 +440,74 @@ class SettingController extends BaseCrudController
                     ['label' => 'admin.coupon.label', 'route' => 'admin.coupons.index', 'visible_when' => 'enable_coupons'],
                 ],
             ],
+            'loyalty' => [
+                'label' => 'admin.sidebar.loyalty_settings',
+                'description' => 'admin.settings.loyalty_description',
+                'fields' => [
+                    'enabled' => ['label' => __('admin.settings.field_labels.loyalty_enabled'), 'type' => 'boolean', 'default' => false],
+                    'spending_amount_per_point' => [
+                        'label' => __('admin.settings.field_labels.spending_amount_per_point'),
+                        'type' => 'number',
+                        'default' => 10000,
+                        'hint' => 'Số tiền chi tiêu (VNĐ) để tích lũy 1 điểm thưởng (VD: 10.000 VNĐ = 1 điểm)',
+                    ],
+                    'point_conversion_rate' => [
+                        'label' => __('admin.settings.field_labels.point_conversion_rate'),
+                        'type' => 'number',
+                        'default' => 1000,
+                        'hint' => 'Giá trị quy đổi 1 điểm ra VNĐ khi thanh toán đổi điểm trừ tiền (VD: 1 điểm = 1.000 VNĐ)',
+                    ],
+                    'minimum_points_to_redeem' => [
+                        'label' => __('admin.settings.field_labels.minimum_points_to_redeem'),
+                        'type' => 'number',
+                        'default' => 10,
+                        'hint' => 'Số điểm tối thiểu để được áp dụng đổi điểm trong một đơn hàng',
+                    ],
+                    'max_redeem_percentage' => [
+                        'label' => __('admin.settings.field_labels.max_redeem_percentage'),
+                        'type' => 'number',
+                        'default' => 50,
+                        'hint' => 'Tỷ lệ giảm giá tối đa bằng điểm thưởng (% tổng đơn hàng, ví dụ: 50%)',
+                    ],
+                    'exclude_sale_items' => [
+                        'label' => __('admin.settings.field_labels.exclude_sale_items'),
+                        'type' => 'boolean',
+                        'default' => false,
+                        'hint' => 'Không tích điểm cho các sản phẩm đang có giá khuyến mãi (Sale)',
+                    ],
+                    'excluded_category_ids' => [
+                        'label' => __('admin.settings.field_labels.excluded_category_ids'),
+                        'type' => 'multiselect',
+                        'default' => [],
+                        'options' => \App\Models\ProductCategory::orderBy('name')->pluck('name', 'id')->toArray(),
+                        'hint' => 'Chọn các danh mục sản phẩm không được áp dụng tích điểm thưởng',
+                    ],
+                    'excluded_product_ids' => [
+                        'label' => __('admin.settings.field_labels.excluded_product_ids'),
+                        'type' => 'multiselect',
+                        'default' => [],
+                        'options' => \App\Models\Product::where('is_visible', true)->orderBy('name')->pluck('name', 'id')->toArray(),
+                        'hint' => 'Chọn các sản phẩm cụ thể không được áp dụng tích điểm thưởng',
+                    ],
+                ],
+                'management_actions' => [
+                    ['label' => 'admin.loyalty.management', 'route' => 'admin.loyalty-points.index', 'visible_when' => 'enabled'],
+                ],
+            ],
             'footer' => [
                 'label' => 'admin.sidebar.footer_settings',
                 'description' => 'admin.settings.footer_description',
                 'fields' => [
-                    'copyright' => ['label' => __('admin.settings.field_labels.copyright'), 'default' => '© 2025 Company Name'],
-                    'links' => ['label' => __('admin.settings.field_labels.links'), 'type' => 'json', 'default' => []],
+                    'copyright' => ['label' => __('admin.settings.field_labels.copyright'), 'default' => '© 2026 Nova Club Store. All rights reserved.'],
+                    'menu_handle' => [
+                        'label' => __('admin.settings.field_labels.links'),
+                        'type' => 'footer_menu',
+                        'default' => 'footer-menu',
+                        'hint' => __('admin.settings.field_labels.footer_menu_hint'),
+                    ],
+                ],
+                'management_actions' => [
+                    ['label' => 'admin.sidebar.menus', 'route' => 'admin.menus.index'],
                 ],
             ],
             'mail' => [
@@ -380,7 +535,13 @@ class SettingController extends BaseCrudController
                 'fields' => [
                     'enabled' => ['label' => __('admin.settings.field_labels.enabled'), 'type' => 'boolean', 'default' => false],
                     'log_retention_days' => ['label' => __('admin.settings.field_labels.log_retention_days'), 'type' => 'number', 'default' => 30],
-                    'allowed_roles' => ['label' => __('admin.settings.field_labels.allowed_roles'), 'type' => 'json', 'default' => []],
+                    'allowed_roles' => [
+                        'label' => __('admin.settings.field_labels.allowed_roles'),
+                        'type' => 'multiselect',
+                        'default' => [],
+                        'options' => $this->roleOptions(),
+                        'hint' => 'Chọn các vai trò (roles) được phép tương tác và cấu hình webhook',
+                    ],
                 ],
                 'management_actions' => [
                     ['label' => 'admin.webhook.management', 'route' => 'admin.webhooks.index', 'visible_when' => 'enabled'],
@@ -394,7 +555,13 @@ class SettingController extends BaseCrudController
                     'enabled' => ['label' => __('admin.settings.field_labels.enabled'), 'type' => 'boolean', 'default' => true],
                     'idempotency_ttl' => ['label' => __('admin.settings.field_labels.idempotency_ttl'), 'type' => 'number', 'default' => 86400],
                     'hmac_secret' => ['label' => __('admin.settings.field_labels.hmac_secret'), 'type' => 'password', 'default' => null],
-                    'allowed_roles' => ['label' => __('admin.settings.field_labels.allowed_roles'), 'type' => 'json', 'default' => []],
+                    'allowed_roles' => [
+                        'label' => __('admin.settings.field_labels.allowed_roles'),
+                        'type' => 'multiselect',
+                        'default' => [],
+                        'options' => $this->roleOptions(),
+                        'hint' => 'Chọn các vai trò (roles) được phép tương tác API',
+                    ],
                 ],
             ],
             'advanced' => [
@@ -417,14 +584,25 @@ class SettingController extends BaseCrudController
         ];
     }
 
+    private function roleOptions(): array
+    {
+        try {
+            return Role::orderBy('name')->pluck('name', 'name')->toArray();
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     private function settingsClassForGroup(string $group): ?string
     {
         return match ($group) {
             'settings' => DBSettings::class,
             'general' => GeneralSettings::class,
+            'ecommerce' => EcommerceSettings::class,
             'products' => ProductSettings::class,
             'checkout' => \App\Settings\CheckoutSettings::class,
             'inventory' => InventorySettings::class,
+            'loyalty' => LoyaltySettings::class,
             'marketing' => MarketingSettings::class,
             'footer' => FooterSettings::class,
             'mail' => MailSettings::class,

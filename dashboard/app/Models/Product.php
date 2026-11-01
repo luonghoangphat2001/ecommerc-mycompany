@@ -99,6 +99,9 @@ class Product extends Model implements HasMedia
         'sale_start_date',
         'sale_end_date',
         'apply_tax',
+        'is_loyalty_earnable',
+        'is_loyalty_redeemable',
+        'loyalty_points_reward',
     ];
 
     public function taxClass(): BelongsTo
@@ -125,6 +128,9 @@ class Product extends Model implements HasMedia
         'sale_end_date' => 'datetime',
         'product_images' => 'array',
         'apply_tax' => 'boolean',
+        'is_loyalty_earnable' => 'boolean',
+        'is_loyalty_redeemable' => 'boolean',
+        'loyalty_points_reward' => 'integer',
     ];
 
     public function featuredImage()
@@ -169,9 +175,14 @@ class Product extends Model implements HasMedia
 
     /** @return BelongsTo<Brand,self> */
     public function brand(): BelongsTo
-
     {
         return $this->belongsTo(Brand::class, 'shop_brand_id');
+    }
+
+    /** @return BelongsToMany<Brand> */
+    public function brands(): BelongsToMany
+    {
+        return $this->belongsToMany(Brand::class, 'shop_brand_product', 'shop_product_id', 'shop_brand_id')->withTimestamps();
     }
 
     /** @return BelongsToMany<Category> */

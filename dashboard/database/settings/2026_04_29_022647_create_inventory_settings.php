@@ -6,6 +6,9 @@ return new class extends SettingsMigration
 {
     public function up(): void
     {
+        $this->migrator->add('inventory.manage_stock', true);
+        $this->migrator->add('inventory.low_stock_threshold', 10);
+        $this->migrator->add('inventory.notify_low_stock', true);
         $this->migrator->add('inventory.multi_warehouse_enabled', false);
         $this->migrator->add('inventory.split_shipping_enabled', false);
         $this->migrator->add('inventory.warehouse_selection_strategy', 'stock_volume');

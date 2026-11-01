@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\ComboProduct;
 use App\Models\ComboProductItem;
@@ -131,6 +132,10 @@ class ProductController extends BaseCrudController
                 'label' => 'SEO Metadata',
                 'fields' => ['seo_title', 'seo_description'],
             ],
+            'loyalty' => [
+                'label' => __('admin.sidebar.loyalty_settings'),
+                'fields' => ['is_loyalty_earnable', 'is_loyalty_redeemable', 'loyalty_points_reward'],
+            ],
         ];
     }
 
@@ -212,13 +217,38 @@ class ProductController extends BaseCrudController
                 'options' => Tag::withType('Product')->pluck('name', 'name')->toArray(),
                 'hideOnIndex' => true,
             ],
+
+            'is_loyalty_earnable' => [
+                'label' => __('admin.settings.field_labels.is_loyalty_earnable'),
+                'type' => 'select',
+                'rules' => ['nullable', 'boolean'],
+                'options' => $yesNo,
+                'hideOnIndex' => true,
+            ],
+            'is_loyalty_redeemable' => [
+                'label' => __('admin.settings.field_labels.is_loyalty_redeemable'),
+                'type' => 'select',
+                'rules' => ['nullable', 'boolean'],
+                'options' => $yesNo,
+                'hideOnIndex' => true,
+            ],
+            'loyalty_points_reward' => [
+                'label' => __('admin.settings.field_labels.loyalty_points_reward'),
+                'type' => 'number',
+                'rules' => ['nullable', 'integer', 'min:0'],
+                'hideOnIndex' => true,
+            ],
         ];
     }
 
     protected function mutateData(array $data, ?Model $record = null): array
     {
         $data = parent::mutateData($data, $record);
-        unset($data['categories'], $data['tags'], $data['attributes_json'], $data['variants_json'], $data['combo_items_json']);
+        $brands = request()->input('brands');
+        if (is_array($brands)) {
+            $data['shop_brand_id'] = !empty($brands) ? (int) $brands[0] : null;
+        }
+        unset($data['categories'], $data['tags'], $data['brands'], $data['attributes_json'], $data['variants_json'], $data['combo_items_json']);
 
         if (!isset($data['price']) || $data['price'] === '' || $data['price'] === null) {
             $data['price'] = 0;
@@ -229,8 +259,17 @@ class ProductController extends BaseCrudController
 
     protected function afterSave(Model $record, Request $request): void
     {
-        // 1. Sync Categories & Tags
+        // 1. Sync Categories, Brands & Tags
         $record->categories()->sync((array) $request->input('categories', []));
+        if ($request->has('brands')) {
+            $brandIds = (array) $request->input('brands', []);
+            $record->brands()->sync($brandIds);
+            $primaryBrandId = !empty($brandIds) ? (int) $brandIds[0] : null;
+            if ($record->shop_brand_id !== $primaryBrandId) {
+                $record->shop_brand_id = $primaryBrandId;
+                $record->saveQuietly();
+            }
+        }
         $tagsInput = $request->input('tags', []);
         $tags = is_array($tagsInput) ? $tagsInput : collect(explode(',', (string) $tagsInput))->map(fn($tag) => trim($tag))->filter()->values()->all();
         $record->syncTagsWithType($tags, 'Product');
@@ -238,51 +277,12 @@ class ProductController extends BaseCrudController
         // 2. Variable Product handling
         if ($record->isVariable()) {
             $attributes = json_decode((string) $request->input('attributes_json', '[]'), true) ?: [];
-            $record->productAttributes()->delete();
-            foreach ($attributes as $pos => $attr) {
-                if (!empty($attr['name'])) {
-                    $record->productAttributes()->create([
-                        'name' => $attr['name'],
-                        'options' => is_array($attr['options']) ? $attr['options'] : explode(',', (string) $attr['options']),
-                        'position' => $pos,
-                        'is_variation' => true,
-                    ]);
-                }
-            }
-
             $variants = json_decode((string) $request->input('variants_json', '[]'), true) ?: [];
-            $record->variants()->delete();
-            $totalStock = 0;
-            $minPrice = null;
 
-            foreach ($variants as $v) {
-                $vPrice = (int) ($v['price'] ?? 0);
-                $vQty = (int) ($v['qty'] ?? 0);
-                $isActive = (bool) ($v['is_active'] ?? true);
-
-                if ($isActive) {
-                    $totalStock += $vQty;
-                    if ($minPrice === null || ($vPrice > 0 && $vPrice < $minPrice)) {
-                        $minPrice = $vPrice;
-                    }
-                }
-
-                $record->variants()->create([
-                    'sku' => $v['sku'] ?? null,
-                    'price' => $vPrice,
-                    'sale_price' => !empty($v['sale_price']) ? (int) $v['sale_price'] : null,
-                    'qty' => $vQty,
-                    'attributes' => $v['attributes'] ?? [],
-                    'is_active' => $isActive,
-                    'tax_class_id' => $record->tax_class_id,
-                ]);
-            }
-
-            $record->updateQuietly([
-                'total_stock' => $totalStock,
-                'qty' => $totalStock,
-                'price' => ((int)$record->price > 0) ? $record->price : ($minPrice ?? 0),
-            ]);
+            /** @var \App\Ecommerce\Product\Services\ProductAttributeService $attrService */
+            $attrService = app(\App\Ecommerce\Product\Services\ProductAttributeService::class);
+            $attrService->syncProductAttributes($record, $attributes);
+            $attrService->syncProductVariants($record, $variants);
         }
 
         // 3. Combo Product handling
@@ -354,6 +354,8 @@ class ProductController extends BaseCrudController
             'image' => ['nullable', 'image', 'max:5120'],
             'categories' => ['nullable', 'array'],
             'categories.*' => ['integer', 'exists:shop_categories,id'],
+            'brands' => ['nullable', 'array'],
+            'brands.*' => ['integer', 'exists:shop_brands,id'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string'],
             'attributes_json' => ['nullable', 'string'],
@@ -364,6 +366,21 @@ class ProductController extends BaseCrudController
 
     protected function formData(?Model $record = null): array
     {
+        /** @var \App\Ecommerce\Product\Services\ProductAttributeService $attrService */
+        $attrService = app(\App\Ecommerce\Product\Services\ProductAttributeService::class);
+        $availableAttributes = $attrService->getGlobalAttributes(true)->map(function ($attr) {
+            return [
+                'id' => $attr->id,
+                'name' => $attr->name,
+                'slug' => $attr->slug,
+                'type' => $attr->type,
+                'values' => is_array($attr->values) ? array_values($attr->values) : [],
+            ];
+        })->values()->toArray();
+
+        $categoryTree = ProductCategory::whereNull('parent_id')->with('children.children')->orderBy('name')->get();
+        $brandTree = Brand::whereNull('parent_id')->with('children.children')->orderBy('name')->get();
+
         if (! $record) {
             return [
                 'type' => 'simple',
@@ -371,8 +388,12 @@ class ProductController extends BaseCrudController
                 'variants_json' => '[]',
                 'combo_items_json' => '[]',
                 'categories' => [],
+                'brands' => [],
                 'tags' => [],
                 'image' => null,
+                'availableAttributes' => $availableAttributes,
+                'categoryTree' => $categoryTree,
+                'brandTree' => $brandTree,
             ];
         }
 
@@ -385,10 +406,30 @@ class ProductController extends BaseCrudController
                 $imagePath = $imageId;
             }
         }
+        if (!$imagePath && !empty($record->image)) {
+            $imagePath = $record->image;
+        }
 
-        $attributes = $record->productAttributes()->get(['name', 'options'])->toArray();
-        $variants = $record->variants()->get(['id', 'sku', 'price', 'sale_price', 'qty', 'attributes', 'is_active'])->toArray();
+        $attributes = $record->productAttributes()->get(['id', 'attribute_id', 'name', 'options', 'is_variation'])->toArray();
+        $variants = $record->variants()->get(['id', 'sku', 'price', 'sale_price', 'sale_start_date', 'sale_end_date', 'qty', 'attributes', 'is_active'])->map(function ($v) {
+            return [
+                'id' => $v->id,
+                'sku' => $v->sku,
+                'price' => $v->price,
+                'sale_price' => $v->sale_price,
+                'sale_start_date' => $v->sale_start_date ? $v->sale_start_date->format('Y-m-d\TH:i') : '',
+                'sale_end_date' => $v->sale_end_date ? $v->sale_end_date->format('Y-m-d\TH:i') : '',
+                'qty' => $v->qty,
+                'attributes' => $v->attributes,
+                'is_active' => (bool) $v->is_active,
+            ];
+        })->toArray();
         $comboItems = $record->comboComponents()->get(['shop_product_id', 'product_variant_id', 'quantity'])->toArray();
+
+        $selectedBrands = $record->brands()->pluck('shop_brands.id')->toArray();
+        if (empty($selectedBrands) && $record->shop_brand_id) {
+            $selectedBrands = [$record->shop_brand_id];
+        }
 
         return [
             'type' => $record->type?->value ?? 'simple',
@@ -396,8 +437,12 @@ class ProductController extends BaseCrudController
             'variants_json' => json_encode($variants, JSON_UNESCAPED_UNICODE),
             'combo_items_json' => json_encode($comboItems, JSON_UNESCAPED_UNICODE),
             'categories' => $record->categories()->pluck('shop_categories.id')->toArray(),
+            'brands' => $selectedBrands,
             'tags' => $record->tags->pluck('name')->toArray(),
             'image' => $imagePath,
+            'availableAttributes' => $availableAttributes,
+            'categoryTree' => $categoryTree,
+            'brandTree' => $brandTree,
         ];
     }
 }

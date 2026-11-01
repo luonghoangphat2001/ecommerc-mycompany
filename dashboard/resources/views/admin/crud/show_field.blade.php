@@ -79,13 +79,71 @@
             {{ $value ? __('admin.common.enabled') : __('admin.common.disabled') }}
         </span>
     @else
-        <span class="badge badge-secondary">{{ $value instanceof \BackedEnum ? $value->value : $value }}</span>
+        <span class="badge badge-secondary">{{ $value instanceof \BackedEnum ? $value->value : (is_scalar($value) ? $value : json_encode($value, JSON_UNESCAPED_UNICODE)) }}</span>
+    @endif
+@elseif ($type === 'blocks')
+    @php
+        $blocksList = is_array($value) ? $value : (json_decode($value, true) ?: []);
+    @endphp
+    @if ($compact)
+        <span class="badge badge-secondary">{{ count($blocksList) }} {{ __('admin.page.fields.blocks') ?? 'blocks' }}</span>
+    @else
+        <div class="blocks-preview" style="display: flex; flex-direction: column; gap: 8px;">
+            @forelse ($blocksList as $block)
+                @php
+                    $bType = $block['type'] ?? 'editor';
+                    $bVal = $block['value'] ?? '';
+                    if (is_array($bVal)) {
+                        $bVal = $bVal[app()->getLocale()] ?? reset($bVal) ?? '';
+                    }
+                @endphp
+                <div class="block-preview-item" style="padding: 8px 12px; background: var(--fi-bg-muted, #f8fafc); border: 1px solid var(--fi-border, #e2e8f0); border-radius: 6px; font-size: 13px;">
+                    <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--fi-muted); margin-bottom: 4px;">
+                        {{ $block['type'] ?? 'block' }}
+                    </div>
+                    @if (in_array($bType, ['editor', 'markdown', 'textarea'], true))
+                        <div class="val-html">{!! $bVal !!}</div>
+                    @elseif ($bType === 'heading')
+                        <strong style="font-size: 15px;">{{ $bVal }}</strong>
+                    @elseif ($bType === 'media' && !empty($bVal))
+                        <img src="{{ $bVal }}" alt="Preview" style="max-height: 100px; border-radius: 4px;">
+                    @else
+                        <div>{{ is_scalar($bVal) ? $bVal : json_encode($bVal, JSON_UNESCAPED_UNICODE) }}</div>
+                    @endif
+                </div>
+            @empty
+                <span class="val-empty">—</span>
+            @endforelse
+        </div>
     @endif
 @elseif (is_array($value))
-    @if ($compact)
-        <span class="badge badge-secondary">{{ count($value) }} {{ __('admin.common.items') }}</span>
+    @php
+        $isAssoc = \Illuminate\Support\Arr::isAssoc($value);
+        $hasComplexItems = false;
+        foreach ($value as $item) {
+            if (is_array($item) || is_object($item)) {
+                $hasComplexItems = true;
+                break;
+            }
+        }
+    @endphp
+    @if ($isAssoc || $hasComplexItems)
+        @if ($compact)
+            <span class="badge badge-secondary">{{ count($value) }} {{ __('admin.common.items') }}</span>
+        @else
+            <div class="val-html mono" style="white-space: pre-wrap; font-size: 12px;">{{ json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) }}</div>
+        @endif
     @else
-        <div class="val-html mono" style="white-space: pre-wrap; font-size: 12px;">{{ json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) }}</div>
+        @php
+            $stringItems = array_map(fn($v) => is_scalar($v) ? (string) $v : '', $value);
+        @endphp
+        @if ($compact)
+            <span class="badge badge-secondary" title="{{ implode(', ', $stringItems) }}">
+                {{ implode(', ', array_slice($stringItems, 0, 5)) }}{{ count($stringItems) > 5 ? '... (+' . (count($stringItems) - 5) . ')' : '' }}
+            </span>
+        @else
+            <div style="font-size: 13px; line-height: 1.6;">{{ implode(', ', $stringItems) }}</div>
+        @endif
     @endif
 @else
     {!! nl2br(e(\App\Support\AdminValue::format($value, $compact))) !!}

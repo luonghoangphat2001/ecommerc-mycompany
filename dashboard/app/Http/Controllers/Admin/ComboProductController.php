@@ -2,16 +2,30 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\ComboProduct;
 use App\Models\ComboProductItem;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class ComboProductController extends BaseCrudController
 {
+    public function create(): View
+    {
+        abort_unless(app(FeaturePolicyServiceInterface::class)->isComboEnabled(), 403, 'Chức năng sản phẩm combo đang bị tắt trong cấu hình.');
+        return parent::create();
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        abort_unless(app(FeaturePolicyServiceInterface::class)->isComboEnabled(), 403, 'Chức năng sản phẩm combo đang bị tắt trong cấu hình.');
+        return parent::store($request);
+    }
     protected function modelClass(): string
     {
         return ComboProduct::class;

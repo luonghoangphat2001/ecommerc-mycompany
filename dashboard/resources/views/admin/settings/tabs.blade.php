@@ -19,6 +19,7 @@
             'checkout' => '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
             'shipping' => '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18.5" r="2.5"/><circle cx="7" cy="18.5" r="2.5"/>',
             'inventory' => '<path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/>',
+            'loyalty' => '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
             'marketing' => '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
             'footer' => '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>',
             'mail' => '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
@@ -48,7 +49,7 @@
         </aside>
 
         {{-- Giao diện phải: Nội dung chi tiết cấu hình --}}
-        <div class="table-panel card settings-panel">
+        <div class="table-panel card settings-panel" style="overflow: visible;">
             <div class="panel-heading settings-heading">
                 <div>
                     <h2>{{ __($section['label']) }}</h2>
@@ -67,7 +68,7 @@
                                 $type = $field['type'] ?? 'text';
                                 $rawValue = data_get($values, $activeTab . '.' . $name, $field['default'] ?? null);
                                 $value = is_array($rawValue) ? json_encode($rawValue, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : $rawValue;
-                                $wide = in_array($type, ['textarea', 'json', 'image', 'payment_gateways', 'exchange_rates'], true);
+                                $wide = in_array($type, ['textarea', 'json', 'image', 'payment_gateways', 'exchange_rates', 'checkboxes', 'multiselect', 'multi_select'], true);
                                 $currentImage = is_string($rawValue) && $rawValue !== '' ? \Illuminate\Support\Facades\Storage::disk('public')->url($rawValue) : null;
                             @endphp
 
@@ -81,6 +82,30 @@
                                         <span class="toggle-switch"></span>
                                         <span>{{ (bool) $rawValue ? __('admin.settings.enabled') : __('admin.settings.disabled') }}</span>
                                     </label>
+                                @elseif ($type === 'checkboxes')
+                                    @php
+                                        $selectedValues = is_array($rawValue) ? $rawValue : (is_string($rawValue) ? (json_decode($rawValue, true) ?: []) : []);
+                                        $selectedValues = array_map('strval', $selectedValues);
+                                    @endphp
+                                    <input type="hidden" name="settings[{{ $name }}][]" value="">
+                                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--fi-border-subtle, #e2e8f0); border-radius: 8px; padding: 10px; background: #f8fafc; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;">
+                                        @forelse (($field['options'] ?? []) as $optKey => $optLabel)
+                                            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; user-select: none; background: #ffffff; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                                                <input type="checkbox" name="settings[{{ $name }}][]" value="{{ $optKey }}" @checked(in_array((string)$optKey, $selectedValues, true)) style="accent-color: var(--fi-primary, #4f46e5); width: 16px; height: 16px;">
+                                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">{{ $optLabel }}</span>
+                                            </label>
+                                        @empty
+                                            <div style="color: #64748b; font-size: 12px; grid-column: 1 / -1;">Chưa có dữ liệu lựa chọn</div>
+                                        @endforelse
+                                    </div>
+                                @elseif ($type === 'multiselect' || $type === 'multi_select')
+                                    <x-admin.multi-select
+                                        :name="'settings[' . $name . ']'"
+                                        :id="'setting-' . $name"
+                                        :options="$field['options'] ?? []"
+                                        :selected="old('settings.' . $name, $rawValue)"
+                                        :placeholder="'Chọn ' . mb_strtolower(__($field['label'] ?? $name), 'UTF-8') . '...'"
+                                    />
                                 @elseif ($type === 'select')
                                     <select id="setting-{{ $name }}" name="settings[{{ $name }}]">
                                         @foreach (($field['options'] ?? []) as $optionValue => $optionLabel)
@@ -183,6 +208,91 @@
                                             <input type="number" name="settings[{{ $name }}][EUR]" value="{{ $rates['EUR'] ?? 27000 }}" class="form-control" placeholder="27000">
                                         </div>
                                     </div>
+                                @elseif ($type === 'footer_menu')
+                                    @php
+                                        $allMenus = \App\Models\Menu::with(['items' => function($q) {
+                                            $orderCol = \Illuminate\Support\Facades\Schema::hasColumn('menu_items', 'order') ? 'order' : 'id';
+                                            $q->orderBy($orderCol);
+                                        }])->orderBy('name')->get();
+                                        $selectedHandle = old('settings.' . $name, $value) ?: 'footer-menu';
+                                        $selectedMenu = $allMenus->firstWhere('handle', $selectedHandle) ?? $allMenus->first();
+                                    @endphp
+                                    <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 6px;">
+                                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                            <div style="flex: 1; min-width: 260px;">
+                                                <select id="setting-{{ $name }}" name="settings[{{ $name }}]" style="width: 100%; padding: 9px 12px; font-weight: 600; border: 1px solid var(--fi-border-subtle, #cbd5e1); border-radius: var(--fi-radius-md, 8px); background: #ffffff;">
+                                                    @foreach ($allMenus as $menu)
+                                                        <option value="{{ $menu->handle }}" @selected($selectedHandle === $menu->handle)>
+                                                            {{ $menu->name }} ({{ $menu->handle }}) — {{ $menu->items->count() }} liên kết
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <a id="footer-menu-manage-btn" href="{{ route('admin.menus.index', ['menu_id' => $selectedMenu?->id]) }}" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: var(--fi-radius-md, 8px); font-size: 13px; font-weight: 600; text-decoration: none;">
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                Quản lý mục liên kết Menu
+                                            </a>
+                                        </div>
+
+                                        <div id="footer-menu-preview-box" style="background: #f8fafc; border: 1px solid var(--fi-border-subtle, #e2e8f0); border-radius: var(--fi-radius-md, 8px); padding: 14px 16px;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+                                                <div style="font-size: 13px; font-weight: 700; color: var(--fi-text, #0f172a); display: flex; align-items: center; gap: 8px;">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                                    <span>Menu đang liên kết: <strong id="preview-menu-name">{{ $selectedMenu?->name ?? 'N/A' }}</strong></span>
+                                                </div>
+                                                <span style="font-size: 11px; font-weight: 600; background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                                                    Đồng bộ tự động từ Menu
+                                                </span>
+                                            </div>
+                                            <div id="footer-menu-items-table-container"></div>
+                                        </div>
+                                    </div>
+
+                                    <script>
+                                        (function() {
+                                            const menusData = @json($allMenus);
+                                            const selectEl = document.getElementById('setting-{{ $name }}');
+                                            const manageBtn = document.getElementById('footer-menu-manage-btn');
+                                            const previewName = document.getElementById('preview-menu-name');
+                                            const tableContainer = document.getElementById('footer-menu-items-table-container');
+                                            if (!selectEl || !tableContainer) return;
+
+                                            function renderItems(menu) {
+                                                if (!menu || !menu.items || menu.items.length === 0) {
+                                                    tableContainer.innerHTML = '<div style="color: #64748b; font-size: 13px; padding: 8px 0; font-style: italic;">Menu này chưa có liên kết nào. Nhấn <strong>Quản lý mục liên kết Menu</strong> để thêm liên kết mới.</div>';
+                                                    return;
+                                                }
+                                                let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">';
+                                                menu.items.forEach(function(item, idx) {
+                                                    let title = typeof item.title === 'object' && item.title !== null 
+                                                        ? (item.title.vi || Object.values(item.title)[0]) 
+                                                        : (item.title || 'Liên kết #' + (idx + 1));
+                                                    html += '<div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">' +
+                                                        '<div style="min-width: 0; flex: 1;">' +
+                                                            '<div style="font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + (idx + 1) + '. ' + title + '</div>' +
+                                                            '<div style="font-size: 11px; color: #64748b; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">' + (item.url || '#') + '</div>' +
+                                                        '</div>' +
+                                                        '<span style="font-size: 10px; font-weight: 600; color: #475569; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">' + (item.target || '_self') + '</span>' +
+                                                    '</div>';
+                                                });
+                                                html += '</div>';
+                                                tableContainer.innerHTML = html;
+                                            }
+
+                                            selectEl.addEventListener('change', function() {
+                                                const val = this.value;
+                                                const found = menusData.find(m => m.handle === val);
+                                                if (found) {
+                                                    if (manageBtn) manageBtn.href = "{{ route('admin.menus.index') }}?menu_id=" + found.id;
+                                                    if (previewName) previewName.textContent = found.name;
+                                                    renderItems(found);
+                                                }
+                                            });
+
+                                            const initialMenu = menusData.find(m => m.handle === selectEl.value) || menusData[0];
+                                            if (initialMenu) renderItems(initialMenu);
+                                        })();
+                                    </script>
                                 @elseif (in_array($type, ['textarea', 'json'], true))
                                     <textarea id="setting-{{ $name }}" name="settings[{{ $name }}]" rows="{{ $type === 'json' ? 8 : 5 }}">{{ old('settings.' . $name, $value) }}</textarea>
                                     @if ($type === 'json')

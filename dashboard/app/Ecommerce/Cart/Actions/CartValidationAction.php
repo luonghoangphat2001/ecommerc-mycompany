@@ -52,6 +52,17 @@ class CartValidationAction
             return null;
         }
 
+        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
+
+        if ($product->isCombo() && !$policy->isComboEnabled()) {
+            $notifications[] = [
+                'type' => 'item_removed',
+                'message' => "Sản phẩm combo {$product->name} hiện đang tạm ngừng hỗ trợ.",
+                'product_id' => $productId,
+            ];
+            return null;
+        }
+
         $variant = null;
         if ($product->isVariable()) {
             $variant = $this->resolveActiveVariant($product, $variantId, $notifications);
@@ -62,11 +73,15 @@ class CartValidationAction
 
         $itemName = $this->buildItemDisplayName($product, $variant);
         $effectivePrice = (float) ($variant ? $variant->effective_price : $product->effective_price);
-        $availableStock = $this->resolveAvailableStock($product, $variant);
 
-        $finalQty = $this->adjustQtyForStock($itemName, $qty, $availableStock, $productId, $variantId, $notifications);
-        if ($finalQty <= 0) {
-            return null;
+        if ($policy->isInventoryTrackingEnabled()) {
+            $availableStock = $this->resolveAvailableStock($product, $variant);
+            $finalQty = $this->adjustQtyForStock($itemName, $qty, $availableStock, $productId, $variantId, $notifications);
+            if ($finalQty <= 0) {
+                return null;
+            }
+        } else {
+            $finalQty = $qty;
         }
 
         $this->notifyPriceChangeIfDifferent($itemName, $clientPrice, $effectivePrice, $productId, $variantId, $notifications);

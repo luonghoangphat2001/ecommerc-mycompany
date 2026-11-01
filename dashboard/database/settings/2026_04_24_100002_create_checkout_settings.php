@@ -6,6 +6,8 @@ return new class extends SettingsMigration
 {
     public function up(): void
     {
+        $this->migrator->add('checkout.enable_tax', true);
+        $this->migrator->add('checkout.enable_shipping', true);
         $this->migrator->add('checkout.enable_guest_checkout', true);
         $this->migrator->add('checkout.tax_calculation_address', 'shipping');
         $this->migrator->add('checkout.prices_include_tax', false);

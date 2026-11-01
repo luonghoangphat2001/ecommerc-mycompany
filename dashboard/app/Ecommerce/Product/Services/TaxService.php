@@ -34,9 +34,9 @@ class TaxService implements TaxServiceInterface
      */
     public function calculate($taxClass, int $amount, ?string $country = null, ?string $state = null, ?string $city = null): array
     {
-        $checkoutSettings = app(CheckoutSettings::class);
+        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
 
-        if (!($checkoutSettings->enable_tax ?? true)) {
+        if (!$policy->isTaxCalculationEnabled()) {
             return $this->buildTaxResult(0, TaxRateStatus::TaxDisabled, 0.0);
         }
 
@@ -82,8 +82,11 @@ class TaxService implements TaxServiceInterface
             return $this->buildTaxResult(0, TaxRateStatus::ProductNotFound, 0.0, null, []);
         }
 
-        $checkoutSettings = app(CheckoutSettings::class);
-        if (!($checkoutSettings->enable_tax ?? true) || !$productModel->apply_tax) {
+        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
+        if (!$policy->isTaxCalculationEnabled()) {
+            return $this->buildTaxResult(0, TaxRateStatus::TaxDisabled, 0.0, null, []);
+        }
+        if (!$productModel->apply_tax) {
             return $this->buildTaxResult(0, TaxRateStatus::NonTaxable, 0.0, null, []);
         }
 

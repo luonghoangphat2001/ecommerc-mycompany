@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\LanguageLineController;
@@ -74,6 +75,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             $crud('permissions', PermissionController::class, 'permissions');
 
             $crud('products', ProductController::class, 'products');
+            Route::post('attributes/inline-store', [AttributeController::class, 'inlineStore'])->name('attributes.inline-store');
+            Route::get('attributes/json', [AttributeController::class, 'listJson'])->name('attributes.json');
+            Route::post('attributes/{attribute}/toggle-status', [AttributeController::class, 'toggleStatus'])->name('attributes.toggle-status');
+            $crud('attributes', AttributeController::class, 'attributes');
             Route::post('brands/{brand}/toggle-status', [BrandController::class, 'toggleStatus'])->name('brands.toggle-status');
             $crud('brands', BrandController::class, 'brands');
             Route::post('product-categories/bulk-action', [ProductCategoryController::class, 'bulkAction'])->name('product-categories.bulk-action');

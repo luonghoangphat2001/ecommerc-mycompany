@@ -42,4 +42,15 @@ interface FinancialAuditServiceInterface
      * Log inventory stock restoration resulting from cancellation or return.
      */
     public function logStockRestoration(Order $order, Model $item, int $restoredQty, string $reason): void;
+
+    /**
+     * Log changes to financial, pricing, tax, shipping, discount, or payment settings.
+     */
+    public function logSettingChange(
+        string $group,
+        string $key,
+        mixed $oldValue,
+        mixed $newValue,
+        ?string $reason = null
+    ): void;
 }

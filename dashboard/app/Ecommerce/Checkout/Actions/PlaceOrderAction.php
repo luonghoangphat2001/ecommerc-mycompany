@@ -9,6 +9,7 @@ use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Order\DTOs\Order\OrderDataDTO;
 use App\Ecommerce\Order\Events\OrderCreated;
 use App\Ecommerce\Checkout\Services\CheckoutCalculatorService;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
@@ -39,8 +40,11 @@ class PlaceOrderAction
         protected LoyaltySettings $loyaltySettings,
         protected DeductStockAction $deductStockAction,
         protected CheckStockAction $checkStockAction,
-        protected InventorySettings $inventorySettings
-    ) {}
+        protected InventorySettings $inventorySettings,
+        protected ?FeaturePolicyServiceInterface $featurePolicy = null
+    ) {
+        $this->featurePolicy = $this->featurePolicy ?: app(FeaturePolicyServiceInterface::class);
+    }
 
     /**
      * Handle the place order action.
@@ -50,6 +54,24 @@ class PlaceOrderAction
      */
     public function execute(OrderDataDTO $dto): Order
     {
+        if (!$this->featurePolicy->isEcommerceEnabled()) {
+            throw ValidationException::withMessages([
+                'order' => ['Cửa hàng hiện đang tạm dừng nhận đơn hàng mới.'],
+            ]);
+        }
+
+        if ($this->featurePolicy->isCatalogMode()) {
+            throw ValidationException::withMessages([
+                'order' => ['Hệ thống đang ở chế độ xem danh mục (Catalog Mode), không thể đặt hàng.'],
+            ]);
+        }
+
+        if ($dto->paymentMethod && !$this->featurePolicy->isPaymentMethodEnabled($dto->paymentMethod)) {
+            throw ValidationException::withMessages([
+                'order' => ["Phương thức thanh toán [{$dto->paymentMethod}] hiện không được hỗ trợ."],
+            ]);
+        }
+
         return $this->useTransaction(function () use ($dto) {
             // 1. Prepare items with validation
             $itemsForCalc = $this->prepareItems($dto);
@@ -66,7 +88,7 @@ class PlaceOrderAction
             // 4. Apply promotions
             $this->applyCoupon($dto, $order, $calcResult, $itemsForCalc);
             $this->applyLoyaltyRedemption($dto, $order, $calcResult);
-            $this->recordLoyaltyAccrual($dto, $order, $calcResult);
+            $this->recordLoyaltyAccrual($dto, $order, $calcResult, $itemsForCalc);
 
             // 5. Create order items and manage inventory
             $this->createProductOrderItems($order, $itemsForCalc);
@@ -124,6 +146,12 @@ class PlaceOrderAction
                 $taxClassId = $variant->tax_class_id ?? ($product->apply_tax ? $product->tax_class_id : null);
                 $taxBreakdown = null;
             } elseif ($product->isCombo()) {
+                if (!$this->featurePolicy->isComboEnabled()) {
+                    throw ValidationException::withMessages([
+                        'order' => ["Sản phẩm combo {$product->name} hiện đang tạm ngừng hỗ trợ."],
+                    ]);
+                }
+
                 $this->validateComboPrice($item, $product);
                 $this->validateComboStock($product, $qty);
 
@@ -190,6 +218,10 @@ class PlaceOrderAction
 
     private function validateVariantStock(ProductVariant $variant, int $qty): void
     {
+        if (!$this->featurePolicy->isInventoryTrackingEnabled()) {
+            return;
+        }
+
         if ($variant->available_stock < $qty) {
             throw ValidationException::withMessages([
                 'order' => [__('messages.insufficient_stock')],
@@ -209,6 +241,10 @@ class PlaceOrderAction
 
     private function validateComboStock(Product $product, int $qty): void
     {
+        if (!$this->featurePolicy->isInventoryTrackingEnabled()) {
+            return;
+        }
+
         $comboStock = $product->calculateComboStock();
         if ($comboStock < $qty) {
             throw ValidationException::withMessages([
@@ -235,6 +271,10 @@ class PlaceOrderAction
      */
     private function validateProductStock($product, int $qty): void
     {
+        if (!$this->featurePolicy->isInventoryTrackingEnabled()) {
+            return;
+        }
+
         if ($this->inventorySettings->multi_warehouse_enabled) {
             if (!$this->checkStockAction->execute($product->sku, $qty)) {
                 throw ValidationException::withMessages([
@@ -349,7 +389,8 @@ class PlaceOrderAction
             return;
         }
 
-        $redeemedPoints = (int) ($calcResult->loyaltyDiscountTotal / $this->loyaltySettings->point_conversion_rate);
+        $conversionRate = $this->loyaltySettings->point_conversion_rate > 0 ? $this->loyaltySettings->point_conversion_rate : 1000;
+        $redeemedPoints = (int) ceil($calcResult->loyaltyDiscountTotal / $conversionRate);
 
         $this->loyaltyService->adjustPoints(
             $dto->customerId,
@@ -366,16 +407,82 @@ class PlaceOrderAction
     /**
      * Record loyalty point accrual.
      */
-    private function recordLoyaltyAccrual(OrderDataDTO $dto, Order $order, CheckoutResultDTO $calcResult): void
+    private function recordLoyaltyAccrual(OrderDataDTO $dto, Order $order, CheckoutResultDTO $calcResult, array $itemsForCalc = []): void
     {
         if (!$this->loyaltySettings->enabled || !$dto->customerId || $calcResult->total <= 0) {
             return;
         }
 
-        $earnedPoints = (int) (($calcResult->subtotal - $calcResult->discountTotal - $calcResult->loyaltyDiscountTotal) * $this->loyaltySettings->points_per_currency);
+        $earnedPoints = 0;
+        $eligibleAmount = 0;
+
+        $productIds = collect($itemsForCalc)->pluck('product_id')->filter()->unique()->all();
+        $products = !empty($productIds)
+            ? Product::with('categories')->whereIn('id', $productIds)->get()->keyBy('id')
+            : collect();
+
+        $excludedProductIds = array_map('intval', $this->loyaltySettings->excluded_product_ids ?? []);
+        $excludedCategoryIds = array_map('intval', $this->loyaltySettings->excluded_category_ids ?? []);
+        $excludeSaleItems = (bool) ($this->loyaltySettings->exclude_sale_items ?? false);
+
+        foreach ($itemsForCalc as $item) {
+            $productId = $item['product_id'] ?? null;
+            $product = $products->get($productId);
+
+            if (!$product) {
+                continue;
+            }
+
+            // Check if product is explicitly excluded from points
+            if ($product->is_loyalty_earnable === false) {
+                continue;
+            }
+
+            // Check global excluded products
+            if (in_array((int)$productId, $excludedProductIds, true)) {
+                continue;
+            }
+
+            // Check global excluded categories
+            if (!empty($excludedCategoryIds)) {
+                $categoryIds = $product->categories->pluck('id')->all();
+                if (!empty(array_intersect($categoryIds, $excludedCategoryIds))) {
+                    continue;
+                }
+            }
+
+            // Check if sale items are excluded
+            if ($excludeSaleItems && $product->is_on_sale) {
+                continue;
+            }
+
+            $qty = (int) ($item['qty'] ?? 1);
+
+            // If product has custom fixed bonus reward points
+            if ($product->loyalty_points_reward && $product->loyalty_points_reward > 0) {
+                $earnedPoints += (int) ($product->loyalty_points_reward * $qty);
+            } else {
+                $itemTotal = (float) ($item['total'] ?? (($item['unit_price'] ?? 0) * $qty));
+                $eligibleAmount += $itemTotal;
+            }
+        }
+
+        // Calculate points from eligible spending amount
+        $spendingRate = (int) ($this->loyaltySettings->spending_amount_per_point ?? 0);
+        if ($spendingRate > 0) {
+            $earnedPoints += (int) floor($eligibleAmount / $spendingRate);
+        } else {
+            // Fallback to legacy points_per_currency
+            $multiplier = (float) ($this->loyaltySettings->points_per_currency ?? 1);
+            $earnedPoints += (int) round($eligibleAmount * $multiplier);
+        }
 
         if ($earnedPoints > 0) {
             $this->loyaltyService->awardPoints($dto->customerId, $order->id, $earnedPoints);
+            $order->metas()->create([
+                'key' => 'earned_points',
+                'value' => (string) $earnedPoints,
+            ]);
         }
     }
 
@@ -420,13 +527,16 @@ class PlaceOrderAction
         }
 
         $qty = (int) $item['qty'];
+        $trackStock = $this->featurePolicy->isInventoryTrackingEnabled();
 
         // 1. Variable Product inventory deduction
         if ($product->isVariable() && !empty($item['variant_id'])) {
             $variant = $product->variants->firstWhere('id', $item['variant_id']) ?: ProductVariant::find($item['variant_id']);
             if ($variant) {
-                $variant->decrement('qty', $qty);
-                $product->decrement('total_stock', $qty);
+                if ($trackStock) {
+                    $variant->decrement('qty', $qty);
+                    $product->decrement('total_stock', $qty);
+                }
 
                 $itemMetadata['product_type'] = 'variable';
                 $itemMetadata['variant_id'] = $variant->id;
@@ -446,12 +556,14 @@ class PlaceOrderAction
                 $cProduct = $component->product;
                 $cVariant = $component->variant;
 
-                if ($cVariant) {
-                    $cVariant->decrement('qty', $totalDeductQty);
-                    $cProduct?->decrement('total_stock', $totalDeductQty);
-                } elseif ($cProduct) {
-                    $cProduct->decrement('qty', $totalDeductQty);
-                    $cProduct->decrement('total_stock', $totalDeductQty);
+                if ($trackStock) {
+                    if ($cVariant) {
+                        $cVariant->decrement('qty', $totalDeductQty);
+                        $cProduct?->decrement('total_stock', $totalDeductQty);
+                    } elseif ($cProduct) {
+                        $cProduct->decrement('qty', $totalDeductQty);
+                        $cProduct->decrement('total_stock', $totalDeductQty);
+                    }
                 }
 
                 $componentSnapshots[] = [
@@ -473,11 +585,18 @@ class PlaceOrderAction
 
         // 3. Simple Product inventory deduction
         $itemMetadata['product_type'] = 'simple';
-        if ($this->inventorySettings->multi_warehouse_enabled) {
-            $inventory = $this->findAndDeductFromInventory($product, $qty);
-            if ($inventory) {
-                $itemMetadata['inventory_id'] = $inventory->id;
-                $itemMetadata['inventory_name'] = $inventory->name;
+        if ($trackStock) {
+            if ($this->inventorySettings->multi_warehouse_enabled) {
+                $inventory = $this->findAndDeductFromInventory($product, $qty);
+                if ($inventory) {
+                    $itemMetadata['inventory_id'] = $inventory->id;
+                    $itemMetadata['inventory_name'] = $inventory->name;
+                } else {
+                    $product->decrement('qty', $qty);
+                    $product->decrement('total_stock', $qty);
+                    $itemMetadata['inventory_id'] = null;
+                    $itemMetadata['inventory_name'] = 'Default Stock';
+                }
             } else {
                 $product->decrement('qty', $qty);
                 $product->decrement('total_stock', $qty);
@@ -485,10 +604,8 @@ class PlaceOrderAction
                 $itemMetadata['inventory_name'] = 'Default Stock';
             }
         } else {
-            $product->decrement('qty', $qty);
-            $product->decrement('total_stock', $qty);
             $itemMetadata['inventory_id'] = null;
-            $itemMetadata['inventory_name'] = 'Default Stock';
+            $itemMetadata['inventory_name'] = 'Stock Tracking Disabled';
         }
 
         return $itemMetadata;
@@ -561,10 +678,10 @@ class PlaceOrderAction
      */
     private function createFeeOrderItems(Order $order, OrderDataDTO $dto, CheckoutResultDTO $calcResult): void
     {
-        if ($calcResult->shippingTotal > 0) {
+        if ($this->featurePolicy->isShippingEnabled() && $calcResult->shippingTotal > 0) {
             $order->items()->create([
                 'type' => OrderItemType::Shipping->value,
-                'name' => 'Giao hàng: ' . $dto->shippingMethod,
+                'name' => 'Giao hàng: ' . ($dto->shippingMethod ?? 'Standard'),
                 'qty' => 1,
                 'unit_price' => $calcResult->shippingTotal,
                 'total' => $calcResult->shippingTotal,
@@ -643,6 +760,10 @@ class PlaceOrderAction
      */
     private function createOrderShipping(Order $order, OrderDataDTO $dto, CheckoutResultDTO $calcResult): void
     {
+        if (!$this->featurePolicy->isShippingEnabled()) {
+            return;
+        }
+
         $shippingMethodModel = null;
         if (is_numeric($dto->shippingMethod)) {
             $shippingMethodModel = \App\Models\ShippingMethod::find((int) $dto->shippingMethod);

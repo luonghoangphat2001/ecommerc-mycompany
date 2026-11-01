@@ -86,11 +86,14 @@
                     </thead>
                     <tbody>
                         @forelse($purchaseOrders as $po)
+                            @php
+                                $poStatusVal = $po->status instanceof \BackedEnum ? $po->status->value : $po->status;
+                            @endphp
                             <tr>
                                 <td class="mono" style="font-weight: 700;">{{ $po->po_number }}</td>
                                 <td style="font-weight: 600;">{{ $po->supplier_name }}</td>
                                 <td>
-                                    <x-admin.status-badge :status="$po->status" :label="__('workspace.logistics.statuses.' . ($po->status === 'shipping' ? 'shipping' : ($po->status === 'partial' ? 'partial' : ($po->status === 'completed' ? 'completed' : 'defective'))))" />
+                                    <x-admin.status-badge :status="$poStatusVal" :label="__('workspace.logistics.statuses.' . ($poStatusVal === 'shipping' ? 'shipping' : ($poStatusVal === 'partial' ? 'partial' : ($poStatusVal === 'completed' ? 'completed' : 'defective'))))" />
                                 </td>
                                 <td class="text-right">
                                     <x-admin.row-actions

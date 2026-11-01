@@ -45,6 +45,7 @@ class PageController extends BaseCrudController
                 'rules' => ['nullable', 'string'],
                 'hint' => __('admin.page.blocks_hint'),
                 'isWide' => true,
+                'hideOnIndex' => true,
             ],
         ];
     }

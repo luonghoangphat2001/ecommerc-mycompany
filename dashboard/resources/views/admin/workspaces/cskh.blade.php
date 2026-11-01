@@ -47,7 +47,10 @@
                 </thead>
                 <tbody>
                     @forelse($reviews as $review)
-                        <tr style="{{ $review->sentiment === 'negative' ? 'background: #fffafa;' : '' }}">
+                        @php
+                            $sentimentVal = $review->sentiment instanceof \BackedEnum ? $review->sentiment->value : $review->sentiment;
+                        @endphp
+                        <tr style="{{ $sentimentVal === 'negative' ? 'background: #fffafa;' : '' }}">
                             <td>
                                 <strong style="font-weight: 600;">{{ $review->customer_name ?? 'N/A' }}</strong><br>
                                 <span class="mono cell-muted" style="font-size: 11px;">{{ $review->created_at->format('d/m/Y H:i') }}</span>
@@ -66,7 +69,7 @@
                                 @endif
                             </td>
                             <td>
-                                <x-admin.status-badge :status="$review->sentiment" :label="__('workspace.cskh.sentiment_types.' . $review->sentiment)" />
+                                <x-admin.status-badge :status="$sentimentVal" :label="__('workspace.cskh.sentiment_types.' . $sentimentVal)" />
                             </td>
                             <td class="text-right">
                                 <x-admin.row-actions
@@ -111,9 +114,9 @@
                     <div class="card-body" style="padding: 18px 20px;">
                         @php
                             $allReviews = \App\Models\DepartmentCustomerReview::all();
-                            $positiveCount = $allReviews->where('sentiment', 'positive')->count();
-                            $neutralCount = $allReviews->where('sentiment', 'neutral')->count();
-                            $negativeCount = $allReviews->where('sentiment', 'negative')->count();
+                            $positiveCount = $allReviews->filter(fn ($r) => ($r->sentiment instanceof \BackedEnum ? $r->sentiment->value : $r->sentiment) === 'positive')->count();
+                            $neutralCount = $allReviews->filter(fn ($r) => ($r->sentiment instanceof \BackedEnum ? $r->sentiment->value : $r->sentiment) === 'neutral')->count();
+                            $negativeCount = $allReviews->filter(fn ($r) => ($r->sentiment instanceof \BackedEnum ? $r->sentiment->value : $r->sentiment) === 'negative')->count();
                             $total = $allReviews->count() ?: 1;
                         @endphp
                         <div style="display: flex; justify-content: space-between; margin-bottom: 12px; align-items: center;">

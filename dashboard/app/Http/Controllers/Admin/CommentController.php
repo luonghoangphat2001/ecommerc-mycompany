@@ -45,7 +45,7 @@ class CommentController extends BaseCrudController
     {
         return [
             'commentable_label' => [
-                'label' => 'Target',
+                'label' => __('admin.comments.target') ?: 'Target',
                 'virtual' => true,
                 'tableOnly' => true,
                 'hideOnForm' => true,
@@ -53,14 +53,22 @@ class CommentController extends BaseCrudController
                 'hideOnImport' => true,
             ],
             'user_id' => [
-                'label' => 'User',
+                'label' => __('admin.comments.user') ?: 'User',
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:users,id'],
-                'options' => ['' => '-- None --'] + User::orderBy('name')->pluck('name', 'id')->toArray(),
+                'options' => ['' => '-- ' . __('admin.common.none', ['default' => 'Không chọn']) . ' --'] + User::orderBy('name')->pluck('name', 'id')->toArray(),
             ],
-            'title' => ['label' => 'Title', 'rules' => ['nullable', 'string', 'max:255']],
-            'content' => ['label' => 'Content', 'type' => 'textarea', 'rules' => ['nullable', 'string']],
-            'is_visible' => ['label' => 'Visible', 'type' => 'boolean', 'rules' => ['nullable', 'boolean']],
+            'title' => ['label' => __('fields.title') ?: 'Title', 'rules' => ['nullable', 'string', 'max:255']],
+            'content' => ['label' => __('fields.content') ?: 'Content', 'type' => 'textarea', 'rules' => ['nullable', 'string']],
+            'is_visible' => [
+                'label' => __('admin.fields.is_visible'),
+                'type' => 'select',
+                'rules' => ['nullable', 'boolean'],
+                'options' => [
+                    '1' => __('admin.common.yes') . ' (Hiển thị)',
+                    '0' => __('admin.common.no') . ' (Tạm ẩn)',
+                ],
+            ],
         ];
     }
 

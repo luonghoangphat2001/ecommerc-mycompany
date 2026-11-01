@@ -13,6 +13,7 @@ use App\Ecommerce\Checkout\Services\Pipes\ResolveTaxRatePipe;
 use App\Ecommerce\Checkout\Services\Pipes\ApplyLoyaltyPoints;
 use App\Ecommerce\Checkout\Services\Pipes\ApplyMarketing;
 
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Settings\CheckoutSettings;
 use App\Settings\CouponSettings;
 use Illuminate\Pipeline\Pipeline;
@@ -22,8 +23,11 @@ class CheckoutCalculatorService
     public function __construct(
         protected CheckoutSettings $checkoutSettings,
         protected CouponSettings $couponSettings,
-        protected Pipeline $pipeline
-    ) {}
+        protected Pipeline $pipeline,
+        protected ?FeaturePolicyServiceInterface $featurePolicy = null
+    ) {
+        $this->featurePolicy = $this->featurePolicy ?: app(FeaturePolicyServiceInterface::class);
+    }
 
     /**
      * Calculate order totals using a pure pipeline.
@@ -41,18 +45,18 @@ class CheckoutCalculatorService
         ];
 
         // Inject tax pipes conditionally
-        if ($this->checkoutSettings->enable_tax) {
+        if ($this->featurePolicy->isTaxCalculationEnabled()) {
             array_unshift($pipes, ResolveTaxRatePipe::class);
             $pipes[] = CalculateTax::class;
         }
 
         // Inject discount pipe conditionally
-        if ($this->couponSettings->enable_coupons) {
+        if ($this->featurePolicy->isCouponsEnabled()) {
             array_splice($pipes, array_search(ApplyExchangeRate::class, $pipes) + 1, 0, ApplyDiscount::class);
         }
 
         // Inject shipping pipe conditionally
-        if ($this->checkoutSettings->enable_shipping) {
+        if ($this->featurePolicy->isShippingEnabled()) {
             $pipes[] = ResolveShippingFeePipe::class;
         }
 

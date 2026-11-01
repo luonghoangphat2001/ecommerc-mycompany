@@ -2,6 +2,7 @@
 
 namespace App\Ecommerce\Shipping\Services;
 
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Shipping\Carriers\CarrierManager;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingZoneRepositoryInterface;
@@ -23,8 +24,10 @@ class ShippingService implements ShippingServiceInterface
     public function __construct(
         protected ShippingZoneRepositoryInterface $shippingZoneRepository,
         protected CarrierManager $carrierManager,
-        protected PackageCalculator $packageCalculator
+        protected PackageCalculator $packageCalculator,
+        protected ?FeaturePolicyServiceInterface $featurePolicy = null
     ) {
+        $this->featurePolicy = $this->featurePolicy ?: app(FeaturePolicyServiceInterface::class);
     }
 
     /**
@@ -36,6 +39,10 @@ class ShippingService implements ShippingServiceInterface
         ?string $postcode = null,
         ?string $ward = null
     ): ?ShippingZone {
+        if (!$this->featurePolicy->isShippingEnabled()) {
+            return null;
+        }
+
         $zone = $this->shippingZoneRepository->findMatchingZone($country, $state, $postcode, $ward);
 
         if (!$zone) {
@@ -56,6 +63,10 @@ class ShippingService implements ShippingServiceInterface
         int $subtotal = 0,
         array $package = []
     ): Collection {
+        if (!$this->featurePolicy->isShippingEnabled()) {
+            return collect();
+        }
+
         $country = $country ?: 'VN';
         $zone = $this->resolveMatchingZone($country, $state, $postcode, $ward);
 
@@ -72,75 +83,80 @@ class ShippingService implements ShippingServiceInterface
         ];
 
         // 1. Calculate manual & configured shipping methods for this zone
-        $methods = $zone->methods()->where('is_enabled', true)->get()->map(function (ShippingMethod $method) use ($subtotal, $destination, $package, $zone) {
-            $type = $method->type instanceof \BackedEnum ? $method->type->value : (string) $method->type;
-            $driverClass = $this->driverClasses[$type] ?? null;
+        $methods = collect();
+        if ($this->featurePolicy->isManualShippingEnabled()) {
+            $methods = $zone->methods()->where('is_enabled', true)->get()->map(function (ShippingMethod $method) use ($subtotal, $destination, $package, $zone) {
+                $type = $method->type instanceof \BackedEnum ? $method->type->value : (string) $method->type;
+                $driverClass = $this->driverClasses[$type] ?? null;
 
-            if (!$driverClass) {
-                return null;
-            }
+                if (!$driverClass) {
+                    return null;
+                }
 
-            $driver = app($driverClass);
-            $options = array_merge(
-                $method->settings ?? [],
-                $package,
-                ['currency' => $method->settings['currency'] ?? 'VND']
-            );
+                $driver = app($driverClass);
+                $options = array_merge(
+                    $method->settings ?? [],
+                    $package,
+                    ['currency' => $method->settings['currency'] ?? 'VND']
+                );
 
-            $cost = $driver->calculateFee($subtotal, $destination, $options);
-            if ($cost === null || $cost < 0) {
-                return null;
-            }
+                $cost = $driver->calculateFee($subtotal, $destination, $options);
+                if ($cost === null || $cost < 0) {
+                    return null;
+                }
 
-            return [
-                'id' => $method->id,
-                'method_id' => $method->id,
-                'name' => $method->name,
-                'code' => $type,
-                'type' => $type,
-                'cost' => $cost,
-                'price' => $cost,
-                'amount' => $cost,
-                'currency' => $method->settings['currency'] ?? 'VND',
-                'estimated_days' => $method->settings['estimated_days'] ?? null,
-                'description' => $method->description ?? ($method->settings['description'] ?? null),
-                'is_available' => true,
-                'zone_id' => $zone->id,
-                'zone_name' => $zone->name,
-            ];
-        })->filter()->values();
+                return [
+                    'id' => $method->id,
+                    'method_id' => $method->id,
+                    'name' => $method->name,
+                    'code' => $type,
+                    'type' => $type,
+                    'cost' => $cost,
+                    'price' => $cost,
+                    'amount' => $cost,
+                    'currency' => $method->settings['currency'] ?? 'VND',
+                    'estimated_days' => $method->settings['estimated_days'] ?? null,
+                    'description' => $method->description ?? ($method->settings['description'] ?? null),
+                    'is_available' => true,
+                    'zone_id' => $zone->id,
+                    'zone_name' => $zone->name,
+                ];
+            })->filter()->values();
+        }
 
-        // 2. Dynamic Carrier rates if carrier API is enabled for this zone
-        $enabledCarriers = $this->carrierManager->getCarriersForDestination($country, $state);
-        foreach ($enabledCarriers as $carrier) {
-            if (!$carrier->isConfigured()) {
-                continue;
-            }
+        // 2. Dynamic Carrier rates if carrier API is enabled
+        if ($this->featurePolicy->isCarrierShippingEnabled()) {
+            $enabledCarriers = $this->carrierManager->getCarriersForDestination($country, $state);
+            foreach ($enabledCarriers as $carrier) {
+                if (!$carrier->isConfigured()) {
+                    continue;
+                }
 
-            $services = $carrier->getAvailableServices($destination, $package);
-            foreach ($services as $service) {
-                $serviceCode = (string) ($service['service_id'] ?? 'standard');
-                $quote = $carrier->calculateRate($serviceCode, $destination, $package);
+                $services = $carrier->getAvailableServices($destination, $package);
+                foreach ($services as $service) {
+                    $serviceCode = (string) ($service['service_id'] ?? 'standard');
+                    $quote = $carrier->calculateRate($serviceCode, $destination, $package);
 
-                if ($quote && isset($quote['amount'])) {
-                    $methods->push([
-                        'id' => 'carrier_' . $carrier->getId() . '_' . $serviceCode,
-                        'method_id' => 'carrier_' . $carrier->getId() . '_' . $serviceCode,
-                        'carrier' => $carrier->getId(),
-                        'carrier_name' => $carrier->getName(),
-                        'name' => $carrier->getName() . ' - ' . ($service['service_name'] ?? $quote['service_name']),
-                        'code' => 'carrier_' . $carrier->getId(),
-                        'type' => 'carrier',
-                        'cost' => (int) $quote['amount'],
-                        'price' => (int) $quote['amount'],
-                        'amount' => (int) $quote['amount'],
-                        'currency' => $quote['currency'] ?? 'VND',
-                        'estimated_days' => $quote['estimated_days'] ?? $service['estimated_days'] ?? 2,
-                        'description' => 'Báo giá động theo thời gian thực từ hãng vận chuyển.',
-                        'is_available' => true,
-                        'zone_id' => $zone->id,
-                        'zone_name' => $zone->name,
-                    ]);
+                    if ($quote && isset($quote['amount'])) {
+                        $methods->push([
+                            'id' => 'carrier_' . $carrier->getId() . '_' . $serviceCode,
+                            'method_id' => 'carrier_' . $carrier->getId() . '_' . $serviceCode,
+                            'carrier' => $carrier->getId(),
+                            'carrier_name' => $carrier->getName(),
+                            'name' => $carrier->getName() . ' - ' . ($service['service_name'] ?? $quote['service_name']),
+                            'code' => 'carrier_' . $carrier->getId(),
+                            'type' => 'carrier',
+                            'cost' => (int) $quote['amount'],
+                            'price' => (int) $quote['amount'],
+                            'amount' => (int) $quote['amount'],
+                            'currency' => $quote['currency'] ?? 'VND',
+                            'estimated_days' => $quote['estimated_days'] ?? $service['estimated_days'] ?? 2,
+                            'description' => 'Báo giá động theo thời gian thực từ hãng vận chuyển.',
+                            'is_available' => true,
+                            'zone_id' => $zone->id,
+                            'zone_name' => $zone->name,
+                        ]);
+                    }
                 }
             }
         }
@@ -157,6 +173,9 @@ class ShippingService implements ShippingServiceInterface
         int $subtotal = 0,
         array $package = []
     ): ?int {
+        if (!$this->featurePolicy->isShippingEnabled()) {
+            return null;
+        }
         if (!$method instanceof ShippingMethod) {
             if (is_numeric($method)) {
                 $method = ShippingMethod::find($method);
