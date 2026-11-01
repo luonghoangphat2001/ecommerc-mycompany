@@ -50,8 +50,8 @@ class ShippingIntegrationTest extends TestCase
             'is_visible' => true,
         ]);
 
-        // Domestic: Hanoi (Miền Bắc)
-        $resHanoi = $this->postJson('/api/v1/storefront/cart/shipping-methods', [
+        // Domestic: Hanoi (Miền Bắc) - Vietnamese
+        $resHanoi = $this->withHeaders(['X-Locale' => 'vi'])->postJson('/api/v1/storefront/cart/shipping-methods', [
             'country' => 'VN',
             'state' => 'Hà Nội',
             'items' => [
@@ -62,11 +62,22 @@ class ShippingIntegrationTest extends TestCase
         $resHanoi->assertOk();
         $methodsHanoi = $resHanoi->json('data') ?? $resHanoi->json();
         $this->assertNotEmpty($methodsHanoi);
-        fwrite(STDERR, json_encode(collect($methodsHanoi)->pluck("name"), JSON_UNESCAPED_UNICODE));
         $this->assertTrue(collect($methodsHanoi)->contains(fn($m) => str_contains($m['name'], 'Miền Bắc')));
 
+        // Domestic: Hanoi (Northern) - English
+        $resHanoiEn = $this->withHeaders(['X-Locale' => 'en'])->postJson('/api/v1/storefront/cart/shipping-methods', [
+            'country' => 'VN',
+            'state' => 'Hà Nội',
+            'items' => [
+                ['product_id' => $product->id, 'quantity' => 1],
+            ],
+        ]);
+        $resHanoiEn->assertOk();
+        $methodsHanoiEn = $resHanoiEn->json('data') ?? $resHanoiEn->json();
+        $this->assertTrue(collect($methodsHanoiEn)->contains(fn($m) => str_contains($m['name'], 'Northern')));
+
         // Domestic: Ho Chi Minh (Miền Nam)
-        $resHcm = $this->postJson('/api/v1/storefront/cart/shipping-methods', [
+        $resHcm = $this->withHeaders(['X-Locale' => 'vi'])->postJson('/api/v1/storefront/cart/shipping-methods', [
             'country' => 'VN',
             'state' => 'Thành phố Hồ Chí Minh',
             'items' => [
@@ -79,7 +90,7 @@ class ShippingIntegrationTest extends TestCase
         $this->assertTrue(collect($methodsHcm)->contains(fn($m) => str_contains($m['name'], 'Miền Nam')));
 
         // International: United States
-        $resUs = $this->postJson('/api/v1/storefront/cart/shipping-methods', [
+        $resUs = $this->withHeaders(['X-Locale' => 'vi'])->postJson('/api/v1/storefront/cart/shipping-methods', [
             'country' => 'US',
             'state' => 'New York',
             'items' => [
@@ -237,9 +248,24 @@ class ShippingIntegrationTest extends TestCase
         $resZones = $this->get(route('admin.shipping-zones.index'));
         $resZones->assertOk();
 
-        // 2. Shipping Methods index
+        // 2. Shipping Methods index & edit
         $resMethods = $this->get(route('admin.shipping-methods.index'));
         $resMethods->assertOk();
+
+        $firstMethod = ShippingMethod::first();
+        if ($firstMethod) {
+            $resEditMethod = $this->get(route('admin.shipping-methods.edit', $firstMethod->id));
+            $resEditMethod->assertOk();
+            $resEditMethod->assertDontSee('<textarea', false);
+            $resEditMethod->assertSee('Cấu hình mức cước và điều kiện');
+        }
+
+        // Settings - Payment Gateways without raw JSON
+        $resCheckoutSettings = $this->get(route('admin.settings.index', ['tab' => 'checkout']));
+        $resCheckoutSettings->assertOk();
+        $resCheckoutSettings->assertDontSee('Cổng thanh toán (JSON)');
+        $resCheckoutSettings->assertDontSee('Payment gateways JSON');
+        $resCheckoutSettings->assertSee('name="settings[enabled_payment_gateways][]"', false);
 
         // 3. Shipping Carriers index
         $resCarriers = $this->get(route('admin.shipping-carriers.index'));
@@ -257,5 +283,39 @@ class ShippingIntegrationTest extends TestCase
         // 5. Shipping Orders index
         $resOrders = $this->get(route('admin.shipping-orders.index'));
         $resOrders->assertOk();
+
+        // 6. Test Shipping Zone Form UI/UX (No raw JSON textarea)
+        $resCreateZone = $this->get(route('admin.shipping-zones.create'));
+        $resCreateZone->assertOk();
+        $resCreateZone->assertSee('Tỉnh thành Việt Nam');
+        $resCreateZone->assertSee('Toàn quốc Việt Nam');
+        $resCreateZone->assertSee('Miền Bắc (25)');
+        $resCreateZone->assertDontSee('<textarea id="locations_json"', false);
+
+        $northZone = ShippingZone::where('code', 'VN_NORTH')->first();
+        $resEditZone = $this->get(route('admin.shipping-zones.edit', $northZone->id));
+        $resEditZone->assertOk();
+        $resEditZone->assertSee('Chỉnh sửa Khu vực vận chuyển');
+        $resEditZone->assertDontSee('<textarea id="locations_json"', false);
+
+        // 7. Store new zone via form
+        $resStoreZone = $this->post(route('admin.shipping-zones.store'), [
+            'name' => ['vi' => 'Khu vực Đồng Bằng Sông Cửu Long', 'en' => 'Mekong Delta Region'],
+            'code' => 'VN_MEKONG_DELTA',
+            'sort' => 5,
+            'is_active' => '1',
+            'locations_json' => json_encode([
+                [
+                    'country' => 'VN',
+                    'provinces' => ['Cần Thơ', 'An Giang', 'Đồng Tháp'],
+                ],
+            ]),
+        ]);
+        $resStoreZone->assertRedirect(route('admin.shipping-zones.index'));
+
+        $savedZone = ShippingZone::where('code', 'VN_MEKONG_DELTA')->first();
+        $this->assertNotNull($savedZone);
+        $this->assertEquals(['Cần Thơ', 'An Giang', 'Đồng Tháp'], $savedZone->locations[0]['provinces']);
+        $this->assertStringContainsString('Cần Thơ', $savedZone->formatted_locations);
     }
 }

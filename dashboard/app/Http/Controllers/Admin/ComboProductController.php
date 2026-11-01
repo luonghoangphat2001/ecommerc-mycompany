@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\ComboProduct;
 use App\Models\ComboProductItem;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -26,6 +27,11 @@ class ComboProductController extends BaseCrudController
         return 'admin.combo-products';
     }
 
+    protected function formView(): string
+    {
+        return 'admin.combo-products.form';
+    }
+
     protected function searchable(): array
     {
         return ['name', 'slug'];
@@ -43,7 +49,7 @@ class ComboProductController extends BaseCrudController
             'is_active' => ['label' => 'Kích hoạt', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
             'start_date' => ['label' => 'Start date', 'type' => 'datetime-local', 'rules' => ['nullable', 'date']],
             'end_date' => ['label' => 'End date', 'type' => 'datetime-local', 'rules' => ['nullable', 'date']],
-            'items_json' => ['label' => 'Combo items JSON', 'type' => 'textarea', 'rules' => ['nullable', 'string'], 'virtual' => true],
+            'items_json' => ['label' => 'Sản phẩm thành phần', 'type' => 'hidden', 'rules' => ['nullable'], 'virtual' => true, 'formOnly' => true],
         ];
     }
 
@@ -60,7 +66,8 @@ class ComboProductController extends BaseCrudController
 
     protected function afterSave(Model $record, Request $request): void
     {
-        $items = json_decode((string) $request->input('items_json', '[]'), true);
+        $raw = $request->input('items_json');
+        $items = is_array($raw) ? $raw : json_decode((string) $raw, true);
         if (! is_array($items)) {
             return;
         }
@@ -68,14 +75,14 @@ class ComboProductController extends BaseCrudController
         $record->items()->delete();
 
         foreach ($items as $item) {
-            if (! isset($item['shop_product_id'])) {
+            if (! isset($item['shop_product_id']) || empty($item['shop_product_id'])) {
                 continue;
             }
 
             ComboProductItem::create([
                 'combo_product_id' => $record->id,
                 'shop_product_id' => (int) $item['shop_product_id'],
-                'quantity' => (int) ($item['quantity'] ?? 1),
+                'quantity' => max(1, (int) ($item['quantity'] ?? 1)),
                 'sort_order' => (int) ($item['sort_order'] ?? 0),
             ]);
         }
@@ -83,12 +90,21 @@ class ComboProductController extends BaseCrudController
 
     protected function formData(?Model $record = null): array
     {
-        if (! $record) {
-            return [];
+        $products = Product::select('id', 'name', 'sku')->orderBy('name')->get();
+        $items = $record ? $record->items()->get(['shop_product_id', 'quantity', 'sort_order'])->toArray() : [];
+
+        if (empty($items) && $products->isNotEmpty()) {
+            $items[] = [
+                'shop_product_id' => $products->first()->id,
+                'quantity' => 1,
+                'sort_order' => 0,
+            ];
         }
 
         return [
-            'items_json' => json_encode($record->items()->get(['shop_product_id', 'quantity', 'sort_order'])->toArray(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+            'products' => $products,
+            'initialItems' => $items,
+            'items_json' => json_encode($items, JSON_UNESCAPED_UNICODE),
         ];
     }
 }

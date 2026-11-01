@@ -184,6 +184,8 @@ class SettingController extends BaseCrudController
             'boolean' => (bool) $value,
             'number' => $value === null || $value === '' ? null : (int) $value,
             'decimal' => $value === null || $value === '' ? null : (float) $value,
+            'payment_gateways', 'checkboxes', 'array' => is_array($value) ? array_values(array_filter($value)) : ($this->decodeJsonSetting($value) ?: []),
+            'exchange_rates' => is_array($value) ? array_filter($value, fn($v) => is_numeric($v)) : ($this->decodeJsonSetting($value) ?: []),
             'json' => $this->decodeJsonSetting($value),
             default => $value === '' ? null : $value,
         };
@@ -249,7 +251,7 @@ class SettingController extends BaseCrudController
                     'currency_symbol' => ['label' => __('admin.settings.field_labels.currency_symbol'), 'default' => 'đ'],
                     'new_user_role' => ['label' => __('admin.settings.field_labels.new_user_role'), 'default' => 'User'],
                     'send_welcome_email' => ['label' => __('admin.settings.field_labels.send_welcome_email'), 'type' => 'boolean', 'default' => false],
-                    'exchange_rates' => ['label' => __('admin.settings.field_labels.exchange_rates'), 'type' => 'json', 'default' => ['VND' => 1, 'USD' => 25000]],
+                    'exchange_rates' => ['label' => __('admin.settings.field_labels.exchange_rates'), 'type' => 'exchange_rates', 'default' => ['VND' => 1, 'USD' => 25000]],
                 ],
                 'management_actions' => [
                     ['label' => 'admin.sidebar.roles', 'route' => 'admin.roles.index'],
@@ -291,7 +293,7 @@ class SettingController extends BaseCrudController
                     'enable_guest_checkout' => ['label' => __('admin.settings.field_labels.enable_guest_checkout'), 'type' => 'boolean', 'default' => true],
                     'tax_calculation_address' => ['label' => __('admin.settings.field_labels.tax_calculation_address'), 'type' => 'select', 'default' => 'shipping', 'options' => ['shipping' => 'Shipping', 'billing' => 'Billing', 'base' => 'Base']],
                     'prices_include_tax' => ['label' => __('admin.settings.field_labels.prices_include_tax'), 'type' => 'boolean', 'default' => false],
-                    'enabled_payment_gateways' => ['label' => __('admin.settings.field_labels.enabled_payment_gateways'), 'type' => 'json', 'default' => ['cod', 'bank_transfer']],
+                    'enabled_payment_gateways' => ['label' => __('admin.settings.field_labels.enabled_payment_gateways'), 'type' => 'payment_gateways', 'default' => ['cod', 'bank_transfer']],
                     'stripe_public_key' => ['label' => __('admin.settings.field_labels.stripe_public_key'), 'default' => null],
                     'stripe_secret_key' => ['label' => __('admin.settings.field_labels.stripe_secret_key'), 'type' => 'password', 'default' => null],
                     'paypal_mode' => ['label' => __('admin.settings.field_labels.paypal_mode'), 'type' => 'select', 'default' => 'sandbox', 'options' => ['sandbox' => 'Sandbox', 'live' => 'Live']],

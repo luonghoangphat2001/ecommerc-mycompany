@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Shipping\Support\VietnamLocations;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Http\Controllers\Admin\Traits\HasShippingTabs;
 use App\Models\ShippingZone;
@@ -33,6 +34,11 @@ class ShippingZoneController extends BaseCrudController
         return 'shipping-zones';
     }
 
+    protected function formView(): string
+    {
+        return 'admin.shipping.zones.form';
+    }
+
     protected function searchable(): array
     {
         return ['name', 'code'];
@@ -55,6 +61,11 @@ class ShippingZoneController extends BaseCrudController
                 'rules' => ['required', 'string', 'max:255'],
                 'translatable' => true,
             ],
+            'formatted_locations' => [
+                'label' => 'Phạm vi áp dụng (Locations)',
+                'tableOnly' => true,
+                'virtual' => true,
+            ],
             'sort' => [
                 'label' => 'Thứ tự ưu tiên (Sort Priority)',
                 'type' => 'number',
@@ -70,10 +81,11 @@ class ShippingZoneController extends BaseCrudController
                 'rules' => ['nullable', 'boolean'],
             ],
             'locations_json' => [
-                'label' => 'Cấu hình địa phương (Locations JSON)',
-                'type' => 'textarea',
-                'rules' => ['nullable', 'string'],
+                'label' => 'Cấu hình địa phương (Locations)',
+                'type' => 'hidden',
+                'rules' => ['nullable'],
                 'virtual' => true,
+                'formOnly' => true,
             ],
         ];
     }
@@ -82,9 +94,15 @@ class ShippingZoneController extends BaseCrudController
     {
         $data = parent::mutateData($data, $record);
 
-        $json = (string) ($data['locations_json'] ?? '');
-        $data['locations'] = $json !== '' ? (json_decode($json, true) ?: []) : [];
-        unset($data['locations_json']);
+        if (isset($data['locations']) && is_array($data['locations'])) {
+            // Already structured array
+        } elseif (isset($data['locations_json'])) {
+            $json = (string) $data['locations_json'];
+            $data['locations'] = $json !== '' ? (json_decode($json, true) ?: []) : [];
+            unset($data['locations_json']);
+        } else {
+            $data['locations'] = [];
+        }
 
         if (isset($data['is_active'])) {
             $data['is_active'] = (bool) $data['is_active'];
@@ -95,22 +113,15 @@ class ShippingZoneController extends BaseCrudController
 
     protected function formData(?Model $record = null): array
     {
-        if (!$record) {
-            return [
-                'sort' => 10,
-                'is_active' => '1',
-                'locations_json' => json_encode([
-                    [
-                        'country' => 'VN',
-                        'provinces' => [],
-                    ],
-                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-            ];
-        }
-
         return [
-            'is_active' => $record->is_active ? '1' : '0',
-            'locations_json' => json_encode($record->locations ?? [], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+            'northProvinces' => VietnamLocations::NORTH_PROVINCES,
+            'centralProvinces' => VietnamLocations::CENTRAL_PROVINCES,
+            'southProvinces' => VietnamLocations::SOUTH_PROVINCES,
+            'continents' => config('continents', []),
+            'countries' => config('countries', []),
+            'initialLocations' => $record ? ($record->locations ?? []) : [['country' => 'VN', 'provinces' => []]],
+            'sort' => $record ? $record->sort : 10,
+            'is_active' => $record ? ($record->is_active ? '1' : '0') : '1',
         ];
     }
 }

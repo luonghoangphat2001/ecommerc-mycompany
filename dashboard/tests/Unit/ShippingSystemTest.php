@@ -258,4 +258,82 @@ class ShippingSystemTest extends TestCase
             $this->assertStringContainsString('Miền Bắc', $m['zone_name']);
         }
     }
+
+    /**
+     * 9. Test Multilingual Translations and CSV Import/Export for Shipping Data.
+     */
+    public function test_multilingual_shipping_data_and_crud_import_export(): void
+    {
+        $zone = ShippingZone::where('code', 'VN_NORTH')->first();
+        $this->assertNotNull($zone);
+
+        // 1. Spatie Translatable verification on model
+        $translations = $zone->getTranslations('name');
+        $this->assertEquals('Miền Bắc', $translations['vi'] ?? null);
+        $this->assertEquals('Northern Vietnam', $translations['en'] ?? null);
+
+        app()->setLocale('vi');
+        $this->assertEquals('Miền Bắc', $zone->name);
+
+        app()->setLocale('en');
+        $this->assertEquals('Northern Vietnam', $zone->name);
+
+        // 2. ShippingMethod multilingual verification
+        $method = $zone->methods()->where('type', 'flat_rate')->first();
+        $this->assertNotNull($method);
+
+        app()->setLocale('vi');
+        $this->assertEquals('Giao hàng tiêu chuẩn Miền Bắc', $method->name);
+        $this->assertEquals('Giao hàng tận nơi 1-2 ngày làm việc.', $method->description);
+
+        app()->setLocale('en');
+        $this->assertEquals('Northern Standard Delivery', $method->name);
+        $this->assertEquals('Door-to-door delivery within 1-2 business days.', $method->description);
+
+        // 3. Test Controller import with multilingual columns (name_vi, name_en)
+        $controller = new \App\Http\Controllers\Admin\ShippingZoneController();
+        $tmpFile = tempnam(sys_get_temp_dir(), 'csv_import_');
+        $fp = fopen($tmpFile, 'w');
+        fputcsv($fp, ['code', 'name_vi', 'name_en', 'sort', 'is_active']);
+        fputcsv($fp, ['VN_TEST_IMPORT', 'Khu Vực Kiểm Thử', 'Test Zone Import', 99, 1]);
+        fclose($fp);
+
+        $uploadedFile = new \Illuminate\Http\UploadedFile($tmpFile, 'zones.csv', 'text/csv', null, true);
+        $request = \Illuminate\Http\Request::create('/admin/shipping-zones/import', 'POST', [], [], ['file' => $uploadedFile]);
+
+        $response = $controller->import($request);
+        $this->assertEquals(302, $response->getStatusCode());
+
+        $importedZone = ShippingZone::where('code', 'VN_TEST_IMPORT')->first();
+        $this->assertNotNull($importedZone);
+
+        app()->setLocale('vi');
+        $this->assertEquals('Khu Vực Kiểm Thử', $importedZone->name);
+
+        app()->setLocale('en');
+        $this->assertEquals('Test Zone Import', $importedZone->name);
+
+        // 4. Test Controller import with JSON in name column
+        $tmpFileJson = tempnam(sys_get_temp_dir(), 'csv_import_json_');
+        $fpJson = fopen($tmpFileJson, 'w');
+        fputcsv($fpJson, ['code', 'name', 'sort', 'is_active']);
+        fputcsv($fpJson, ['VN_TEST_JSON', '{"vi":"Khu Vực JSON","en":"JSON Test Zone"}', 100, 1]);
+        fclose($fpJson);
+
+        $uploadedFileJson = new \Illuminate\Http\UploadedFile($tmpFileJson, 'zones_json.csv', 'text/csv', null, true);
+        $requestJson = \Illuminate\Http\Request::create('/admin/shipping-zones/import', 'POST', [], [], ['file' => $uploadedFileJson]);
+
+        $controller->import($requestJson);
+        $jsonZone = ShippingZone::where('code', 'VN_TEST_JSON')->first();
+        $this->assertNotNull($jsonZone);
+
+        app()->setLocale('vi');
+        $this->assertEquals('Khu Vực JSON', $jsonZone->name);
+
+        app()->setLocale('en');
+        $this->assertEquals('JSON Test Zone', $jsonZone->name);
+
+        @unlink($tmpFile);
+        @unlink($tmpFileJson);
+    }
 }

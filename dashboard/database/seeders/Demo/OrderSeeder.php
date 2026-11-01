@@ -104,20 +104,36 @@ class OrderSeeder extends Seeder
             $selectedProducts = $products->random(rand(1, 3));
             foreach ($selectedProducts as $prod) {
                 $qty = rand(1, 3);
-                $unitPrice = $prod->sale_price ?: $prod->price;
+                $variantId = null;
+                $itemName = $prod->getTranslation('name', 'vi');
+                $originalPrice = $prod->price;
+                $salePrice = $prod->sale_price;
+
+                if ($prod->isVariable() && $prod->variants()->exists()) {
+                    $variant = $prod->variants->random();
+                    $variantId = $variant->id;
+                    $originalPrice = $variant->price;
+                    $salePrice = $variant->sale_price;
+                    $attrSummary = collect($variant->attributes)->map(fn($v, $k) => "$k: $v")->join(', ');
+                    $itemName .= " ({$attrSummary})";
+                }
+
+                $unitPrice = $salePrice ?: $originalPrice;
                 $lineTotal = $unitPrice * $qty;
+                $discountAmount = $salePrice ? (($originalPrice - $salePrice) * $qty) : 0;
 
                 OrderItem::create([
                     'order_id' => $order->id,
                     'shop_product_id' => $prod->id,
+                    'variant_id' => $variantId,
                     'type' => OrderItemType::Product->value,
-                    'name' => $prod->getTranslation('name', 'vi'),
+                    'name' => $itemName,
                     'qty' => $qty,
                     'unit_price' => $unitPrice,
                     'total' => $lineTotal,
-                    'original_price' => $prod->price,
-                    'sale_price' => $prod->sale_price,
-                    'discount_amount' => $prod->sale_price ? (($prod->price - $prod->sale_price) * $qty) : 0,
+                    'original_price' => $originalPrice,
+                    'sale_price' => $salePrice,
+                    'discount_amount' => $discountAmount,
                     'created_at' => $orderDate,
                     'updated_at' => $orderDate,
                 ]);

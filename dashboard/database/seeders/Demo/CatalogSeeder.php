@@ -2,13 +2,18 @@
 
 namespace Database\Seeders\Demo;
 
+use App\Enums\ProductType;
+use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\ComboProduct;
+use App\Models\ComboProductItem;
 use App\Models\Coupon;
 use App\Models\CrossSellProduct;
 use App\Models\Media;
 use App\Models\Product;
+use App\Models\ProductAttribute;
 use App\Models\ProductCategory;
+use App\Models\ProductVariant;
 use App\Models\ShippingMethod;
 use App\Models\ShippingZone;
 use App\Models\TaxClass;
@@ -17,6 +22,7 @@ use App\Models\UpsellProduct;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class CatalogSeeder extends Seeder
@@ -27,6 +33,9 @@ class CatalogSeeder extends Seeder
     public function run(): void
     {
         $admin = User::where('email', 'admin@admin.com')->first() ?? User::first();
+
+        // 0. Purge current catalog products and their variant/combo relationships
+        $this->purgeExistingProducts();
 
         // 1. Tax Classes and Rates
         $this->seedTaxData();
@@ -40,19 +49,56 @@ class CatalogSeeder extends Seeder
         // 4. Categories & Subcategories
         $categories = $this->seedCategories();
 
-        // 5. Products
-        $products = $this->seedProducts($brands, $categories, $admin);
+        // 5. Global Attributes (Size, Color, Volume, Portion)
+        $attributes = $this->seedAttributes();
 
-        // 6. Combos
+        // 6. Products (Simple + Variable Products with Attributes & Variations)
+        $products = $this->seedProducts($brands, $categories, $attributes, $admin);
+
+        // 7. Combos (Combo Products linked to Simple Products and Product Variants)
         $this->seedCombos($products);
 
-        // 7. Upsells and Cross-sells
+        // 8. Upsells and Cross-sells
         $this->seedUpsellsAndCrossSells($products);
 
-        // 8. Coupons
+        // 9. Coupons
         $this->seedCoupons();
 
-        $this->command?->info("CatalogSeeder completed successfully: Products, Categories, Combos, and Coupons ready.");
+        $this->command?->info("CatalogSeeder completed successfully: Simple, Variable, and Combo products ready.");
+    }
+
+    /**
+     * Purge all existing products, variations, attributes, and combos cleanly.
+     */
+    protected function purgeExistingProducts(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        $tables = [
+            'shop_order_items',
+            'shop_combo_product_items',
+            'shop_combo_products',
+            'shop_upsell_products',
+            'shop_cross_sell_products',
+            'shop_product_inventory_stocks',
+            'shop_product_variants',
+            'shop_product_attributes',
+            'shop_attributes',
+            'shop_category_product',
+            'shop_brand_product',
+            'shop_product_meta',
+            'shop_products',
+        ];
+
+        foreach ($tables as $table) {
+            if (Schema::hasTable($table)) {
+                DB::table($table)->delete();
+            }
+        }
+
+        Schema::enableForeignKeyConstraints();
+
+        $this->command?->info("Existing catalog data purged cleanly.");
     }
 
     protected function seedTaxData(): void
@@ -305,13 +351,69 @@ class CatalogSeeder extends Seeder
         return $allCategories;
     }
 
-    protected function seedProducts($brands, $categories, $admin): \Illuminate\Support\Collection
+    /**
+     * Seed global attributes for variation matrix.
+     */
+    protected function seedAttributes(): \Illuminate\Support\Collection
+    {
+        $attributesData = [
+            [
+                'name' => 'Kích cỡ (Size)',
+                'slug' => 'size',
+                'type' => 'button',
+                'values' => ['S', 'M', 'L', 'XL', 'XXL'],
+            ],
+            [
+                'name' => 'Màu sắc (Color)',
+                'slug' => 'color',
+                'type' => 'color',
+                'values' => ['Đen', 'Trắng', 'Đỏ Ruby', 'Xanh Navy'],
+            ],
+            [
+                'name' => 'Dung tích (Volume)',
+                'slug' => 'volume',
+                'type' => 'select',
+                'values' => ['330ml (Lon)', '500ml (Chai)', '750ml (Chai)', '1000ml (Chai)'],
+            ],
+            [
+                'name' => 'Khẩu phần / Trọng lượng (Portion)',
+                'slug' => 'portion',
+                'type' => 'select',
+                'values' => ['200g', '350g', '500g'],
+            ],
+        ];
+
+        $attributes = collect();
+        foreach ($attributesData as $attr) {
+            $model = Attribute::updateOrCreate(
+                ['slug' => $attr['slug']],
+                [
+                    'name' => $attr['name'],
+                    'type' => $attr['type'],
+                    'values' => $attr['values'],
+                ]
+            );
+            $attributes->put($attr['slug'], $model);
+        }
+
+        return $attributes;
+    }
+
+    protected function seedProducts($brands, $categories, $attributes, $admin): \Illuminate\Support\Collection
     {
         $tax = TaxClass::where('slug', 'standard')->first() ?? TaxClass::first();
+        $reducedTax = TaxClass::where('slug', 'reduced')->first() ?? $tax;
         $mediaCount = Media::count();
         $authorId = $admin ? $admin->id : 1;
 
-        $catalogItems = [
+        $brandMap = $brands->keyBy('slug');
+        $catMap = $categories->keyBy('slug');
+        $products = collect();
+
+        // -------------------------------------------------------------
+        // A. Simple Products
+        // -------------------------------------------------------------
+        $simpleItems = [
             // Cocktails
             [
                 'sku' => 'CLUB-COCK-001',
@@ -427,13 +529,6 @@ class CatalogSeeder extends Seeder
 
             // Culinary & Food
             [
-                'sku' => 'CLUB-FOOD-001',
-                'name' => ['vi' => 'Bò Bít Tết Wagyu A5 Áp Chảo Kèm Sốt Tiêu Đen', 'en' => 'Pan-Seared Wagyu A5 Ribeye with Peppercorn Sauce'],
-                'description' => ['vi' => 'Thịt bò Wagyu mềm mọng như bơ tan, phục vụ cùng khoai tây nghiền mịn và măng tây nướng tỏi.', 'en' => 'Incredible marbled Wagyu A5 ribeye seared to perfection, served with truffle mash and garlic asparagus.'],
-                'price' => 720000, 'old_price' => 820000, 'cost' => 350000, 'sale_price' => 680000,
-                'brand' => 'saigon-fb-gourmet', 'category' => 'steaks-mains', 'featured' => true,
-            ],
-            [
                 'sku' => 'CLUB-FOOD-002',
                 'name' => ['vi' => 'Sườn Heo Non Nướng Sốt BBQ Mật Ong Thảo Mộc', 'en' => 'Honey Glazed Slow-Roasted BBQ Pork Ribs'],
                 'description' => ['vi' => 'Sườn heo ướp chậm 12 giờ, nướng than hoa vàng ươm ngập sốt BBQ mật ong đậm đà khó cưỡng.', 'en' => 'Tender 12-hour marinated ribs glazed with rich honey BBQ sauce and served with coleslaw.'],
@@ -469,139 +564,390 @@ class CatalogSeeder extends Seeder
                 'brand' => 'saigon-fb-gourmet', 'category' => 'desserts', 'featured' => false,
             ],
 
-            // VIP Accessories & Merch
+            // VIP Accessories
             [
                 'sku' => 'CLUB-MERCH-001',
-                'name' => ['vi' => 'Bộ 2 Ly Thủy Tinh Nova Club Thượng Hạng', 'en' => 'Set of 2 Nova Club Premium Glasses'],
-                'description' => ['vi' => 'Thủy tinh cao cấp chịu nhiệt, in logo Nova Club mạ vàng tinh xảo.', 'en' => 'Heat-resistant premium glassware featuring subtle golden Nova Club branding.'],
+                'name' => ['vi' => 'Bộ 2 Ly Pha Lê Nova Club VIP Thượng Hạng', 'en' => 'Set of 2 Nova Club Premium Crystal Glasses'],
+                'description' => ['vi' => 'Thủy tinh pha lê cao cấp chịu nhiệt, in logo Nova Club mạ vàng tinh xảo.', 'en' => 'Heat-resistant premium glassware featuring subtle golden Nova Club branding.'],
                 'price' => 550000, 'old_price' => 650000, 'cost' => 250000, 'sale_price' => 490000,
                 'brand' => 'nova-club-signature', 'category' => 'glassware-tools', 'featured' => false,
             ],
-            [
-                'sku' => 'CLUB-MERCH-002',
-                'name' => ['vi' => 'Áo Thun Cotton Nova Club VIP Limited Edition (Size L)', 'en' => 'Nova Club VIP Limited Edition Cotton T-Shirt (Size L)'],
-                'description' => ['vi' => 'Chất liệu 100% cotton 280gsm thoáng mát, in logo dạ quang Nova Club tinh tế ở ngực và lưng.', 'en' => 'Heavyweight 280gsm cotton tee featuring luminous Nova Club branding details.'],
-                'price' => 350000, 'old_price' => 420000, 'cost' => 140000, 'sale_price' => null,
-                'brand' => 'nova-club-signature', 'category' => 'apparel', 'featured' => false,
-            ],
         ];
 
-        $products = collect();
-        $brandMap = $brands->keyBy('slug');
-        $catMap = $categories->keyBy('slug');
-
-        foreach ($catalogItems as $index => $item) {
+        foreach ($simpleItems as $index => $item) {
             $brandObj = $brandMap->get($item['brand']) ?? $brands->first();
             $catObj = $catMap->get($item['category']) ?? $categories->first();
-
-            // Pick valid media ID
             $mediaId = $mediaCount > 0 ? (($index % $mediaCount) + 1) : null;
 
-            $product = Product::updateOrCreate(
-                ['sku' => $item['sku']],
-                [
-                    'shop_brand_id' => $brandObj ? $brandObj->id : null,
-                    'author_id' => $authorId,
-                    'name' => $item['name'],
-                    'slug' => Str::slug($item['name']['en']) . '-' . strtolower(Str::random(4)),
-                    'barcode' => '893' . str_pad($index + 1000, 10, '0', STR_PAD_LEFT),
-                    'description' => $item['description'],
-                    'qty' => 100, // Stock will be updated by InventorySeeder
-                    'total_stock' => 100,
-                    'security_stock' => 10,
-                    'featured' => $item['featured'],
-                    'is_visible' => true,
-                    'price' => $item['price'],
-                    'old_price' => $item['old_price'],
-                    'cost' => $item['cost'],
-                    'sale_price' => $item['sale_price'],
-                    'tax_class_id' => $tax ? $tax->id : null,
-                    'type' => 'deliverable',
-                    'apply_tax' => true,
-                    'requires_shipping' => true,
-                    'product_images' => $mediaId,
-                    'published_at' => now()->subDays(rand(10, 180)),
-                ]
-            );
+            $product = Product::create([
+                'sku' => $item['sku'],
+                'shop_brand_id' => $brandObj?->id,
+                'author_id' => $authorId,
+                'name' => $item['name'],
+                'slug' => Str::slug($item['name']['en']) . '-' . strtolower(Str::random(4)),
+                'barcode' => '893' . str_pad($index + 1000, 10, '0', STR_PAD_LEFT),
+                'description' => $item['description'],
+                'qty' => 100,
+                'total_stock' => 100,
+                'security_stock' => 10,
+                'featured' => $item['featured'],
+                'is_visible' => true,
+                'price' => $item['price'],
+                'old_price' => $item['old_price'],
+                'cost' => $item['cost'],
+                'sale_price' => $item['sale_price'],
+                'tax_class_id' => $tax?->id,
+                'type' => ProductType::Simple,
+                'apply_tax' => true,
+                'requires_shipping' => true,
+                'product_images' => $mediaId,
+                'published_at' => now()->subDays(rand(10, 180)),
+            ]);
 
             if ($catObj) {
-                $product->categories()->syncWithoutDetaching([$catObj->id]);
+                $product->categories()->sync([$catObj->id]);
             }
 
             $products->push($product);
         }
 
-        return $products;
-    }
+        // -------------------------------------------------------------
+        // B. Variable Products (with Attributes and Product Variants)
+        // -------------------------------------------------------------
+        $attrSize = $attributes->get('size');
+        $attrColor = $attributes->get('color');
+        $attrVolume = $attributes->get('volume');
+        $attrPortion = $attributes->get('portion');
 
-    protected function seedCombos($products): void
-    {
-        if ($products->count() < 4) {
-            return;
-        }
+        $variableCatalog = [
+            // 1. Áo Polo Thể Thao Nova Club VIP
+            [
+                'sku' => 'NOVA-POLO-VIP',
+                'name' => ['vi' => 'Áo Polo Thể Thao Nova Club VIP', 'en' => 'Nova Club VIP Sports Polo Shirt'],
+                'description' => [
+                    'vi' => 'Chất vải thun cá sấu 100% cotton co giãn 4 chiều, thoáng khí thấm hút mồ hôi, thêu logo Nova Club chỉ vàng kim sang trọng.',
+                    'en' => 'Premium 4-way stretch 100% pique cotton sports polo with luxury embroidered golden Nova Club crest.',
+                ],
+                'price' => 450000,
+                'old_price' => 550000,
+                'cost' => 180000,
+                'sale_price' => null,
+                'brand' => 'nova-club-signature',
+                'category' => 'apparel',
+                'featured' => true,
+                'attributes' => [
+                    ['attribute' => $attrSize, 'name' => 'Size', 'options' => ['S', 'M', 'L', 'XL'], 'position' => 0],
+                    ['attribute' => $attrColor, 'name' => 'Color', 'options' => ['Đen', 'Trắng'], 'position' => 1],
+                ],
+                'variants' => [
+                    ['sku_suffix' => 'S-BLK', 'price' => 450000, 'sale_price' => null, 'cost' => 180000, 'qty' => 20, 'attrs' => ['Size' => 'S', 'Color' => 'Đen']],
+                    ['sku_suffix' => 'M-BLK', 'price' => 450000, 'sale_price' => 390000, 'cost' => 180000, 'qty' => 35, 'attrs' => ['Size' => 'M', 'Color' => 'Đen']],
+                    ['sku_suffix' => 'L-BLK', 'price' => 450000, 'sale_price' => 390000, 'cost' => 180000, 'qty' => 40, 'attrs' => ['Size' => 'L', 'Color' => 'Đen']],
+                    ['sku_suffix' => 'XL-BLK', 'price' => 450000, 'sale_price' => null, 'cost' => 180000, 'qty' => 15, 'attrs' => ['Size' => 'XL', 'Color' => 'Đen']],
+                    ['sku_suffix' => 'S-WHT', 'price' => 450000, 'sale_price' => null, 'cost' => 180000, 'qty' => 15, 'attrs' => ['Size' => 'S', 'Color' => 'Trắng']],
+                    ['sku_suffix' => 'M-WHT', 'price' => 450000, 'sale_price' => 390000, 'cost' => 180000, 'qty' => 30, 'attrs' => ['Size' => 'M', 'Color' => 'Trắng']],
+                    ['sku_suffix' => 'L-WHT', 'price' => 450000, 'sale_price' => 390000, 'cost' => 180000, 'qty' => 35, 'attrs' => ['Size' => 'L', 'Color' => 'Trắng']],
+                    ['sku_suffix' => 'XL-WHT', 'price' => 450000, 'sale_price' => null, 'cost' => 180000, 'qty' => 12, 'attrs' => ['Size' => 'XL', 'Color' => 'Trắng']],
+                ],
+            ],
 
-        $combosData = [
+            // 2. Áo Hoodie Nova Club Nightlife Signature
             [
-                'name' => 'VIP Lounge Gold Party Pack',
-                'slug' => 'vip-lounge-gold-party-pack',
-                'description' => 'Trọn gói đêm tiệc VIP đỉnh cao: 1 chai Hennessy VSOP + 1 Đĩa bò Wagyu áp chảo + 1 Đĩa sườn BBQ + 1 Bánh Tiramisu.',
-                'combo_price' => 2800000,
-                'original_price' => 3255000,
-                'discount_percent' => 14,
-                'skus' => ['CLUB-SPIR-003', 'CLUB-FOOD-001', 'CLUB-FOOD-002', 'CLUB-FOOD-006'],
+                'sku' => 'NOVA-HOODIE-VIP',
+                'name' => ['vi' => 'Áo Hoodie Nova Club Nightlife Signature', 'en' => 'Nova Club Nightlife Edition Hoodie'],
+                'description' => [
+                    'vi' => 'Áo hoodie nỉ bông cao cấp định lượng 380gsm giữ ấm hoàn hảo, in họa tiết phản quang Nova dạ quang tiệc đêm.',
+                    'en' => 'Heavyweight 380gsm fleece hoodie with reflective nightlife Nova signature iconography.',
+                ],
+                'price' => 750000,
+                'old_price' => 880000,
+                'cost' => 320000,
+                'sale_price' => 690000,
+                'brand' => 'nova-club-signature',
+                'category' => 'apparel',
+                'featured' => true,
+                'attributes' => [
+                    ['attribute' => $attrSize, 'name' => 'Size', 'options' => ['M', 'L', 'XL'], 'position' => 0],
+                    ['attribute' => $attrColor, 'name' => 'Color', 'options' => ['Đen Ruby', 'Xanh Navy'], 'position' => 1],
+                ],
+                'variants' => [
+                    ['sku_suffix' => 'M-BLK', 'price' => 750000, 'sale_price' => 690000, 'cost' => 320000, 'qty' => 20, 'attrs' => ['Size' => 'M', 'Color' => 'Đen Ruby']],
+                    ['sku_suffix' => 'L-BLK', 'price' => 750000, 'sale_price' => 690000, 'cost' => 320000, 'qty' => 25, 'attrs' => ['Size' => 'L', 'Color' => 'Đen Ruby']],
+                    ['sku_suffix' => 'XL-BLK', 'price' => 750000, 'sale_price' => null, 'cost' => 320000, 'qty' => 15, 'attrs' => ['Size' => 'XL', 'Color' => 'Đen Ruby']],
+                    ['sku_suffix' => 'M-NVY', 'price' => 750000, 'sale_price' => 690000, 'cost' => 320000, 'qty' => 18, 'attrs' => ['Size' => 'M', 'Color' => 'Xanh Navy']],
+                    ['sku_suffix' => 'L-NVY', 'price' => 750000, 'sale_price' => 690000, 'cost' => 320000, 'qty' => 22, 'attrs' => ['Size' => 'L', 'Color' => 'Xanh Navy']],
+                    ['sku_suffix' => 'XL-NVY', 'price' => 750000, 'sale_price' => null, 'cost' => 320000, 'qty' => 12, 'attrs' => ['Size' => 'XL', 'Color' => 'Xanh Navy']],
+                ],
             ],
+
+            // 3. Bia Tuyết Lúa Mỳ Edelweiss Hảo Hạng
             [
-                'name' => 'Craft Beer & BBQ Platter Weekend Pack',
-                'slug' => 'craft-beer-bbq-platter-weekend-pack',
-                'description' => 'Combo giải nhiệt cuối tuần: 1 Lốc East West IPA + 1 Phần sườn BBQ + 1 Phần cánh gà chiên mắm + 1 Khoai tây Cajun.',
-                'combo_price' => 850000,
-                'original_price' => 980000,
-                'discount_percent' => 13,
-                'skus' => ['CLUB-BEER-002', 'CLUB-FOOD-002', 'CLUB-FOOD-005', 'CLUB-FOOD-004'],
+                'sku' => 'EDEL-BEER-VAR',
+                'name' => ['vi' => 'Bia Tuyết Lúa Mỳ Edelweiss Tuyệt Hảo', 'en' => 'Edelweiss Wheat Beer Alpine Tradition'],
+                'description' => [
+                    'vi' => 'Dòng bia tuyết từ dãy Alps nước Áo với hương hoa cỏ tự nhiên, vỏ cam và rau mùi tây sảng khoái ướp lạnh.',
+                    'en' => 'Authentic Austrian wheat beer infused with mountain herbs and hints of citrus.',
+                ],
+                'price' => 45000,
+                'old_price' => 52000,
+                'cost' => 22000,
+                'sale_price' => null,
+                'brand' => 'heineken-vietnam',
+                'category' => 'imported-lagers',
+                'featured' => true,
+                'attributes' => [
+                    ['attribute' => $attrVolume, 'name' => 'Volume', 'options' => ['330ml (Lon)', '500ml (Chai)'], 'position' => 0],
+                ],
+                'variants' => [
+                    ['sku_suffix' => '330', 'price' => 45000, 'sale_price' => 39000, 'cost' => 22000, 'qty' => 150, 'attrs' => ['Volume' => '330ml (Lon)']],
+                    ['sku_suffix' => '500', 'price' => 65000, 'sale_price' => null, 'cost' => 32000, 'qty' => 100, 'attrs' => ['Volume' => '500ml (Chai)']],
+                ],
             ],
+
+            // 4. Bò Bít Tết Wagyu A5 Nhật Bản Thượng Hạng
             [
-                'name' => 'Cocktail Tasting Flight Trio',
-                'slug' => 'cocktail-tasting-flight-trio',
-                'description' => 'Thưởng thức bộ 3 ly cocktail đặc sắc: Classic Mojito + Margarita + Tequila Sunrise.',
-                'combo_price' => 380000,
-                'original_price' => 435000,
-                'discount_percent' => 12,
-                'skus' => ['CLUB-COCK-001', 'CLUB-COCK-002', 'CLUB-COCK-004'],
+                'sku' => 'WAGYU-A5-VAR',
+                'name' => ['vi' => 'Bò Bít Tết Wagyu A5 Nhật Bản Thượng Hạng', 'en' => 'Japanese Wagyu A5 Striploin Steak'],
+                'description' => [
+                    'vi' => 'Thịt bò Wagyu A5 với tỉ lệ vân mỡ cẩm thạch BMS 10-12 mềm tan tức thì, phục vụ cùng muối hồng Himalaya và sốt tiêu đen.',
+                    'en' => 'Melt-in-your-mouth Japanese Wagyu A5 striploin with BMS 10-12 marbling, served with pink salt and pepper sauce.',
+                ],
+                'price' => 680000,
+                'old_price' => 780000,
+                'cost' => 320000,
+                'sale_price' => null,
+                'brand' => 'saigon-fb-gourmet',
+                'category' => 'steaks-mains',
+                'featured' => true,
+                'attributes' => [
+                    ['attribute' => $attrPortion, 'name' => 'Portion', 'options' => ['200g', '350g', '500g'], 'position' => 0],
+                ],
+                'variants' => [
+                    ['sku_suffix' => '200G', 'price' => 680000, 'sale_price' => null, 'cost' => 300000, 'qty' => 30, 'attrs' => ['Portion' => '200g']],
+                    ['sku_suffix' => '350G', 'price' => 1150000, 'sale_price' => 1050000, 'cost' => 520000, 'qty' => 25, 'attrs' => ['Portion' => '350g']],
+                    ['sku_suffix' => '500G', 'price' => 1600000, 'sale_price' => null, 'cost' => 750000, 'qty' => 20, 'attrs' => ['Portion' => '500g']],
+                ],
             ],
         ];
 
-        $productMap = $products->keyBy('sku');
+        foreach ($variableCatalog as $vIndex => $vItem) {
+            $brandObj = $brandMap->get($vItem['brand']) ?? $brands->first();
+            $catObj = $catMap->get($vItem['category']) ?? $categories->first();
+            $mediaId = $mediaCount > 0 ? ((($simpleItemsCount ?? 20) + $vIndex) % $mediaCount + 1) : null;
 
-        foreach ($combosData as $c) {
-            $combo = ComboProduct::updateOrCreate(
-                ['slug' => $c['slug']],
-                [
-                    'name' => $c['name'],
-                    'description' => $c['description'],
-                    'combo_price' => $c['combo_price'],
-                    'original_price' => $c['original_price'],
-                    'discount_percent' => $c['discount_percent'],
+            // Total stock across variants
+            $totalVarStock = collect($vItem['variants'])->sum('qty');
+
+            $varProduct = Product::create([
+                'sku' => $vItem['sku'],
+                'shop_brand_id' => $brandObj?->id,
+                'author_id' => $authorId,
+                'name' => $vItem['name'],
+                'slug' => Str::slug($vItem['name']['en']) . '-' . strtolower(Str::random(4)),
+                'barcode' => '893' . str_pad(2000 + $vIndex, 10, '0', STR_PAD_LEFT),
+                'description' => $vItem['description'],
+                'qty' => $totalVarStock,
+                'total_stock' => $totalVarStock,
+                'security_stock' => 10,
+                'featured' => $vItem['featured'],
+                'is_visible' => true,
+                'price' => $vItem['price'],
+                'old_price' => $vItem['old_price'],
+                'cost' => $vItem['cost'],
+                'sale_price' => $vItem['sale_price'],
+                'tax_class_id' => $tax?->id,
+                'type' => ProductType::Variable,
+                'apply_tax' => true,
+                'requires_shipping' => true,
+                'product_images' => $mediaId,
+                'published_at' => now()->subDays(rand(10, 180)),
+            ]);
+
+            if ($catObj) {
+                $varProduct->categories()->sync([$catObj->id]);
+            }
+
+            // Assign Product Attributes
+            foreach ($vItem['attributes'] as $attrConfig) {
+                ProductAttribute::create([
+                    'product_id' => $varProduct->id,
+                    'attribute_id' => $attrConfig['attribute']?->id,
+                    'name' => $attrConfig['name'],
+                    'options' => $attrConfig['options'],
+                    'is_variation' => true,
+                    'position' => $attrConfig['position'],
+                ]);
+            }
+
+            // Create Variants
+            foreach ($vItem['variants'] as $varConfig) {
+                ProductVariant::create([
+                    'product_id' => $varProduct->id,
+                    'sku' => $varProduct->sku . '-' . $varConfig['sku_suffix'],
+                    'price' => $varConfig['price'],
+                    'sale_price' => $varConfig['sale_price'],
+                    'cost' => $varConfig['cost'],
+                    'qty' => $varConfig['qty'],
+                    'attributes' => $varConfig['attrs'],
                     'is_active' => true,
-                    'start_date' => now()->subDays(30),
-                    'end_date' => now()->addMonths(6),
-                ]
-            );
+                    'tax_class_id' => $tax?->id,
+                ]);
+            }
 
-            // Clear old items and attach
-            DB::table('shop_combo_product_items')->where('combo_product_id', $combo->id)->delete();
-            foreach ($c['skus'] as $idx => $sku) {
-                $p = $productMap->get($sku);
-                if ($p) {
-                    DB::table('shop_combo_product_items')->insert([
-                        'combo_product_id' => $combo->id,
-                        'shop_product_id' => $p->id,
-                        'quantity' => 1,
-                        'sort_order' => $idx + 1,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+            $products->push($varProduct);
+        }
+
+        return $products;
+    }
+
+    /**
+     * Seed realistic Combo Products containing Simple products and Product Variants.
+     */
+    protected function seedCombos($products): void
+    {
+        $productMap = $products->keyBy('sku');
+        $tax = TaxClass::where('slug', 'standard')->first() ?? TaxClass::first();
+        $catCocktails = ProductCategory::where('slug', 'classic-cocktails')->first() ?? ProductCategory::first();
+        $catSteaks = ProductCategory::where('slug', 'steaks-mains')->first() ?? ProductCategory::first();
+        $catChampagne = ProductCategory::where('slug', 'champagne-sparkling')->first() ?? ProductCategory::first();
+
+        // Find variant for Áo Polo (Size L, Color Đen)
+        $polo = $productMap->get('NOVA-POLO-VIP');
+        $poloVariantLBlk = $polo?->variants()->where('sku', 'like', '%L-BLK')->first()
+            ?? $polo?->variants()->first();
+
+        $combosConfig = [
+            [
+                'sku' => 'COMBO-VIP-NIGHT',
+                'name' => [
+                    'vi' => 'Combo Tiệc Đêm VIP Dom Pérignon & Nova VIP Club',
+                    'en' => 'VIP Nightlife Experience Dom Pérignon & Nova Club Set',
+                ],
+                'slug' => 'vip-nightlife-experience-pack',
+                'description' => [
+                    'vi' => 'Trọn bộ combo đỉnh cao cho bàn tiệc VIP: 1 chai Champagne Dom Pérignon Vintage 750ml, 2 ly Cocktail Mojito tươi mát, và 1 Áo Polo Nova Club VIP (Size L - Đen).',
+                    'en' => 'The ultimate VIP table celebration pack: 1x Dom Pérignon Champagne 750ml, 2x Fresh Mojito Cocktails, and 1x Nova Club VIP Polo Shirt (Size L - Black).',
+                ],
+                'combo_price' => 6500000,
+                'original_price' => 7200000,
+                'discount_percent' => 10,
+                'category_id' => $catChampagne?->id,
+                'items' => [
+                    ['sku' => 'CLUB-WINE-002', 'variant_id' => null, 'quantity' => 1],
+                    ['sku' => 'CLUB-COCK-001', 'variant_id' => null, 'quantity' => 2],
+                    ['sku' => 'NOVA-POLO-VIP', 'variant_id' => $poloVariantLBlk?->id, 'quantity' => 1],
+                ],
+            ],
+            [
+                'sku' => 'COMBO-BBQ-BEER',
+                'name' => [
+                    'vi' => 'Combo Đại Tiệc Sườn Nướng BBQ & Bia Thủ Công East West',
+                    'en' => 'Weekend BBQ Ribs & East West Craft Beer Feast',
+                ],
+                'slug' => 'weekend-bbq-and-craft-beer-feast',
+                'description' => [
+                    'vi' => 'Thực đơn hoàn hảo cho nhóm bạn: 1 Dẻ sườn non nướng sốt BBQ mật ong, 1 Lốc bia East West IPA 6 chai, 1 Cánh gà chiên mắm giòn, và 1 Phần khoai tây Cajun phô mai.',
+                    'en' => 'Perfect weekend party platter: Slow-roasted BBQ pork ribs, 6-pack East West craft IPA, crispy fish sauce wings, and Cajun parmesan fries.',
+                ],
+                'combo_price' => 820000,
+                'original_price' => 980000,
+                'discount_percent' => 16,
+                'category_id' => $catSteaks?->id,
+                'items' => [
+                    ['sku' => 'CLUB-FOOD-002', 'variant_id' => null, 'quantity' => 1],
+                    ['sku' => 'CLUB-BEER-002', 'variant_id' => null, 'quantity' => 1],
+                    ['sku' => 'CLUB-FOOD-005', 'variant_id' => null, 'quantity' => 1],
+                    ['sku' => 'CLUB-FOOD-004', 'variant_id' => null, 'quantity' => 1],
+                ],
+            ],
+            [
+                'sku' => 'COMBO-COCKTAIL-TRIO',
+                'name' => [
+                    'vi' => 'Bộ 3 Cocktail Cổ Điển Trứ Danh Nova Lounge',
+                    'en' => 'Nova Lounge Signature Cocktail Trio Tasting Flight',
+                ],
+                'slug' => 'cocktail-tasting-flight-trio',
+                'description' => [
+                    'vi' => 'Thưởng thức 3 phong vị cocktail kinh điển: Classic Mojito the mát, Margarita viền muối sắc nét, và Tequila Sunrise ngọt ngào rực rỡ.',
+                    'en' => 'Taste the timeless cocktail trio: Crisp mint Mojito, classic salted Margarita, and sweet citrus Tequila Sunrise.',
+                ],
+                'combo_price' => 380000,
+                'original_price' => 435000,
+                'discount_percent' => 12,
+                'category_id' => $catCocktails?->id,
+                'items' => [
+                    ['sku' => 'CLUB-COCK-001', 'variant_id' => null, 'quantity' => 1],
+                    ['sku' => 'CLUB-COCK-002', 'variant_id' => null, 'quantity' => 1],
+                    ['sku' => 'CLUB-COCK-004', 'variant_id' => null, 'quantity' => 1],
+                ],
+            ],
+        ];
+
+        foreach ($combosConfig as $cIdx => $cfg) {
+            // 1. Create modern Parent Combo Product in shop_products
+            $comboProduct = Product::create([
+                'sku' => $cfg['sku'],
+                'name' => $cfg['name'],
+                'slug' => $cfg['slug'] . '-' . strtolower(Str::random(4)),
+                'barcode' => '893' . str_pad(3000 + $cIdx, 10, '0', STR_PAD_LEFT),
+                'description' => $cfg['description'],
+                'qty' => 50,
+                'total_stock' => 50,
+                'security_stock' => 5,
+                'featured' => true,
+                'is_visible' => true,
+                'price' => $cfg['combo_price'],
+                'old_price' => $cfg['original_price'],
+                'sale_price' => null,
+                'tax_class_id' => $tax?->id,
+                'type' => ProductType::Combo,
+                'apply_tax' => true,
+                'requires_shipping' => true,
+                'published_at' => now()->subDays(30),
+            ]);
+
+            if ($cfg['category_id']) {
+                $comboProduct->categories()->sync([$cfg['category_id']]);
+            }
+
+            // 2. Create or sync legacy ComboProduct
+            $legacyCombo = ComboProduct::create([
+                'product_id' => $comboProduct->id,
+                'name' => $cfg['name']['vi'],
+                'slug' => $cfg['slug'],
+                'description' => $cfg['description']['vi'],
+                'combo_price' => $cfg['combo_price'],
+                'original_price' => $cfg['original_price'],
+                'discount_percent' => $cfg['discount_percent'],
+                'is_active' => true,
+                'start_date' => now()->subDays(30),
+                'end_date' => now()->addMonths(6),
+            ]);
+
+            // 3. Attach component items
+            foreach ($cfg['items'] as $sIdx => $itemCfg) {
+                $childProd = $productMap->get($itemCfg['sku']);
+                if ($childProd) {
+                    ComboProductItem::create([
+                        'combo_product_id' => $legacyCombo->id,
+                        'parent_product_id' => $comboProduct->id,
+                        'shop_product_id' => $childProd->id,
+                        'product_variant_id' => $itemCfg['variant_id'],
+                        'quantity' => $itemCfg['quantity'],
+                        'sort_order' => $sIdx + 1,
                     ]);
                 }
             }
+
+            // Recalculate combo available stock based on components
+            $comboProduct->refresh();
+            $availableStock = $comboProduct->calculateComboStock();
+            $comboProduct->updateQuietly([
+                'qty' => $availableStock,
+                'total_stock' => $availableStock,
+            ]);
+
+            $products->push($comboProduct);
         }
     }
 
@@ -609,10 +955,9 @@ class CatalogSeeder extends Seeder
     {
         $productMap = $products->keyBy('sku');
 
-        // Wine upsells to crystal glasses
         $wine = $productMap->get('CLUB-WINE-001');
         $glasses = $productMap->get('CLUB-MERCH-001');
-        $steak = $productMap->get('CLUB-FOOD-001');
+        $steak = $productMap->get('WAGYU-A5-VAR') ?? $productMap->get('CLUB-FOOD-002');
         $mojito = $productMap->get('CLUB-COCK-001');
         $fries = $productMap->get('CLUB-FOOD-004');
 

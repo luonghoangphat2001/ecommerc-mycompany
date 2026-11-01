@@ -21,6 +21,7 @@ class InventoryRecordController extends BaseCrudController
     {
         return 'inventory-records';
     }
+
     protected function modelClass(): string
     {
         return InventoryRecord::class;
@@ -28,12 +29,17 @@ class InventoryRecordController extends BaseCrudController
 
     protected function title(): string
     {
-        return 'admin.settings.manage_inventory_records';
+        return app()->getLocale() === 'en' ? 'Inventory Records' : 'Phiếu xuất nhập kho';
     }
 
     protected function routePrefix(): string
     {
         return 'admin.inventory-records';
+    }
+
+    protected function formView(): string
+    {
+        return 'admin.inventory.records.form';
     }
 
     protected function searchable(): array
@@ -43,11 +49,40 @@ class InventoryRecordController extends BaseCrudController
 
     protected function fields(): array
     {
+        $isEn = app()->getLocale() === 'en';
+
         return [
-            'type' => ['label' => 'Type', 'type' => 'select', 'rules' => ['required', 'string'], 'options' => ['IN' => 'IN', 'OUT' => 'OUT', 'TRANSFER' => 'TRANSFER']],
-            'status' => ['label' => 'Status', 'type' => 'select', 'rules' => ['required', 'string'], 'options' => ['DRAFT' => 'DRAFT', 'COMPLETED' => 'COMPLETED']],
-            'notes' => ['label' => 'Notes', 'type' => 'textarea', 'rules' => ['nullable', 'string']],
-            'items_json' => ['label' => 'Items JSON', 'type' => 'textarea', 'rules' => ['nullable', 'string'], 'virtual' => true],
+            'type' => [
+                'label' => $isEn ? 'Record Type' : 'Loại phiếu',
+                'type' => 'select',
+                'rules' => ['required', 'string'],
+                'options' => [
+                    'IN' => $isEn ? 'Stock In' : 'Nhập kho',
+                    'OUT' => $isEn ? 'Stock Out' : 'Xuất kho',
+                    'TRANSFER' => $isEn ? 'Transfer' : 'Điều chuyển kho',
+                ],
+            ],
+            'status' => [
+                'label' => $isEn ? 'Status' : 'Trạng thái',
+                'type' => 'select',
+                'rules' => ['required', 'string'],
+                'options' => [
+                    'DRAFT' => $isEn ? 'Draft' : 'Bản nháp',
+                    'COMPLETED' => $isEn ? 'Completed' : 'Hoàn thành',
+                ],
+            ],
+            'notes' => [
+                'label' => $isEn ? 'Notes' : 'Ghi chú',
+                'type' => 'textarea',
+                'rules' => ['nullable', 'string'],
+            ],
+            'items_json' => [
+                'label' => $isEn ? 'Items' : 'Chi tiết sản phẩm',
+                'type' => 'hidden',
+                'rules' => ['nullable'],
+                'virtual' => true,
+                'formOnly' => true,
+            ],
         ];
     }
 
@@ -61,7 +96,8 @@ class InventoryRecordController extends BaseCrudController
 
     protected function afterSave(Model $record, Request $request): void
     {
-        $items = json_decode((string) $request->input('items_json', '[]'), true);
+        $raw = $request->input('items_json');
+        $items = is_array($raw) ? $raw : json_decode((string) $raw, true);
         if (! is_array($items)) {
             return;
         }
@@ -69,7 +105,7 @@ class InventoryRecordController extends BaseCrudController
         $record->items()->delete();
 
         foreach ($items as $item) {
-            if (! isset($item['shop_product_id'], $item['warehouse_id'], $item['quantity'])) {
+            if (! isset($item['shop_product_id'], $item['warehouse_id'], $item['quantity']) || empty($item['shop_product_id'])) {
                 continue;
             }
 
@@ -77,20 +113,57 @@ class InventoryRecordController extends BaseCrudController
                 'warehouse_record_id' => $record->id,
                 'shop_product_id' => (int) $item['shop_product_id'],
                 'warehouse_id' => (int) $item['warehouse_id'],
-                'target_warehouse_id' => isset($item['target_warehouse_id']) ? (int) $item['target_warehouse_id'] : null,
-                'quantity' => (int) $item['quantity'],
+                'target_warehouse_id' => !empty($item['target_warehouse_id']) ? (int) $item['target_warehouse_id'] : null,
+                'quantity' => max(1, (int) $item['quantity']),
             ]);
         }
     }
 
     protected function formData(?Model $record = null): array
     {
-        if (! $record) {
-            return [];
+        $products = Product::select('id', 'name', 'sku')->orderBy('name')->get();
+        $warehouses = Inventory::select('id', 'name', 'code')->orderBy('name')->get();
+
+        $items = [];
+        if ($record) {
+            foreach ($record->items()->get(['shop_product_id', 'warehouse_id', 'target_warehouse_id', 'quantity']) as $item) {
+                $items[] = [
+                    'shop_product_id' => (int) $item->shop_product_id,
+                    'warehouse_id' => (int) $item->warehouse_id,
+                    'target_warehouse_id' => $item->target_warehouse_id ? (int) $item->target_warehouse_id : null,
+                    'quantity' => (int) $item->quantity,
+                ];
+            }
+        }
+
+        if (empty($items)) {
+            $firstProduct = $products->first();
+            $firstWh = $warehouses->first();
+            $items[] = [
+                'shop_product_id' => $firstProduct ? $firstProduct->id : null,
+                'warehouse_id' => $firstWh ? $firstWh->id : null,
+                'target_warehouse_id' => null,
+                'quantity' => 1,
+            ];
+        }
+
+        $type = 'IN';
+        if ($record && $record->type) {
+            $type = $record->type instanceof \BackedEnum ? $record->type->value : (string) $record->type;
+        }
+
+        $status = 'DRAFT';
+        if ($record && $record->status) {
+            $status = $record->status instanceof \BackedEnum ? $record->status->value : (string) $record->status;
         }
 
         return [
-            'items_json' => json_encode($record->items()->get(['shop_product_id', 'warehouse_id', 'target_warehouse_id', 'quantity'])->toArray(), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
+            'products' => $products,
+            'warehouses' => $warehouses,
+            'initialItems' => $items,
+            'currentType' => $type,
+            'currentStatus' => $status,
+            'items_json' => json_encode($items, JSON_UNESCAPED_UNICODE),
         ];
     }
 

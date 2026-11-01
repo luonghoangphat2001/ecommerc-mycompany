@@ -78,47 +78,88 @@ class InventorySeeder extends Seeder
         $coldWh = $warehouses->where('slug', 'kho-thiet-bi-the-thao-thu-duc')->first() ?? $warehouses->last() ?? $mainWh;
 
         foreach ($products as $idx => $product) {
-            // Define scenarios based on product SKU / index
-            if ($product->sku === 'CLUB-SPIR-003' || $product->sku === 'CLUB-WINE-002') {
-                // Low stock luxury items (to trigger dashboard low-stock warning)
-                $qtyMain = 4;
-                $qtyBar = 2;
-                $qtyCold = 2;
-            } elseif ($idx === 5) {
-                // Out of stock item
-                $qtyMain = 0;
-                $qtyBar = 0;
-                $qtyCold = 0;
+            if ($product->isVariable() && $product->variants()->exists()) {
+                // Distribute stock across variants
+                $totalVarStock = 0;
+                foreach ($product->variants as $variant) {
+                    $qtyMain = rand(15, 35);
+                    $qtyBar = rand(10, 20);
+                    $qtyCold = rand(5, 15);
+                    $vStock = $qtyMain + $qtyBar + $qtyCold;
+                    $totalVarStock += $vStock;
+
+                    $variant->updateQuietly(['qty' => $vStock]);
+
+                    DB::table('shop_product_inventory_stocks')->updateOrInsert(
+                        ['shop_product_id' => $product->id, 'variant_id' => $variant->id, 'warehouse_id' => $mainWh->id],
+                        ['stock_quantity' => $qtyMain, 'updated_at' => now(), 'created_at' => now()]
+                    );
+
+                    DB::table('shop_product_inventory_stocks')->updateOrInsert(
+                        ['shop_product_id' => $product->id, 'variant_id' => $variant->id, 'warehouse_id' => $barWh->id],
+                        ['stock_quantity' => $qtyBar, 'updated_at' => now(), 'created_at' => now()]
+                    );
+
+                    DB::table('shop_product_inventory_stocks')->updateOrInsert(
+                        ['shop_product_id' => $product->id, 'variant_id' => $variant->id, 'warehouse_id' => $coldWh->id],
+                        ['stock_quantity' => $qtyCold, 'updated_at' => now(), 'created_at' => now()]
+                    );
+                }
+
+                $product->updateQuietly([
+                    'qty' => $totalVarStock,
+                    'total_stock' => $totalVarStock,
+                ]);
+            } elseif ($product->isCombo()) {
+                // Combo available stock is calculated dynamically from component stocks
+                $comboStock = $product->calculateComboStock();
+                $product->updateQuietly([
+                    'qty' => $comboStock,
+                    'total_stock' => $comboStock,
+                ]);
             } else {
-                // Standard healthy stock
-                $qtyMain = rand(30, 80);
-                $qtyBar = rand(15, 40);
-                $qtyCold = rand(10, 30);
+                // Simple product stock allocation
+                if ($product->sku === 'CLUB-SPIR-003' || $product->sku === 'CLUB-WINE-002') {
+                    // Low stock luxury items (to trigger dashboard low-stock warning)
+                    $qtyMain = 4;
+                    $qtyBar = 2;
+                    $qtyCold = 2;
+                } elseif ($idx === 5) {
+                    // Out of stock item
+                    $qtyMain = 0;
+                    $qtyBar = 0;
+                    $qtyCold = 0;
+                } else {
+                    // Standard healthy stock
+                    $qtyMain = rand(30, 80);
+                    $qtyBar = rand(15, 40);
+                    $qtyCold = rand(10, 30);
+                }
+
+                $totalStock = $qtyMain + $qtyBar + $qtyCold;
+
+                // Sync stocks into shop_product_inventory_stocks
+                DB::table('shop_product_inventory_stocks')->updateOrInsert(
+                    ['shop_product_id' => $product->id, 'variant_id' => null, 'warehouse_id' => $mainWh->id],
+                    ['stock_quantity' => $qtyMain, 'updated_at' => now(), 'created_at' => now()]
+                );
+
+                DB::table('shop_product_inventory_stocks')->updateOrInsert(
+                    ['shop_product_id' => $product->id, 'variant_id' => null, 'warehouse_id' => $barWh->id],
+                    ['stock_quantity' => $qtyBar, 'updated_at' => now(), 'created_at' => now()]
+                );
+
+                DB::table('shop_product_inventory_stocks')->updateOrInsert(
+                    ['shop_product_id' => $product->id, 'variant_id' => null, 'warehouse_id' => $coldWh->id],
+                    ['stock_quantity' => $qtyCold, 'updated_at' => now(), 'created_at' => now()]
+                );
+
+                // Update master product model with exact sum
+                $product->updateQuietly([
+                    'qty' => $totalStock,
+                    'total_stock' => $totalStock,
+                ]);
             }
-
-            $totalStock = $qtyMain + $qtyBar + $qtyCold;
-
-            // Sync stocks into shop_product_inventory_stocks
-            DB::table('shop_product_inventory_stocks')->updateOrInsert(
-                ['shop_product_id' => $product->id, 'warehouse_id' => $mainWh->id],
-                ['stock_quantity' => $qtyMain, 'updated_at' => now(), 'created_at' => now()]
-            );
-
-            DB::table('shop_product_inventory_stocks')->updateOrInsert(
-                ['shop_product_id' => $product->id, 'warehouse_id' => $barWh->id],
-                ['stock_quantity' => $qtyBar, 'updated_at' => now(), 'created_at' => now()]
-            );
-
-            DB::table('shop_product_inventory_stocks')->updateOrInsert(
-                ['shop_product_id' => $product->id, 'warehouse_id' => $coldWh->id],
-                ['stock_quantity' => $qtyCold, 'updated_at' => now(), 'created_at' => now()]
-            );
-
-            // Update master product model with exact sum
-            $product->updateQuietly([
-                'qty' => $totalStock,
-                'total_stock' => $totalStock,
-            ]);
         }
     }
 

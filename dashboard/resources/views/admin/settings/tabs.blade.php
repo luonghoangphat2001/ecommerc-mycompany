@@ -67,7 +67,7 @@
                                 $type = $field['type'] ?? 'text';
                                 $rawValue = data_get($values, $activeTab . '.' . $name, $field['default'] ?? null);
                                 $value = is_array($rawValue) ? json_encode($rawValue, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : $rawValue;
-                                $wide = in_array($type, ['textarea', 'json', 'image'], true);
+                                $wide = in_array($type, ['textarea', 'json', 'image', 'payment_gateways', 'exchange_rates'], true);
                                 $currentImage = is_string($rawValue) && $rawValue !== '' ? \Illuminate\Support\Facades\Storage::disk('public')->url($rawValue) : null;
                             @endphp
 
@@ -96,6 +96,93 @@
                                         :currentName="is_string($rawValue) && $rawValue !== '' ? $rawValue : null"
                                         :previewId="'preview-setting-' . $name"
                                     />
+                                @elseif ($type === 'payment_gateways')
+                                    @php
+                                        $selectedGateways = is_array($rawValue) ? $rawValue : (is_string($rawValue) ? (json_decode($rawValue, true) ?: []) : ['cod', 'bank_transfer']);
+                                        $availableGateways = [
+                                            'cod' => [
+                                                'name' => 'Thanh toán khi nhận hàng (COD)',
+                                                'desc' => 'Thu tiền mặt trực tiếp khi giao hàng thành công tận tay khách.',
+                                                'badge' => 'Tiền mặt',
+                                                'badge_color' => '#15803d',
+                                                'badge_bg' => '#dcfce7',
+                                            ],
+                                            'bank_transfer' => [
+                                                'name' => 'Chuyển khoản ngân hàng (Bank Transfer)',
+                                                'desc' => 'Hiển thị số tài khoản ngân hàng và mã đơn hàng để khách chuyển khoản.',
+                                                'badge' => 'Ngân hàng',
+                                                'badge_color' => '#0369a1',
+                                                'badge_bg' => '#e0f2fe',
+                                            ],
+                                            'vnpay' => [
+                                                'name' => 'Cổng thanh toán VNPAY',
+                                                'desc' => 'Thanh toán quét mã VNPAY-QR, thẻ ATM nội địa & Mobile Banking.',
+                                                'badge' => 'VNPAY-QR',
+                                                'badge_color' => '#b91c1c',
+                                                'badge_bg' => '#fee2e2',
+                                            ],
+                                            'momo' => [
+                                                'name' => 'Ví điện tử MoMo',
+                                                'desc' => 'Thanh toán tức thời qua ứng dụng Ví điện tử MoMo trên di động.',
+                                                'badge' => 'Ví MoMo',
+                                                'badge_color' => '#a21caf',
+                                                'badge_bg' => '#fdf4ff',
+                                            ],
+                                            'stripe' => [
+                                                'name' => 'Thẻ quốc tế Stripe (Visa / Mastercard)',
+                                                'desc' => 'Chấp nhận thanh toán thẻ quốc tế Visa, Mastercard, JCB bảo mật chuẩn PCI-DSS.',
+                                                'badge' => 'Thẻ quốc tế',
+                                                'badge_color' => '#4338ca',
+                                                'badge_bg' => '#e0e7ff',
+                                            ],
+                                            'paypal' => [
+                                                'name' => 'Cổng thanh toán PayPal',
+                                                'desc' => 'Thanh toán an toàn qua tài khoản PayPal cho khách quốc tế.',
+                                                'badge' => 'PayPal',
+                                                'badge_color' => '#0f766e',
+                                                'badge_bg' => '#ccfbf1',
+                                            ],
+                                        ];
+                                    @endphp
+
+                                    <input type="hidden" name="settings[{{ $name }}][]" value="">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; margin-top: 8px;">
+                                        @foreach ($availableGateways as $gwKey => $gw)
+                                            @php
+                                                $isChecked = in_array($gwKey, $selectedGateways, true);
+                                            @endphp
+                                            <label style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border: 1px solid var(--fi-border-subtle, #e2e8f0); border-radius: var(--fi-radius-md, 8px); background: #ffffff; cursor: pointer; user-select: none;">
+                                                <input type="checkbox" name="settings[{{ $name }}][]" value="{{ $gwKey }}" @checked($isChecked) style="accent-color: var(--fi-primary, #4f46e5); width: 16px; height: 16px; margin-top: 3px;">
+                                                <div style="flex: 1; min-width: 0;">
+                                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 3px;">
+                                                        <strong style="font-size: 13px; color: var(--fi-text, #0f172a);">{{ $gw['name'] }}</strong>
+                                                        <span style="font-size: 11px; font-weight: 600; color: {{ $gw['badge_color'] }}; background: {{ $gw['badge_bg'] }}; padding: 1px 7px; border-radius: 4px; white-space: nowrap;">{{ $gw['badge'] }}</span>
+                                                    </div>
+                                                    <div style="font-size: 12px; color: var(--fi-muted, #64748b); line-height: 1.4;">{{ $gw['desc'] }}</div>
+                                                </div>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @elseif ($type === 'exchange_rates')
+                                    @php
+                                        $rates = is_array($rawValue) ? $rawValue : (is_string($rawValue) ? (json_decode($rawValue, true) ?: []) : ['VND' => 1, 'USD' => 25000]);
+                                        if (!isset($rates['VND'])) $rates['VND'] = 1;
+                                    @endphp
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 8px;">
+                                        <div style="padding: 10px 12px; background: #f8fafc; border: 1px solid var(--fi-border-subtle, #e2e8f0); border-radius: var(--fi-radius-md, 8px);">
+                                            <div style="font-weight: 600; font-size: 12px; color: var(--fi-muted, #64748b); margin-bottom: 4px;">Tiền tệ gốc: VND</div>
+                                            <input type="text" value="1 VND" class="form-control" disabled style="background: #e2e8f0; font-weight: 600;">
+                                            <input type="hidden" name="settings[{{ $name }}][VND]" value="1">
+                                        </div>
+                                        <div style="padding: 10px 12px; background: #ffffff; border: 1px solid var(--fi-border-subtle, #e2e8f0); border-radius: var(--fi-radius-md, 8px);">
+                                            <div style="font-weight: 600; font-size: 12px; color: var(--fi-text, #0f172a); margin-bottom: 4px;">Đô la Mỹ (USD) = ? VND</div>
+                                            <input type="number" name="settings[{{ $name }}][USD]" value="{{ $rates['USD'] ?? 25000 }}" class="form-control" placeholder="25000">
+                                        </div>
+                                        <div style="padding: 10px 12px; background: #ffffff; border: 1px solid var(--fi-border-subtle, #e2e8f0); border-radius: var(--fi-radius-md, 8px);">
+                                            <div style="font-weight: 600; font-size: 12px; color: var(--fi-text, #0f172a); margin-bottom: 4px;">Euro (EUR) = ? VND</div>
+                                            <input type="number" name="settings[{{ $name }}][EUR]" value="{{ $rates['EUR'] ?? 27000 }}" class="form-control" placeholder="27000">
+                                        </div>
+                                    </div>
                                 @elseif (in_array($type, ['textarea', 'json'], true))
                                     <textarea id="setting-{{ $name }}" name="settings[{{ $name }}]" rows="{{ $type === 'json' ? 8 : 5 }}">{{ old('settings.' . $name, $value) }}</textarea>
                                     @if ($type === 'json')
