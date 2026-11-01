@@ -8,6 +8,9 @@ enum LoyaltyActionType: string
     case Redeem = 'redeem';
     case Refund = 'refund';
 
+    /**
+     * Default label (English).
+     */
     public function label(): string
     {
         return match ($this) {
@@ -15,5 +18,51 @@ enum LoyaltyActionType: string
             self::Redeem => 'Redeem Points',
             self::Refund => 'Points Refunded',
         };
+    }
+
+    /**
+     * Vietnamese label.
+     */
+    public function labelVi(): string
+    {
+        return match ($this) {
+            self::Earn => 'Tích điểm',
+            self::Redeem => 'Đổi điểm',
+            self::Refund => 'Hoàn điểm',
+        };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function options(): array
+    {
+        $options = [];
+        foreach (self::cases() as $case) {
+            $options[$case->value] = $case->label();
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function optionsVi(): array
+    {
+        $options = [];
+        foreach (self::cases() as $case) {
+            $options[$case->value] = $case->labelVi();
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

@@ -44,7 +44,7 @@ class UserResource extends BaseResource
             'phone' => $this->phone,
             'photo' => $this->photo,
             'avatar_url' => $avatarUrl,
-            'gender' => $this->gender,
+            'gender' => $this->gender instanceof \BackedEnum ? $this->gender->value : $this->gender,
             'birthday' => $this->birthday,
             'bio' => $this->bio,
             'default_shipping_address_id' => $this->default_shipping_address_id,

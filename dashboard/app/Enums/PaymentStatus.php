@@ -11,14 +11,65 @@ enum PaymentStatus: string
     case Failed = 'failed';
     case Refunded = 'refunded';
 
+    /**
+     * Default label (English).
+     */
     public function label(): string
     {
         return match ($this) {
-            self::Pending => __('admin.order.payment_statuses.pending') ?? 'Pending',
-            self::Paid => __('admin.order.payment_statuses.paid') ?? 'Paid',
-            self::Completed, self::Success => __('admin.order.payment_statuses.completed') ?? 'Completed',
-            self::Failed => __('admin.order.payment_statuses.failed') ?? 'Failed',
-            self::Refunded => __('admin.order.payment_statuses.refunded') ?? 'Refunded',
+            self::Pending => 'Pending',
+            self::Paid => 'Paid',
+            self::Completed, self::Success => 'Completed',
+            self::Failed => 'Failed',
+            self::Refunded => 'Refunded',
         };
+    }
+
+    /**
+     * Vietnamese label.
+     */
+    public function labelVi(): string
+    {
+        return match ($this) {
+            self::Pending => 'Chờ thanh toán',
+            self::Paid => 'Đã thanh toán',
+            self::Completed, self::Success => 'Hoàn tất',
+            self::Failed => 'Thất bại',
+            self::Refunded => 'Đã hoàn tiền',
+        };
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function options(): array
+    {
+        $options = [];
+        foreach (self::cases() as $case) {
+            $options[$case->value] = $case->label();
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function optionsVi(): array
+    {
+        $options = [];
+        foreach (self::cases() as $case) {
+            $options[$case->value] = $case->labelVi();
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }

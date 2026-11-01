@@ -14,7 +14,28 @@ enum RoleEnum: string
     case VIEWER = 'viewer';
     case REGISTERED_USER = 'Thành viên đăng ký';
 
+    /**
+     * Default label (English).
+     */
     public function label(): string
+    {
+        return match ($this) {
+            self::SUPER_ADMIN => 'Super Admin',
+            self::ADMIN => 'Admin',
+            self::MANAGER => 'Manager',
+            self::EDITOR => 'Editor',
+            self::CSKH => 'Customer Support',
+            self::WAREHOUSE_STAFF => 'Warehouse Staff',
+            self::ACCOUNTANT => 'Accountant',
+            self::VIEWER => 'Viewer',
+            self::REGISTERED_USER => 'Registered User',
+        };
+    }
+
+    /**
+     * Vietnamese label.
+     */
+    public function labelVi(): string
     {
         return match ($this) {
             self::SUPER_ADMIN => 'Super Admin (Quản trị tối cao)',
@@ -40,5 +61,26 @@ enum RoleEnum: string
         }
 
         return $options;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function optionsVi(): array
+    {
+        $options = [];
+        foreach (self::cases() as $case) {
+            $options[$case->value] = $case->labelVi();
+        }
+
+        return $options;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
     }
 }
