@@ -2,21 +2,27 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Menu\Services\FooterMenuSyncService;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\Menu;
 use App\Models\MenuItem;
-use App\Settings\FooterSettings;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class MenuItemController extends BaseCrudController
 {
-    public function index(\Illuminate\Http\Request $request): \Illuminate\View\View
+    public function __construct(
+        private readonly FooterMenuSyncService $footerSync
+    ) {
+        parent::__construct();
+    }
+
+    public function index(Request $request): RedirectResponse
     {
-        return app(MenuController::class)->index($request);
+        return redirect()->route('admin.menus.index', $request->query());
     }
 
     protected function modelClass(): string
@@ -36,7 +42,7 @@ class MenuItemController extends BaseCrudController
 
     protected function searchable(): array
     {
-        return array_values(array_filter(['label', 'name', 'url', 'target', 'type', 'route', 'menuable_type'], fn (string $column) => Schema::hasColumn('menu_items', $column) || in_array($column, ['label', 'name', 'type'], true)));
+        return array_values(array_filter(['label', 'name', 'url', 'target', 'type', 'route', 'menuable_type'], fn (string $column) => $this->hasMenuItemColumn($column) || in_array($column, ['label', 'name', 'type'], true)));
     }
 
     protected function fields(): array
@@ -50,19 +56,20 @@ class MenuItemController extends BaseCrudController
             ],
         ];
 
-        if (Schema::hasColumn('menu_items', 'parent_id')) {
+        if ($this->hasMenuItemColumn('parent_id')) {
             $fields['parent_id'] = [
                 'label' => 'Parent',
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:menu_items,id'],
                 'options' => ['' => '-- Root --'] + MenuItem::with('menu')->orderBy('id')->get()->mapWithKeys(function (MenuItem $item) {
                     $menuName = $item->menu?->name ?: 'Menu';
+
                     return [$item->id => "[{$menuName}] {$item->label}"];
                 })->toArray(),
             ];
         }
 
-        if (Schema::hasColumn('menu_items', 'title')) {
+        if ($this->hasMenuItemColumn('title')) {
             $fields['title'] = [
                 'label' => __('admin.fields.title'),
                 'rules' => ['required', 'string', 'max:255'],
@@ -70,34 +77,34 @@ class MenuItemController extends BaseCrudController
             ];
         }
 
-        if (Schema::hasColumn('menu_items', 'label')) {
+        if ($this->hasMenuItemColumn('label')) {
             $fields['label'] = ['label' => __('admin.fields.label'), 'rules' => ['required', 'string', 'max:255']];
         }
 
-        if (Schema::hasColumn('menu_items', 'name')) {
+        if ($this->hasMenuItemColumn('name')) {
             $fields['name'] = ['label' => __('admin.fields.name'), 'rules' => ['required', 'string', 'max:255']];
         }
 
         $fields['type'] = ['label' => 'Type', 'rules' => ['required', 'string', 'max:50']];
         $fields['url'] = ['label' => 'URL', 'rules' => ['nullable', 'string', 'max:255']];
 
-        if (Schema::hasColumn('menu_items', 'route')) {
+        if ($this->hasMenuItemColumn('route')) {
             $fields['route'] = ['label' => 'Route', 'rules' => ['nullable', 'string', 'max:255']];
         }
 
-        if (Schema::hasColumn('menu_items', 'route_parameters')) {
+        if ($this->hasMenuItemColumn('route_parameters')) {
             $fields['route_parameters'] = ['label' => 'Route parameters JSON', 'type' => 'textarea', 'rules' => ['nullable', 'string']];
         }
 
-        if (Schema::hasColumn('menu_items', 'menuable_type')) {
+        if ($this->hasMenuItemColumn('menuable_type')) {
             $fields['menuable_type'] = ['label' => 'Menuable type', 'rules' => ['nullable', 'string', 'max:255']];
         }
 
-        if (Schema::hasColumn('menu_items', 'menuable_id')) {
+        if ($this->hasMenuItemColumn('menuable_id')) {
             $fields['menuable_id'] = ['label' => 'Menuable ID', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']];
         }
 
-        if (Schema::hasColumn('menu_items', 'target')) {
+        if ($this->hasMenuItemColumn('target')) {
             $fields['target'] = [
                 'label' => 'Target',
                 'type' => 'select',
@@ -106,23 +113,23 @@ class MenuItemController extends BaseCrudController
             ];
         }
 
-        if (Schema::hasColumn('menu_items', 'order')) {
+        if ($this->hasMenuItemColumn('order')) {
             $fields['order'] = ['label' => 'Order', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']];
         }
 
-        if (Schema::hasColumn('menu_items', 'use_menuable_name')) {
+        if ($this->hasMenuItemColumn('use_menuable_name')) {
             $fields['use_menuable_name'] = ['label' => 'Use menuable name', 'type' => 'boolean', 'rules' => ['nullable', 'boolean']];
         }
 
-        if (Schema::hasColumn('menu_items', 'link_class')) {
+        if ($this->hasMenuItemColumn('link_class')) {
             $fields['link_class'] = ['label' => 'Link class', 'rules' => ['nullable', 'string', 'max:255']];
         }
 
-        if (Schema::hasColumn('menu_items', 'wrapper_class')) {
+        if ($this->hasMenuItemColumn('wrapper_class')) {
             $fields['wrapper_class'] = ['label' => 'Wrapper class', 'rules' => ['nullable', 'string', 'max:255']];
         }
 
-        if (Schema::hasColumn('menu_items', 'parameters')) {
+        if ($this->hasMenuItemColumn('parameters')) {
             $fields['parameters'] = ['label' => 'Parameters JSON', 'type' => 'textarea', 'rules' => ['nullable', 'string']];
         }
 
@@ -135,7 +142,7 @@ class MenuItemController extends BaseCrudController
             'menu_id' => ['required', 'integer', 'exists:menus,id'],
         ];
 
-        if (Schema::hasColumn('menu_items', 'parent_id')) {
+        if ($this->hasMenuItemColumn('parent_id')) {
             $rules['parent_id'] = [
                 'nullable',
                 'integer',
@@ -145,7 +152,7 @@ class MenuItemController extends BaseCrudController
             ];
         }
 
-        if (Schema::hasColumn('menu_items', 'title')) {
+        if ($this->hasMenuItemColumn('title')) {
             if (is_array(request()->input('title'))) {
                 $rules['title'] = ['required', 'array'];
                 $rules['title.vi'] = ['nullable', 'string', 'max:255'];
@@ -155,11 +162,11 @@ class MenuItemController extends BaseCrudController
             }
         }
 
-        if (Schema::hasColumn('menu_items', 'label')) {
+        if ($this->hasMenuItemColumn('label')) {
             $rules['label'] = ['required', 'string', 'max:255'];
         }
 
-        if (Schema::hasColumn('menu_items', 'name')) {
+        if ($this->hasMenuItemColumn('name')) {
             $rules['name'] = ['required', 'string', 'max:255'];
         }
 
@@ -168,78 +175,79 @@ class MenuItemController extends BaseCrudController
             'url' => ['nullable', 'string', 'max:255'],
         ];
 
-        if (Schema::hasColumn('menu_items', 'route')) {
+        if ($this->hasMenuItemColumn('route')) {
             $rules['route'] = ['nullable', 'string', 'max:255'];
         }
 
-        if (Schema::hasColumn('menu_items', 'target')) {
+        if ($this->hasMenuItemColumn('target')) {
             $rules['target'] = ['required', 'string', 'max:20'];
         }
 
-        if (Schema::hasColumn('menu_items', 'order')) {
+        if ($this->hasMenuItemColumn('order')) {
             $rules['order'] = ['nullable', 'integer', 'min:0'];
         }
 
-        if (Schema::hasColumn('menu_items', 'route_parameters')) {
+        if ($this->hasMenuItemColumn('route_parameters')) {
             $rules['route_parameters'] = ['nullable', 'string'];
         }
 
-        if (Schema::hasColumn('menu_items', 'menuable_type')) {
+        if ($this->hasMenuItemColumn('menuable_type')) {
             $rules['menuable_type'] = ['nullable', 'string', 'max:255'];
         }
 
-        if (Schema::hasColumn('menu_items', 'menuable_id')) {
+        if ($this->hasMenuItemColumn('menuable_id')) {
             $rules['menuable_id'] = ['nullable', 'integer', 'min:0'];
         }
 
-        if (Schema::hasColumn('menu_items', 'use_menuable_name')) {
+        if ($this->hasMenuItemColumn('use_menuable_name')) {
             $rules['use_menuable_name'] = ['nullable', 'boolean'];
         }
 
-        if (Schema::hasColumn('menu_items', 'link_class')) {
+        if ($this->hasMenuItemColumn('link_class')) {
             $rules['link_class'] = ['nullable', 'string', 'max:255'];
         }
 
-        if (Schema::hasColumn('menu_items', 'wrapper_class')) {
+        if ($this->hasMenuItemColumn('wrapper_class')) {
             $rules['wrapper_class'] = ['nullable', 'string', 'max:255'];
         }
 
-        if (Schema::hasColumn('menu_items', 'parameters')) {
+        if ($this->hasMenuItemColumn('parameters')) {
             $rules['parameters'] = ['nullable', 'string'];
         }
 
         return $rules;
     }
 
-    public function store(\Illuminate\Http\Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate($this->rules());
-        $data = $this->mutateData($data);
-        $record = MenuItem::create($data);
-        $this->afterSave($record, $request);
-        $this->flushStorefrontCaches();
-
+        $record = $this->persistMenuItem(MenuItem::make(), $data, $request);
         $menuId = $record->menu_id;
-        $this->syncFooterMenuIfNeeded($menuId);
 
         return redirect()->route('admin.menus.index', ['menu_id' => $menuId])
             ->with('status', __('admin.messages.created'));
     }
 
-    public function update(\Illuminate\Http\Request $request, int $id): RedirectResponse
+    public function update(Request $request, int $id): RedirectResponse
     {
         $record = MenuItem::findOrFail($id);
         $data = $request->validate($this->rules($id));
-        $data = $this->mutateData($data, $record);
-        $record->update($data);
-        $this->afterSave($record, $request);
-        $this->flushStorefrontCaches();
-
+        $record = $this->persistMenuItem($record, $data, $request);
         $menuId = $record->menu_id;
-        $this->syncFooterMenuIfNeeded($menuId);
 
         return redirect()->route('admin.menus.index', ['menu_id' => $menuId])
             ->with('status', __('admin.messages.updated'));
+    }
+
+    private function persistMenuItem(MenuItem $record, array $data, Request $request): MenuItem
+    {
+        $data = $this->mutateData($data, $record->exists ? $record : null);
+        $record->exists ? $record->update($data) : $record->fill($data)->save();
+        $this->afterSave($record, $request);
+        $this->flushStorefrontCaches();
+        $this->footerSync->syncByMenuId($record->menu_id);
+
+        return $record;
     }
 
     public function destroy(int $id): RedirectResponse
@@ -247,15 +255,14 @@ class MenuItemController extends BaseCrudController
         $record = MenuItem::findOrFail($id);
         $menuId = $record->menu_id;
         $record->delete();
-        Cache::forget('all_menus');
         $this->flushStorefrontCaches();
-        $this->syncFooterMenuIfNeeded($menuId);
+        $this->footerSync->syncByMenuId($menuId);
 
         return redirect()->route('admin.menus.index', ['menu_id' => $menuId])
             ->with('status', __('admin.messages.deleted'));
     }
 
-    public function reorder(\Illuminate\Http\Request $request)
+    public function reorder(Request $request)
     {
         $tree = $request->input('tree', []);
         if (empty($tree)) {
@@ -265,73 +272,35 @@ class MenuItemController extends BaseCrudController
         $firstId = $tree[0]['id'] ?? null;
         $menuId = $firstId ? MenuItem::find($firstId)?->menu_id : null;
 
-        $this->updateMenuItemTree($tree, null);
-        Cache::forget('all_menus');
+        $this->walkTree($tree, null, function (array $item, int $index, ?int $parentId): void {
+            $record = MenuItem::find($item['id'] ?? null);
+            if (! $record) {
+                return;
+            }
+
+            if ($this->hasMenuItemColumn('parent_id')) {
+                $record->parent_id = $parentId;
+            }
+            if ($this->hasMenuItemColumn('order')) {
+                $record->order = $index + 1;
+            }
+            if ($this->hasMenuItemColumn('order_column')) {
+                $record->order_column = $index + 1;
+            }
+            $record->save();
+        });
         $this->flushStorefrontCaches();
 
         if ($menuId) {
-            $this->syncFooterMenuIfNeeded($menuId);
+            $this->footerSync->syncByMenuId($menuId);
         }
 
         return response()->json(['success' => true]);
     }
 
-    protected function syncFooterMenuIfNeeded(?int $menuId): void
+    protected function hasMenuItemColumn(string $column): bool
     {
-        if (! $menuId) {
-            return;
-        }
-
-        try {
-            $footerSettings = app(FooterSettings::class);
-            $footerMenuHandle = $footerSettings->menu_handle ?: 'footer-menu';
-            $footerMenu = Menu::where('handle', $footerMenuHandle)->first();
-
-            if ($footerMenu && (int) $footerMenu->id === (int) $menuId) {
-                $footerMenu->load('items');
-                $syncedLinks = $footerMenu->items->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'title' => is_array($item->title) ? ($item->title['vi'] ?? reset($item->title)) : $item->title,
-                        'url' => $item->url,
-                        'target' => $item->target ?? '_self',
-                        'order' => $item->order ?? 0,
-                    ];
-                })->values()->all();
-
-                $footerSettings->links = $syncedLinks;
-                $footerSettings->save();
-            }
-        } catch (\Throwable $e) {
-            // Silently ignore if settings not initialized
-        }
-    }
-
-    protected function updateMenuItemTree(array $tree, ?int $parentId): void
-    {
-        $hasOrder = Schema::hasColumn('menu_items', 'order');
-        $hasOrderCol = Schema::hasColumn('menu_items', 'order_column');
-        $hasParentId = Schema::hasColumn('menu_items', 'parent_id');
-
-        foreach ($tree as $index => $item) {
-            $record = MenuItem::find($item['id'] ?? null);
-            if ($record) {
-                if ($hasParentId) {
-                    $record->parent_id = $parentId;
-                }
-                if ($hasOrder) {
-                    $record->order = $index + 1;
-                }
-                if ($hasOrderCol) {
-                    $record->order_column = $index + 1;
-                }
-                $record->save();
-            }
-
-            if (isset($item['children']) && is_array($item['children'])) {
-                $this->updateMenuItemTree($item['children'], (int) ($item['id'] ?? 0));
-            }
-        }
+        return Schema::hasColumn('menu_items', $column);
     }
 
     protected function mutateData(array $data, ?Model $record = null): array
@@ -351,8 +320,8 @@ class MenuItemController extends BaseCrudController
         }
 
         if (isset($data['title']) && is_array($data['title'])) {
-            $vi = trim((string)($data['title']['vi'] ?? ''));
-            $en = trim((string)($data['title']['en'] ?? ''));
+            $vi = trim((string) ($data['title']['vi'] ?? ''));
+            $en = trim((string) ($data['title']['en'] ?? ''));
             if ($vi === '' && $en !== '') {
                 $vi = $en;
             }
@@ -370,16 +339,11 @@ class MenuItemController extends BaseCrudController
         }
 
         foreach (array_keys($data) as $key) {
-            if (! Schema::hasColumn('menu_items', $key)) {
+            if (! $this->hasMenuItemColumn($key)) {
                 unset($data[$key]);
             }
         }
 
         return $data;
-    }
-
-    protected function afterSave(Model $record, \Illuminate\Http\Request $request): void
-    {
-        Cache::forget('all_menus');
     }
 }

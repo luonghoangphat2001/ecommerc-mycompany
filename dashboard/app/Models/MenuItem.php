@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Localization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -78,16 +79,14 @@ class MenuItem extends Model
 
     public function getLabelAttribute($value): string
     {
-        if (is_array($this->title) && !empty($this->title)) {
-            $locale = app()->getLocale() ?: 'vi';
-            return (string) ($this->title[$locale] ?? $this->title['vi'] ?? $this->title['en'] ?? reset($this->title) ?: '');
+        if (is_array($this->title) && ! empty($this->title)) {
+            return (string) (Localization::value($this->title) ?: '');
         }
 
         if (is_string($this->title) && str_starts_with(trim($this->title), '{')) {
             $decoded = json_decode($this->title, true);
-            if (is_array($decoded) && !empty($decoded)) {
-                $locale = app()->getLocale() ?: 'vi';
-                return (string) ($decoded[$locale] ?? $decoded['vi'] ?? $decoded['en'] ?? reset($decoded) ?: '');
+            if (is_array($decoded) && ! empty($decoded)) {
+                return (string) (Localization::value($decoded) ?: '');
             }
         }
 

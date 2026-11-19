@@ -2,14 +2,25 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Workspace\Services\CfoService;
 use App\Enums\FinancialProposalStatus;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
+use App\Http\Controllers\Admin\Traits\HasPermissionedServiceCrudActions;
 use App\Models\DepartmentFinancialProposal;
-use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class DepartmentFinancialProposalController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+    use HasPermissionedServiceCrudActions;
+
+    public function __construct(private readonly CfoService $cfoService)
+    {
+        parent::__construct();
+    }
+
     protected function modelClass(): string
     {
         return DepartmentFinancialProposal::class;
@@ -37,13 +48,13 @@ class DepartmentFinancialProposalController extends BaseCrudController
                 'label' => 'Phòng ban',
                 'type' => 'select',
                 'rules' => ['required', 'exists:departments,id'],
-                'options' => \App\Models\Department::pluck('name', 'id')->toArray(),
+                'options' => $this->departmentOptions(),
             ],
             'user_id' => [
                 'label' => 'Người đề xuất',
                 'type' => 'select',
                 'rules' => ['required', 'exists:users,id'],
-                'options' => User::orderBy('name')->pluck('name', 'id')->toArray(),
+                'options' => $this->userOptions(),
             ],
             'title' => [
                 'label' => 'Tiêu đề',
@@ -77,58 +88,37 @@ class DepartmentFinancialProposalController extends BaseCrudController
         ];
     }
 
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    protected function crudService(): object
     {
-        if (!$this->hasPermission('create')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $cfoService = app(\App\Ecommerce\Workspace\Services\CfoService::class);
-        $cfoService->createProposal($validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Tạo mới thành công.');
+        return $this->cfoService;
     }
 
-    public function update(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    protected function createServiceMethod(): string
     {
-        if (!$this->hasPermission('update')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $cfoService = app(\App\Ecommerce\Workspace\Services\CfoService::class);
-        $cfoService->updateProposal($id, $validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Cập nhật thành công.');
+        return 'createProposal';
     }
 
-    public function destroy(int $id): \Illuminate\Http\RedirectResponse
+    protected function updateServiceMethod(): string
     {
-        if (!$this->hasPermission('delete')) {
-            abort(403);
-        }
-
-        $cfoService = app(\App\Ecommerce\Workspace\Services\CfoService::class);
-        $cfoService->deleteProposal($id);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Xóa thành công.');
+        return 'updateProposal';
     }
 
-    public function quickStatus(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    protected function deleteServiceMethod(): string
+    {
+        return 'deleteProposal';
+    }
+
+    public function quickStatus(Request $request, int $id): RedirectResponse
     {
         $status = $request->input('status');
-        if (!in_array($status, ['approved', 'rejected'], true)) {
+        if (! in_array($status, ['approved', 'rejected'], true)) {
             return back()->with('error', 'Trạng thái không hợp lệ.');
         }
 
-        $proposal = DepartmentFinancialProposal::findOrFail($id);
-        $proposal->status = $status;
-        $proposal->save();
+        $proposal = $this->cfoService->updateProposalStatus($id, $status);
 
         $actionText = $status === 'approved' ? 'được phê duyệt thành công (1-Click CEO Approval)' : 'bị từ chối';
+
         return back()->with('status', "Đề xuất #{$proposal->id} \"{$proposal->title}\" đã {$actionText}.");
     }
 }

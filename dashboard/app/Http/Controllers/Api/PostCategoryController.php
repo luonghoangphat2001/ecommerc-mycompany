@@ -30,9 +30,11 @@ class PostCategoryController extends BaseApiController
     #[ApiList(
         path: '/post-categories',
         summary: 'List of Post Categories',
-        tags: 'Storefront - Post Categories',
+        tags: 'Post Categories',
         requiresAuth: false
     )]
+
+
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
@@ -43,7 +45,7 @@ class PostCategoryController extends BaseApiController
     #[ApiPost(
         path: '/post-categories',
         summary: 'Create Post Category',
-        tags: 'Storefront - Post Categories',
+        tags: 'Post Categories',
         requestBody: new OAT\RequestBody(
             required: true,
             content: new OAT\JsonContent(
@@ -56,23 +58,27 @@ class PostCategoryController extends BaseApiController
             )
         )
     )]
+
+
     public function store(PostCategoryRequest $request)
     {
         $dto = PostCategoryDTO::fromRequest($request);
         $category = $this->postCategoryService->createCategory($dto->toArray());
-        
+
         return $this->created(new PostCategoryResource($category));
     }
 
     #[ApiGet(
         path: '/post-categories/{postCategory}',
         summary: 'Post Category Details',
-        tags: 'Storefront - Post Categories',
+        tags: 'Post Categories',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'postCategory', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Category ID')
         ]
     )]
+
+
     public function show(PostCategory $postCategory)
     {
         return $this->ok(new PostCategoryResource($postCategory->load('posts')));
@@ -81,7 +87,7 @@ class PostCategoryController extends BaseApiController
     #[ApiUpdate(
         path: '/post-categories/{postCategory}',
         summary: 'Update Post Category',
-        tags: 'Storefront - Post Categories',
+        tags: 'Post Categories',
         parameters: [
             new OAT\Parameter(name: 'postCategory', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Category ID')
         ],
@@ -94,22 +100,26 @@ class PostCategoryController extends BaseApiController
             )
         )
     )]
+
+
     public function update(PostCategoryRequest $request, PostCategory $postCategory)
     {
         $dto = PostCategoryDTO::fromRequest($request);
         $category = $this->postCategoryService->updateCategory($postCategory, $dto->toArray());
-        
+
         return $this->ok(new PostCategoryResource($category));
     }
 
     #[ApiDelete(
         path: '/post-categories/{postCategory}',
         summary: 'Delete Post Category',
-        tags: 'Storefront - Post Categories',
+        tags: 'Post Categories',
         parameters: [
             new OAT\Parameter(name: 'postCategory', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Category ID')
         ]
     )]
+
+
     public function destroy(PostCategory $postCategory)
     {
         $this->postCategoryService->deleteCategory($postCategory);
@@ -119,12 +129,14 @@ class PostCategoryController extends BaseApiController
     #[ApiList(
         path: '/post-categories/{postCategory}/posts',
         summary: 'List of Posts in Category',
-        tags: 'Storefront - Post Categories',
+        tags: 'Post Categories',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'postCategory', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Category ID')
         ]
     )]
+
+
     public function posts(PostCategory $postCategory, Request $request)
     {
         $perPage = $request->get('per_page', 10);

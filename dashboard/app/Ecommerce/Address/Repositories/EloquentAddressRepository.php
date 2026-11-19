@@ -11,8 +11,6 @@ class EloquentAddressRepository extends BaseRepository implements AddressReposit
 {
     /**
      * EloquentAddressRepository constructor.
-     *
-     * @param Address $model
      */
     public function __construct(Address $model)
     {
@@ -20,36 +18,42 @@ class EloquentAddressRepository extends BaseRepository implements AddressReposit
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getByCustomerId(int $customerId)
     {
-        $user = User::find($customerId);
-        if (!$user) {
+        $user = $this->findCustomer($customerId);
+        if (! $user) {
             return collect();
         }
+
         return $user->addresses;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function associateWithCustomer(int $addressId, int $customerId)
     {
-        $user = User::find($customerId);
+        $user = $this->findCustomer($customerId);
         if ($user) {
             $user->addresses()->syncWithoutDetaching([$addressId]);
         }
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function dissociateFromCustomer(int $addressId, int $customerId)
     {
-        $user = User::find($customerId);
+        $user = $this->findCustomer($customerId);
         if ($user) {
             $user->addresses()->detach($addressId);
         }
+    }
+
+    private function findCustomer(int $customerId): ?User
+    {
+        return User::query()->find($customerId);
     }
 }

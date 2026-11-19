@@ -14,6 +14,7 @@ return new class extends Migration
             $table->json('name');
             $table->string('slug')->unique();
             $table->foreignId('parent_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->index(['parent_id', 'type']);
             $table->json('description')->nullable();
             $table->string('type')->default('post')->index(); // 'post', 'product', etc.
             $table->boolean('is_visible')->default(true);

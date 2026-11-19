@@ -2,21 +2,23 @@
 
 namespace App\Ecommerce\Checkout\Services\Pipes;
 
-use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
+use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Ecommerce\Shipping\Services\PackageCalculator;
-use App\Models\ShippingMethod;
-use Illuminate\Support\Facades\DB;
+use App\Services\Logging\ModuleLogger;
 use App\Settings\InventorySettings;
 use Closure;
+use Illuminate\Support\Facades\DB;
 
 class ResolveShippingFeePipe
 {
     public function __construct(
         protected ShippingServiceInterface $shippingService,
         protected PackageCalculator $packageCalculator,
-        protected InventorySettings $inventorySettings
+        protected InventorySettings $inventorySettings,
+        protected FeaturePolicyServiceInterface $featurePolicy
     ) {}
 
     public function handle(array $passable, Closure $next)
@@ -26,10 +28,13 @@ class ResolveShippingFeePipe
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isShippingEnabled() || !$request->shippingAddress) {
+        if (! $this->featurePolicy->isShippingEnabled() || ! $request->shippingAddress) {
             $result->shippingTotal = 0;
+
             return $next($passable);
         }
+
+        $method = null;
 
         try {
             $destArray = $request->shippingAddress->toArray();
@@ -41,42 +46,9 @@ class ResolveShippingFeePipe
             // 1. Resolve matching zone for customer destination
             $zone = $this->shippingService->resolveMatchingZone($country, $state, $postcode, $ward);
 
-            /** @var ShippingMethod|null $method */
-            $method = null;
-            $reqMethod = $request->shippingMethod;
+            $method = $this->shippingService->resolveCheckoutMethod($zone, $request->shippingMethod);
 
-            if ($zone) {
-                if (is_numeric($reqMethod)) {
-                    $method = $zone->methods()->where('id', (int) $reqMethod)->where('is_enabled', true)->first();
-                }
-
-                if (!$method && !empty($reqMethod)) {
-                    $method = $zone->methods()->where('type', $reqMethod)->where('is_enabled', true)->first();
-                }
-
-                if (!$method && !empty($reqMethod)) {
-                    $method = $zone->methods()->where('name', $reqMethod)->where('is_enabled', true)->first();
-                }
-
-                if (!$method) {
-                    $method = $zone->methods()->where('is_enabled', true)->first();
-                }
-            }
-
-            // Fallback global method if zone has none or not found
-            if (!$method && is_numeric($reqMethod)) {
-                $method = ShippingMethod::query()->where('id', (int) $reqMethod)->where('is_enabled', true)->first();
-            }
-
-            if (!$method && !empty($reqMethod)) {
-                $method = ShippingMethod::query()->where('type', $reqMethod)->where('is_enabled', true)->first();
-            }
-
-            if (!$method) {
-                $method = ShippingMethod::query()->where('is_enabled', true)->first();
-            }
-
-            if (!$method || !$method->is_enabled) {
+            if (! $method || ! $method->is_enabled) {
                 return $next($passable);
             }
 
@@ -87,7 +59,7 @@ class ResolveShippingFeePipe
             $totalPackages = 1;
             if ($this->inventorySettings->split_shipping_enabled) {
                 $productIds = collect($request->items)->pluck('product_id')->filter()->toArray();
-                if (!empty($productIds)) {
+                if (! empty($productIds)) {
                     $inventoriesCount = DB::table('shop_product_inventory_stocks')
                         ->whereIn('shop_product_id', $productIds)
                         ->where('stock_quantity', '>', 0)
@@ -121,7 +93,12 @@ class ResolveShippingFeePipe
                 $result->total += $finalShippingTotal;
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('ResolveShippingFeePipe error: ' . $e->getMessage());
+            ModuleLogger::shipping()->warning(
+                'shipping_fee_calculation_failed',
+                'Shipping fee calculation failed; continuing with the current checkout total.',
+                ['shipping_method_id' => $method->id ?? null]
+            );
+            report($e);
         }
 
         return $next($passable);

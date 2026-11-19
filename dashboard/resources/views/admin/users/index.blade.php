@@ -30,7 +30,7 @@
     @php
         $roleOptions = [];
         foreach (\Spatie\Permission\Models\Role::orderBy('name')->pluck('name') as $r) {
-            $roleOptions[$r] = \App\Support\AdminLabel::role($r);
+            $roleOptions[$r] = \App\Support\Admin::roleLabel($r);
         }
         $departmentOptions = \App\Models\Department::orderBy('name')->pluck('name', 'id')->toArray();
     @endphp

@@ -3,14 +3,16 @@
 namespace App\Ecommerce\Analytics\Repositories;
 
 use App\Ecommerce\Analytics\Contracts\AnalyticsRepositoryInterface;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use App\Enums\AddressType;
 use App\Models\Order;
+use Carbon\Carbon;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
 {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getMonthlyRevenue(string $filter): array
     {
@@ -21,17 +23,13 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
             ->groupBy('month')
             ->orderBy('month');
 
-        if ($filter === 'last_year') {
-            $query->whereYear('created_at', Carbon::now()->subYear()->year);
-        } elseif ($filter !== 'all_time') {
-            $query->whereYear('created_at', Carbon::now()->year);
-        }
+        $this->applyPeriodFilter($query, $filter);
 
         return $query->pluck('total', 'month')->toArray();
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getMonthlyCustomerRegistrations(string $filter): array
     {
@@ -42,17 +40,13 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
             ->groupBy('month')
             ->orderBy('month');
 
-        if ($filter === 'last_year') {
-            $query->whereYear('created_at', Carbon::now()->subYear()->year);
-        } elseif ($filter !== 'all_time') {
-            $query->whereYear('created_at', Carbon::now()->year);
-        }
+        $this->applyPeriodFilter($query, $filter);
 
         return $query->pluck('total', 'month')->toArray();
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getMonthlyOrderStatuses(int $year): array
     {
@@ -72,13 +66,13 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getStatsSummary(?array $filters = []): array
     {
         $filters = $filters ?? [];
-        $startDate = !is_null($filters['startDate'] ?? null) ? Carbon::parse($filters['startDate']) : now()->subDays(7);
-        $endDate = !is_null($filters['endDate'] ?? null) ? Carbon::parse($filters['endDate']) : now();
+        $startDate = ! is_null($filters['startDate'] ?? null) ? Carbon::parse($filters['startDate']) : now()->subDays(7);
+        $endDate = ! is_null($filters['endDate'] ?? null) ? Carbon::parse($filters['endDate']) : now();
 
         $customerData = DB::table('users')->whereBetween('created_at', [$startDate, $endDate])->count();
         $totalRevenue = DB::table('shop_orders')->whereBetween('created_at', [$startDate, $endDate])->sum('total');
@@ -95,12 +89,12 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTopProducts(int $limit = 6, string $locale = 'en'): array
     {
         $nameField = $this->getJsonExtractExpression('shop_products.name', $locale);
-        
+
         return DB::table('shop_products')
             ->select(
                 'shop_products.id',
@@ -117,13 +111,14 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
             ->map(function ($product) {
                 $media = DB::table('media')->where('id', $product->product_images)->first();
                 $product->image_url = $media ? $media->path : asset('images/default.jpg');
+
                 return (array) $product;
             })
             ->toArray();
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTopCustomers(int $limit = 10): array
     {
@@ -138,7 +133,7 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
             ->leftJoin('users', 'shop_orders.user_id', '=', 'users.id')
             ->leftJoin('shop_order_addresses', function ($join) {
                 $join->on('shop_orders.id', '=', 'shop_order_addresses.order_id')
-                    ->where('shop_order_addresses.type', '=', \App\Enums\AddressType::Shipping->value);
+                    ->where('shop_order_addresses.type', '=', AddressType::Shipping->value);
             })
             ->groupBy('shop_orders.user_id', 'shop_order_addresses.email', 'shop_order_addresses.first_name', 'shop_order_addresses.last_name', 'users.photo')
             ->orderByDesc('total_spent')
@@ -151,14 +146,14 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
                     'email' => $order->email,
                     'photo' => $order->photo,
                     'total_spent' => $order->total_spent,
-                    'is_guest' => $order->user_id === null
+                    'is_guest' => $order->user_id === null,
                 ];
             })
             ->toArray();
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getRecentCustomers(int $limit = 10): array
     {
@@ -170,7 +165,7 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getOrderStatusDistribution(): array
     {
@@ -185,9 +180,9 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function getFilteredNewCustomersQuery(?string $from = null, ?string $until = null): \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder
+    public function getFilteredNewCustomersQuery(?string $from = null, ?string $until = null): Builder | \Illuminate\Database\Eloquent\Builder
     {
         $query = $this->getNewCustomersQuery();
 
@@ -199,7 +194,7 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function applyNewCustomersFilter($query, ?string $from = null, ?string $until = null)
     {
@@ -211,22 +206,22 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function getNewCustomersQuery(): \Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder
+    public function getNewCustomersQuery(): Builder | \Illuminate\Database\Eloquent\Builder
     {
         return Order::query()
             ->with('user')
             ->leftJoin('shop_order_addresses', function ($join) {
                 $join->on('shop_orders.id', '=', 'shop_order_addresses.order_id')
-                    ->where('shop_order_addresses.type', '=', \App\Enums\AddressType::Shipping->value);
+                    ->where('shop_order_addresses.type', '=', AddressType::Shipping->value);
             })
             ->selectRaw("MIN(shop_orders.id) as id, shop_order_addresses.email, shop_orders.user_id, CONCAT(COALESCE(shop_order_addresses.first_name, ''), ' ', COALESCE(shop_order_addresses.last_name, '')) as customer_name, SUM(shop_orders.total) as total_spent, MAX(shop_orders.created_at) as latest_order")
             ->groupBy('shop_order_addresses.email', 'shop_orders.user_id', 'shop_order_addresses.first_name', 'shop_order_addresses.last_name');
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTopProductsChartData(int $limit = 10, string $locale = 'en'): array
     {
@@ -245,7 +240,7 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTopProductsDonutChartData(int $limit = 5, string $locale = 'en'): array
     {
@@ -264,7 +259,7 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getMonthlyCustomerStats(): array
     {
@@ -287,8 +282,6 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
 
     /**
      * Get database specific month expression.
-     *
-     * @return string
      */
     protected function getMonthExpression(): string
     {
@@ -297,12 +290,17 @@ class EloquentAnalyticsRepository implements AnalyticsRepositoryInterface
             : 'MONTH(created_at)';
     }
 
+    protected function applyPeriodFilter(Builder $query, string $filter): void
+    {
+        if ($filter === 'last_year') {
+            $query->whereYear('created_at', Carbon::now()->subYear()->year);
+        } elseif ($filter !== 'all_time') {
+            $query->whereYear('created_at', Carbon::now()->year);
+        }
+    }
+
     /**
      * Get database specific JSON extract expression.
-     *
-     * @param string $column
-     * @param string $locale
-     * @return string
      */
     protected function getJsonExtractExpression(string $column, string $locale): string
     {

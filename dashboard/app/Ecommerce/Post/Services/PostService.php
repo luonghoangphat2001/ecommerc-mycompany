@@ -2,9 +2,12 @@
 
 namespace App\Ecommerce\Post\Services;
 
+use App\Ecommerce\Core\Helpers\CatalogQueryFilters;
 use App\Ecommerce\Post\Contracts\PostRepositoryInterface;
 use App\Ecommerce\Post\Contracts\PostServiceInterface;
 use App\Models\Post;
+use Awcodes\Curator\Models\Media;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class PostService implements PostServiceInterface
@@ -16,8 +19,6 @@ class PostService implements PostServiceInterface
 
     /**
      * PostService constructor.
-     *
-     * @param PostRepositoryInterface $postRepository
      */
     public function __construct(PostRepositoryInterface $postRepository)
     {
@@ -26,23 +27,15 @@ class PostService implements PostServiceInterface
 
     /**
      * Get all posts with relations.
-     *
-     * @param int $perPage
-     * @param array $filters
-     * @return LengthAwarePaginator
      */
     public function getPaginatedPosts(int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
         $query = $this->postRepository->query()
             ->with(['author', 'categories', 'comments', 'featuredImage']);
 
-        if (!array_key_exists('is_visible', $filters)) {
-            $query->where('is_visible', true);
-        } elseif ($filters['is_visible'] !== 'all' && $filters['is_visible'] !== null && $filters['is_visible'] !== '') {
-            $query->where('is_visible', filter_var($filters['is_visible'], FILTER_VALIDATE_BOOLEAN));
-        }
+        CatalogQueryFilters::visibility($query, $filters);
 
-        $search = trim((string) ($filters['search'] ?? $filters['q'] ?? $filters['keyword'] ?? ''));
+        $search = CatalogQueryFilters::searchTerm($filters);
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
@@ -52,24 +45,24 @@ class PostService implements PostServiceInterface
         }
 
         $categoryFilter = $filters['category_id'] ?? $filters['category'] ?? null;
-        if ($categoryFilter !== null && $categoryFilter !== '' && $categoryFilter !== 'all') {
-            $query->whereHas('categories', function ($q) use ($categoryFilter) {
-                if (is_numeric($categoryFilter)) {
-                    $q->where('categories.id', (int) $categoryFilter);
-                } else {
-                    $q->where('categories.slug', (string) $categoryFilter);
-                }
-            });
-        }
+        CatalogQueryFilters::relation($query, $categoryFilter, 'categories', 'categories.id', 'categories.slug');
 
         return $query->orderByDesc('published_at')->orderByDesc('id')->paginate($perPage);
     }
 
+    public function getFeaturedPosts(int $limit = 4)
+    {
+        return $this->postRepository->query()
+            ->with(['author', 'categories', 'comments', 'featuredImage'])
+            ->where('is_visible', true)
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+    }
+
     /**
      * Create a new post.
-     *
-     * @param array $data
-     * @return Post
      */
     public function createPost(array $data): Post
     {
@@ -78,22 +71,16 @@ class PostService implements PostServiceInterface
 
     /**
      * Update an existing post.
-     *
-     * @param Post $post
-     * @param array $data
-     * @return Post
      */
     public function updatePost(Post $post, array $data): Post
     {
         $this->postRepository->update($post->id, $data);
+
         return $post->fresh();
     }
 
     /**
      * Delete a post.
-     *
-     * @param Post $post
-     * @return bool
      */
     public function deletePost(Post $post): bool
     {
@@ -102,17 +89,14 @@ class PostService implements PostServiceInterface
 
     /**
      * Get featured image URL for a post.
-     *
-     * @param Post $post
-     * @return string|null
      */
     public function getFeaturedImageUrl(Post $post): ?string
     {
-        return $post->image ? \Awcodes\Curator\Models\Media::find($post->image)?->url : null;
+        return $post->image ? Media::find($post->image)?->url : null;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function firstOrNew(array $attributes): Post
     {
@@ -120,17 +104,17 @@ class PostService implements PostServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function findOrFail(int|string $id): Post
+    public function findOrFail(int | string $id): Post
     {
         return $this->postRepository->findOrFail($id);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function getTableQuery(): \Illuminate\Database\Eloquent\Builder
+    public function getTableQuery(): Builder
     {
         return $this->postRepository->query()
             ->with(['featuredImage'])

@@ -23,6 +23,11 @@ class LogisticsService
         ];
     }
 
+    public function getMetrics(string $period = 'all'): array
+    {
+        return $this->logisticsRepository->getMetrics($period);
+    }
+
     public function createPO(array $data)
     {
         return $this->logisticsRepository->createPO($data);

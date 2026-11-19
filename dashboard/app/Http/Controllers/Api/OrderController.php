@@ -33,9 +33,11 @@ class OrderController extends BaseApiController
     #[ApiList(
         path: '/orders',
         summary: 'List of User Orders',
-        tags: 'Storefront - Orders',
+        tags: 'Orders',
         responseData: '#/components/schemas/OrderResource'
     )]
+
+
     public function index(Request $request)
     {
         $userId = $this->customerResolver->resolveCustomerId($request);
@@ -57,7 +59,7 @@ class OrderController extends BaseApiController
     #[ApiPost(
         path: '/orders',
         summary: 'Create New Order',
-        tags: 'Storefront - Orders',
+        tags: 'Orders',
         requestBody: new OAT\RequestBody(
             required: true,
             content: new OAT\JsonContent(
@@ -87,6 +89,8 @@ class OrderController extends BaseApiController
         ),
         responseData: '#/components/schemas/OrderResource'
     )]
+
+
     public function store(OrderRequest $request)
     {
         $dto = OrderDataDTO::fromRequest($request->validated());
@@ -104,12 +108,14 @@ class OrderController extends BaseApiController
     #[ApiGet(
         path: '/orders/{order}',
         summary: 'Order Details',
-        tags: 'Storefront - Orders',
+        tags: 'Orders',
         parameters: [
             new OAT\Parameter(name: 'order', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Order ID')
         ],
         responseData: '#/components/schemas/OrderResource'
     )]
+
+
     public function show($id)
     {
         $order = $this->orderService->getFullOrder($id);
@@ -126,7 +132,7 @@ class OrderController extends BaseApiController
     #[ApiUpdate(
         path: '/orders/{order}',
         summary: 'Update Order Status/Notes',
-        tags: 'Storefront - Orders',
+        tags: 'Orders',
         parameters: [
             new OAT\Parameter(name: 'order', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Order ID')
         ],
@@ -141,6 +147,8 @@ class OrderController extends BaseApiController
         ),
         responseData: '#/components/schemas/OrderResource'
     )]
+
+
     public function update(OrderRequest $request, $id)
     {
         $order = $this->orderService->find($id);
@@ -266,11 +274,13 @@ class OrderController extends BaseApiController
     #[ApiDelete(
         path: '/orders/{order}',
         summary: 'Delete Order (Cancel)',
-        tags: 'Storefront - Orders',
+        tags: 'Orders',
         parameters: [
             new OAT\Parameter(name: 'order', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Order ID')
         ]
     )]
+
+
     public function destroy($id)
     {
         $order = $this->orderService->find($id);

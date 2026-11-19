@@ -3,17 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
+use App\Http\Controllers\Admin\Traits\HasHierarchicalOptions;
 use App\Models\Post;
 use App\Models\PostCategory;
-use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
+use App\Support\Media;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Spatie\Tags\Tag;
 
 class PostController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+    use HasHierarchicalOptions;
+
     protected function modelClass(): string
     {
         return Post::class;
@@ -121,16 +126,16 @@ class PostController extends BaseCrudController
                 'label' => __('admin.post.fields.author_id'),
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:users,id'],
-                'options' => ['' => '-- None --'] + User::orderBy('name')->pluck('name', 'id')->toArray(),
+                'options' => ['' => '-- None --'] + $this->userOptions(),
                 'hideOnIndex' => true,
             ],
-            'image' => ['label' => __('admin.post.fields.image'), 'type' => 'image', 'rules' => ['nullable', 'image', 'max:5120']],
+            'image' => $this->imageField(__('admin.post.fields.image')),
             'title' => ['label' => __('admin.post.fields.title'), 'rules' => ['required']],
             'slug' => ['label' => __('admin.post.fields.slug'), 'rules' => ['required', 'string', 'max:255'], 'hideOnIndex' => true],
             'content' => ['label' => __('admin.post.fields.content'), 'type' => 'editor', 'rules' => ['nullable', 'string'], 'hideOnIndex' => true],
             'post_type' => ['label' => __('admin.post.fields.post_type'), 'type' => 'select', 'rules' => ['required', 'string', 'max:50'], 'options' => ['blog' => 'blog', 'news' => 'news', 'page' => 'page']],
             'published_at' => ['label' => __('admin.post.fields.published_at'), 'type' => 'date', 'rules' => ['nullable', 'date']],
-            'is_visible' => ['label' => __('admin.post.fields.is_visible'), 'type' => 'select', 'rules' => ['required', 'boolean'], 'options' => ['1' => __('admin.common.yes'), '0' => __('admin.common.no')]],
+            'is_visible' => ['label' => __('admin.post.fields.is_visible'), 'type' => 'select', 'rules' => ['required', 'boolean'], 'options' => $this->booleanOptions()],
             'seo_title' => ['label' => __('admin.post.fields.seo_title'), 'rules' => ['nullable', 'string', 'max:255'], 'colspan' => 'full', 'hideOnIndex' => true],
             'seo_description' => ['label' => __('admin.post.fields.seo_description'), 'type' => 'textarea', 'rules' => ['nullable', 'string', 'max:255'], 'hideOnIndex' => true],
             'categories' => [
@@ -138,7 +143,7 @@ class PostController extends BaseCrudController
                 'type' => 'tree-select',
                 'colspan' => 1,
                 'rules' => ['nullable', 'array'],
-                'tree_nodes' => PostCategory::whereNull('parent_id')->with('children.children')->get(),
+                'tree_nodes' => $this->hierarchyTree(PostCategory::class),
                 'hideOnIndex' => true,
             ],
             'tags' => [
@@ -163,7 +168,7 @@ class PostController extends BaseCrudController
     {
         $record->categories()->sync((array) $request->input('categories', []));
         $tagsInput = $request->input('tags', []);
-        $tags = is_array($tagsInput) ? $tagsInput : collect(explode(',', (string) $tagsInput))->map(fn($tag) => trim($tag))->filter()->values()->all();
+        $tags = is_array($tagsInput) ? $tagsInput : collect(explode(',', (string) $tagsInput))->map(fn ($tag) => trim($tag))->filter()->values()->all();
         $record->syncTagsWithType($tags, 'Post');
     }
 
@@ -173,14 +178,7 @@ class PostController extends BaseCrudController
             return [];
         }
 
-        $imagePath = null;
-        if ($record->image) {
-            if (is_numeric($record->image) && $record->featuredImage) {
-                $imagePath = $record->featuredImage->path;
-            } else {
-                $imagePath = $record->image;
-            }
-        }
+        $imagePath = Media::path($record->image, $record->featuredImage);
 
         return [
             'categories' => $record->categories()->pluck('categories.id')->toArray(),

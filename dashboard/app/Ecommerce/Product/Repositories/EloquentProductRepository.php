@@ -2,9 +2,11 @@
 
 namespace App\Ecommerce\Product\Repositories;
 
+use App\Ecommerce\Core\Helpers\CatalogQueryFilters;
+use App\Ecommerce\Core\Repositories\BaseRepository;
 use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
 use App\Models\Product;
-use App\Ecommerce\Core\Repositories\BaseRepository;
+use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -12,8 +14,6 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
 {
     /**
      * EloquentProductRepository constructor.
-     *
-     * @param Product $model
      */
     public function __construct(Product $model)
     {
@@ -21,7 +21,7 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function scopeRooms(Builder $builder): Builder
     {
@@ -29,7 +29,7 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function scopeTours(Builder $builder): Builder
     {
@@ -37,7 +37,7 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function searchByName(string $term, ?string $type = null, int $limit = 50): Collection
     {
@@ -55,7 +55,7 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getLowStockCount(): int
     {
@@ -68,12 +68,55 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
     public function findBySlug(string $slug, array $relations = []): ?Product
     {
         $query = $this->model->where('slug', $slug);
-        
-        if (!empty($relations)) {
+
+        if (! empty($relations)) {
             $query->with($relations);
         }
-        
+
         return $query->first();
+    }
+
+    public function findBySku(string $sku): ?Product
+    {
+        return $this->model->newQuery()->where('sku', $sku)->first();
+    }
+
+    public function findForCheckout(int $productId, bool $visibleOnly = false): ?Product
+    {
+        $query = $this->model->newQuery()
+            ->with(['comboComponents.product', 'comboComponents.variant', 'variants']);
+
+        if ($visibleOnly) {
+            $query->where('is_visible', true);
+        }
+
+        return $query->find($productId);
+    }
+
+    public function findByIds(array $productIds, array $relations = []): Collection
+    {
+        return $this->model->newQuery()
+            ->when($relations !== [], fn (Builder $query) => $query->with($relations))
+            ->whereIn('id', $productIds)
+            ->get();
+    }
+
+    public function findVariantForProduct(int $variantId, int $productId, bool $activeOnly = true): ?ProductVariant
+    {
+        $query = ProductVariant::query()
+            ->whereKey($variantId)
+            ->where('product_id', $productId);
+
+        if ($activeOnly) {
+            $query->where('is_active', true);
+        }
+
+        return $query->first();
+    }
+
+    public function findVariantById(int $variantId): ?ProductVariant
+    {
+        return ProductVariant::query()->find($variantId);
     }
 
     /**
@@ -83,17 +126,13 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
     {
         $query = $this->model->newQuery();
 
-        if (!empty($relations)) {
+        if (! empty($relations)) {
             $query->with($relations);
         }
 
-        if (!array_key_exists('is_visible', $filters)) {
-            $query->where('is_visible', true);
-        } elseif ($filters['is_visible'] !== 'all' && $filters['is_visible'] !== null && $filters['is_visible'] !== '') {
-            $query->where('is_visible', filter_var($filters['is_visible'], FILTER_VALIDATE_BOOLEAN));
-        }
+        CatalogQueryFilters::visibility($query, $filters);
 
-        $search = trim((string) ($filters['search'] ?? $filters['q'] ?? $filters['keyword'] ?? ''));
+        $search = CatalogQueryFilters::searchTerm($filters);
         if ($search !== '') {
             $query->where(function (Builder $q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -104,15 +143,7 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
         }
 
         $categoryFilter = $filters['category_id'] ?? $filters['category'] ?? null;
-        if ($categoryFilter !== null && $categoryFilter !== '' && $categoryFilter !== 'all') {
-            $query->whereHas('categories', function (Builder $q) use ($categoryFilter) {
-                if (is_numeric($categoryFilter)) {
-                    $q->where('shop_categories.id', (int) $categoryFilter);
-                } else {
-                    $q->where('shop_categories.slug', (string) $categoryFilter);
-                }
-            });
-        }
+        CatalogQueryFilters::relation($query, $categoryFilter, 'categories', 'shop_categories.id', 'shop_categories.slug');
 
         $brandFilter = $filters['brand_id'] ?? $filters['brand'] ?? null;
         if ($brandFilter !== null && $brandFilter !== '' && $brandFilter !== 'all') {
@@ -147,28 +178,34 @@ class EloquentProductRepository extends BaseRepository implements ProductReposit
             case 'price-asc':
             case 'price_low':
                 $query->orderBy('price', 'asc');
+
                 break;
             case 'price_desc':
             case 'price-desc':
             case 'price_high':
                 $query->orderBy('price', 'desc');
+
                 break;
             case 'name_asc':
             case 'name-asc':
             case 'name':
                 $query->orderBy('name', 'asc');
+
                 break;
             case 'name_desc':
             case 'name-desc':
                 $query->orderBy('name', 'desc');
+
                 break;
             case 'oldest':
                 $query->orderBy('created_at', 'asc');
+
                 break;
             case 'newest':
             case 'latest':
             default:
                 $query->orderByDesc('created_at')->orderByDesc('id');
+
                 break;
         }
 

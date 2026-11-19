@@ -2,25 +2,28 @@
 
 namespace App\Ecommerce\Combo\Services;
 
-use App\Ecommerce\Combo\Contracts\ComboServiceInterface;
 use App\Ecommerce\Combo\Contracts\ComboRepositoryInterface;
+use App\Ecommerce\Combo\Contracts\ComboServiceInterface;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use Illuminate\Support\Collection;
 
 class ComboService implements ComboServiceInterface
 {
     protected ComboRepositoryInterface $comboRepository;
 
-    public function __construct(ComboRepositoryInterface $comboRepository)
-    {
+    public function __construct(
+        ComboRepositoryInterface $comboRepository,
+        protected FeaturePolicyServiceInterface $featurePolicy
+    ) {
         $this->comboRepository = $comboRepository;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getActiveCombos(): Collection
     {
-        if (!$this->isEnabled()) {
+        if (! $this->isEnabled()) {
             return collect();
         }
 
@@ -28,11 +31,11 @@ class ComboService implements ComboServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getComboBySlug(string $slug)
     {
-        if (!$this->isEnabled()) {
+        if (! $this->isEnabled()) {
             return null;
         }
 
@@ -40,10 +43,10 @@ class ComboService implements ComboServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isEnabled(): bool
     {
-        return app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isComboEnabled();
+        return $this->featurePolicy->isComboEnabled();
     }
 }

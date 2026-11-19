@@ -4,6 +4,8 @@ use Illuminate\Support\Str;
 
 return [
 
+    'idempotency_ttl' => (int) env('IDEMPOTENCY_TTL', 86400),
+
     /*
     |--------------------------------------------------------------------------
     | Default Cache Store

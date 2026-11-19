@@ -2,18 +2,8 @@
 
 namespace App\Http\Requests\API;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class CouponRequest extends FormRequest
+class CouponRequest extends ApiFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * Validation rules for coupon application and management.
      *
@@ -28,4 +18,3 @@ class CouponRequest extends FormRequest
         ];
     }
 }
-

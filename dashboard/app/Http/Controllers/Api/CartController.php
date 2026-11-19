@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Api\BaseApiController;
-use App\Ecommerce\Cart\Contracts\CartServiceInterface;
 use App\Ecommerce\Cart\Contracts\CartCalculationServiceInterface;
+use App\Ecommerce\Cart\Contracts\CartServiceInterface;
+use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
+use App\Ecommerce\Shipping\Services\PackageCalculator;
 use App\Http\Requests\API\CartRequest;
 use App\Http\Resources\Api\CartResource;
+use App\Http\Resources\Api\ProductResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
@@ -19,18 +22,19 @@ use App\Swagger\Attributes\ApiDelete;
 
 class CartController extends BaseApiController
 {
-
     public function __construct(
         protected CartServiceInterface $cartService,
         protected CartCalculationServiceInterface $calculationService,
         protected ShippingServiceInterface $shippingService,
-        protected \App\Ecommerce\Product\Contracts\ProductRepositoryInterface $productRepository
+        protected ProductRepositoryInterface $productRepository,
+        protected FeaturePolicyServiceInterface $featurePolicy,
+        protected PackageCalculator $packageCalculator,
     ) {}
 
     #[ApiPost(
         path: '/cart',
         summary: 'Get Cart Information',
-        tags: 'Storefront - Cart',
+        tags: 'Cart',
         requiresAuth: false,
         requestBody: new OAT\RequestBody(
             required: false,
@@ -53,11 +57,13 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'notifications', type: 'array', items: new OAT\Items(type: 'string'))
         ]
     )]
+
+
     public function index(CartRequest $request): JsonResponse
     {
         $items = $this->extractCartItems($request);
         $validated = $this->cartService->syncAndValidate($items);
-        
+
         $summary = $this->calculationService->calculate(
             $validated['items'] ?? [],
             $request->input('country', 'VN'),
@@ -100,21 +106,22 @@ class CartController extends BaseApiController
 
         $limit = (int) $request->input('limit', 4);
 
-        $products = \App\Models\Product::with(['categories', 'brand', 'featuredImage', 'inventories'])
+        $products = $this->productRepository->query()
+            ->with(['categories', 'brand', 'featuredImage', 'inventories'])
             ->where('is_visible', true)
-            ->when(!empty($excludeIds), fn ($q) => $q->whereNotIn('id', $excludeIds))
+            ->when(! empty($excludeIds), fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->orderByDesc('featured')
             ->orderByDesc('id')
             ->limit($limit)
             ->get();
 
-        return $this->ok(\App\Http\Resources\Api\ProductResource::collection($products));
+        return $this->ok(ProductResource::collection($products));
     }
 
     #[ApiPost(
         path: '/cart/sync',
         summary: 'Sync Cart',
-        tags: 'Storefront - Cart',
+        tags: 'Cart',
         requiresAuth: false,
         requestBody: new OAT\RequestBody(
             required: true,
@@ -137,6 +144,8 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'notifications', type: 'array', items: new OAT\Items(type: 'string'))
         ]
     )]
+
+
     public function sync(CartRequest $request): JsonResponse
     {
         return $this->index($request);
@@ -145,7 +154,7 @@ class CartController extends BaseApiController
     #[ApiPost(
         path: '/cart/items',
         summary: 'Add Item to Cart',
-        tags: 'Storefront - Cart',
+        tags: 'Cart',
         requiresAuth: false,
         requestBody: new OAT\RequestBody(
             required: true,
@@ -166,11 +175,13 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'available', type: 'boolean', example: true),
         ]
     )]
+
+
     public function addItem(CartRequest $request): JsonResponse
     {
-        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
+        $policy = $this->featurePolicy;
 
-        if (!$policy->isEcommerceEnabled()) {
+        if (! $policy->isEcommerceEnabled()) {
             return $this->error('Cửa hàng hiện đang tạm dừng hoạt động.', 503);
         }
 
@@ -179,13 +190,13 @@ class CartController extends BaseApiController
         }
 
         $validated = $request->validated();
-        $product = $this->productRepository->find((int)$validated['product_id']);
-        
-        if (!$product) {
+        $product = $this->productRepository->find((int) $validated['product_id']);
+
+        if (! $product) {
             return $this->error(__('messages.product_not_found') ?? 'Product not found', 404);
         }
 
-        if ($product->isCombo() && !$policy->isComboEnabled()) {
+        if ($product->isCombo() && ! $policy->isComboEnabled()) {
             return $this->error('Sản phẩm combo hiện đang tạm ngừng hỗ trợ.', 422);
         }
 
@@ -206,7 +217,7 @@ class CartController extends BaseApiController
     #[ApiUpdate(
         path: '/cart/items/{itemId}',
         summary: 'Update Item Quantity',
-        tags: 'Storefront - Cart',
+        tags: 'Cart',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'itemId', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Product ID')
@@ -226,11 +237,13 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'available', type: 'boolean', example: true),
         ]
     )]
+
+
     public function updateItem(CartRequest $request, $itemId): JsonResponse
     {
-        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
+        $policy = $this->featurePolicy;
 
-        if (!$policy->isEcommerceEnabled()) {
+        if (! $policy->isEcommerceEnabled()) {
             return $this->error('Cửa hàng hiện đang tạm dừng hoạt động.', 503);
         }
 
@@ -239,9 +252,9 @@ class CartController extends BaseApiController
         }
 
         $validated = $request->validated();
-        $product = $this->productRepository->find((int)$itemId);
-        
-        if (!$product) {
+        $product = $this->productRepository->find((int) $itemId);
+
+        if (! $product) {
             return $this->error(__('messages.product_not_found') ?? 'Product not found', 404);
         }
 
@@ -253,14 +266,14 @@ class CartController extends BaseApiController
         return $this->success([
             'product_id' => $product->id,
             'quantity' => $quantity,
-            'available' => $quantity > 0 ? (!$policy->isInventoryTrackingEnabled() || $product->qty >= $quantity) : true,
+            'available' => $quantity > 0 ? (! $policy->isInventoryTrackingEnabled() || $product->qty >= $quantity) : true,
         ]);
     }
 
     #[ApiDelete(
         path: '/cart/items/{itemId}',
         summary: 'Remove Item from Cart',
-        tags: 'Storefront - Cart',
+        tags: 'Cart',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'itemId', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Product ID')
@@ -269,6 +282,8 @@ class CartController extends BaseApiController
             new OAT\Property(property: 'removed', type: 'boolean', example: true)
         ]
     )]
+
+
     public function removeItem($itemId): JsonResponse
     {
         return $this->success(['removed' => true], __('messages.cart_item_removed') ?? 'Cart item removed');
@@ -277,12 +292,14 @@ class CartController extends BaseApiController
     #[ApiDelete(
         path: '/cart',
         summary: 'Clear Cart',
-        tags: 'Storefront - Cart',
+        tags: 'Cart',
         requiresAuth: false,
         responseData: [
             new OAT\Property(property: 'cleared', type: 'boolean', example: true)
         ]
     )]
+
+
     public function clear(): JsonResponse
     {
         return $this->success(['cleared' => true], __('messages.cart_cleared') ?? 'Cart cleared');
@@ -291,7 +308,7 @@ class CartController extends BaseApiController
     #[ApiPost(
         path: '/cart/shipping-methods',
         summary: 'Get Shipping Methods',
-        tags: 'Storefront - Cart',
+        tags: 'Cart',
         requiresAuth: false,
         requestBody: new OAT\RequestBody(
             required: true,
@@ -313,16 +330,18 @@ class CartController extends BaseApiController
             ))
         ]
     )]
+
+
     public function shippingMethods(Request $request): JsonResponse
     {
-        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
-        if (!$policy->isShippingEnabled()) {
+        $policy = $this->featurePolicy;
+        if (! $policy->isShippingEnabled()) {
             return $this->success([]);
         }
 
         $items = $this->extractCartItems($request);
-        $subtotal = collect($items)->sum(fn($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 0));
-        $package = app(\App\Ecommerce\Shipping\Services\PackageCalculator::class)->calculatePackage($items);
+        $subtotal = collect($items)->sum(fn ($i) => ($i['price'] ?? 0) * ($i['quantity'] ?? 0));
+        $package = $this->packageCalculator->calculatePackage($items);
 
         $methods = $this->shippingService->getAvailableMethods(
             $request->input('country', 'VN'),

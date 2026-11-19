@@ -22,17 +22,19 @@ class CrossSellController extends BaseApiController
     #[ApiList(
         path: '/products/{productId}/cross-sells',
         summary: 'List Cross-sells for Product',
-        tags: 'Storefront - Cross-sells',
+        tags: 'Cross-sells',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'productId', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Original Product ID')
         ],
         responseData: '#/components/schemas/CrossSellResource'
     )]
+
+
     public function index(int $productId): JsonResponse
     {
         $crossSells = $this->crossSellService->getCrossSellsForProduct($productId);
-        
+
         return $this->ok(CrossSellResource::collection($crossSells));
     }
 }

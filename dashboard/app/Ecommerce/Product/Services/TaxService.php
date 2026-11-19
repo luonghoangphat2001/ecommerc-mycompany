@@ -2,14 +2,14 @@
 
 namespace App\Ecommerce\Product\Services;
 
+use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
 use App\Ecommerce\Product\Contracts\TaxClassRepositoryInterface;
 use App\Ecommerce\Product\Contracts\TaxRateRepositoryInterface;
 use App\Ecommerce\Product\Contracts\TaxServiceInterface;
-use App\Ecommerce\Product\DTOs\TaxCalculationDTO;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Enums\TaxRateStatus;
 use App\Models\ComboProductItem;
 use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\TaxClass;
 use App\Settings\CheckoutSettings;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,39 +19,36 @@ class TaxService implements TaxServiceInterface
 {
     public function __construct(
         protected TaxRateRepositoryInterface $taxRateRepository,
-        protected TaxClassRepositoryInterface $taxClassRepository
+        protected TaxClassRepositoryInterface $taxClassRepository,
+        protected ProductRepositoryInterface $productRepository,
+        protected CheckoutSettings $checkoutSettings,
+        protected FeaturePolicyServiceInterface $featurePolicy
     ) {}
 
     /**
      * Calculate tax for a given amount and tax class.
      *
-     * @param TaxClass|int|string|null $taxClass
-     * @param int $amount
-     * @param string|null $country
-     * @param string|null $state
-     * @param string|null $city
+     * @param  TaxClass|int|string|null  $taxClass
      * @return array{amount: int, status: string, rate_name: string, rate_percent: float, tax_rate_id: ?int}
      */
     public function calculate($taxClass, int $amount, ?string $country = null, ?string $state = null, ?string $city = null): array
     {
-        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
-
-        if (!$policy->isTaxCalculationEnabled()) {
+        if (! $this->featurePolicy->isTaxCalculationEnabled()) {
             return $this->buildTaxResult(0, TaxRateStatus::TaxDisabled, 0.0);
         }
 
         $taxClassId = $this->resolveTaxClassId($taxClass);
-        if (!$taxClassId || $amount <= 0) {
+        if (! $taxClassId || $amount <= 0) {
             return $this->buildTaxResult(0, TaxRateStatus::NoTax, 0.0);
         }
 
         $rate = $this->taxRateRepository->findMatchingRate($taxClassId, $country, $state, $city);
-        if (!$rate) {
+        if (! $rate) {
             return $this->buildTaxResult(0, TaxRateStatus::NoTax, 0.0);
         }
 
         $ratePercent = (float) $rate->rate;
-        $includeTax = (bool) ($checkoutSettings->prices_include_tax ?? false);
+        $includeTax = (bool) ($this->checkoutSettings->prices_include_tax ?? false);
         $taxAmount = $this->computeTaxFromAmount($amount, $ratePercent, $includeTax);
 
         return [
@@ -67,7 +64,7 @@ class TaxService implements TaxServiceInterface
      * Authoritatively calculate tax for a product (Simple, Variable, or Combo).
      */
     public function calculateProductTax(
-        Product|int $product,
+        Product | int $product,
         ?int $variantId,
         int $amount,
         ?string $country = null,
@@ -75,18 +72,17 @@ class TaxService implements TaxServiceInterface
         ?string $city = null
     ): array {
         $productModel = is_numeric($product)
-            ? Product::with(['comboComponents.product', 'comboComponents.variant', 'variants'])->find($product)
+            ? $this->productRepository->findForCheckout((int) $product)
             : $product;
 
-        if (!$productModel) {
+        if (! $productModel) {
             return $this->buildTaxResult(0, TaxRateStatus::ProductNotFound, 0.0, null, []);
         }
 
-        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
-        if (!$policy->isTaxCalculationEnabled()) {
+        if (! $this->featurePolicy->isTaxCalculationEnabled()) {
             return $this->buildTaxResult(0, TaxRateStatus::TaxDisabled, 0.0, null, []);
         }
-        if (!$productModel->apply_tax) {
+        if (! $productModel->apply_tax) {
             return $this->buildTaxResult(0, TaxRateStatus::NonTaxable, 0.0, null, []);
         }
 
@@ -95,15 +91,18 @@ class TaxService implements TaxServiceInterface
         }
 
         if ($productModel->isVariable() && $variantId) {
-            $variant = $productModel->variants->firstWhere('id', $variantId) ?: ProductVariant::find($variantId);
+            $variant = $productModel->variants->firstWhere('id', $variantId)
+                ?: $this->productRepository->findVariantForProduct($variantId, $productModel->id);
             $taxClassId = $variant?->tax_class_id ?? $productModel->tax_class_id;
             $res = $this->calculate($taxClassId, $amount, $country, $state, $city);
             $res['breakdown'] = [];
+
             return $res;
         }
 
         $res = $this->calculate($productModel->tax_class_id, $amount, $country, $state, $city);
         $res['breakdown'] = [];
+
         return $res;
     }
 
@@ -121,6 +120,7 @@ class TaxService implements TaxServiceInterface
         if ($components->isEmpty()) {
             $res = $this->calculate($combo->tax_class_id, $amount, $country, $state, $city);
             $res['breakdown'] = [];
+
             return $res;
         }
 
@@ -172,7 +172,8 @@ class TaxService implements TaxServiceInterface
      */
     private function calculateNominalTotal(Collection $components, int $fallbackAmount): int
     {
-        $sum = (int) $components->sum(fn(ComboProductItem $item) => $item->subtotal);
+        $sum = (int) $components->sum(fn (ComboProductItem $item) => $item->subtotal);
+
         return $sum > 0 ? $sum : max(1, $fallbackAmount);
     }
 
@@ -192,6 +193,7 @@ class TaxService implements TaxServiceInterface
 
         $allocated = (int) round(($itemNominal / $nominalTotal) * $totalAmount);
         $allocatedSoFar += $allocated;
+
         return $allocated;
     }
 
@@ -213,6 +215,7 @@ class TaxService implements TaxServiceInterface
 
         if ($appliesTax && $taxClassId) {
             $calc = $this->calculate($taxClassId, $allocatedAmount, $country, $state, $city);
+
             return [
                 'component_id' => $item->id,
                 'product_id' => $item->shop_product_id,
@@ -286,6 +289,7 @@ class TaxService implements TaxServiceInterface
 
         if (is_string($taxClass)) {
             $found = TaxClass::where('slug', $taxClass)->orWhere('name', $taxClass)->value('id');
+
             return $found ? (int) $found : null;
         }
 
@@ -293,7 +297,7 @@ class TaxService implements TaxServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTaxClassTableQuery(): Builder
     {

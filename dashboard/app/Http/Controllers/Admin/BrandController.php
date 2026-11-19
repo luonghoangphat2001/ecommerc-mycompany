@@ -3,16 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasHierarchicalOptions;
+use App\Http\Controllers\Admin\Traits\HasVisibilityMetrics;
+use App\Http\Controllers\Admin\Traits\HasVisibilityToggle;
 use App\Models\Brand;
 use App\Models\Product;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BrandController extends BaseCrudController
 {
+    use HasHierarchicalOptions;
+    use HasVisibilityMetrics;
+    use HasVisibilityToggle;
+
     protected function modelClass(): string
     {
         return Brand::class;
@@ -33,25 +38,14 @@ class BrandController extends BaseCrudController
         return ['name', 'slug', 'website'];
     }
 
-    public function getParentCategoryOptions(?int $excludeId = null): array
+    protected function hierarchyRootLabel(): string
     {
-        $brands = Brand::orderBy('order_column')->orderBy('sort')->orderBy('id')->get();
-        $options = ['' => '-- ' . __('admin.common.none') . ' (Thương hiệu gốc) --'];
+        return 'Thương hiệu gốc';
+    }
 
-        $buildTree = function ($parentId, $prefix = '') use (&$buildTree, &$options, $brands, $excludeId) {
-            foreach ($brands->where('parent_id', $parentId) as $brand) {
-                if ($excludeId && $brand->id == $excludeId) {
-                    continue;
-                }
-                $name = $brand->getTranslation('name', 'vi') ?: $brand->slug;
-                $options[$brand->id] = $prefix ? ($prefix . '↳ ' . $name) : $name;
-                $buildTree($brand->id, $prefix . '    ');
-            }
-        };
-
-        $buildTree(null);
-
-        return $options;
+    protected function visibilityEntityLabel(): string
+    {
+        return 'thương hiệu';
     }
 
     protected function fields(): array
@@ -94,7 +88,7 @@ class BrandController extends BaseCrudController
         ];
     }
 
-    protected function mutateData(array $data, ?\Illuminate\Database\Eloquent\Model $record = null): array
+    protected function mutateData(array $data, ?Model $record = null): array
     {
         $data = parent::mutateData($data, $record);
 
@@ -107,19 +101,11 @@ class BrandController extends BaseCrudController
 
     public function index(Request $request): View
     {
-        $totalCount = Brand::count();
-        $visibleCount = Brand::where('is_visible', true)->count();
-        $hiddenCount = Brand::where('is_visible', false)->count();
-        $rootCount = Brand::whereNull('parent_id')->count();
         $totalProductsCount = Product::whereNotNull('shop_brand_id')->count();
 
-        $metrics = [
-            'total' => $totalCount,
-            'visible' => $visibleCount,
-            'hidden' => $hiddenCount,
-            'root' => $rootCount,
+        $metrics = $this->visibilityMetrics([
             'total_items' => $totalProductsCount,
-        ];
+        ]);
 
         $allBrands = Brand::withCount('directProducts')
             ->orderBy('order_column')
@@ -127,23 +113,13 @@ class BrandController extends BaseCrudController
             ->orderBy('id')
             ->get();
 
-        $groupedBrands = $allBrands->groupBy('parent_id');
-        $rootBrands = $groupedBrands->get(null, collect());
-
-        $allBrandIds = $allBrands->pluck('id')->toArray();
-        $orphans = $allBrands->filter(function ($item) use ($allBrandIds) {
-            return ! is_null($item->parent_id) && ! in_array($item->parent_id, $allBrandIds, true);
-        });
-
-        if ($orphans->isNotEmpty()) {
-            $rootBrands = $rootBrands->merge($orphans);
-        }
+        $hierarchy = $this->hierarchyCollections($allBrands);
 
         return view('admin.crud.tree', [
             'title' => __($this->title()),
             'allCategories' => $allBrands,
-            'groupedCategories' => $groupedBrands,
-            'rootCategories' => $rootBrands,
+            'groupedCategories' => $hierarchy['grouped'],
+            'rootCategories' => $hierarchy['roots'],
             'metrics' => $metrics,
             'routePrefix' => $this->routePrefix(),
             'entityLabel' => 'thương hiệu',
@@ -157,34 +133,7 @@ class BrandController extends BaseCrudController
         ]);
     }
 
-    public function toggleStatus(Request $request, int $id): JsonResponse|RedirectResponse
-    {
-        $brand = Brand::findOrFail($id);
-        $newStatus = $request->has('is_visible')
-            ? $request->boolean('is_visible')
-            : ! $brand->is_visible;
-
-        $brand->is_visible = $newStatus;
-        $brand->save();
-
-        $this->flushStorefrontCaches();
-
-        $message = $brand->is_visible
-            ? 'Đã bật hiển thị thương hiệu "' . $brand->display_name . '"'
-            : 'Đã tạm ẩn thương hiệu "' . $brand->display_name . '"';
-
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'is_visible' => (bool) $brand->is_visible,
-                'message' => $message,
-            ]);
-        }
-
-        return back()->with('status', $message);
-    }
-
-    protected function formData(?\Illuminate\Database\Eloquent\Model $record = null): array
+    protected function formData(?Model $record = null): array
     {
         if ($record) {
             return [];

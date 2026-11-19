@@ -8,14 +8,17 @@ use App\Models\ProductVariant;
 class PackageCalculator
 {
     public const DEFAULT_ITEM_WEIGHT_GRAMS = 500;
+
     public const DEFAULT_LENGTH_CM = 20;
+
     public const DEFAULT_WIDTH_CM = 15;
+
     public const DEFAULT_HEIGHT_CM = 10;
 
     /**
      * Calculate package weight and dimensions from cart/order items.
      *
-     * @param array $items Array of items with 'product_id', 'qty'/'quantity', and optional 'variant_id'
+     * @param  array  $items  Array of items with 'product_id', 'qty'/'quantity', and optional 'variant_id'
      * @return array ['weight' => int (grams), 'length' => int, 'width' => int, 'height' => int, 'items_count' => int]
      */
     public function calculatePackage(array $items): array
@@ -29,14 +32,16 @@ class PackageCalculator
             $qty = max(1, (int) ($item['quantity'] ?? $item['qty'] ?? 1));
             $totalQuantity += $qty;
 
-            if (!$productId) {
+            if (! $productId) {
                 $totalWeight += self::DEFAULT_ITEM_WEIGHT_GRAMS * $qty;
+
                 continue;
             }
 
             $product = Product::with(['comboComponents.product', 'comboComponents.variant'])->find($productId);
-            if (!$product) {
+            if (! $product) {
                 $totalWeight += self::DEFAULT_ITEM_WEIGHT_GRAMS * $qty;
+
                 continue;
             }
 
@@ -47,37 +52,18 @@ class PackageCalculator
                 if ($components && $components->isNotEmpty()) {
                     foreach ($components as $component) {
                         $compQty = max(1, (int) ($component->quantity ?? 1));
-                        $compVariantWeight = $component->variant?->weight;
-                        $compWeight = $compVariantWeight ?? $component->product?->weight ?? self::DEFAULT_ITEM_WEIGHT_GRAMS;
-                        // Convert kg to grams if value is small (< 50)
-                        if ($compWeight > 0 && $compWeight < 50) {
-                            $compWeight = (int) ($compWeight * 1000);
-                        }
+                        $compWeight = $this->weightInGrams(
+                            $component->variant?->weight ?? $component->product?->weight
+                        );
                         $comboWeight += $compWeight * $compQty;
                     }
                 }
                 $totalWeight += ($comboWeight > 0 ? $comboWeight : self::DEFAULT_ITEM_WEIGHT_GRAMS) * $qty;
             } elseif ($product->isVariable() && $variantId) {
                 $variant = ProductVariant::find($variantId);
-                $varWeight = $variant?->weight;
-                if ($varWeight !== null && $varWeight > 0) {
-                    if ($varWeight < 50) {
-                        $varWeight = (int) ($varWeight * 1000);
-                    }
-                    $totalWeight += $varWeight * $qty;
-                } else {
-                    $totalWeight += self::DEFAULT_ITEM_WEIGHT_GRAMS * $qty;
-                }
+                $totalWeight += $this->weightInGrams($variant?->weight) * $qty;
             } else {
-                $pWeight = $product->weight ?? null;
-                if ($pWeight !== null && $pWeight > 0) {
-                    if ($pWeight < 50) {
-                        $pWeight = (int) ($pWeight * 1000);
-                    }
-                    $totalWeight += $pWeight * $qty;
-                } else {
-                    $totalWeight += self::DEFAULT_ITEM_WEIGHT_GRAMS * $qty;
-                }
+                $totalWeight += $this->weightInGrams($product->weight ?? null) * $qty;
             }
         }
 
@@ -92,5 +78,16 @@ class PackageCalculator
             'height' => min(150, $height),
             'items_count' => $totalQuantity,
         ];
+    }
+
+    private function weightInGrams(mixed $weight): int
+    {
+        $weight = (float) $weight;
+
+        if ($weight <= 0) {
+            return self::DEFAULT_ITEM_WEIGHT_GRAMS;
+        }
+
+        return $weight < 50 ? (int) ($weight * 1000) : (int) $weight;
     }
 }

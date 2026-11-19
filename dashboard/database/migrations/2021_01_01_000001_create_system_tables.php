@@ -77,18 +77,6 @@ return new class extends Migration
 
         $this->seedShopSettings();
 
-        // Personal Access Tokens
-        Schema::create('personal_access_tokens', function (Blueprint $table) {
-            $table->id();
-            $table->morphs('tokenable');
-            $table->string('name');
-            $table->string('token', 64)->unique();
-            $table->text('abilities')->nullable();
-            $table->timestamp('last_used_at')->nullable();
-            $table->timestamp('expires_at')->nullable();
-            $table->timestamps();
-        });
-
         // Notifications
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
@@ -244,7 +232,6 @@ return new class extends Migration
         Schema::dropIfExists('cache_locks');
         Schema::dropIfExists('cache');
         Schema::dropIfExists('notifications');
-        Schema::dropIfExists('personal_access_tokens');
         Schema::dropIfExists('settings');
         Schema::dropIfExists('failed_jobs');
         Schema::dropIfExists('sessions');

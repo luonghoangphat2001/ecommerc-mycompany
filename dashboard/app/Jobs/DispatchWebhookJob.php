@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Webhook;
 use App\Models\WebhookLog;
+use App\Services\Logging\ModuleLogger;
 use App\Settings\WebhookSettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,14 +12,19 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class DispatchWebhookJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     public $tries = 5;
+
+    public $timeout = 30;
+
     public $backoff = [10, 60, 300, 600, 1800]; // Exponential backoff
 
     public function __construct(
@@ -28,15 +34,15 @@ class DispatchWebhookJob implements ShouldQueue
         protected array $changes = []
     ) {}
 
-    public function handle(): void
+    public function handle(WebhookSettings $settings): void
     {
-        if (!app(WebhookSettings::class)->enabled) {
+        if (! $settings->enabled) {
             return;
         }
 
         $model = $this->modelClass::find($this->modelId);
-        
-        if (!$model && !Str::contains($this->event, 'deleted')) {
+
+        if (! $model && ! Str::contains($this->event, 'deleted')) {
             return;
         }
 
@@ -57,12 +63,12 @@ class DispatchWebhookJob implements ShouldQueue
 
     protected function getPayloadData($model): array
     {
-        if (!$model) {
+        if (! $model) {
             return ['id' => $this->modelId];
         }
 
         $resourceClass = $this->getResourceClass(get_class($model));
-        
+
         if ($resourceClass) {
             return $resourceClass::make($model)->resolve();
         }
@@ -74,7 +80,7 @@ class DispatchWebhookJob implements ShouldQueue
     {
         $baseName = class_basename($modelClass);
         $resourceClass = "App\\Http\\Resources\\Api\\{$baseName}Resource";
-        
+
         return class_exists($resourceClass) ? $resourceClass : null;
     }
 
@@ -92,7 +98,7 @@ class DispatchWebhookJob implements ShouldQueue
         $signature = hash_hmac('sha256', $jsonPayload, $webhook->secret);
 
         $startTime = microtime(true);
-        
+
         try {
             $response = Http::withHeaders([
                 'X-Hub-Signature' => $signature,
@@ -101,16 +107,24 @@ class DispatchWebhookJob implements ShouldQueue
             ])->timeout(10)->post($webhook->url, $payload);
 
             $duration = (int) ((microtime(true) - $startTime) * 1000);
-            
+
             $status = $response->successful() ? 'delivered' : 'failed';
 
             $this->logDelivery($webhook, $payload, $response->json(), $status, $duration);
+
+            if (! $response->successful()) {
+                throw new \RuntimeException("Webhook delivery returned HTTP {$response->status()}.");
+            }
         } catch (\Exception $e) {
             $duration = (int) ((microtime(true) - $startTime) * 1000);
-            $this->logDelivery($webhook, $payload, ['error' => $e->getMessage()], 'failed', $duration);
-            
-            \App\Services\Logging\ModuleLogger::webhook()->error('webhook_delivery_failed', "Webhook delivery failed to {$webhook->url}: " . $e->getMessage(), ['webhook_id' => $webhook->id, 'url' => $webhook->url, 'event' => $this->event]);
-            
+            $this->logDelivery($webhook, $payload, ['exception' => get_class($e)], 'failed', $duration);
+
+            ModuleLogger::webhook()->error(
+                'webhook_delivery_failed',
+                'Webhook delivery failed.',
+                $this->webhookContext($webhook, ['exception' => get_class($e)])
+            );
+
             throw $e; // Re-throw to trigger retry
         }
     }
@@ -127,13 +141,18 @@ class DispatchWebhookJob implements ShouldQueue
             'created_at' => now(),
         ]);
 
-        \App\Services\Logging\ModuleLogger::webhook()->info('webhook_delivered', "Webhook {$status} to {$webhook->url}", [
+        ModuleLogger::webhook()->info(
+            'webhook_delivered',
+            "Webhook {$status}",
+            $this->webhookContext($webhook, ['status' => $status, 'duration' => $duration])
+        );
+    }
+
+    protected function webhookContext(Webhook $webhook, array $context = []): array
+    {
+        return array_merge([
             'webhook_id' => $webhook->id,
             'event' => $this->event,
-            'url' => $webhook->url,
-            'status' => $status,
-            'duration' => $duration,
-            'response' => $response,
-        ]);
+        ], $context);
     }
 }

@@ -2,9 +2,8 @@
 
 namespace App\Http\Resources\Api;
 
-use Illuminate\Http\Request;
-
 use OpenApi\Attributes as OAT;
+
 
 #[OAT\Schema(
     schema: "CrossSellResource",
@@ -16,20 +15,10 @@ use OpenApi\Attributes as OAT;
         new OAT\Property(property: "product", ref: "#/components/schemas/ProductResource")
     ]
 )]
-class CrossSellResource extends BaseResource
+class CrossSellResource extends RelatedProductResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray($request): array
+    protected function productRelation(): string
     {
-        return [
-            'id' => $this->id,
-            'sort_order' => $this->sort_order,
-            'is_active' => $this->is_active,
-            'product' => $this->whenLoaded('crossSellProduct', fn() => new ProductResource($this->crossSellProduct)),
-        ];
+        return 'crossSellProduct';
     }
 }

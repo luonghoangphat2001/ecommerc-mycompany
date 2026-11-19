@@ -2,8 +2,9 @@
 
 namespace App\Ecommerce\Checkout\Services\Pipes;
 
-use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
+use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Shipping\Services\ShippingManager;
 use Closure;
 
@@ -11,16 +12,17 @@ class CalculateShipping
 {
     protected $shippingManager;
 
-    public function __construct(ShippingManager $shippingManager)
-    {
+    public function __construct(
+        ShippingManager $shippingManager,
+        protected FeaturePolicyServiceInterface $featurePolicy
+    ) {
         $this->shippingManager = $shippingManager;
     }
 
     /**
      * Handle the pipe.
      *
-     * @param array $passable ['request' => CheckoutRequestDTO, 'result' => CheckoutResultDTO]
-     * @param Closure $next
+     * @param  array  $passable  ['request' => CheckoutRequestDTO, 'result' => CheckoutResultDTO]
      * @return mixed
      */
     public function handle(array $passable, Closure $next)
@@ -30,8 +32,9 @@ class CalculateShipping
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isShippingEnabled() || !$request->shippingMethod) {
+        if (! $this->featurePolicy->isShippingEnabled() || ! $request->shippingMethod) {
             $result->shippingTotal = 0;
+
             return $next($passable);
         }
 

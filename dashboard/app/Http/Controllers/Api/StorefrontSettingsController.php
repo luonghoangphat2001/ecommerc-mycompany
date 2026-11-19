@@ -21,7 +21,7 @@ class StorefrontSettingsController extends BaseApiController
     #[ApiGet(
         path: '/settings',
         summary: 'Get Storefront Settings',
-        tags: 'Storefront - Settings',
+        tags: 'Settings',
         requiresAuth: false,
         responseData: [
             new OAT\Property(property: 'general', type: 'object'),
@@ -29,6 +29,8 @@ class StorefrontSettingsController extends BaseApiController
             new OAT\Property(property: 'store', type: 'object')
         ]
     )]
+
+
     public function index(): JsonResponse
     {
         return $this->success($this->settingsService->getStorefrontSettings());

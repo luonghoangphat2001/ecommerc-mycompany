@@ -3,12 +3,14 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import authService from '../services/authService';
 import useCartStore from '../../cart/store/useCartStore';
 import { unwrapApiObject } from '../../../api/apiResponse';
+import tokenManager from '../services/tokenManager';
 
 const useAuthStore = create(
   persist(
     (set, get) => ({
       user: null,
       access_token: null,
+      refresh_token: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -23,14 +25,22 @@ const useAuthStore = create(
         try {
           const response = await authService.login(email, password);
           const data = unwrapApiObject(response);
-          const user = data.user || data;
-          const token = data.access_token;
+          const user = data.user || data.profile || null;
+          const token = data.access_token || data.accessToken || data.token || null;
+          const refreshToken = data.refresh_token || null;
+
+          if (!token) {
+            throw new Error('Login response did not include an access token');
+          }
+
           set({
             user,
-            access_token: token || null,
+            access_token: token,
+            refresh_token: refreshToken,
             isAuthenticated: true,
             isLoading: false
           });
+          tokenManager.setAccessToken(token);
 
           if (user?.cart_items) {
             useCartStore.getState().mergeCart(user.cart_items);
@@ -42,6 +52,7 @@ const useAuthStore = create(
             error: error.response?.data?.message || 'Login failed',
             isLoading: false
           });
+          tokenManager.clearAccessToken();
           throw error;
         }
       },
@@ -54,27 +65,35 @@ const useAuthStore = create(
           set({
             user: null,
             access_token: null,
+            refresh_token: null,
             isAuthenticated: false,
             isLoading: false
           });
         }
       },
 
-      setUser: (user, token) =>
-        set((state) => ({
+      setUser: (user, token) => set((state) => {
+        if (token !== undefined) tokenManager.setAccessToken(token);
+        return {
           user,
           access_token: token !== undefined ? token : state.access_token,
           isAuthenticated: !!user,
-        })),
+        };
+      }),
 
       refreshUser: async () => {
         try {
           const response = await authService.fetchUser();
           const data = unwrapApiObject(response);
-          set({ user: data.user || data });
+          set({
+            user: data.user || data,
+            isAuthenticated: true,
+          });
           return data;
         } catch (error) {
           console.error('Failed to refresh user:', error);
+          tokenManager.clearAccessToken();
+          set({ user: null, isAuthenticated: false });
           return null;
         }
       }
@@ -84,23 +103,23 @@ const useAuthStore = create(
       version: 1,
       storage: createJSONStorage(() => localStorage),
       migrate: (persistedState) => {
-        const token = persistedState?.state?.access_token ?? persistedState?.state?.accessToken ?? null;
-
         return {
           ...persistedState,
           state: {
             ...persistedState?.state,
-            access_token: token,
+            access_token: null,
+            refresh_token: null,
+            isAuthenticated: false,
           },
         };
       },
       onRehydrateStorage: () => (state) => {
         state.setHasHydrated(true);
+        if (state.user) state.refreshUser();
       },
       partialize: (state) => ({
         user: state.user,
-        access_token: state.access_token,
-        isAuthenticated: state.isAuthenticated
+        isAuthenticated: false,
       }),
     }
   )

@@ -2,18 +2,8 @@
 
 namespace App\Http\Requests\API;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class PageRequest extends FormRequest
+class PageRequest extends ApiFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * Get the validation rules that apply to the request.
      * Handles both Store (POST) and Update (PUT/PATCH).
@@ -23,7 +13,7 @@ class PageRequest extends FormRequest
     public function rules(): array
     {
         $pageId = $this->route('page') ?? $this->route('id');
-        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH') || !empty($pageId);
+        $isUpdate = $this->isMethod('PUT') || $this->isMethod('PATCH') || ! empty($pageId);
 
         return [
             'title' => $isUpdate ? 'sometimes|required|string|max:255' : 'required|string|max:255',

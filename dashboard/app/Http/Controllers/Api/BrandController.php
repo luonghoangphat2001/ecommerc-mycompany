@@ -26,10 +26,12 @@ class BrandController extends BaseApiController
     #[ApiList(
         path: '/brands',
         summary: 'List of Brands',
-        tags: 'Storefront - Brands',
+        tags: 'Brands',
         requiresAuth: false,
         responseData: '#/components/schemas/BrandResource'
     )]
+
+
     public function index(Request $request)
     {
         $perPage = (int) $request->get('per_page', 50);
@@ -40,7 +42,7 @@ class BrandController extends BaseApiController
     #[ApiPost(
         path: '/brands',
         summary: 'Create Brand',
-        tags: 'Storefront - Brands',
+        tags: 'Brands',
         requestBody: new OAT\RequestBody(
             required: true,
             content: new OAT\JsonContent(
@@ -55,24 +57,28 @@ class BrandController extends BaseApiController
         ),
         responseData: '#/components/schemas/BrandResource'
     )]
+
+
     public function store(BrandRequest $request)
     {
         $dto = BrandDTO::fromRequest($request);
         $brand = $this->brandService->createBrand($dto->toArray());
-        
+
         return $this->created(new BrandResource($brand));
     }
 
     #[ApiGet(
         path: '/brands/{brand}',
         summary: 'Brand Details',
-        tags: 'Storefront - Brands',
+        tags: 'Brands',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'brand', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Brand ID')
         ],
         responseData: '#/components/schemas/BrandResource'
     )]
+
+
     public function show(Brand $brand)
     {
         return $this->ok(new BrandResource($brand));
@@ -81,7 +87,7 @@ class BrandController extends BaseApiController
     #[ApiUpdate(
         path: '/brands/{brand}',
         summary: 'Update Brand',
-        tags: 'Storefront - Brands',
+        tags: 'Brands',
         parameters: [
             new OAT\Parameter(name: 'brand', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Brand ID')
         ],
@@ -98,22 +104,26 @@ class BrandController extends BaseApiController
         ),
         responseData: '#/components/schemas/BrandResource'
     )]
+
+
     public function update(BrandRequest $request, Brand $brand)
     {
         $dto = BrandDTO::fromRequest($request);
         $this->brandService->updateBrand($brand->id, $dto->toArray());
-        
+
         return $this->ok(new BrandResource($brand->fresh()));
     }
 
     #[ApiDelete(
         path: '/brands/{brand}',
         summary: 'Delete Brand',
-        tags: 'Storefront - Brands',
+        tags: 'Brands',
         parameters: [
             new OAT\Parameter(name: 'brand', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Brand ID')
         ]
     )]
+
+
     public function destroy(Brand $brand)
     {
         $this->brandService->deleteBrand($brand->id);

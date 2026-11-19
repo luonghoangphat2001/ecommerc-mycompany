@@ -2,24 +2,27 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Api\BaseApiController;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
-use Carbon\Carbon;
 use App\Ecommerce\Core\Services\AuthService;
-
+use App\Http\Requests\API\Auth\ChangePasswordRequest;
+use App\Http\Requests\API\Auth\ForgotPasswordRequest;
+use App\Http\Requests\API\Auth\LoginRequest;
+use App\Http\Requests\API\Auth\RegisterRequest;
+use App\Http\Requests\API\Auth\ResetPasswordRequest;
+use App\Http\Requests\API\Auth\UpdateProfileRequest;
+use App\Http\Resources\Api\UserResource;
+use App\Services\Logging\ModuleLogger;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use App\Swagger\Attributes\ApiPost;
 use App\Swagger\Attributes\ApiUpdate;
 use OpenApi\Attributes as OAT;
 
-use App\Http\Requests\API\AuthRequest;
-use App\Http\Resources\Api\UserResource;
-
 class AuthController extends BaseApiController
 {
-
     protected $authService;
 
     public function __construct(AuthService $authService)
@@ -30,7 +33,7 @@ class AuthController extends BaseApiController
     #[ApiPost(
         path: '/auth/login',
         summary: 'Storefront Login',
-        tags: 'Storefront - Authentication',
+        tags: 'Authentication',
         requiresAuth: false,
         requestBody: new OAT\RequestBody(
             required: true,
@@ -44,13 +47,15 @@ class AuthController extends BaseApiController
             )
         ),
         responseData: [
-            new OAT\Property(property: 'access_token', type: 'string', example: '1|xyz...'),
+            new OAT\Property(property: 'access_token', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.signature'),
             new OAT\Property(property: 'token_type', type: 'string', example: 'Bearer'),
-            new OAT\Property(property: 'expires_in', type: 'integer', example: 3600),
+            new OAT\Property(property: 'expires_in', type: 'integer', example: 900),
             new OAT\Property(property: 'user', ref: '#/components/schemas/UserResource')
         ]
     )]
-    public function login(AuthRequest $request)
+
+
+    public function login(LoginRequest $request)
     {
         $validated = $request->validated();
 
@@ -60,73 +65,53 @@ class AuthController extends BaseApiController
             $validated['device_name']
         );
 
-        \App\Services\Logging\ModuleLogger::auth()->info('login_success', 'User logged in successfully', [
+        ModuleLogger::auth()->info('login_success', 'User logged in successfully', [
             'user_id' => $authData['user']['id'],
             'email' => $validated['email'],
             'device_name' => $validated['device_name'],
         ]);
 
-        return $this->ok([
-            'access_token' => $authData['access_token'],
-            'token_type' => $authData['token_type'],
-            'expires_in' => $authData['expires_in'],
-            'user' => new UserResource($authData['user'])
-        ], __('messages.login_success') ?? 'Login successful.');
+        return $this->ok(
+            $this->tokenResponseData($authData),
+            __('messages.login_success') ?? 'Login successful.'
+        )
+            ->withCookie($this->refreshCookie($authData['refresh_token']));
     }
 
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        $rules = [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'password' => ['required', 'string', 'min:6'],
-            'device_name' => ['nullable', 'string', 'max:255'],
-        ];
-
-        if ($request->filled('password_confirmation')) {
-            $rules['password'][] = 'confirmed';
-        }
-
-        $validated = $request->validate($rules);
+        $validated = $request->validated();
 
         $authData = $this->authService->register($validated);
 
-        \App\Services\Logging\ModuleLogger::auth()->info('register_success', 'User registered successfully', [
+        ModuleLogger::auth()->info('register_success', 'User registered successfully', [
             'user_id' => $authData['user']->id,
             'email' => $validated['email'],
         ]);
 
-        return $this->created([
-            'access_token' => $authData['access_token'],
-            'token_type' => $authData['token_type'],
-            'expires_in' => $authData['expires_in'],
-            'user' => new UserResource($authData['user']),
-        ], __('storefront.auth.register_success'));
+        return $this->created(
+            $this->tokenResponseData($authData),
+            __('storefront.auth.register_success')
+        )
+            ->withCookie($this->refreshCookie($authData['refresh_token']));
     }
 
-    public function forgotPassword(Request $request)
+    public function forgotPassword(ForgotPasswordRequest $request)
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email'],
-        ]);
+        $validated = $request->validated();
 
-        $user = User::where('email', $validated['email'])->first();
+        $user = $this->authService->findByEmail($validated['email']);
         $token = null;
 
         if ($user) {
-            $token = \Illuminate\Support\Str::random(64);
-            try {
-                \Illuminate\Support\Facades\DB::table('password_reset_tokens')->updateOrInsert(
-                    ['email' => $user->email],
-                    [
-                        'token' => Hash::make($token),
-                        'created_at' => now(),
-                    ]
-                );
-            } catch (\Throwable $e) {
-                // Table may not exist in minimal sqlite setup
-            }
+            $token = Str::random(64);
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $user->email],
+                [
+                    'token' => Hash::make($token),
+                    'created_at' => now(),
+                ]
+            );
         }
 
         return $this->ok([
@@ -135,69 +120,58 @@ class AuthController extends BaseApiController
         ], __('storefront.auth.reset_email_sent'));
     }
 
-    public function resetPassword(Request $request)
+    public function resetPassword(ResetPasswordRequest $request)
     {
-        $rules = [
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string', 'min:6'],
-            'token' => ['nullable', 'string'],
-        ];
+        $validated = $request->validated();
 
-        if ($request->filled('password_confirmation')) {
-            $rules['password'][] = 'confirmed';
+        $user = $this->authService->findByEmail($validated['email']);
+        if (! $user) {
+            return $this->validationError(['email' => [__('passwords.user')]]);
         }
 
-        $validated = $request->validate($rules);
+        $resetRecord = DB::table('password_reset_tokens')
+            ->where('email', $user->email)
+            ->first();
 
-        $user = User::where('email', $validated['email'])->first();
-        if (!$user) {
-            return $this->notFound('User not found');
+        $expiresAt = now()->subMinutes((int) config('auth.passwords.users.expire', 60));
+        if (! $resetRecord
+            || ! $resetRecord->created_at
+            || $resetRecord->created_at < $expiresAt
+            || ! Hash::check($validated['token'], $resetRecord->token)) {
+            return $this->validationError(['token' => [__('passwords.token')]]);
         }
 
-        $user->update([
-            'password' => $validated['password'],
-        ]);
+        $this->authService->updatePassword($user, $validated['password']);
 
-        try {
-            \Illuminate\Support\Facades\DB::table('password_reset_tokens')
-                ->where('email', $user->email)
-                ->delete();
-        } catch (\Throwable $e) {
-            // Ignore if table doesn't exist
-        }
+        $this->authService->revokeAll($user);
+
+        DB::table('password_reset_tokens')
+            ->where('email', $user->email)
+            ->delete();
 
         return $this->ok([
             'reset' => true,
         ], __('storefront.auth.reset_success'));
     }
 
-    public function changePassword(Request $request)
+    public function changePassword(ChangePasswordRequest $request)
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return $this->unauthorized(__('messages.unauthorized') ?? 'Unauthorized');
         }
 
-        $rules = [
-            'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:6'],
-        ];
+        $validated = $request->validated();
 
-        if ($request->filled('password_confirmation')) {
-            $rules['password'][] = 'confirmed';
-        }
-
-        $validated = $request->validate($rules);
-
-        if (!Hash::check($validated['current_password'], $user->password)) {
+        if (! Hash::check($validated['current_password'], $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => [__('storefront.account.password_update_failed')],
             ]);
         }
 
-        $user->update([
-            'password' => $validated['password'],
-        ]);
+        $this->authService->updatePassword($user, $validated['password']);
+
+        $this->authService->revokeAll($user);
 
         return $this->ok(
             new UserResource($user->fresh(['defaultShippingAddress', 'defaultBillingAddress'])),
@@ -208,73 +182,76 @@ class AuthController extends BaseApiController
     #[ApiPost(
         path: '/auth/refresh-token',
         summary: 'Refresh Access Token',
-        tags: 'Storefront - Authentication',
+        tags: 'Authentication',
         requiresAuth: false,
         requestBody: new OAT\RequestBody(
             required: false
         ),
         responseData: [
-            new OAT\Property(property: 'access_token', type: 'string', example: '1|xyz...'),
+            new OAT\Property(property: 'access_token', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.signature'),
             new OAT\Property(property: 'token_type', type: 'string', example: 'Bearer'),
             new OAT\Property(property: 'expires_in', type: 'integer', example: 900),
             new OAT\Property(property: 'user', type: 'object')
         ]
     )]
+
+
     public function refreshToken(Request $request)
     {
-        $bearerToken = $request->bearerToken();
+        $refreshToken = $request->cookie('storefront_refresh');
 
-        if (!$bearerToken) {
+        if (! $refreshToken) {
             return $this->unauthorized('Token not found');
         }
 
-        $authData = $this->authService->refreshToken($bearerToken);
+        $authData = $this->authService->refreshToken($refreshToken);
 
-        if (!$authData) {
+        if (! $authData) {
             return $this->unauthorized('Token expired');
         }
 
-        return $this->ok([
-            'access_token' => $authData['access_token'],
-            'token_type' => $authData['token_type'],
-            'expires_in' => $authData['expires_in'],
-            'user' => new UserResource($authData['user'])
-        ]);
+        return $this->ok($this->tokenResponseData($authData))
+            ->withCookie($this->refreshCookie($authData['refresh_token']));
     }
 
     #[ApiPost(
         path: '/auth/logout',
         summary: 'Logout',
-        tags: 'Storefront - Authentication',
+        tags: 'Authentication',
         requiresAuth: true
     )]
+
+
     public function logout(Request $request)
     {
-        if (!$request->user()) {
+        if (! $request->user()) {
             return $this->notFound('User not found');
         }
 
         $user = $request->user();
         $this->authService->logout($user);
 
-        \App\Services\Logging\ModuleLogger::auth()->info('logout_success', 'User logged out successfully', [
+        ModuleLogger::auth()->info('logout_success', 'User logged out successfully', [
             'user_id' => $user->id,
         ]);
 
-        return $this->ok(null, 'Logged out successfully');
+        return $this->ok(null, 'Logged out successfully')
+            ->withCookie(Cookie::forget('storefront_refresh', '/api/v1/auth', config('session.domain')));
     }
 
     #[ApiGet(
         path: '/auth/profile',
         summary: 'Get Profile',
-        tags: 'Storefront - Authentication',
+        tags: 'Authentication',
         requiresAuth: true,
         responseData: '#/components/schemas/UserResource'
     )]
+
+
     public function profile(Request $request)
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return $this->unauthorized(__('messages.unauthorized') ?? 'Unauthorized');
         }
 
@@ -284,7 +261,7 @@ class AuthController extends BaseApiController
     #[ApiUpdate(
         path: '/profile',
         summary: 'Update Profile',
-        tags: 'Storefront - Authentication',
+        tags: 'Authentication',
         requiresAuth: true,
         requestBody: new OAT\RequestBody(
             required: true,
@@ -299,17 +276,19 @@ class AuthController extends BaseApiController
         ),
         responseData: '#/components/schemas/UserResource'
     )]
-    public function updateProfile(AuthRequest $request)
+
+
+    public function updateProfile(UpdateProfileRequest $request)
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return $this->notFound('User not found');
         }
 
         $validated = $request->validated();
 
-        if (!empty($validated['password'])) {
-            if (empty($validated['current_password']) || !Hash::check($validated['current_password'], $user->password)) {
+        if (! empty($validated['password'])) {
+            if (empty($validated['current_password']) || ! Hash::check($validated['current_password'], $user->password)) {
                 throw ValidationException::withMessages([
                     'current_password' => [__('storefront.account.password_update_failed')],
                 ]);
@@ -332,17 +311,41 @@ class AuthController extends BaseApiController
         unset($validated['avatar']);
 
         $oldData = $user->only(['name', 'phone', 'default_shipping_address_id', 'default_billing_address_id']);
-        $user->update($validated);
+        $user = $this->authService->updateProfile($user, $validated);
 
-        \App\Services\Logging\ModuleLogger::user()->info('profile_updated', 'User profile updated successfully', [
+        ModuleLogger::user()->info('profile_updated', 'User profile updated successfully', [
             'user_id' => $user->id,
-            'old_data' => $oldData,
-            'new_data' => collect($validated)->except(['password'])->toArray(),
+            'changed_fields' => array_values(array_unique(array_merge(array_keys($oldData), array_keys($validated)))),
         ]);
 
         return $this->ok(
-            new UserResource($user->fresh(['defaultShippingAddress', 'defaultBillingAddress'])),
+            new UserResource($user),
             __('storefront.account.profile_updated')
         );
+    }
+
+    private function refreshCookie(string $plainTextToken): \Symfony\Component\HttpFoundation\Cookie
+    {
+        return Cookie::make(
+            'storefront_refresh',
+            $plainTextToken,
+            7 * 24 * 60,
+            '/api/v1/auth',
+            config('session.domain'),
+            (bool) config('session.secure', app()->isProduction()),
+            true,
+            false,
+            config('session.same_site', 'lax')
+        );
+    }
+
+    private function tokenResponseData(array $authData): array
+    {
+        return [
+            'access_token' => $authData['access_token'],
+            'token_type' => $authData['token_type'],
+            'expires_in' => $authData['expires_in'],
+            'user' => new UserResource($authData['user']),
+        ];
     }
 }

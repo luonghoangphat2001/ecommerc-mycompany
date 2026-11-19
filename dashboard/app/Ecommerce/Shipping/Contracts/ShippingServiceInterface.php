@@ -11,14 +11,6 @@ interface ShippingServiceInterface
 {
     /**
      * Get available shipping methods for a location.
-     *
-     * @param string|null $country
-     * @param string|null $state
-     * @param string|null $postcode
-     * @param string|null $ward
-     * @param int $subtotal
-     * @param array $package
-     * @return Collection
      */
     public function getAvailableMethods(
         ?string $country = null,
@@ -33,11 +25,15 @@ interface ShippingServiceInterface
      * Calculate fee for a specific shipping method.
      */
     public function calculateMethodFee(
-        ShippingMethod|int|string $method,
+        ShippingMethod | int | string $method,
         array $destination,
         int $subtotal = 0,
         array $package = []
     ): ?int;
+
+    public function resolveMethod(ShippingMethod | int | string | null $method): ?ShippingMethod;
+
+    public function resolveCheckoutMethod(?ShippingZone $zone, int | string | null $method): ?ShippingMethod;
 
     /**
      * Resolve the shipping zone matching a destination.
@@ -51,24 +47,18 @@ interface ShippingServiceInterface
 
     /**
      * Get query for ShippingZone table.
-     *
-     * @return Builder
      */
     public function getShippingZoneTableQuery(): Builder;
 
     /**
      * Validate shipping address data.
      *
-     * @param array $addressData
      * @return array ['is_valid' => bool, 'errors' => array]
      */
     public function validateAddress(array $addressData): array;
 
     /**
      * Get location info based on postcode/address.
-     *
-     * @param string $postcode
-     * @return array|null
      */
     public function getLocationInfo(string $postcode): ?array;
 }

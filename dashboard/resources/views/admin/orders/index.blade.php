@@ -30,11 +30,11 @@
     @php
         $orderStatusOptions = [];
         foreach (['pending', 'new', 'processing', 'delivering', 'completed', 'cancelled', 'refunded'] as $s) {
-            $orderStatusOptions[$s] = \App\Support\AdminLabel::orderStatus($s);
+            $orderStatusOptions[$s] = \App\Support\Admin::orderStatus($s);
         }
         $paymentStatusOptions = [];
         foreach (['pending', 'paid', 'failed', 'refunded'] as $ps) {
-            $paymentStatusOptions[$ps] = \App\Support\AdminLabel::paymentStatus($ps);
+            $paymentStatusOptions[$ps] = \App\Support\Admin::paymentStatus($ps);
         }
         $currency = app(\App\Ecommerce\Core\Contracts\CurrencyServiceInterface::class);
     @endphp
@@ -113,15 +113,15 @@
                     @php
                         $orderStatus = $item->status instanceof \BackedEnum ? $item->status->value : $item->status;
                     @endphp
-                    <x-admin.status-badge :status="$orderStatus" :label="\App\Support\AdminLabel::orderStatus($orderStatus)" />
+                    <x-admin.status-badge :status="$orderStatus" :label="\App\Support\Admin::orderStatus($orderStatus)" />
                 </td>
                 <td>
                     @if($item->payments->count() > 0)
                         @php($latestPayment = $item->payments->last())
-                        <x-admin.status-badge :status="$latestPayment->status" :label="\App\Support\AdminLabel::paymentStatus($latestPayment->status)" />
+                    <x-admin.status-badge :status="$latestPayment->status" :label="\App\Support\Admin::paymentStatus($latestPayment->status)" />
                         <span class="cell-muted mono" style="margin-left: 4px; text-transform: uppercase;">{{ $latestPayment->method }}</span>
                     @else
-                        <x-admin.status-badge status="pending" :label="\App\Support\AdminLabel::paymentStatus('pending')" />
+                    <x-admin.status-badge status="pending" :label="\App\Support\Admin::paymentStatus('pending')" />
                     @endif
                 </td>
                 <td class="text-right font-bold mono">{{ $currency->format($item->total, true) }}</td>

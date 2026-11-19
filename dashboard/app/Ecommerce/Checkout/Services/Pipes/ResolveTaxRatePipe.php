@@ -2,15 +2,17 @@
 
 namespace App\Ecommerce\Checkout\Services\Pipes;
 
-use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
+use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Product\Contracts\TaxRateRepositoryInterface;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use Closure;
 
 class ResolveTaxRatePipe
 {
     public function __construct(
-        protected TaxRateRepositoryInterface $taxRateRepository
+        protected TaxRateRepositoryInterface $taxRateRepository,
+        protected FeaturePolicyServiceInterface $featurePolicy
     ) {}
 
     public function handle(array $passable, Closure $next)
@@ -22,8 +24,9 @@ class ResolveTaxRatePipe
 
         $address = $request->shippingAddress;
 
-        if (!$address || !app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isTaxCalculationEnabled()) {
+        if (! $address || ! $this->featurePolicy->isTaxCalculationEnabled()) {
             $passable['resolved_tax_rates'] = [];
+
             return $next($passable);
         }
 
@@ -31,19 +34,19 @@ class ResolveTaxRatePipe
 
         foreach ($request->items as $item) {
             $classIds = [];
-            if (!empty($item['tax_class_id'])) {
+            if (! empty($item['tax_class_id'])) {
                 $classIds[] = $item['tax_class_id'];
             }
-            if (!empty($item['tax_breakdown']) && is_array($item['tax_breakdown'])) {
+            if (! empty($item['tax_breakdown']) && is_array($item['tax_breakdown'])) {
                 foreach ($item['tax_breakdown'] as $part) {
-                    if (!empty($part['tax_class_id'])) {
+                    if (! empty($part['tax_class_id'])) {
                         $classIds[] = $part['tax_class_id'];
                     }
                 }
             }
 
             foreach (array_unique($classIds) as $classId) {
-                if (!isset($passable['resolved_tax_rates'][$classId])) {
+                if (! isset($passable['resolved_tax_rates'][$classId])) {
                     $rate = $this->taxRateRepository->findMatchingRate(
                         $classId,
                         $address->country_code,

@@ -2,10 +2,25 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use App\Ecommerce\Workspace\Services\CfoService;
+use App\Ecommerce\Workspace\Services\CskhService;
+use App\Ecommerce\Workspace\Services\HrService;
+use App\Ecommerce\Workspace\Services\LogisticsService;
+use App\Ecommerce\Workspace\Services\OpsService;
 use App\Ecommerce\Workspace\Services\WorkspaceService;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\WorkspaceImportRequest;
+use App\Models\Department;
+use App\Models\DepartmentAgent;
+use App\Models\DepartmentCustomerReview;
+use App\Models\DepartmentEmployeeContract;
+use App\Models\DepartmentFinancialProposal;
+use App\Models\DepartmentIncident;
+use App\Models\DepartmentMaterialPrice;
+use App\Models\DepartmentPayroll;
+use App\Models\DepartmentPurchaseOrder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -13,16 +28,18 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DepartmentWorkspaceController extends Controller
 {
-    protected WorkspaceService $workspaceService;
-
-    public function __construct(WorkspaceService $workspaceService)
-    {
-        $this->workspaceService = $workspaceService;
-    }
+    public function __construct(
+        protected WorkspaceService $workspaceService,
+        protected CfoService $cfoService,
+        protected LogisticsService $logisticsService,
+        protected OpsService $opsService,
+        protected CskhService $cskhService,
+        protected HrService $hrService,
+    ) {}
 
     public function export(Request $request, string $code): StreamedResponse
     {
-        $department = \App\Models\Department::where('code', $code)->first();
+        $department = $this->departmentByCode($code);
         $datasets = $this->workspaceDatasets($code);
         $filename = 'workspace-' . Str::slug($code) . '-' . now()->format('Ymd-His') . '.xls';
 
@@ -50,13 +67,7 @@ class DepartmentWorkspaceController extends Controller
                     foreach ($records as $record) {
                         echo '<tr>';
                         foreach ($columns as $column) {
-                            $value = data_get($record, $column);
-                            if ($value instanceof \DateTimeInterface) {
-                                $value = $value->format('Y-m-d H:i:s');
-                            } elseif ($value instanceof \BackedEnum) {
-                                $value = $value->value;
-                            }
-                            echo '<td>' . e((string) $value) . '</td>';
+                            echo '<td>' . e($this->formatExportValue(data_get($record, $column))) . '</td>';
                         }
                         echo '</tr>';
                     }
@@ -69,20 +80,28 @@ class DepartmentWorkspaceController extends Controller
         }, $filename, ['Content-Type' => 'application/vnd.ms-excel; charset=UTF-8']);
     }
 
-    public function import(Request $request, string $code): RedirectResponse
+    private function formatExportValue(mixed $value): string
     {
-        $request->validate([
-            'dataset' => ['required', 'string'],
-            'file' => ['required', 'file', 'mimes:csv,txt,xls,xlsx', 'max:5120'],
-        ]);
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
 
+        if ($value instanceof \BackedEnum) {
+            return (string) $value->value;
+        }
+
+        return (string) $value;
+    }
+
+    public function import(WorkspaceImportRequest $request, string $code): RedirectResponse
+    {
         $datasets = $this->workspaceDatasets($code);
         $datasetKey = $request->input('dataset');
         if (! isset($datasets[$datasetKey])) {
             return back()->with('status', 'Dataset không hợp lệ.');
         }
 
-        $department = \App\Models\Department::where('code', $code)->first();
+        $department = $this->departmentByCode($code);
         $dataset = $datasets[$datasetKey];
         $rows = $this->readSpreadsheetRows($request->file('file')->getRealPath(), $request->file('file')->getClientOriginalExtension());
         $headers = array_shift($rows);
@@ -97,21 +116,10 @@ class DepartmentWorkspaceController extends Controller
         $skipped = 0;
 
         foreach ($rows as $row) {
-            $payload = [];
-            foreach ($headers as $index => $header) {
-                if (! in_array($header, $columns, true) || $header === 'id') {
-                    continue;
-                }
-                $payload[$header] = $row[$index] ?? null;
-            }
-
-            if ($department && in_array('department_id', $columns, true)) {
-                $payload['department_id'] = $department->id;
-            }
-
-            $payload = array_filter($payload, fn ($value) => $value !== '');
+            $payload = $this->buildWorkspaceImportPayload($headers, $row, $columns, $department);
             if ($payload === []) {
                 $skipped++;
+
                 continue;
             }
 
@@ -127,9 +135,28 @@ class DepartmentWorkspaceController extends Controller
             ->with('status', __('admin.messages.import_completed', ['created' => $created, 'skipped' => $skipped]));
     }
 
+    private function buildWorkspaceImportPayload(array $headers, array $row, array $columns, ?Department $department): array
+    {
+        $payload = [];
+
+        foreach ($headers as $index => $header) {
+            if (! in_array($header, $columns, true) || $header === 'id') {
+                continue;
+            }
+
+            $payload[$header] = $row[$index] ?? null;
+        }
+
+        if ($department && in_array('department_id', $columns, true)) {
+            $payload['department_id'] = $department->id;
+        }
+
+        return array_filter($payload, fn ($value) => $value !== '');
+    }
+
     public function show(Request $request, string $code)
     {
-        // Route explicit workspaces to their respective methods to maintain backwards compatibility 
+        // Route explicit workspaces to their respective methods to maintain backwards compatibility
         // with specific layouts and specific metric collections if any custom logic remains
         if (in_array($code, ['cfo', 'logistics', 'rnd', 'ops', 'cskh', 'hr'])) {
             return $this->{$code}($request);
@@ -139,7 +166,7 @@ class DepartmentWorkspaceController extends Controller
         $data = $this->workspaceService->getDefaultData($code);
 
         $view = "admin.workspaces.{$code}";
-        if (!view()->exists($view)) {
+        if (! view()->exists($view)) {
             $view = 'admin.workspaces.default';
         }
 
@@ -155,10 +182,9 @@ class DepartmentWorkspaceController extends Controller
     public function cfo(Request $request)
     {
         $period = $request->query('period', 'all');
-        $cfoService = app(\App\Ecommerce\Workspace\Services\CfoService::class);
-        $data = $cfoService->getWorkspaceData($period);
+        $data = $this->cfoService->getWorkspaceData($period);
         $metrics = $data['metrics'];
-        
+
         return view('admin.workspaces.cfo', [
             'metrics' => $metrics,
             'proposals' => $data['proposals'],
@@ -176,9 +202,8 @@ class DepartmentWorkspaceController extends Controller
     public function logistics(Request $request)
     {
         $period = $request->query('period', 'all');
-        $logisticsService = app(\App\Ecommerce\Workspace\Services\LogisticsService::class);
-        $data = $logisticsService->getWorkspaceData($period);
-        
+        $data = $this->logisticsService->getWorkspaceData($period);
+
         return view('admin.workspaces.logistics', [
             'metrics' => $data['metrics'],
             'lowStockAlerts' => $data['lowStockAlerts'],
@@ -205,8 +230,7 @@ class DepartmentWorkspaceController extends Controller
     public function ops(Request $request)
     {
         $period = $request->query('period', 'all');
-        $opsService = app(\App\Ecommerce\Workspace\Services\OpsService::class);
-        $data = $opsService->getWorkspaceData($period);
+        $data = $this->opsService->getWorkspaceData($period);
 
         return view('admin.workspaces.ops', [
             'metrics' => $data['metrics'],
@@ -223,8 +247,7 @@ class DepartmentWorkspaceController extends Controller
     public function cskh(Request $request)
     {
         $period = $request->query('period', 'all');
-        $cskhService = app(\App\Ecommerce\Workspace\Services\CskhService::class);
-        $data = $cskhService->getWorkspaceData($period);
+        $data = $this->cskhService->getWorkspaceData($period);
 
         return view('admin.workspaces.cskh', [
             'metrics' => $data['metrics'],
@@ -242,8 +265,7 @@ class DepartmentWorkspaceController extends Controller
     public function hr(Request $request)
     {
         $period = $request->query('period', 'all');
-        $hrService = app(\App\Ecommerce\Workspace\Services\HrService::class);
-        $data = $hrService->getWorkspaceData($period);
+        $data = $this->hrService->getWorkspaceData($period);
 
         return view('admin.workspaces.hr', [
             'metrics' => $data['metrics'],
@@ -264,33 +286,38 @@ class DepartmentWorkspaceController extends Controller
             ->toArray();
     }
 
+    private function departmentByCode(string $code): ?Department
+    {
+        return Department::query()->where('code', $code)->first();
+    }
+
     private function workspaceDatasets(string $code): array
     {
         $map = [
             'cfo' => [
-                'financial_proposals' => ['label' => 'Đề xuất tài chính', 'model' => \App\Models\DepartmentFinancialProposal::class],
-                'payrolls' => ['label' => 'Bảng lương', 'model' => \App\Models\DepartmentPayroll::class],
-                'material_prices' => ['label' => 'Giá nguyên vật liệu', 'model' => \App\Models\DepartmentMaterialPrice::class],
+                'financial_proposals' => ['label' => 'Đề xuất tài chính', 'model' => DepartmentFinancialProposal::class],
+                'payrolls' => ['label' => 'Bảng lương', 'model' => DepartmentPayroll::class],
+                'material_prices' => ['label' => 'Giá nguyên vật liệu', 'model' => DepartmentMaterialPrice::class],
             ],
             'logistics' => [
-                'purchase_orders' => ['label' => 'Đơn mua hàng', 'model' => \App\Models\DepartmentPurchaseOrder::class],
+                'purchase_orders' => ['label' => 'Đơn mua hàng', 'model' => DepartmentPurchaseOrder::class],
             ],
             'ops' => [
-                'incidents' => ['label' => 'Sự cố vận hành', 'model' => \App\Models\DepartmentIncident::class],
+                'incidents' => ['label' => 'Sự cố vận hành', 'model' => DepartmentIncident::class],
             ],
             'cskh' => [
-                'customer_reviews' => ['label' => 'Đánh giá khách hàng', 'model' => \App\Models\DepartmentCustomerReview::class],
+                'customer_reviews' => ['label' => 'Đánh giá khách hàng', 'model' => DepartmentCustomerReview::class],
             ],
             'hr' => [
-                'employee_contracts' => ['label' => 'Hợp đồng nhân sự', 'model' => \App\Models\DepartmentEmployeeContract::class],
+                'employee_contracts' => ['label' => 'Hợp đồng nhân sự', 'model' => DepartmentEmployeeContract::class],
             ],
             'rnd' => [
-                'department_agents' => ['label' => 'Nhân sự phòng ban', 'model' => \App\Models\DepartmentAgent::class],
+                'department_agents' => ['label' => 'Nhân sự phòng ban', 'model' => DepartmentAgent::class],
             ],
         ];
 
         $datasets = $map[$code] ?? [
-            'department_agents' => ['label' => 'Nhân sự phòng ban', 'model' => \App\Models\DepartmentAgent::class],
+            'department_agents' => ['label' => 'Nhân sự phòng ban', 'model' => DepartmentAgent::class],
         ];
 
         foreach ($datasets as $key => $dataset) {
@@ -329,7 +356,7 @@ class DepartmentWorkspaceController extends Controller
 
     private function readXlsxRows(string $path): array
     {
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($path) !== true) {
             return [];
         }

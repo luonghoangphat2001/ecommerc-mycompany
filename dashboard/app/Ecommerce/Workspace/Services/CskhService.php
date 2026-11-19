@@ -22,6 +22,11 @@ class CskhService
         ];
     }
 
+    public function getMetrics(string $period = 'all'): array
+    {
+        return $this->cskhRepository->getMetrics($period);
+    }
+
     public function createReview(array $data)
     {
         return $this->cskhRepository->createReview($data);

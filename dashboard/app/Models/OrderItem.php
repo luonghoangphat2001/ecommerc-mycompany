@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class OrderItem extends Model
 {
@@ -59,5 +60,10 @@ class OrderItem extends Model
     public function tax(): HasOne
     {
         return $this->hasOne(OrderTax::class, 'shop_order_item_id');
+    }
+
+    public function inventoryMovementDetails(): MorphMany
+    {
+        return $this->morphMany(InventoryMovementDetail::class, 'source');
     }
 }

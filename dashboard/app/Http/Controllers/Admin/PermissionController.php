@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
-use App\Support\AdminLabel;
+use App\Support\Admin;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
@@ -77,13 +77,14 @@ class PermissionController extends BaseCrudController
         $modules = [];
 
         foreach ($allPerms as $perm) {
-            [$action, $resource] = AdminLabel::splitPermission($perm->name);
+            [$action, $resource] = Admin::splitPermission($perm->name);
             $resource = $resource ?: 'other';
 
             $catKey = 'system';
             foreach ($categoryMap as $k => $cat) {
                 if (in_array($resource, $cat['items'], true)) {
                     $catKey = $k;
+
                     break;
                 }
             }
@@ -91,7 +92,7 @@ class PermissionController extends BaseCrudController
             if (! isset($modules[$resource])) {
                 $modules[$resource] = [
                     'slug' => $resource,
-                    'name' => AdminLabel::resource($resource),
+                    'name' => Admin::resourceLabel($resource),
                     'category' => $catKey,
                     'category_label' => $categoryMap[$catKey]['label'],
                     'actions' => [
@@ -111,7 +112,7 @@ class PermissionController extends BaseCrudController
                 'id' => $perm->id,
                 'name' => $perm->name,
                 'action' => $action ?: 'custom',
-                'action_label' => AdminLabel::action($action),
+                'action_label' => Admin::actionLabel($action),
                 'roles' => $permRoles,
             ];
 

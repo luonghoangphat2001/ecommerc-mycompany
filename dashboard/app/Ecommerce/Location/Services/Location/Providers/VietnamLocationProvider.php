@@ -3,8 +3,8 @@
 namespace App\Ecommerce\Location\Services\Location\Providers;
 
 use App\Ecommerce\Location\Contracts\LocationProviderInterface;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class VietnamLocationProvider implements LocationProviderInterface
 {
@@ -17,7 +17,9 @@ class VietnamLocationProvider implements LocationProviderInterface
 
     public function getStates(?string $countryCode): array
     {
-        if (!$countryCode || strtoupper($countryCode) !== 'VN') return [];
+        if (! $countryCode || strtoupper($countryCode) !== 'VN') {
+            return [];
+        }
 
         return Cache::remember('vn_provinces', 604800, function () {
             try {
@@ -25,14 +27,19 @@ class VietnamLocationProvider implements LocationProviderInterface
                 if ($response->successful()) {
                     return collect($response->json()['data'] ?? [])->pluck('name', 'id')->toArray();
                 }
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                report($e);
+            }
+
             return [];
         });
     }
 
     public function getCities(?string $countryCode, ?string $stateId): array
     {
-        if (!$countryCode || !$stateId || strtoupper($countryCode) !== 'VN') return [];
+        if (! $countryCode || ! $stateId || strtoupper($countryCode) !== 'VN') {
+            return [];
+        }
 
         return Cache::remember('vn_districts_' . $stateId, 604800, function () use ($stateId) {
             try {
@@ -40,14 +47,19 @@ class VietnamLocationProvider implements LocationProviderInterface
                 if ($response->successful()) {
                     return collect($response->json()['data'] ?? [])->pluck('name', 'id')->toArray();
                 }
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                report($e);
+            }
+
             return [];
         });
     }
 
     public function getWards(?string $countryCode, ?string $stateId, ?string $cityId): array
     {
-        if (!$countryCode || !$stateId || !$cityId || strtoupper($countryCode) !== 'VN') return [];
+        if (! $countryCode || ! $stateId || ! $cityId || strtoupper($countryCode) !== 'VN') {
+            return [];
+        }
 
         return Cache::remember('vn_wards_' . $cityId, 604800, function () use ($cityId) {
             try {
@@ -55,7 +67,10 @@ class VietnamLocationProvider implements LocationProviderInterface
                 if ($response->successful()) {
                     return collect($response->json()['data'] ?? [])->pluck('name', 'id')->toArray();
                 }
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                report($e);
+            }
+
             return [];
         });
     }

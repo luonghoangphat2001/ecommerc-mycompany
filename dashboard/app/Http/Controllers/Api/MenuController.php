@@ -19,10 +19,12 @@ class MenuController extends BaseApiController
     #[ApiList(
         path: '/menus',
         summary: 'List of Menus',
-        tags: 'Storefront - Menus',
+        tags: 'Menus',
         requiresAuth: false,
         responseData: '#/components/schemas/MenuResource'
     )]
+
+
     public function index()
     {
         $menus = $this->menuService->getAllMenus();
@@ -40,13 +42,15 @@ class MenuController extends BaseApiController
     #[ApiGet(
         path: '/menus/{slug}',
         summary: 'Menu Details (by Slug)',
-        tags: 'Storefront - Menus',
+        tags: 'Menus',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'slug', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'main-menu'), description: 'Menu Slug')
         ],
         responseData: '#/components/schemas/MenuResource'
     )]
+
+
     public function show($slug)
     {
         $menu = $this->menuService->getMenuBySlug($slug);

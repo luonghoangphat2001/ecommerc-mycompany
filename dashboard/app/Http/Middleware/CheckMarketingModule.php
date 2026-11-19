@@ -2,22 +2,23 @@
 
 namespace App\Http\Middleware;
 
+use App\Settings\MarketingSettings;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckMarketingModule
 {
+    public function __construct(private readonly MarketingSettings $marketingSettings) {}
+
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next, string $module): Response
     {
-        $marketingSettings = app(\App\Settings\MarketingSettings::class);
-
-        if (!isset($marketingSettings->$module) || !$marketingSettings->$module) {
+        if (! isset($this->marketingSettings->$module) || ! $this->marketingSettings->$module) {
             abort(403, "The marketing module [{$module}] is currently disabled.");
         }
 

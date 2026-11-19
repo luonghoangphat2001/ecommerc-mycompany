@@ -3,49 +3,38 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class InventoryMovement extends Model
 {
     protected $table = 'shop_inventory_movements';
 
-    protected $fillable = [
-        'shop_product_id',
-        'warehouse_id',
-        'reference_type',
-        'reference_id',
-        'prev_stock',
-        'quantity_changed',
-        'new_stock',
-    ];
-
-    public function product(): BelongsTo
+    public function detail(): HasOne
     {
-        return $this->belongsTo(Product::class, 'shop_product_id');
-    }
-
-    public function warehouse(): BelongsTo
-    {
-        return $this->belongsTo(Inventory::class, 'warehouse_id');
+        return $this->hasOne(InventoryMovementDetail::class, 'inventory_movement_id');
     }
 
     public function getProductDisplayAttribute(): string
     {
-        if ($this->product) {
-            $name = is_array($this->product->name) ? ($this->product->name[app()->getLocale()] ?? reset($this->product->name)) : $this->product->name;
-            return $name . ($this->product->sku ? ' (' . $this->product->sku . ')' : '');
+        $product = $this->detail?->product;
+        if ($product) {
+            $name = is_array($product->name)
+                ? \App\Support\Localization::value($product->name)
+                : $product->name;
+
+            return $name . ($product->sku ? ' (' . $product->sku . ')' : '');
         }
 
-        return $this->shop_product_id ? '#' . $this->shop_product_id : '—';
+        return $this->detail?->shop_product_id ? '#' . $this->detail->shop_product_id : '—';
     }
 
     public function getWarehouseDisplayAttribute(): string
     {
-        if ($this->warehouse) {
-            return $this->warehouse->name;
+        if ($this->detail?->warehouse) {
+            return $this->detail->warehouse->name;
         }
 
-        return $this->warehouse_id ? '#' . $this->warehouse_id : '—';
+        return $this->detail?->warehouse_id ? '#' . $this->detail->warehouse_id : '—';
     }
 
     public function getFormattedQuantityAttribute(): string

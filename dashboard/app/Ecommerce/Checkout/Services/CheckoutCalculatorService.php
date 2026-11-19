@@ -2,17 +2,16 @@
 
 namespace App\Ecommerce\Checkout\Services;
 
-use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
+use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\Services\Pipes\ApplyDiscount;
 use App\Ecommerce\Checkout\Services\Pipes\ApplyExchangeRate;
+use App\Ecommerce\Checkout\Services\Pipes\ApplyLoyaltyPoints;
+use App\Ecommerce\Checkout\Services\Pipes\ApplyMarketing;
 use App\Ecommerce\Checkout\Services\Pipes\CalculateSubtotal;
 use App\Ecommerce\Checkout\Services\Pipes\CalculateTax;
 use App\Ecommerce\Checkout\Services\Pipes\ResolveShippingFeePipe;
 use App\Ecommerce\Checkout\Services\Pipes\ResolveTaxRatePipe;
-use App\Ecommerce\Checkout\Services\Pipes\ApplyLoyaltyPoints;
-use App\Ecommerce\Checkout\Services\Pipes\ApplyMarketing;
-
 use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Settings\CheckoutSettings;
 use App\Settings\CouponSettings;
@@ -24,16 +23,11 @@ class CheckoutCalculatorService
         protected CheckoutSettings $checkoutSettings,
         protected CouponSettings $couponSettings,
         protected Pipeline $pipeline,
-        protected ?FeaturePolicyServiceInterface $featurePolicy = null
-    ) {
-        $this->featurePolicy = $this->featurePolicy ?: app(FeaturePolicyServiceInterface::class);
-    }
+        protected FeaturePolicyServiceInterface $featurePolicy
+    ) {}
 
     /**
      * Calculate order totals using a pure pipeline.
-     *
-     * @param CheckoutRequestDTO $request
-     * @return CheckoutResultDTO
      */
     public function calculate(CheckoutRequestDTO $request): CheckoutResultDTO
     {
@@ -63,7 +57,7 @@ class CheckoutCalculatorService
         $result = $this->pipeline
             ->send([
                 'request' => $request,
-                'result' => new CheckoutResultDTO(currency: $request->currency)
+                'result' => new CheckoutResultDTO(currency: $request->currency),
             ])
             ->through($pipes)
             ->then(function ($passable) {

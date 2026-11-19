@@ -2,8 +2,8 @@
 
 namespace App\Http\Resources\Api;
 
-use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
+
 
 #[OAT\Schema(
     schema: 'InventoryResource',
@@ -27,6 +27,10 @@ class InventoryResource extends BaseResource
      */
     public function toArray($request)
     {
+        $stockQuantity = $this->whenPivotLoaded('shop_product_inventory_stocks', function () {
+            return $this->pivot->stock_quantity ?? 0;
+        });
+
         return [
             'id' => $this->id,
             'warehouse_id' => $this->id,
@@ -36,12 +40,8 @@ class InventoryResource extends BaseResource
             'location' => $this->location,
             'warehouse_location' => $this->location,
             'is_active' => $this->is_active,
-            'stock_quantity' => $this->whenPivotLoaded('shop_product_inventory_stocks', function () {
-                return $this->pivot->stock_quantity ?? 0;
-            }),
-            'quantity' => $this->whenPivotLoaded('shop_product_inventory_stocks', function () {
-                return $this->pivot->stock_quantity ?? 0;
-            }),
+            'stock_quantity' => $stockQuantity,
+            'quantity' => $stockQuantity,
             'variant_id' => $this->whenPivotLoaded('shop_product_inventory_stocks', function () {
                 return $this->pivot->variant_id ?? null;
             }),

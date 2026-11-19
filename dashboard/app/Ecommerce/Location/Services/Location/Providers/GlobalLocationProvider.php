@@ -3,8 +3,8 @@
 namespace App\Ecommerce\Location\Services\Location\Providers;
 
 use App\Ecommerce\Location\Contracts\LocationProviderInterface;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class GlobalLocationProvider implements LocationProviderInterface
 {
@@ -18,17 +18,22 @@ class GlobalLocationProvider implements LocationProviderInterface
                         return [strtoupper($country['cca2']) => $country['name']['common']];
                     })->toArray();
                     asort($countries);
+
                     return $countries;
                 }
-            } catch (\Exception $e) {}
-            
+            } catch (\Exception $e) {
+                report($e);
+            }
+
             return ['VN' => 'Vietnam', 'US' => 'United States'];
         });
     }
 
     public function getStates(?string $countryCode): array
     {
-        if (!$countryCode) return [];
+        if (! $countryCode) {
+            return [];
+        }
 
         // For Global, we might return US states as a fallback or if country is US
         if (strtoupper($countryCode) === 'US') {

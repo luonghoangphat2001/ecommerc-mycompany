@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
-use App\Models\Product;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
 use App\Models\UpsellProduct;
 
 class UpsellProductController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+
     protected function modelClass(): string
     {
         return UpsellProduct::class;
@@ -25,11 +27,13 @@ class UpsellProductController extends BaseCrudController
 
     protected function fields(): array
     {
+        $productOptions = $this->productOptions();
+
         return [
-            'shop_product_id' => ['label' => 'Product', 'type' => 'select', 'rules' => ['required', 'integer', 'exists:shop_products,id'], 'options' => Product::orderBy('name')->pluck('name', 'id')->toArray()],
-            'upsell_product_id' => ['label' => 'Upsell Product', 'type' => 'select', 'rules' => ['required', 'integer', 'exists:shop_products,id'], 'options' => Product::orderBy('name')->pluck('name', 'id')->toArray()],
-            'sort_order' => ['label' => 'Sort order', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']],
-            'is_active' => ['label' => 'Kích hoạt', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
+            'shop_product_id' => ['label' => 'Product', 'type' => 'select', 'rules' => ['required', 'integer', 'exists:shop_products,id'], 'options' => $productOptions],
+            'upsell_product_id' => ['label' => 'Upsell Product', 'type' => 'select', 'rules' => ['required', 'integer', 'exists:shop_products,id'], 'options' => $productOptions],
+            'sort_order' => $this->sortOrderField(),
+            'is_active' => $this->activeField(),
         ];
     }
 }

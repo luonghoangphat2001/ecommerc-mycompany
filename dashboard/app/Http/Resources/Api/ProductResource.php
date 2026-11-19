@@ -2,13 +2,9 @@
 
 namespace App\Http\Resources\Api;
 
-use Illuminate\Http\Request;
-use Awcodes\Curator\Models\Media;
-use App\Http\Resources\Api\MediaResource;
-use App\Http\Resources\Api\BrandResource;
-use App\Http\Resources\Api\ProductCategoryResource;
-use App\Http\Resources\Api\InventoryResource;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use OpenApi\Attributes as OAT;
+
 
 #[OAT\Schema(
     schema: 'ProductResource',
@@ -58,22 +54,22 @@ class ProductResource extends BaseResource
         $stock = $this->available_stock;
         $productType = $this->isVariable() ? 'variable' : ($this->isCombo() ? 'combo' : 'simple');
 
-        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
+        $policy = app(FeaturePolicyServiceInterface::class);
         $trackStock = $policy->isInventoryTrackingEnabled();
 
         $attributesData = [];
         if ($this->relationLoaded('productAttributes')) {
-            $attributesData = $this->productAttributes->map(fn($attr) => [
+            $attributesData = $this->productAttributes->map(fn ($attr) => [
                 'id' => $attr->id,
                 'name' => $attr->name,
-                'options' => is_array($attr->options) ? $attr->options : (json_decode($attr->options, true) ?: []),
+                'options' => $this->asArray($attr->options),
                 'is_variation' => (bool) $attr->is_variation,
             ]);
         }
 
         $variantsData = [];
         if ($this->relationLoaded('variants')) {
-            $variantsData = $this->variants->map(fn($v) => [
+            $variantsData = $this->variants->map(fn ($v) => [
                 'id' => $v->id,
                 'sku' => $v->sku,
                 'price' => (int) $v->price,
@@ -82,8 +78,8 @@ class ProductResource extends BaseResource
                 'is_on_sale' => (bool) $v->is_on_sale,
                 'qty' => (int) $v->qty,
                 'stock' => (int) $v->available_stock,
-                'is_available' => (bool) ($v->is_active && (!$trackStock || $v->available_stock > 0)),
-                'attributes' => is_array($v->attributes) ? $v->attributes : (json_decode($v->attributes, true) ?: []),
+                'is_available' => (bool) ($v->is_active && (! $trackStock || $v->available_stock > 0)),
+                'attributes' => $this->asArray($v->attributes),
                 'image' => $v->image,
                 'weight' => $v->weight,
                 'dimensions' => $v->dimensions,
@@ -103,26 +99,8 @@ class ProductResource extends BaseResource
                     'quantity' => (int) $item->quantity,
                     'unit_price' => (int) $item->unit_price,
                     'subtotal' => (int) $item->subtotal,
-                    'product' => $item->product ? [
-                        'id' => $item->product->id,
-                        'name' => $item->product->name,
-                        'slug' => $item->product->slug,
-                        'sku' => $item->product->sku,
-                        'price' => (int) $item->product->price,
-                        'effective_price' => (int) $item->product->effective_price,
-                        'stock' => (int) $item->product->available_stock,
-                        'image' => $item->product->featuredImage ? \Illuminate\Support\Facades\Storage::url($item->product->featuredImage->path) : null,
-                        'tax_class_id' => $item->product->tax_class_id,
-                    ] : null,
-                    'variant' => $item->variant ? [
-                        'id' => $item->variant->id,
-                        'sku' => $item->variant->sku,
-                        'price' => (int) $item->variant->price,
-                        'effective_price' => (int) $item->variant->effective_price,
-                        'stock' => (int) $item->variant->available_stock,
-                        'attributes' => $item->variant->attributes,
-                        'tax_class_id' => $item->variant->tax_class_id,
-                    ] : null,
+                    'product' => $this->componentProduct($item->product),
+                    'variant' => $this->componentVariant($item->variant),
                 ];
             });
         }
@@ -145,7 +123,7 @@ class ProductResource extends BaseResource
             'is_on_sale' => $this->is_on_sale,
             'sale_start_at' => $this->sale_start_date ? $this->sale_start_date->toIso8601String() : null,
             'sale_end_at' => $this->sale_end_date ? $this->sale_end_date->toIso8601String() : null,
-            'apply_tax' => (bool)$this->apply_tax,
+            'apply_tax' => (bool) $this->apply_tax,
             'is_loyalty_earnable' => (bool) ($this->is_loyalty_earnable ?? true),
             'is_loyalty_redeemable' => (bool) ($this->is_loyalty_redeemable ?? true),
             'loyalty_points_reward' => $this->loyalty_points_reward ? (int) $this->loyalty_points_reward : null,
@@ -153,7 +131,7 @@ class ProductResource extends BaseResource
             'qty' => $stock,
             'stock' => $stock,
             'featured' => $this->featured,
-            'is_available' => (bool) ($this->is_visible && (!$trackStock || $stock > 0)),
+            'is_available' => (bool) ($this->is_visible && (! $trackStock || $stock > 0)),
             'brand' => new BrandResource($this->whenLoaded('brand')),
             'categories' => ProductCategoryResource::collection($this->whenLoaded('categories')),
             'inventories' => InventoryResource::collection($this->whenLoaded('inventories')),
@@ -164,9 +142,45 @@ class ProductResource extends BaseResource
                 'title' => $this->translate('seo_title') ?: $this->translate('name'),
                 'description' => $this->translate('seo_description') ?: $this->translate('description'),
             ],
-            'og_image' => $this->relationLoaded('featuredImage') && $this->featuredImage 
-                ? \Illuminate\Support\Facades\Storage::url($this->featuredImage->path) 
+            'og_image' => $this->relationLoaded('featuredImage') && $this->featuredImage
+                ? $this->mediaUrl($this->featuredImage)
                 : null,
         ], $this->getVisibility(), $this->getTimestamps());
+    }
+
+    protected function componentProduct(mixed $product): ?array
+    {
+        if (! $product) {
+            return null;
+        }
+
+        return array_merge($this->componentPricing($product), [
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'image' => $this->mediaUrl($product->featuredImage),
+        ]);
+    }
+
+    protected function componentVariant(mixed $variant): ?array
+    {
+        if (! $variant) {
+            return null;
+        }
+
+        return array_merge($this->componentPricing($variant), [
+            'attributes' => $variant->attributes,
+        ]);
+    }
+
+    protected function componentPricing(mixed $component): array
+    {
+        return [
+            'id' => $component->id,
+            'sku' => $component->sku,
+            'price' => (int) $component->price,
+            'effective_price' => (int) $component->effective_price,
+            'stock' => (int) $component->available_stock,
+            'tax_class_id' => $component->tax_class_id,
+        ];
     }
 }

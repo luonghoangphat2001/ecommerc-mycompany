@@ -6,16 +6,17 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
-
 use OpenApi\Attributes as OAT;
+
+
 
 #[OAT\Info(
     version: "1.0.0",
     description: "Comprehensive API documentation for HP Platform, including Admin and Storefront APIs.\n\n" .
                  "## Authentication Guide\n\n" .
-                 "This API uses **Bearer Token Authentication** (Laravel Sanctum).\n\n" .
+                 "This API uses **Bearer Token Authentication** (Laravel Passport).\n\n" .
                  "### Authentication Flow\n" .
-                 "1. **Login**: Send a `POST` request to `/api/v1/login` with your `email`, `password`, and `device_name`.\n" .
+                 "1. **Login**: Send a `POST` request to `/api/v1/storefront/auth/login` with your `email`, `password`, and `device_name`.\n" .
                  "2. **Receive Token**: On success, the API returns a response containing the token.\n" .
                  "3. **Use Token**: Add the token to the `Authorization` header for subsequent requests (`Authorization: Bearer <your_token>`).\n\n" .
                  "### Example Login Response\n" .
@@ -23,9 +24,9 @@ use OpenApi\Attributes as OAT;
                  "{\n" .
                  "  \"success\": true,\n" .
                  "  \"data\": {\n" .
-                 "    \"access_token\": \"1|your_access_token_here\",\n" .
+                 "    \"access_token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.signature\",\n" .
                  "    \"token_type\": \"Bearer\",\n" .
-                 "    \"expires_in\": 3600,\n" .
+                 "    \"expires_in\": 900,\n" .
                  "    \"user\": {\n" .
                  "      \"id\": 1,\n" .
                  "      \"name\": \"John Doe\",\n" .
@@ -45,22 +46,11 @@ use OpenApi\Attributes as OAT;
                  "- **Public APIs**: Endpoints without the lock icon can be accessed freely.\n" .
                  "- **Roles & Permissions**: Access to specific APIs depends on the roles and permissions assigned to your user account (e.g., Customer, Admin). Accessing an unauthorized endpoint will result in a `403 Forbidden` response.\n\n" .
                  "### Logout & Token Revocation\n" .
-                 "To revoke your current token, send a `POST` request to `/api/v1/logout`. This will invalidate the token.",
+                 "To revoke your current token, send a `POST` request to `/api/v1/storefront/auth/logout`. This will invalidate the access token and its device refresh token.",
     title: "HP Platform API Documentation",
     contact: new OAT\Contact(email: "admin@example.com")
 )]
-#[OAT\Server(
-    url: L5_SWAGGER_CONST_HOST,
-    description: "Primary API Server"
-)]
-#[OAT\SecurityScheme(
-    securityScheme: "bearerAuth",
-    type: "http",
-    name: "bearerAuth",
-    in: "header",
-    bearerFormat: "JWT",
-    scheme: "bearer"
-)]
+
 class Controller extends BaseController
 {
     use AuthorizesRequests;

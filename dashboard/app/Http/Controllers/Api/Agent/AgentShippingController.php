@@ -2,54 +2,53 @@
 
 namespace App\Http\Controllers\Api\Agent;
 
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Shipping\Carriers\CarrierManager;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Ecommerce\Shipping\Services\PackageCalculator;
 use App\Ecommerce\Shipping\Support\VietnamLocations;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\API\AgentShippingEstimateRequest;
 use App\Models\OrderShipping;
 use App\Models\ShippingZone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class AgentShippingController extends Controller
 {
     public function __construct(
         protected ShippingServiceInterface $shippingService,
         protected CarrierManager $carrierManager,
-        protected PackageCalculator $packageCalculator
-    ) {
-    }
+        protected PackageCalculator $packageCalculator,
+        protected FeaturePolicyServiceInterface $featurePolicy
+    ) {}
 
     /**
      * List all active shipping zones and rules.
      */
     public function zones(Request $request): JsonResponse
     {
-        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isShippingEnabled()) {
-            return response()->json([
-                'success' => true,
-                'shipping_enabled' => false,
-                'data' => [],
-            ]);
+        if (! $this->featurePolicy->isShippingEnabled()) {
+            return $this->shippingDisabledResponse(['data' => []]);
         }
 
-        $zones = ShippingZone::with(['methods' => fn($q) => $q->where('is_enabled', true)])
+        $zones = ShippingZone::with(['methods' => fn ($q) => $q->where('is_enabled', true)])
             ->when(
-                \Illuminate\Support\Facades\Schema::hasColumn('shop_shipping_zones', 'is_active'),
-                fn($q) => $q->where('is_active', true)
+                Schema::hasColumn('shop_shipping_zones', 'is_active'),
+                fn ($q) => $q->where('is_active', true)
             )
             ->orderBy('sort')
             ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $zones->map(fn($z) => [
+            'data' => $zones->map(fn ($z) => [
                 'id' => $z->id,
                 'code' => $z->code,
                 'name' => $z->name,
                 'priority' => $z->sort,
-                'methods' => $z->methods->map(fn($m) => [
+                'methods' => $z->methods->map(fn ($m) => [
                     'id' => $m->id,
                     'name' => $m->name,
                     'type' => $m->type instanceof \BackedEnum ? $m->type->value : (string) $m->type,
@@ -90,29 +89,19 @@ class AgentShippingController extends Controller
     /**
      * Estimate shipping rates for AI Agent inquiry.
      */
-    public function estimate(Request $request): JsonResponse
+    public function estimate(AgentShippingEstimateRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'country' => 'nullable|string|max:10',
-            'state' => 'nullable|string|max:100',
-            'city' => 'nullable|string|max:100',
-            'ward' => 'nullable|string|max:100',
-            'subtotal' => 'nullable|integer|min:0',
-            'items' => 'nullable|array',
-            'weight' => 'nullable|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         $items = $validated['items'] ?? [];
-        $package = !empty($items)
+        $package = ! empty($items)
             ? $this->packageCalculator->calculatePackage($items)
             : ['weight' => (int) ($validated['weight'] ?? 500), 'length' => 20, 'width' => 15, 'height' => 10];
 
         $subtotal = (int) ($validated['subtotal'] ?? 0);
 
-        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isShippingEnabled()) {
-            return response()->json([
-                'success' => true,
-                'shipping_enabled' => false,
+        if (! $this->featurePolicy->isShippingEnabled()) {
+            return $this->shippingDisabledResponse([
                 'destination' => [
                     'country' => $validated['country'] ?? 'VN',
                     'state' => $validated['state'] ?? null,
@@ -158,9 +147,7 @@ class AgentShippingController extends Controller
             $adapter = $this->carrierManager->getAdapter($carrier);
             $carrierTracking = $adapter ? $adapter->getTracking($trackingNumber) : null;
 
-            return response()->json([
-                'success' => true,
-                'found' => true,
+            return $this->trackingFoundResponse([
                 'tracking_number' => $trackingNumber,
                 'order_number' => $orderShipping->order?->number,
                 'carrier' => $carrier,
@@ -174,10 +161,8 @@ class AgentShippingController extends Controller
         // Check across carrier adapters directly if not in local order database
         foreach ($this->carrierManager->getAllCarriers() as $carrier) {
             $tracking = $carrier->getTracking($trackingNumber);
-            if (!empty($tracking['history']) || ($tracking['status'] ?? '') !== 'unknown') {
-                return response()->json([
-                    'success' => true,
-                    'found' => true,
+            if (! empty($tracking['history']) || ($tracking['status'] ?? '') !== 'unknown') {
+                return $this->trackingFoundResponse([
                     'tracking_number' => $trackingNumber,
                     'carrier' => $carrier->getId(),
                     'status' => $tracking['status'],
@@ -216,5 +201,21 @@ class AgentShippingController extends Controller
                 ],
             ],
         ]);
+    }
+
+    private function shippingDisabledResponse(array $payload): JsonResponse
+    {
+        return response()->json(array_merge([
+            'success' => true,
+            'shipping_enabled' => false,
+        ], $payload));
+    }
+
+    private function trackingFoundResponse(array $payload): JsonResponse
+    {
+        return response()->json(array_merge([
+            'success' => true,
+            'found' => true,
+        ], $payload));
     }
 }

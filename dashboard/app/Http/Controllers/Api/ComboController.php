@@ -24,10 +24,12 @@ class ComboController extends BaseApiController
     #[ApiList(
         path: '/combos',
         summary: 'List of Combos',
-        tags: 'Storefront - Combos',
+        tags: 'Combos',
         requiresAuth: false,
         responseData: '#/components/schemas/ComboResource'
     )]
+
+
     public function index(Request $request): JsonResponse
     {
         $combos = $this->comboService->getActiveCombos();
@@ -38,13 +40,15 @@ class ComboController extends BaseApiController
     #[ApiGet(
         path: '/combos/{slug}',
         summary: 'Combo Details',
-        tags: 'Storefront - Combos',
+        tags: 'Combos',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'slug', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'summer-combo'), description: 'Combo Slug')
         ],
         responseData: '#/components/schemas/ComboResource'
     )]
+
+
     public function show(string $slug): JsonResponse
     {
         $combo = $this->comboService->getComboBySlug($slug);

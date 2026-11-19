@@ -3,8 +3,9 @@
 namespace App\Listeners;
 
 use App\Models\MailLog;
+use App\Services\Logging\ModuleLogger;
 use Illuminate\Mail\Events\MessageSent;
-use Illuminate\Support\Facades\Log;
+use Symfony\Component\Mime\Email;
 
 class LogSentMessage
 {
@@ -17,10 +18,12 @@ class LogSentMessage
             $sentMessage = $event->sent;
             $message = $sentMessage->getOriginalMessage();
 
-            if (!$message instanceof \Symfony\Component\Mime\Email) {
+            if (! $message instanceof Email) {
                 return;
             }
-            
+
+            $timestamp = now();
+
             MailLog::create([
                 'from' => $this->formatAddress($message->getFrom()),
                 'to' => $this->formatAddress($message->getTo()),
@@ -31,11 +34,13 @@ class LogSentMessage
                 'headers' => $message->getHeaders()->toString(),
                 'message_id' => $sentMessage->getMessageId(),
                 'status' => 'sent',
-                'created_at' => now(),
-                'updated_at' => now(),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
             ]);
         } catch (\Exception $e) {
-            \App\Services\Logging\ModuleLogger::system()->error('log_email_failed', 'Failed to log email: ' . $e->getMessage(), ['exception' => $e->getMessage()]);
+            ModuleLogger::system()->error('log_email_failed', 'Failed to persist sent email log.', [
+                'exception' => get_class($e),
+            ]);
         }
     }
 
@@ -49,8 +54,8 @@ class LogSentMessage
         }
 
         return collect($addresses)
-            ->map(fn($address) => $address->getName() 
-                ? "{$address->getName()} <{$address->getAddress()}>" 
+            ->map(fn ($address) => $address->getName()
+                ? "{$address->getName()} <{$address->getAddress()}>"
                 : $address->getAddress())
             ->implode(', ');
     }

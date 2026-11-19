@@ -25,9 +25,11 @@ class PageController extends BaseApiController
     #[ApiList(
         path: '/pages',
         summary: 'List of Pages',
-        tags: 'Storefront - Pages',
+        tags: 'Pages',
         requiresAuth: false
     )]
+
+
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
@@ -38,7 +40,7 @@ class PageController extends BaseApiController
     #[ApiPost(
         path: '/pages',
         summary: 'Create Page',
-        tags: 'Storefront - Pages',
+        tags: 'Pages',
         requestBody: new OAT\RequestBody(
             required: true,
             content: new OAT\JsonContent(
@@ -52,23 +54,27 @@ class PageController extends BaseApiController
             )
         )
     )]
+
+
     public function store(PageRequest $request)
     {
         $dto = PageDTO::fromRequest($request);
         $page = $this->pageService->createPage($dto->toArray());
-        
+
         return $this->created(new PageResource($page));
     }
 
     #[ApiGet(
         path: '/pages/{page}',
         summary: 'Page Details',
-        tags: 'Storefront - Pages',
+        tags: 'Pages',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'page', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'about-us'), description: 'Page ID or Slug')
         ]
     )]
+
+
     public function show($page)
     {
         $pageModel = is_numeric($page)
@@ -85,7 +91,7 @@ class PageController extends BaseApiController
     #[ApiUpdate(
         path: '/pages/{page}',
         summary: 'Update Page',
-        tags: 'Storefront - Pages',
+        tags: 'Pages',
         parameters: [
             new OAT\Parameter(name: 'page', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: '1'), description: 'Page ID')
         ],
@@ -98,22 +104,26 @@ class PageController extends BaseApiController
             )
         )
     )]
+
+
     public function update(PageRequest $request, $id)
     {
         $dto = PageDTO::fromRequest($request);
         $page = $this->pageService->updatePage($id, $dto->toArray());
-        
+
         return $this->ok(new PageResource($page));
     }
 
     #[ApiDelete(
         path: '/pages/{page}',
         summary: 'Delete Page',
-        tags: 'Storefront - Pages',
+        tags: 'Pages',
         parameters: [
             new OAT\Parameter(name: 'page', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: '1'), description: 'Page ID')
         ]
     )]
+
+
     public function destroy($id)
     {
         $this->pageService->deletePage($id);

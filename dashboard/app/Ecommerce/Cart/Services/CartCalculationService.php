@@ -7,10 +7,10 @@ use App\Ecommerce\Cart\Contracts\CartCalculationServiceInterface;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\Services\CheckoutCalculatorService;
+use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
 use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Settings\CheckoutSettings;
 
 class CartCalculationService implements CartCalculationServiceInterface
@@ -19,7 +19,8 @@ class CartCalculationService implements CartCalculationServiceInterface
         protected TaxServiceInterface $taxService,
         protected ShippingServiceInterface $shippingService,
         protected CheckoutSettings $checkoutSettings,
-        protected CheckoutCalculatorService $calculator
+        protected CheckoutCalculatorService $calculator,
+        protected ProductRepositoryInterface $productRepository
     ) {}
 
     /**
@@ -72,8 +73,8 @@ class CartCalculationService implements CartCalculationServiceInterface
         $productId = $item['product_id'] ?? $item['id'] ?? null;
         $variantId = $item['variant_id'] ?? null;
 
-        $product = Product::with(['comboComponents.product', 'comboComponents.variant', 'variants'])->find($productId);
-        if (!$product) {
+        $product = $this->productRepository->findForCheckout((int) $productId);
+        if (! $product) {
             return null;
         }
 
@@ -107,7 +108,8 @@ class CartCalculationService implements CartCalculationServiceInterface
         $taxClassId = $product->apply_tax ? $product->tax_class_id : null;
 
         if ($product->isVariable() && $variantId) {
-            $variant = $product->variants->firstWhere('id', $variantId) ?: ProductVariant::find($variantId);
+            $variant = $product->variants->firstWhere('id', $variantId)
+                ?: $this->productRepository->findVariantForProduct($variantId, $product->id);
             if ($variant) {
                 $unitPrice = (int) $variant->effective_price;
                 $taxClassId = $variant->tax_class_id ?? $taxClassId;
@@ -128,8 +130,10 @@ class CartCalculationService implements CartCalculationServiceInterface
         }
 
         return collect($taxCalc['breakdown'])->map(function (array $b) {
-            $cProduct = Product::find($b['product_id']);
-            $cVariant = !empty($b['variant_id']) ? ProductVariant::find($b['variant_id']) : null;
+            $cProduct = $this->productRepository->find((int) $b['product_id']);
+            $cVariant = ! empty($b['variant_id'])
+                ? $this->productRepository->findVariantForProduct((int) $b['variant_id'], (int) $b['product_id'], false)
+                : null;
 
             return [
                 'name' => $b['name'],

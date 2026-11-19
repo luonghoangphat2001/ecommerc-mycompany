@@ -4,18 +4,20 @@ namespace App\Ecommerce\Agent\Repositories;
 
 use App\Ecommerce\Agent\Contracts\AgentDashboardRepositoryInterface;
 use App\Ecommerce\Department\Enums\AgentStatus;
+use App\Ecommerce\Order\Enums\OrderStatus;
 use App\Models\DepartmentAgent;
 use App\Models\Order;
 use App\Models\Product;
+use Illuminate\Support\Facades\Cache;
 
 class EloquentAgentDashboardRepository implements AgentDashboardRepositoryInterface
 {
     public function getOperationalSummary(): array
     {
-        return \Illuminate\Support\Facades\Cache::remember('agent_dashboard_op_summary', 60, function () {
+        return Cache::remember('agent_dashboard_op_summary', 60, function () {
             return [
-                'products' => Product::query()->count(),
-                'orders' => Order::query()->count(),
+                'products' => $this->countProducts(),
+                'orders' => $this->countOrders(),
                 'active_agents' => DepartmentAgent::query()
                     ->where('status', AgentStatus::ACTIVE)
                     ->count(),
@@ -27,7 +29,7 @@ class EloquentAgentDashboardRepository implements AgentDashboardRepositoryInterf
     {
         $cacheKey = 'agent_dashboard_metrics_' . $period;
 
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($period) {
+        return Cache::remember($cacheKey, 60, function () use ($period) {
             $now = now();
             [$from, $until] = match ($period) {
                 'month' => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
@@ -39,19 +41,32 @@ class EloquentAgentDashboardRepository implements AgentDashboardRepositoryInterf
             $orders = Order::query()
                 ->whereBetween('created_at', [$from, $until])
                 ->whereNotIn('status', [
-                    \App\Ecommerce\Order\Enums\OrderStatus::Cancelled->value,
-                    \App\Ecommerce\Order\Enums\OrderStatus::Refunded->value,
+                    OrderStatus::Cancelled->value,
+                    OrderStatus::Refunded->value,
                 ]);
+            $orderSummary = $orders
+                ->selectRaw('COUNT(*) as orders, COALESCE(SUM(total), 0) as revenue')
+                ->first();
 
             return [
                 'period' => $period,
                 'from' => $from->toIso8601String(),
                 'until' => $until->toIso8601String(),
-                'orders' => (clone $orders)->count(),
-                'revenue' => (int) (clone $orders)->sum('total'),
+                'orders' => (int) ($orderSummary->orders ?? 0),
+                'revenue' => (int) ($orderSummary->revenue ?? 0),
                 'currency' => (string) (Order::query()->whereNotNull('currency')->value('currency') ?? 'VND'),
-                'products' => Product::query()->count(),
+                'products' => $this->countProducts(),
             ];
         });
+    }
+
+    private function countProducts(): int
+    {
+        return Product::query()->count();
+    }
+
+    private function countOrders(): int
+    {
+        return Order::query()->count();
     }
 }

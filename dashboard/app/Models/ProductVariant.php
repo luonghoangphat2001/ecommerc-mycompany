@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\HasInventoryStock;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Facades\DB;
 
 class ProductVariant extends Model
 {
     use HasFactory;
+    use HasInventoryStock;
 
     protected $table = 'shop_product_variants';
 
@@ -44,25 +45,6 @@ class ProductVariant extends Model
         'weight' => 'float',
     ];
 
-    protected static function booted(): void
-    {
-        static::updating(function (ProductVariant $variant) {
-            if ($variant->isDirty('price') || $variant->isDirty('sale_price')) {
-                try {
-                    app(\App\Ecommerce\Audit\Contracts\FinancialAuditServiceInterface::class)->logVariantPriceChange(
-                        $variant,
-                        (float) ($variant->getOriginal('price') ?? 0),
-                        (float) ($variant->price ?? 0),
-                        $variant->getOriginal('sale_price') !== null ? (float) $variant->getOriginal('sale_price') : null,
-                        $variant->sale_price !== null ? (float) $variant->sale_price : null
-                    );
-                } catch (\Throwable $e) {
-                    report($e);
-                }
-            }
-        });
-    }
-
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
@@ -83,7 +65,7 @@ class ProductVariant extends Model
     public function getEffectivePriceAttribute(): int
     {
         if (
-            !is_null($this->sale_price) &&
+            ! is_null($this->sale_price) &&
             $this->sale_price > 0 &&
             $this->sale_price < $this->price
         ) {
@@ -94,6 +76,7 @@ class ProductVariant extends Model
             if ($this->sale_end_date && $now->gt($this->sale_end_date)) {
                 return (int) $this->price;
             }
+
             return (int) $this->sale_price;
         }
 
@@ -107,9 +90,7 @@ class ProductVariant extends Model
 
     public function getAvailableStockAttribute(): int
     {
-        $stockSum = DB::table('shop_product_inventory_stocks')
-            ->where('variant_id', $this->id)
-            ->sum('stock_quantity');
+        $stockSum = $this->inventoryStockSum('variant_id');
 
         if ($stockSum !== null && (int) $stockSum > 0) {
             return (int) $stockSum;

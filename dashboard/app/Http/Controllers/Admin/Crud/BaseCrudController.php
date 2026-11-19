@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Admin\Crud;
 
+use App\Http\Controllers\Admin\Traits\HasRecursiveTreeReorder;
 use App\Http\Controllers\Controller;
-use App\Support\AdminValue;
+use App\Support\Admin;
+use App\Support\Infrastructure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -15,14 +18,70 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 abstract class BaseCrudController extends Controller
 {
+    use HasRecursiveTreeReorder;
+
+    protected function isEnglishLocale(): bool
+    {
+        return app()->getLocale() === 'en';
+    }
+
     abstract protected function modelClass(): string;
+
     abstract protected function title(): string;
+
     abstract protected function routePrefix(): string;
+
     abstract protected function fields(): array;
 
     protected function searchable(): array
     {
         return ['id'];
+    }
+
+    protected function findRecord(int $id): Model
+    {
+        $modelClass = $this->modelClass();
+
+        return $modelClass::query()->findOrFail($id);
+    }
+
+    protected function redirectToIndex(string $message): RedirectResponse
+    {
+        return redirect()
+            ->route($this->routePrefix() . '.index')
+            ->with('status', __('admin.messages.' . $message));
+    }
+
+    protected function redirectWithSuccess(string $message): RedirectResponse
+    {
+        return redirect()
+            ->route($this->routePrefix() . '.index')
+            ->with('success', $message);
+    }
+
+    protected function redirectBackWithError(\Throwable $exception): RedirectResponse
+    {
+        report($exception);
+
+        return back()->withInput()->withErrors(['error' => $exception->getMessage()]);
+    }
+
+    protected function persistRecord(Request $request, ?Model $record = null): Model
+    {
+        $data = $request->validate($this->rules($record?->getKey()));
+        $data = $this->mutateData($data, $record);
+
+        if ($record) {
+            $record->update($data);
+        } else {
+            $modelClass = $this->modelClass();
+            $record = $modelClass::query()->create($data);
+        }
+
+        $this->afterSave($record, $request);
+        $this->flushStorefrontCaches();
+
+        return $record;
     }
 
     protected function indexQuery(Builder $query, Request $request): Builder
@@ -40,7 +99,7 @@ abstract class BaseCrudController extends Controller
 
         $existingTranslations = $this->extractTranslations($record);
         foreach ($this->translatableFields() as $field) {
-            if (!array_key_exists($field, $data)) {
+            if (! array_key_exists($field, $data)) {
                 continue;
             }
 
@@ -72,7 +131,7 @@ abstract class BaseCrudController extends Controller
                 }
 
                 $clean = array_filter(['vi' => $vi, 'en' => $en], fn ($v) => $v !== '');
-                $data[$field] = !empty($clean) ? $clean : null;
+                $data[$field] = ! empty($clean) ? $clean : null;
             } elseif (is_string($data[$field]) && trim($data[$field]) !== '') {
                 $val = trim($data[$field]);
                 $locale = app()->getLocale() ?: 'vi';
@@ -94,13 +153,13 @@ abstract class BaseCrudController extends Controller
     protected function translatableFields(): array
     {
         $modelClass = $this->modelClass();
-        $model = new $modelClass();
+        $model = new $modelClass;
         $translatable = method_exists($model, 'getTranslatableAttributes')
             ? $model->getTranslatableAttributes()
             : [];
 
         foreach ($this->fields() as $name => $field) {
-            if (!empty($field['translatable']) && !in_array($name, $translatable, true)) {
+            if (! empty($field['translatable']) && ! in_array($name, $translatable, true)) {
                 $translatable[] = $name;
             }
         }
@@ -112,53 +171,54 @@ abstract class BaseCrudController extends Controller
     {
         $result = [];
         foreach ($this->translatableFields() as $field) {
-            $vi = '';
-            $en = '';
-
-            if ($record) {
-                if (method_exists($record, 'getTranslations') && method_exists($record, 'isTranslatableAttribute') && $record->isTranslatableAttribute($field)) {
-                    $translations = $record->getTranslations($field);
-                    $vi = (string) ($translations['vi'] ?? '');
-                    $en = (string) ($translations['en'] ?? '');
-                } else {
-                    $raw = $record->{$field} ?? null;
-                    if (is_array($raw)) {
-                        $vi = (string) ($raw['vi'] ?? '');
-                        $en = (string) ($raw['en'] ?? '');
-                    } elseif (is_string($raw)) {
-                        $decoded = json_decode($raw, true);
-                        if (is_array($decoded)) {
-                            $vi = (string) ($decoded['vi'] ?? '');
-                            $en = (string) ($decoded['en'] ?? '');
-                        } else {
-                            $vi = $raw;
-                            $en = $raw;
-                        }
-                    }
-                }
-            }
-
-            $result[$field] = [
-                'vi' => $vi,
-                'en' => $en,
-            ];
+            $result[$field] = $record ? $this->translationPair($record, $field) : ['vi' => '', 'en' => ''];
         }
 
         return $result;
     }
 
-    protected function flushStorefrontCaches(): void
+    protected function translationPair(Model $record, string $field): array
     {
-        foreach (['vi', 'en'] as $loc) {
-            \Illuminate\Support\Facades\Cache::forget("storefront_settings_v1_{$loc}");
-            \Illuminate\Support\Facades\Cache::forget("storefront_settings_v2_{$loc}");
+        if (method_exists($record, 'getTranslations')
+            && method_exists($record, 'isTranslatableAttribute')
+            && $record->isTranslatableAttribute($field)) {
+            $translations = $record->getTranslations($field);
+
+            return [
+                'vi' => (string) ($translations['vi'] ?? ''),
+                'en' => (string) ($translations['en'] ?? ''),
+            ];
         }
-        \Illuminate\Support\Facades\Cache::forget('all_menus');
+
+        $raw = $record->{$field} ?? null;
+        if (is_array($raw)) {
+            return [
+                'vi' => (string) ($raw['vi'] ?? ''),
+                'en' => (string) ($raw['en'] ?? ''),
+            ];
+        }
+
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return [
+                    'vi' => (string) ($decoded['vi'] ?? ''),
+                    'en' => (string) ($decoded['en'] ?? ''),
+                ];
+            }
+
+            return ['vi' => $raw, 'en' => $raw];
+        }
+
+        return ['vi' => '', 'en' => ''];
     }
 
-    protected function afterSave(Model $record, Request $request): void
+    protected function flushStorefrontCaches(): void
     {
+        Infrastructure::flushStorefrontCache();
     }
+
+    protected function afterSave(Model $record, Request $request): void {}
 
     protected function formData(?Model $record = null): array
     {
@@ -174,7 +234,7 @@ abstract class BaseCrudController extends Controller
 
             $module = str_replace('admin.', '', $this->routePrefix());
             $method = $request->route()->getActionMethod();
-            
+
             $actionMap = [
                 'index' => 'view',
                 'show' => 'view',
@@ -193,12 +253,13 @@ abstract class BaseCrudController extends Controller
                 'syncFromFiles' => 'update',
                 'updateGroup' => 'update',
             ];
-            
+
             $action = $actionMap[$method] ?? null;
             if ($action) {
                 $permission = $action . '_' . $module;
+
                 try {
-                    if (!auth()->user()->hasPermissionTo($permission)) {
+                    if (! auth()->user()->hasPermissionTo($permission)) {
                         abort(403, 'Unauthorized action. Missing permission: ' . $permission);
                     }
                 } catch (\Exception $e) {
@@ -216,6 +277,7 @@ abstract class BaseCrudController extends Controller
             return true;
         }
         $module = str_replace('admin.', '', $this->routePrefix());
+
         try {
             return auth()->check() && auth()->user()->hasPermissionTo($action . '_' . $module);
         } catch (\Exception $e) {
@@ -263,7 +325,12 @@ abstract class BaseCrudController extends Controller
         return null;
     }
 
-    public function index(Request $request): View
+    protected function paginateIndex(Builder $query, int $perPage = 15): LengthAwarePaginator
+    {
+        return $query->latest('id')->paginate($perPage)->withQueryString();
+    }
+
+    public function index(Request $request): View | RedirectResponse
     {
         $modelClass = $this->modelClass();
         $query = $modelClass::query();
@@ -272,7 +339,7 @@ abstract class BaseCrudController extends Controller
 
         return view('admin.crud.index', [
             'title' => __($this->title()),
-            'items' => $query->latest('id')->paginate(15)->withQueryString(),
+            'items' => $this->paginateIndex($query),
             'fields' => $this->visibleFields('index'),
             'routePrefix' => $this->routePrefix(),
             'canCreate' => $this->canCreate(),
@@ -309,8 +376,8 @@ abstract class BaseCrudController extends Controller
     public function show(int $id): View
     {
         $modelClass = $this->modelClass();
-        $record = $modelClass::findOrFail($id);
-        
+        $record = $this->findRecord($id);
+
         $visibleFields = $this->visibleFields('show');
         $groups = method_exists($this, 'showGroups') ? $this->showGroups() : [];
         if (empty($groups)) {
@@ -318,7 +385,7 @@ abstract class BaseCrudController extends Controller
                 'general' => [
                     'label' => __('admin.common.general_info'),
                     'fields' => array_keys($visibleFields),
-                ]
+                ],
             ];
         }
 
@@ -338,20 +405,15 @@ abstract class BaseCrudController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate($this->rules());
-        $data = $this->mutateData($data);
-        $modelClass = $this->modelClass();
-        $record = $modelClass::create($data);
-        $this->afterSave($record, $request);
-        $this->flushStorefrontCaches();
+        $this->persistRecord($request);
 
-        return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.created'));
+        return $this->redirectToIndex('created');
     }
 
     public function edit(int $id): View
     {
         $modelClass = $this->modelClass();
-        $record = $modelClass::findOrFail($id);
+        $record = $this->findRecord($id);
 
         return view($this->formView(), [
             'title' => __('admin.actions.edit') . ' - ' . __($this->title()),
@@ -368,25 +430,20 @@ abstract class BaseCrudController extends Controller
 
     public function update(Request $request, int $id): RedirectResponse
     {
-        $modelClass = $this->modelClass();
-        $record = $modelClass::findOrFail($id);
-        $data = $request->validate($this->rules($id));
-        $data = $this->mutateData($data, $record);
-        $record->update($data);
-        $this->afterSave($record, $request);
-        $this->flushStorefrontCaches();
+        $record = $this->findRecord($id);
+        $this->persistRecord($request, $record);
 
-        return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.updated'));
+        return $this->redirectToIndex('updated');
     }
 
     public function destroy(int $id): RedirectResponse
     {
         $modelClass = $this->modelClass();
-        $record = $modelClass::findOrFail($id);
+        $record = $this->findRecord($id);
         $record->delete();
         $this->flushStorefrontCaches();
 
-        return redirect()->route($this->routePrefix() . '.index')->with('status', __('admin.messages.deleted'));
+        return $this->redirectToIndex('deleted');
     }
 
     public function reorder(Request $request)
@@ -397,30 +454,23 @@ abstract class BaseCrudController extends Controller
         }
 
         $modelClass = $this->modelClass();
-        $hasParentId = \Illuminate\Support\Facades\Schema::hasColumn((new $modelClass)->getTable(), 'parent_id');
-        
-        $this->updateTreeOrder($tree, null, $modelClass, $hasParentId);
+        $hasParentId = Schema::hasColumn((new $modelClass)->getTable(), 'parent_id');
+
+        $this->walkTree($tree, null, function (array $item, int $index, ?int $parentId) use ($modelClass, $hasParentId): void {
+            $record = $modelClass::query()->find($item['id'] ?? null);
+            if (! $record) {
+                return;
+            }
+
+            if ($hasParentId) {
+                $record->parent_id = $parentId;
+            }
+            $record->order_column = $index;
+            $record->save();
+        });
         $this->flushStorefrontCaches();
 
         return response()->json(['success' => true]);
-    }
-
-    protected function updateTreeOrder(array $tree, ?int $parentId, string $modelClass, bool $hasParentId)
-    {
-        foreach ($tree as $index => $item) {
-            $record = $modelClass::find($item['id']);
-            if ($record) {
-                if ($hasParentId) {
-                    $record->parent_id = $parentId;
-                }
-                $record->order_column = $index;
-                $record->save();
-            }
-
-            if (isset($item['children']) && is_array($item['children'])) {
-                $this->updateTreeOrder($item['children'], $item['id'], $modelClass, $hasParentId);
-            }
-        }
     }
 
     public function export(Request $request): StreamedResponse
@@ -435,44 +485,49 @@ abstract class BaseCrudController extends Controller
 
         return response()->streamDownload(function () use ($query, $fields, $translatable): void {
             $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM for Excel
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM for Excel
 
-            $headers = ['id'];
-            foreach ($fields as $name => $field) {
-                if (in_array($name, $translatable, true)) {
-                    $headers[] = "{$name}_vi";
-                    $headers[] = "{$name}_en";
-                } else {
-                    $headers[] = $name;
-                }
-            }
-            fputcsv($handle, $headers);
+            fputcsv($handle, $this->exportHeaders($fields, $translatable));
 
             $query->latest('id')->chunk(200, function ($records) use ($handle, $fields, $translatable): void {
                 foreach ($records as $record) {
-                    $row = [$record->id];
-                    foreach ($fields as $name => $field) {
-                        if (in_array($name, $translatable, true)) {
-                            if (method_exists($record, 'getTranslation')) {
-                                $row[] = $record->getTranslation($name, 'vi', false) ?: '';
-                                $row[] = $record->getTranslation($name, 'en', false) ?: '';
-                            } elseif (is_array($record->{$name})) {
-                                $row[] = $record->{$name}['vi'] ?? '';
-                                $row[] = $record->{$name}['en'] ?? '';
-                            } else {
-                                $row[] = (string) $record->{$name};
-                                $row[] = (string) $record->{$name};
-                            }
-                        } else {
-                            $row[] = AdminValue::format(data_get($record, $name), true);
-                        }
-                    }
-                    fputcsv($handle, $row);
+                    fputcsv($handle, $this->exportRow($record, $fields, $translatable));
                 }
             });
 
             fclose($handle);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    protected function exportHeaders(array $fields, array $translatable): array
+    {
+        $headers = ['id'];
+        foreach ($fields as $name => $field) {
+            if (in_array($name, $translatable, true)) {
+                $headers[] = "{$name}_vi";
+                $headers[] = "{$name}_en";
+            } else {
+                $headers[] = $name;
+            }
+        }
+
+        return $headers;
+    }
+
+    protected function exportRow(Model $record, array $fields, array $translatable): array
+    {
+        $row = [$record->getKey()];
+        foreach ($fields as $name => $field) {
+            if (in_array($name, $translatable, true)) {
+                $translation = $this->translationPair($record, $name);
+                $row[] = $translation['vi'];
+                $row[] = $translation['en'];
+            } else {
+                $row[] = Admin::format(data_get($record, $name), true);
+            }
+        }
+
+        return $row;
     }
 
     public function import(Request $request): RedirectResponse
@@ -491,6 +546,7 @@ abstract class BaseCrudController extends Controller
         $headers = fgetcsv($handle);
         if (! is_array($headers) || $headers === []) {
             fclose($handle);
+
             return back()->with('status', __('admin.messages.import_missing_header'));
         }
 
@@ -502,40 +558,10 @@ abstract class BaseCrudController extends Controller
         $modelClass = $this->modelClass();
 
         while (($row = fgetcsv($handle)) !== false) {
-            $payload = [];
-            foreach ($headers as $index => $header) {
-                if (! in_array($header, $allowed, true)) {
-                    continue;
-                }
-                $val = $row[$index] ?? null;
-
-                $isLangSuffix = false;
-                foreach ($translatable as $transField) {
-                    if ($header === "{$transField}_vi" || $header === "{$transField}[vi]") {
-                        if (!isset($payload[$transField]) || !is_array($payload[$transField])) {
-                            $payload[$transField] = is_array($payload[$transField] ?? null) ? $payload[$transField] : [];
-                        }
-                        $payload[$transField]['vi'] = $val;
-                        $isLangSuffix = true;
-                        break;
-                    } elseif ($header === "{$transField}_en" || $header === "{$transField}[en]") {
-                        if (!isset($payload[$transField]) || !is_array($payload[$transField])) {
-                            $payload[$transField] = is_array($payload[$transField] ?? null) ? $payload[$transField] : [];
-                        }
-                        $payload[$transField]['en'] = $val;
-                        $isLangSuffix = true;
-                        break;
-                    }
-                }
-
-                if (!$isLangSuffix) {
-                    $payload[$header] = $val;
-                }
-            }
-
-            $payload = array_filter($payload, fn ($value) => $value !== '' && $value !== null);
+            $payload = $this->buildImportPayload($headers, $row, $allowed, $translatable);
             if ($payload === []) {
                 $skipped++;
+
                 continue;
             }
 
@@ -551,6 +577,43 @@ abstract class BaseCrudController extends Controller
 
         return redirect()->route($this->routePrefix() . '.index')
             ->with('status', __('admin.messages.import_completed', ['created' => $created, 'skipped' => $skipped]));
+    }
+
+    protected function buildImportPayload(array $headers, array $row, array $allowed, array $translatable): array
+    {
+        $payload = [];
+
+        foreach ($headers as $index => $header) {
+            if (! in_array($header, $allowed, true)) {
+                continue;
+            }
+
+            $translation = $this->importTranslationColumn($header, $translatable);
+            if ($translation) {
+                [$field, $locale] = $translation;
+                $payload[$field] = is_array($payload[$field] ?? null) ? $payload[$field] : [];
+                $payload[$field][$locale] = $row[$index] ?? null;
+
+                continue;
+            }
+
+            $payload[$header] = $row[$index] ?? null;
+        }
+
+        return array_filter($payload, fn ($value) => $value !== '' && $value !== null);
+    }
+
+    protected function importTranslationColumn(string $header, array $translatable): ?array
+    {
+        foreach ($translatable as $field) {
+            foreach (['vi', 'en'] as $locale) {
+                if ($header === "{$field}_{$locale}" || $header === "{$field}[{$locale}]") {
+                    return [$field, $locale];
+                }
+            }
+        }
+
+        return null;
     }
 
     protected function rules(?int $id = null): array
@@ -610,7 +673,7 @@ abstract class BaseCrudController extends Controller
     protected function importableColumns(): array
     {
         $modelClass = $this->modelClass();
-        $table = (new $modelClass())->getTable();
+        $table = (new $modelClass)->getTable();
         $translatable = $this->translatableFields();
 
         $columns = array_values(array_filter(array_keys($this->visibleFields('import')), function (string $column) use ($table): bool {
@@ -636,7 +699,7 @@ abstract class BaseCrudController extends Controller
         }
 
         $modelClass = $this->modelClass();
-        $table = (new $modelClass())->getTable();
+        $table = (new $modelClass)->getTable();
         $columns = array_filter($this->searchable(), fn (string $column) => Schema::hasColumn($table, $column));
 
         if ($columns === []) {

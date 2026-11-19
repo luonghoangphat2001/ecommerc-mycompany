@@ -5,6 +5,7 @@ namespace App\Http\Resources\Api;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 
+
 #[OAT\Schema(
     schema: 'OrderAddressResource',
     title: 'Order Address',

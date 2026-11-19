@@ -1,11 +1,11 @@
 # Ecommerce Storefront (`website`)
 
-SPA storefront dành cho khách mua hàng của My Ecommerce. Website dùng React và gọi Laravel dashboard backend qua REST API `/api/v1/storefront`.
+SPA storefront dành cho khách mua hàng của My Ecommerce. Website dùng React và gọi Laravel dashboard backend qua REST API `/api/v1`.
 
 ## Tính năng
 
 - Trang chủ, catalog, tìm kiếm/lọc sản phẩm và trang chi tiết.
-- Đăng ký, đăng nhập, quên/reset mật khẩu và tự refresh Sanctum token.
+- Đăng ký, đăng nhập, quên/reset mật khẩu và tự refresh Passport token.
 - Giỏ hàng local với Zustand persist.
 - Checkout, địa chỉ giao hàng, shipping method và payment flow.
 - Tài khoản, profile, address book, lịch sử/chi tiết/theo dõi đơn hàng.
@@ -87,18 +87,18 @@ npm test -- --watchAll=false
 `.env.example`:
 
 ```env
-REACT_APP_API_URL=http://127.0.0.1:8000/api/v1/storefront
+REACT_APP_API_URL=http://127.0.0.1:8000/api/v1
 REACT_APP_ADMIN_EMAIL=admin@admin.com
 REACT_APP_ADMIN_PASSWORD=password
 ```
 
-`REACT_APP_API_URL` là base URL thực tế được dùng bởi `src/api/axiosClient.js`. Nếu bỏ trống, client fallback về `/api/v1`; khi chạy local nên đặt đầy đủ `/api/v1/storefront` để khớp backend hiện tại.
+`REACT_APP_API_URL` là base URL thực tế được dùng bởi `src/api/axiosClient.js`. Nếu bỏ trống, client fallback về `/api/v1`; khi chạy local nên đặt đầy đủ `/api/v1` để khớp backend hiện tại.
 
 `REACT_APP_ADMIN_EMAIL` và `REACT_APP_ADMIN_PASSWORD` chỉ được dùng để prefill thông tin login trong môi trường dev; không đưa credential production vào frontend vì biến `REACT_APP_*` được đóng gói vào JavaScript public.
 
 ## API backend được sử dụng
 
-Base URL là `/api/v1/storefront`:
+Base URL là `/api/v1`:
 
 ```text
 auth/login, auth/register, auth/logout, auth/profile, auth/refresh-token
@@ -119,7 +119,7 @@ Backend tương ứng nằm tại [../dashboard](../dashboard). API route source
 - Component tập trung render; validation và API orchestration đặt ở hooks/services.
 - Dùng `utils/` cho format tiền, ngày và trạng thái đơn hàng.
 - Không hardcode secret hoặc credential vào source/frontend.
-- Khi thêm API, cập nhật service trong feature tương ứng và kiểm tra lại prefix `/api/v1/storefront`.
+- Khi thêm API, cập nhật service trong feature tương ứng và kiểm tra lại prefix `/api/v1`.
 
 ## Deploy
 

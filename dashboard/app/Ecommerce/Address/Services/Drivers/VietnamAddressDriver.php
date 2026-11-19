@@ -3,8 +3,8 @@
 namespace App\Ecommerce\Address\Services\Drivers;
 
 use App\Ecommerce\Address\Services\Contracts\AddressProviderInterface;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class VietnamAddressDriver implements AddressProviderInterface
 {
@@ -18,7 +18,10 @@ class VietnamAddressDriver implements AddressProviderInterface
                 if ($response->successful()) {
                     return collect($response->json()['data'] ?? [])->pluck('name', 'name')->toArray();
                 }
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                report($e);
+            }
+
             return [];
         });
     }
@@ -30,14 +33,19 @@ class VietnamAddressDriver implements AddressProviderInterface
                 // We need to resolve the ID first as esgoo uses numeric IDs for children
                 $provinces = Http::timeout(5)->get(self::BASE_URL . '/1/0.htm')->json();
                 $province = collect($provinces['data'] ?? [])->firstWhere('name', $stateId);
-                
-                if (!$province) return [];
+
+                if (! $province) {
+                    return [];
+                }
 
                 $response = Http::timeout(5)->get(self::BASE_URL . '/2/' . $province['id'] . '.htm');
                 if ($response->successful()) {
                     return collect($response->json()['data'] ?? [])->pluck('name', 'name')->toArray();
                 }
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                report($e);
+            }
+
             return [];
         });
     }
@@ -48,17 +56,24 @@ class VietnamAddressDriver implements AddressProviderInterface
             try {
                 $provinces = Http::timeout(5)->get(self::BASE_URL . '/1/0.htm')->json();
                 $province = collect($provinces['data'] ?? [])->firstWhere('name', $stateId);
-                if (!$province) return [];
+                if (! $province) {
+                    return [];
+                }
 
                 $districts = Http::timeout(5)->get(self::BASE_URL . '/2/' . $province['id'] . '.htm')->json();
                 $district = collect($districts['data'] ?? [])->firstWhere('name', $regionId);
-                if (!$district) return [];
+                if (! $district) {
+                    return [];
+                }
 
                 $response = Http::timeout(5)->get(self::BASE_URL . '/3/' . $district['id'] . '.htm');
                 if ($response->successful()) {
                     return collect($response->json()['data'] ?? [])->pluck('name', 'name')->toArray();
                 }
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+                report($e);
+            }
+
             return [];
         });
     }

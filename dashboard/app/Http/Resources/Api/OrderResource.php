@@ -5,6 +5,7 @@ namespace App\Http\Resources\Api;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 
+
 #[OAT\Schema(
     schema: 'OrderResource',
     title: 'Order',
@@ -41,10 +42,21 @@ class OrderResource extends BaseResource
 {
     public function toArray(Request $request): array
     {
+        $status = $this->enumValue($this->status);
+        $latestPayment = $this->relationLoaded('payments')
+            ? $this->payments->sortByDesc('id')->first()
+            : null;
+        $statusHistory = $this->relationLoaded('activities') && $this->activities->isNotEmpty()
+            ? $this->activities->sortBy('created_at')->map(fn ($activity) => [
+                'status' => $this->enumValue($activity->properties['attributes']['status'] ?? $status),
+                'time' => $activity->created_at?->toDateTimeString(),
+            ])->values()->toArray()
+            : [['status' => $status, 'time' => $this->created_at?->toDateTimeString()]];
+
         return array_merge([
             'id' => $this->id,
             'number' => $this->number,
-            'status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status,
+            'status' => $status,
             'currency' => $this->currency,
             'subtotal' => $this->subtotal,
             'tax_amount' => $this->tax_amount,
@@ -53,26 +65,20 @@ class OrderResource extends BaseResource
             'shipping_address' => new OrderAddressResource($this->whenLoaded('shippingAddress')),
             'billing_address' => new OrderAddressResource($this->whenLoaded('billingAddress')),
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
-            'status_history' => $this->relationLoaded('activities') && $this->activities->isNotEmpty()
-                ? $this->activities->sortBy('created_at')->map(fn($activity) => [
-                    'status' => $activity->properties['attributes']['status'] ?? ($this->status instanceof \BackedEnum ? $this->status->value : $this->status),
-                    'time' => $activity->created_at?->toDateTimeString(),
-                ])->values()->toArray() 
-                : [
-                    ['status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status, 'time' => $this->created_at?->toDateTimeString()]
-                ],
+            'status_history' => $statusHistory,
             'shipping_method' => $this->relationLoaded('shipping') && $this->shipping ? $this->shipping->method : null,
-            'payment_method' => $this->relationLoaded('payments') && $this->payments->isNotEmpty() 
-                ? ($this->payments->sortByDesc('id')->first()->method instanceof \BackedEnum ? $this->payments->sortByDesc('id')->first()->method->value : $this->payments->sortByDesc('id')->first()->method) 
-                : null,
-            'payment_status' => $this->relationLoaded('payments') && $this->payments->isNotEmpty() 
-                ? ($this->payments->sortByDesc('id')->first()->status instanceof \BackedEnum ? $this->payments->sortByDesc('id')->first()->status->value : $this->payments->sortByDesc('id')->first()->status) 
-                : null,
+            'payment_method' => $latestPayment ? $this->enumValue($latestPayment->method) : null,
+            'payment_status' => $latestPayment ? $this->enumValue($latestPayment->status) : null,
             'customer_notes' => $this->relationLoaded('metas') && $this->metas ? $this->metas->where('key', 'customer_notes')->first()?->value : null,
             'loyalty_discount' => $this->relationLoaded('metas') && $this->metas ? (int) ($this->metas->where('key', 'loyalty_discount')->first()?->value ?? 0) : 0,
             'discount_total' => $this->relationLoaded('coupons') && $this->coupons ? $this->coupons->sum('discount_amount') : 0,
-            'coupons' => $this->relationLoaded('coupons') ? $this->coupons->map(fn($c) => ['code' => $c->coupon_code, 'discount' => $c->discount_amount]) : [],
-            'refunds' => $this->relationLoaded('refunds') ? $this->refunds->map(fn($r) => ['amount' => $r->amount, 'reason' => $r->reason, 'type' => $r->metadata['type'] ?? 'full', 'status' => $r->metadata['status'] ?? 'completed', 'date' => $r->created_at->toDateTimeString()]) : [],
+            'coupons' => $this->relationLoaded('coupons') ? $this->coupons->map(fn ($c) => ['code' => $c->coupon_code, 'discount' => $c->discount_amount]) : [],
+            'refunds' => $this->relationLoaded('refunds') ? $this->refunds->map(fn ($r) => ['amount' => $r->amount, 'reason' => $r->reason, 'type' => $r->metadata['type'] ?? 'full', 'status' => $r->metadata['status'] ?? 'completed', 'date' => $r->created_at->toDateTimeString()]) : [],
         ], $this->getTimestamps());
+    }
+
+    protected function enumValue(mixed $value): mixed
+    {
+        return $value instanceof \BackedEnum ? $value->value : $value;
     }
 }

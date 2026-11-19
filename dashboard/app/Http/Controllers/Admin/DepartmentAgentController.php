@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Ecommerce\Department\Services\DepartmentAgentService;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
+use App\Http\Requests\Admin\DepartmentAgentStoreRequest;
 use App\Models\Department;
 use App\Models\DepartmentAgent;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +17,8 @@ use Illuminate\Validation\Rule;
 
 class DepartmentAgentController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+
     protected function modelClass(): string
     {
         return DepartmentAgent::class;
@@ -47,7 +51,7 @@ class DepartmentAgentController extends BaseCrudController
                 'label' => 'Phòng ban',
                 'type' => 'select',
                 'rules' => ['required', 'exists:departments,id'],
-                'options' => Department::orderBy('name')->pluck('name', 'id')->toArray(),
+                'options' => $this->departmentOptions(),
             ],
             'agent_code' => [
                 'label' => 'Mã Agent',
@@ -101,13 +105,9 @@ class DepartmentAgentController extends BaseCrudController
         return $data;
     }
 
-    public function storeForDepartment(Request $request, Department $department): RedirectResponse
+    public function storeForDepartment(DepartmentAgentStoreRequest $request, Department $department): RedirectResponse
     {
-        $validated = $request->validate([
-            'agent_code' => 'required|string|unique:department_agents,agent_code',
-            'name' => 'required|string|max:255',
-            'status' => 'required|in:active,inactive,suspended',
-        ]);
+        $validated = $request->validated();
 
         $department->agents()->create($validated);
 
@@ -117,6 +117,7 @@ class DepartmentAgentController extends BaseCrudController
     public function destroyForDepartment(Department $department, DepartmentAgent $agent): RedirectResponse
     {
         $agent->delete();
+
         return redirect()->route('admin.departments.show', $department)->with('success', 'Agent deleted successfully.');
     }
 

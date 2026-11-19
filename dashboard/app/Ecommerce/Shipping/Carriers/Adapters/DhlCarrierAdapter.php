@@ -8,51 +8,33 @@ use Illuminate\Support\Facades\Http;
 
 class DhlCarrierAdapter extends BaseCarrierAdapter
 {
+    protected string $carrierId = 'dhl';
+
+    protected string $carrierName = 'DHL Express';
+
+    protected bool $supportsInternational = true;
+
     private const SANDBOX_URL = 'https://express.api.dhl.com/mydhlapi/test/';
+
     private const PRODUCTION_URL = 'https://express.api.dhl.com/mydhlapi/';
-
-    public function getId(): string
-    {
-        return 'dhl';
-    }
-
-    public function getName(): string
-    {
-        return 'DHL Express';
-    }
-
-    public function isDomestic(): bool
-    {
-        return false;
-    }
-
-    public function isInternational(): bool
-    {
-        return true;
-    }
 
     public function isConfigured(): bool
     {
-        $config = $this->getConfig();
-        return !empty($config['client_id']) && !empty($config['client_secret']);
+        return $this->hasConfigValues('client_id', 'client_secret');
     }
 
     protected function getBaseUrl(): string
     {
-        return $this->isSandbox() ? self::SANDBOX_URL : self::PRODUCTION_URL;
+        return $this->environmentUrl(self::SANDBOX_URL, self::PRODUCTION_URL);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function testConnection(): array
     {
-        if (!$this->isConfigured()) {
-            return [
-                'success' => false,
-                'message' => 'Chưa cấu hình API credentials DHL (API Key / Client Secret còn trống).',
-                'details' => ['status' => 'missing_credentials'],
-            ];
+        if (! $this->isConfigured()) {
+            return $this->missingCredentialsResponse('Chưa cấu hình API credentials DHL (API Key / Client Secret còn trống).');
         }
 
         try {
@@ -77,11 +59,10 @@ class DhlCarrierAdapter extends BaseCarrierAdapter
                 ]);
 
             if ($response->successful()) {
-                return [
-                    'success' => true,
-                    'message' => 'Kết nối DHL Express API thành công (' . ($this->isSandbox() ? 'Sandbox' : 'Production') . ').',
-                    'details' => ['status' => $response->status()],
-                ];
+                return $this->successResponse(
+                    'Kết nối DHL Express API thành công (' . ($this->isSandbox() ? 'Sandbox' : 'Production') . ').',
+                    ['status' => $response->status()]
+                );
             }
 
             return [
@@ -91,16 +72,13 @@ class DhlCarrierAdapter extends BaseCarrierAdapter
             ];
         } catch (\Exception $e) {
             $this->log('error', 'DHL connection test error: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Không thể kết nối đến máy chủ DHL Express: ' . $e->getMessage(),
-                'details' => ['exception' => $e->getMessage()],
-            ];
+
+            return $this->exceptionResponse('Không thể kết nối đến máy chủ DHL Express: ' . $e->getMessage(), $e);
         }
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function supportsDestination(string $country, ?string $state = null): bool
     {
@@ -109,11 +87,11 @@ class DhlCarrierAdapter extends BaseCarrierAdapter
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getAvailableServices(array $destination, array $package = []): array
     {
-        if (!$this->supportsDestination($destination['country'] ?? '')) {
+        if (! $this->supportsDestination($destination['country'] ?? '')) {
             return [];
         }
 
@@ -124,11 +102,11 @@ class DhlCarrierAdapter extends BaseCarrierAdapter
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function calculateRate(string $serviceCode, array $destination, array $package = []): ?array
     {
-        if (!$this->supportsDestination($destination['country'] ?? '') || !$this->isConfigured()) {
+        if (! $this->canCalculateRate($destination, '')) {
             return null;
         }
 
@@ -146,9 +124,9 @@ class DhlCarrierAdapter extends BaseCarrierAdapter
                     'destinationCountryCode' => strtoupper($destination['country']),
                     'destinationCityName' => (string) ($destination['city'] ?? 'Capital'),
                     'weight' => $weightKg,
-                    'length' => max(5, (int) ($package['length'] ?? 20)),
-                    'width' => max(5, (int) ($package['width'] ?? 15)),
-                    'height' => max(5, (int) ($package['height'] ?? 10)),
+                    'length' => $this->packageValue($package, 'length', 20, 5),
+                    'width' => $this->packageValue($package, 'width', 15, 5),
+                    'height' => $this->packageValue($package, 'height', 10, 5),
                     'plannedShippingDate' => now()->addDay()->format('Y-m-d'),
                     'isCustomsDeclarable' => 'false',
                     'unitOfMeasurement' => 'metric',
@@ -156,15 +134,16 @@ class DhlCarrierAdapter extends BaseCarrierAdapter
 
             if ($response->successful()) {
                 $products = $response->json()['products'] ?? [];
-                if (!empty($products)) {
+                if (! empty($products)) {
                     $first = $products[0];
                     $totalPrice = (int) ($first['totalPrice'][0]['price'] ?? 0);
-                    return [
-                        'amount' => $this->applyMarkup($totalPrice),
-                        'currency' => $first['totalPrice'][0]['priceCurrency'] ?? 'VND',
-                        'service_name' => $first['productName'] ?? 'DHL Express',
-                        'estimated_days' => 4,
-                    ];
+
+                    return $this->rateResponse(
+                        $this->applyMarkup($totalPrice),
+                        $first['productName'] ?? 'DHL Express',
+                        4,
+                        $first['totalPrice'][0]['priceCurrency'] ?? 'VND'
+                    );
                 }
             }
         } catch (\Exception $e) {
@@ -175,30 +154,25 @@ class DhlCarrierAdapter extends BaseCarrierAdapter
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function createShipment(Order $order, array $options = []): array
     {
-        if (!$this->isConfigured()) {
-            return ['success' => false, 'message' => 'DHL credentials not configured'];
+        if (! $this->isConfigured()) {
+            return $this->credentialsMissing('DHL');
         }
 
         if ($this->isSandbox()) {
             $tracking = 'DHL-' . strtoupper(substr(md5($order->id . time()), 0, 10));
-            return [
-                'success' => true,
-                'tracking_number' => $tracking,
-                'reference' => 'SANDBOX-' . $order->number,
-                'carrier' => 'dhl',
-                'raw' => ['mode' => 'sandbox_simulated', 'tracking' => $tracking],
-            ];
+
+            return $this->sandboxShipmentResponse($order, $tracking);
         }
 
-        return ['success' => false, 'message' => 'Live shipment creation requires production environment approval'];
+        return $this->liveShipmentApprovalRequired();
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function cancelShipment(string $trackingNumber): bool
     {
@@ -206,18 +180,15 @@ class DhlCarrierAdapter extends BaseCarrierAdapter
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTracking(string $trackingNumber): array
     {
-        return [
-            'tracking_number' => $trackingNumber,
-            'carrier' => 'dhl',
-            'status' => 'transit',
-            'status_text' => 'Bưu phẩm đang trên chuyến bay quốc tế',
-            'history' => [
-                ['time' => now()->format('Y-m-d H:i:s'), 'status' => 'Lô hàng được thông quan và rời trung tâm trung chuyển'],
-            ],
-        ];
+        return $this->trackingResponse(
+            $trackingNumber,
+            'transit',
+            'Bưu phẩm đang trên chuyến bay quốc tế',
+            [['time' => now()->format('Y-m-d H:i:s'), 'status' => 'Lô hàng được thông quan và rời trung tâm trung chuyển']]
+        );
     }
 }

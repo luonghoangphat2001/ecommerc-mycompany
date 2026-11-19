@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
 use App\Models\Comment;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CommentController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+
     protected function modelClass(): string
     {
         return Comment::class;
@@ -56,7 +58,7 @@ class CommentController extends BaseCrudController
                 'label' => __('admin.comments.user') ?: 'User',
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:users,id'],
-                'options' => ['' => '-- ' . __('admin.common.none', ['default' => 'Không chọn']) . ' --'] + User::orderBy('name')->pluck('name', 'id')->toArray(),
+                'options' => ['' => '-- ' . __('admin.common.none', ['default' => 'Không chọn']) . ' --'] + $this->userOptions(),
             ],
             'title' => ['label' => __('fields.title') ?: 'Title', 'rules' => ['nullable', 'string', 'max:255']],
             'content' => ['label' => __('fields.content') ?: 'Content', 'type' => 'textarea', 'rules' => ['nullable', 'string']],
@@ -74,12 +76,12 @@ class CommentController extends BaseCrudController
 
     public function index(Request $request): View
     {
-        $query = Comment::query()->with(['user', 'commentable']);
+        $query = $this->indexQuery(Comment::query(), $request);
         $this->applySearch($query, $request);
 
         return view('admin.comments.index', [
             'title' => 'Comments',
-            'items' => $query->latest('id')->paginate(15)->withQueryString(),
+            'items' => $this->paginateIndex($query),
             'routePrefix' => $this->routePrefix(),
         ]);
     }

@@ -6,32 +6,36 @@ use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Shipping\Carriers\CarrierManager;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingZoneRepositoryInterface;
+use App\Ecommerce\Shipping\Services\Drivers\CarrierDriver;
+use App\Ecommerce\Shipping\Services\Drivers\FlatRateDriver;
+use App\Ecommerce\Shipping\Services\Drivers\FreeShippingDriver;
+use App\Ecommerce\Shipping\Services\Drivers\WeightBasedDriver;
 use App\Models\ShippingMethod;
 use App\Models\ShippingZone;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class ShippingService implements ShippingServiceInterface
 {
     protected array $driverClasses = [
-        'flat_rate' => \App\Ecommerce\Shipping\Services\Drivers\FlatRateDriver::class,
-        'free_shipping' => \App\Ecommerce\Shipping\Services\Drivers\FreeShippingDriver::class,
-        'weight_based' => \App\Ecommerce\Shipping\Services\Drivers\WeightBasedDriver::class,
-        'local_pickup' => \App\Ecommerce\Shipping\Services\Drivers\FlatRateDriver::class,
-        'carrier' => \App\Ecommerce\Shipping\Services\Drivers\CarrierDriver::class,
+        'flat_rate' => FlatRateDriver::class,
+        'free_shipping' => FreeShippingDriver::class,
+        'weight_based' => WeightBasedDriver::class,
+        'local_pickup' => FlatRateDriver::class,
+        'carrier' => CarrierDriver::class,
     ];
 
     public function __construct(
         protected ShippingZoneRepositoryInterface $shippingZoneRepository,
         protected CarrierManager $carrierManager,
         protected PackageCalculator $packageCalculator,
-        protected ?FeaturePolicyServiceInterface $featurePolicy = null
-    ) {
-        $this->featurePolicy = $this->featurePolicy ?: app(FeaturePolicyServiceInterface::class);
-    }
+        protected FeaturePolicyServiceInterface $featurePolicy,
+        protected Container $container
+    ) {}
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function resolveMatchingZone(
         ?string $country = null,
@@ -39,13 +43,13 @@ class ShippingService implements ShippingServiceInterface
         ?string $postcode = null,
         ?string $ward = null
     ): ?ShippingZone {
-        if (!$this->featurePolicy->isShippingEnabled()) {
+        if (! $this->featurePolicy->isShippingEnabled()) {
             return null;
         }
 
         $zone = $this->shippingZoneRepository->findMatchingZone($country, $state, $postcode, $ward);
 
-        if (!$zone) {
+        if (! $zone) {
             $zone = $this->shippingZoneRepository->all()->first();
         }
 
@@ -53,7 +57,7 @@ class ShippingService implements ShippingServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getAvailableMethods(
         ?string $country = null,
@@ -63,14 +67,14 @@ class ShippingService implements ShippingServiceInterface
         int $subtotal = 0,
         array $package = []
     ): Collection {
-        if (!$this->featurePolicy->isShippingEnabled()) {
+        if (! $this->featurePolicy->isShippingEnabled()) {
             return collect();
         }
 
         $country = $country ?: 'VN';
         $zone = $this->resolveMatchingZone($country, $state, $postcode, $ward);
 
-        if (!$zone) {
+        if (! $zone) {
             return collect();
         }
 
@@ -89,11 +93,11 @@ class ShippingService implements ShippingServiceInterface
                 $type = $method->type instanceof \BackedEnum ? $method->type->value : (string) $method->type;
                 $driverClass = $this->driverClasses[$type] ?? null;
 
-                if (!$driverClass) {
+                if (! $driverClass) {
                     return null;
                 }
 
-                $driver = app($driverClass);
+                $driver = $this->container->make($driverClass);
                 $options = array_merge(
                     $method->settings ?? [],
                     $package,
@@ -128,7 +132,7 @@ class ShippingService implements ShippingServiceInterface
         if ($this->featurePolicy->isCarrierShippingEnabled()) {
             $enabledCarriers = $this->carrierManager->getCarriersForDestination($country, $state);
             foreach ($enabledCarriers as $carrier) {
-                if (!$carrier->isConfigured()) {
+                if (! $carrier->isConfigured()) {
                     continue;
                 }
 
@@ -165,21 +169,19 @@ class ShippingService implements ShippingServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function calculateMethodFee(
-        ShippingMethod|int|string $method,
+        ShippingMethod | int | string $method,
         array $destination,
         int $subtotal = 0,
         array $package = []
     ): ?int {
-        if (!$this->featurePolicy->isShippingEnabled()) {
+        if (! $this->featurePolicy->isShippingEnabled()) {
             return null;
         }
-        if (!$method instanceof ShippingMethod) {
-            if (is_numeric($method)) {
-                $method = ShippingMethod::find($method);
-            } elseif (is_string($method) && str_starts_with($method, 'carrier_')) {
+        if (! $method instanceof ShippingMethod) {
+            if (is_string($method) && str_starts_with($method, 'carrier_')) {
                 // Parse dynamic carrier
                 $parts = explode('_', $method, 3);
                 $carrierId = $parts[1] ?? 'ghn';
@@ -187,25 +189,27 @@ class ShippingService implements ShippingServiceInterface
                 $carrier = $this->carrierManager->getAdapter($carrierId);
                 if ($carrier && $carrier->isEnabled()) {
                     $quote = $carrier->calculateRate($serviceCode, $destination, $package);
+
                     return $quote ? (int) $quote['amount'] : null;
                 }
+
                 return null;
-            } else {
-                $method = ShippingMethod::where('type', $method)->first();
             }
+
+            $method = $this->resolveMethod($method);
         }
 
-        if (!$method || !$method->is_enabled) {
+        if (! $method || ! $method->is_enabled) {
             return null;
         }
 
         $type = $method->type instanceof \BackedEnum ? $method->type->value : (string) $method->type;
         $driverClass = $this->driverClasses[$type] ?? null;
-        if (!$driverClass) {
+        if (! $driverClass) {
             return null;
         }
 
-        $driver = app($driverClass);
+        $driver = $this->container->make($driverClass);
         $options = array_merge(
             $method->settings ?? [],
             $package,
@@ -213,11 +217,74 @@ class ShippingService implements ShippingServiceInterface
         );
 
         $fee = $driver->calculateFee($subtotal, $destination, $options);
+
         return ($fee !== null && $fee >= 0) ? $fee : null;
     }
 
+    public function resolveMethod(ShippingMethod | int | string | null $method): ?ShippingMethod
+    {
+        if ($method instanceof ShippingMethod) {
+            return $method;
+        }
+
+        if ($method === null || $method === '') {
+            return null;
+        }
+
+        $query = ShippingMethod::query()->where('is_enabled', true);
+
+        if (is_numeric($method)) {
+            return $query->whereKey((int) $method)->first();
+        }
+
+        return $query
+            ->where(fn ($builder) => $builder->where('type', $method)->orWhere('name', $method))
+            ->first();
+    }
+
+    public function resolveCheckoutMethod(?ShippingZone $zone, int | string | null $method): ?ShippingMethod
+    {
+        if ($zone) {
+            $query = $zone->methods()->where('is_enabled', true);
+
+            if (is_numeric($method)) {
+                $resolved = (clone $query)->whereKey((int) $method)->first();
+                if ($resolved) {
+                    return $resolved;
+                }
+            }
+
+            if ($method !== null && $method !== '') {
+                $resolved = (clone $query)
+                    ->where(fn ($builder) => $builder
+                        ->where('type', $method)
+                        ->orWhere('name', $method))
+                    ->first();
+
+                if ($resolved) {
+                    return $resolved;
+                }
+            }
+
+            $resolved = $query->first();
+            if ($resolved) {
+                return $resolved;
+            }
+        }
+
+        if (is_numeric($method)) {
+            $resolved = $this->resolveMethod((int) $method);
+            if ($resolved) {
+                return $resolved;
+            }
+        }
+
+        return $this->resolveMethod(is_string($method) ? $method : null)
+            ?? $this->resolveMethod(null);
+    }
+
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getShippingZoneTableQuery(): Builder
     {
@@ -225,7 +292,7 @@ class ShippingService implements ShippingServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function validateAddress(array $addressData): array
     {
@@ -244,7 +311,7 @@ class ShippingService implements ShippingServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getLocationInfo(string $postcode): ?array
     {

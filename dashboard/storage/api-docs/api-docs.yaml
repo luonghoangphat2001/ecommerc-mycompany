@@ -1,0 +1,5228 @@
+openapi: 3.0.0
+info:
+  title: 'Storefront API'
+  description: 'Tài liệu API dành cho Storefront (Client/App)'
+  version: 1.0.0
+servers:
+  -
+    url: 'http://localhost:8009'
+    description: 'Primary API Server'
+paths:
+  /api/v1/addresses/countries:
+    get:
+      tags:
+        - Address
+      summary: 'List of Countries'
+      operationId: 0e75bbf1edae22c138d66e0487843511
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      code:
+                        type: string
+                        example: VN
+                      name:
+                        type: string
+                        example: Vietnam
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  '/api/v1/addresses/countries/{countryCode}/states':
+    get:
+      tags:
+        - Address
+      summary: 'List of States by Country'
+      operationId: 84f0d4f2fa7c1d1476b467bb113d0c42
+      parameters:
+        -
+          name: countryCode
+          in: path
+          description: 'Country code'
+          required: true
+          schema:
+            type: string
+            example: VN
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      id:
+                        type: string
+                        example: SG
+                      name:
+                        type: string
+                        example: 'Hồ Chí Minh'
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  '/api/v1/addresses/countries/{countryCode}/states/{stateId}/regions':
+    get:
+      tags:
+        - Address
+      summary: 'List of Regions by State'
+      operationId: 176ea2736143db2269227a9e4983a6c0
+      parameters:
+        -
+          name: countryCode
+          in: path
+          description: 'Country code'
+          required: true
+          schema:
+            type: string
+            example: VN
+        -
+          name: stateId
+          in: path
+          description: 'State ID'
+          required: true
+          schema:
+            type: string
+            example: SG
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      id:
+                        type: string
+                        example: Q1
+                      name:
+                        type: string
+                        example: 'Quận 1'
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  '/api/v1/addresses/countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions':
+    get:
+      tags:
+        - Address
+      summary: 'List of Sub-Regions by Region'
+      operationId: a280bb3ff5fc6268439b8eca538df602
+      parameters:
+        -
+          name: countryCode
+          in: path
+          description: 'Country code'
+          required: true
+          schema:
+            type: string
+            example: VN
+        -
+          name: stateId
+          in: path
+          description: 'State ID'
+          required: true
+          schema:
+            type: string
+            example: SG
+        -
+          name: regionId
+          in: path
+          description: 'Region ID'
+          required: true
+          schema:
+            type: string
+            example: Q1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      id:
+                        type: string
+                        example: PBN
+                      name:
+                        type: string
+                        example: 'Phường Bến Nghé'
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  /api/v1/user-addresses:
+    get:
+      tags:
+        - 'User Address'
+      summary: 'List of User Addresses'
+      operationId: 24b61e9adc63c22870c0ebf69707b551
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      first_name:
+                        type: string
+                        example: Nguyen
+                      last_name:
+                        type: string
+                        example: 'Van A'
+                      phone:
+                        type: string
+                        example: '0123456789'
+                      street:
+                        type: string
+                        example: '123 Le Loi'
+                      city:
+                        type: string
+                        example: 'Ho Chi Minh'
+                      country:
+                        type: string
+                        example: VN
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - 'User Address'
+      summary: 'Add New Address'
+      operationId: b4ce5399eead9bf18905c6bb19d498f2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - first_name
+                - last_name
+                - phone
+                - country_code
+                - street
+              properties:
+                first_name:
+                  type: string
+                  example: Nguyen
+                last_name:
+                  type: string
+                  example: 'Van A'
+                company:
+                  type: string
+                  example: 'HP Platform'
+                  nullable: true
+                phone:
+                  type: string
+                  example: '0123456789'
+                email:
+                  type: string
+                  format: email
+                  example: a@example.com
+                  nullable: true
+                type:
+                  type: string
+                  example: shipping
+                  enum:
+                    - shipping
+                    - billing
+                country_code:
+                  type: string
+                  example: VN
+                state_id:
+                  type: string
+                  example: SG
+                  nullable: true
+                city_id:
+                  type: string
+                  example: HCM
+                  nullable: true
+                ward_id:
+                  type: string
+                  example: W1
+                  nullable: true
+                street:
+                  type: string
+                  example: '123 Le Loi'
+                zip:
+                  type: string
+                  example: '700000'
+                  nullable: true
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      first_name:
+                        type: string
+                        example: Nguyen
+                      last_name:
+                        type: string
+                        example: 'Van A'
+                      phone:
+                        type: string
+                        example: '0123456789'
+                      street:
+                        type: string
+                        example: '123 Le Loi'
+                      city:
+                        type: string
+                        example: 'Ho Chi Minh'
+                      country:
+                        type: string
+                        example: VN
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/user-addresses/{address}':
+    put:
+      tags:
+        - 'User Address'
+      summary: 'Update Address'
+      operationId: dc40367419d18f4d3f875b40d657b250
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                first_name:
+                  type: string
+                  example: Nguyen
+                last_name:
+                  type: string
+                  example: 'Van A'
+                company:
+                  type: string
+                  example: 'HP Platform'
+                  nullable: true
+                phone:
+                  type: string
+                  example: '0123456789'
+                email:
+                  type: string
+                  format: email
+                  example: a@example.com
+                  nullable: true
+                type:
+                  type: string
+                  example: shipping
+                  enum:
+                    - shipping
+                    - billing
+                country_code:
+                  type: string
+                  example: VN
+                state_id:
+                  type: string
+                  example: SG
+                  nullable: true
+                city_id:
+                  type: string
+                  example: HCM
+                  nullable: true
+                ward_id:
+                  type: string
+                  example: W1
+                  nullable: true
+                street:
+                  type: string
+                  example: '123 Le Loi'
+                zip:
+                  type: string
+                  example: '700000'
+                  nullable: true
+              type: object
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      first_name:
+                        type: string
+                        example: Nguyen
+                      last_name:
+                        type: string
+                        example: 'Van A'
+                      phone:
+                        type: string
+                        example: '0123456789'
+                      street:
+                        type: string
+                        example: '123 Le Loi'
+                      city:
+                        type: string
+                        example: 'Ho Chi Minh'
+                      country:
+                        type: string
+                        example: VN
+                    type: object
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - 'User Address'
+      summary: 'Delete Address'
+      operationId: 73c19a14848dc5242799cb6ce4378864
+      parameters:
+        -
+          name: address
+          in: path
+          description: 'Address ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      deleted:
+                        type: boolean
+                        example: true
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/attributes:
+    get:
+      tags:
+        - Attributes
+      summary: 'List of Global Attributes'
+      operationId: 6169302bc2163b9f3c11df1e9d80ba55
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AttributeResource'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+    post:
+      tags:
+        - Attributes
+      summary: 'Create Global Attribute'
+      operationId: 50dcf21178ac204ad2d37aea18157383
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/attributes/{id}':
+    get:
+      tags:
+        - Attributes
+      summary: 'Get Attribute by ID'
+      operationId: bddd86e7d274ac5f9175e5cf80115038
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AttributeResource'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+    put:
+      tags:
+        - Attributes
+      summary: 'Update Global Attribute'
+      operationId: 202e35258e910f124406a2ed16c55785
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Attributes
+      summary: 'Delete Global Attribute'
+      operationId: 11c4f6a56f4788caaaaf83e3a9fd1177
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: 'Storefront Login'
+      operationId: fb66b153966d9fac2e999136ef0ade67
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - email
+                - password
+                - device_name
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: customer@example.com
+                password:
+                  type: string
+                  format: password
+                  example: password123
+                device_name:
+                  type: string
+                  example: web
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      access_token:
+                        type: string
+                        example: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.signature
+                      token_type:
+                        type: string
+                        example: Bearer
+                      expires_in:
+                        type: integer
+                        example: 900
+                      user:
+                        $ref: '#/components/schemas/UserResource'
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security: []
+  /api/v1/auth/refresh-token:
+    post:
+      tags:
+        - Authentication
+      summary: 'Refresh Access Token'
+      operationId: e7effffad81d43535c7bad0b99aac84e
+      requestBody:
+        required: false
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      access_token:
+                        type: string
+                        example: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.signature
+                      token_type:
+                        type: string
+                        example: Bearer
+                      expires_in:
+                        type: integer
+                        example: 900
+                      user:
+                        type: object
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security: []
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout
+      operationId: 307ed0512855922b2280792376bb2095
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/profile:
+    put:
+      tags:
+        - Authentication
+      summary: 'Update Profile'
+      operationId: 6d255c691abf88d993b6ab831ccec25d
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+                  example: 'Nguyen Van A'
+                phone:
+                  type: string
+                  example: '0123456789'
+                default_shipping_address_id:
+                  type: integer
+                  example: 1
+                  nullable: true
+                default_billing_address_id:
+                  type: integer
+                  example: 2
+                  nullable: true
+              type: object
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UserResource'
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/brands:
+    get:
+      tags:
+        - Brands
+      summary: 'List of Brands'
+      operationId: 41ee8c5ca737e71782e6d058a4c4a36f
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BrandResource'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+    post:
+      tags:
+        - Brands
+      summary: 'Create Brand'
+      operationId: ee7e7f8fcd9a6991653c61e4570359b7
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - name
+                - slug
+              properties:
+                name:
+                  type: string
+                  example: Nike
+                slug:
+                  type: string
+                  example: nike
+                description:
+                  type: string
+                  example: 'Nike brand'
+                  nullable: true
+                is_active:
+                  type: boolean
+                  example: true
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/BrandResource'
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/brands/{brand}':
+    get:
+      tags:
+        - Brands
+      summary: 'Brand Details'
+      operationId: 19733754f5362552de76e50f0160166a
+      parameters:
+        -
+          name: brand
+          in: path
+          description: 'Brand ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/BrandResource'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+    put:
+      tags:
+        - Brands
+      summary: 'Update Brand'
+      operationId: d150c02e7b85f9406804d7e3f6281824
+      parameters:
+        -
+          name: brand
+          in: path
+          description: 'Brand ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+                  example: 'Nike Updated'
+                slug:
+                  type: string
+                  example: nike-updated
+                description:
+                  type: string
+                  example: 'Nike brand'
+                  nullable: true
+                is_active:
+                  type: boolean
+                  example: true
+              type: object
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/BrandResource'
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Brands
+      summary: 'Delete Brand'
+      operationId: 522ee6c27bebdc9597fae34639fad0a5
+      parameters:
+        -
+          name: brand
+          in: path
+          description: 'Brand ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/cart:
+    post:
+      tags:
+        - Cart
+      summary: 'Get Cart Information'
+      operationId: ab7b89747a46a9ae964f7cf0d84bcdc5
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                country:
+                  type: string
+                  example: VN
+                state:
+                  type: string
+                  nullable: true
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                      summary:
+                        properties:
+                          subtotal:
+                            type: number
+                            format: float
+                            example: 1000000
+                          tax_amount:
+                            type: number
+                            format: float
+                            example: 100000
+                          shipping_cost:
+                            type: number
+                            format: float
+                            example: 30000
+                          total:
+                            type: number
+                            format: float
+                            example: 1130000
+                        type: object
+                      notifications:
+                        type: array
+                        items:
+                          type: string
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security: []
+    delete:
+      tags:
+        - Cart
+      summary: 'Clear Cart'
+      operationId: 04b1d3cc7ae99bb87fedc6fb97b30908
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      cleared:
+                        type: boolean
+                        example: true
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  /api/v1/cart/sync:
+    post:
+      tags:
+        - Cart
+      summary: 'Sync Cart'
+      operationId: fffb20f03d4864692ca1101090c17d00
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                country:
+                  type: string
+                  example: VN
+                state:
+                  type: string
+                  nullable: true
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                      summary:
+                        properties:
+                          subtotal:
+                            type: number
+                            format: float
+                            example: 1000000
+                          tax_amount:
+                            type: number
+                            format: float
+                            example: 100000
+                          shipping_cost:
+                            type: number
+                            format: float
+                            example: 30000
+                          total:
+                            type: number
+                            format: float
+                            example: 1130000
+                        type: object
+                      notifications:
+                        type: array
+                        items:
+                          type: string
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security: []
+  /api/v1/cart/items:
+    post:
+      tags:
+        - Cart
+      summary: 'Add Item to Cart'
+      operationId: 74026a355fc7660c73027713706dce92
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - product_id
+                - quantity
+              properties:
+                product_id:
+                  type: integer
+                  example: 1
+                quantity:
+                  type: integer
+                  example: 2
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      product_id:
+                        type: integer
+                        example: 1
+                      name:
+                        type: string
+                        example: 'Sản phẩm 1'
+                      price:
+                        type: number
+                        format: float
+                        example: 500000
+                      quantity:
+                        type: integer
+                        example: 2
+                      subtotal:
+                        type: number
+                        format: float
+                        example: 1000000
+                      available:
+                        type: boolean
+                        example: true
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security: []
+  '/api/v1/cart/items/{itemId}':
+    put:
+      tags:
+        - Cart
+      summary: 'Update Item Quantity'
+      operationId: 7c60baa0fc0e4a3f3dc9f29b407187fe
+      parameters:
+        -
+          name: itemId
+          in: path
+          description: 'Product ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: integer
+                  example: 3
+              type: object
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      product_id:
+                        type: integer
+                        example: 1
+                      quantity:
+                        type: integer
+                        example: 3
+                      available:
+                        type: boolean
+                        example: true
+                    type: object
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+    delete:
+      tags:
+        - Cart
+      summary: 'Remove Item from Cart'
+      operationId: a55b9d660d126a4b4ec6c1aae613eea4
+      parameters:
+        -
+          name: itemId
+          in: path
+          description: 'Product ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      removed:
+                        type: boolean
+                        example: true
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  /api/v1/cart/shipping-methods:
+    post:
+      tags:
+        - Cart
+      summary: 'Get Shipping Methods'
+      operationId: c212838604ef7acc23b4f2f47d1a938d
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                country:
+                  type: string
+                  example: VN
+                state:
+                  type: string
+                  nullable: true
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      methods:
+                        type: array
+                        items:
+                          properties:
+                            id:
+                              type: integer
+                              example: 1
+                            name:
+                              type: string
+                              example: 'Giao hàng tiêu chuẩn'
+                            cost:
+                              type: number
+                              format: float
+                              example: 30000
+                          type: object
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security: []
+  /api/v1/combos:
+    get:
+      tags:
+        - Combos
+      summary: 'List of Combos'
+      operationId: 7c9ae2c5ad3552d00b60daf6a65c34b5
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ComboResource'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+  '/api/v1/combos/{slug}':
+    get:
+      tags:
+        - Combos
+      summary: 'Combo Details'
+      operationId: 95f0276afa90203628264c355d8eb6d7
+      parameters:
+        -
+          name: slug
+          in: path
+          description: 'Combo Slug'
+          required: true
+          schema:
+            type: string
+            example: summer-combo
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ComboResource'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  /api/v1/coupons/apply:
+    post:
+      tags:
+        - Coupons
+      summary: 'Apply Coupon'
+      operationId: acd68b67b817c20655d076768252570b
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - code
+                - items
+                - subtotal
+              properties:
+                code:
+                  type: string
+                  example: SUMMER24
+                items:
+                  type: array
+                  items:
+                    type: object
+                subtotal:
+                  type: number
+                  format: float
+                  example: 1500000
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      code:
+                        type: string
+                        example: SUMMER24
+                      discount_amount:
+                        type: number
+                        format: float
+                        example: 50000
+                      type:
+                        type: string
+                        example: fixed
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/products/{productId}/cross-sells':
+    get:
+      tags:
+        - Cross-sells
+      summary: 'List Cross-sells for Product'
+      operationId: 0b744766f0cbffdce274196b8b10bfda
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+        -
+          name: productId
+          in: path
+          description: 'Original Product ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrossSellResource'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+  /api/v1/user/loyalty/points:
+    get:
+      tags:
+        - Loyalty
+      summary: 'Get User Loyalty Points'
+      operationId: 8f2d8876ec4401891b9021e3a73c7d08
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      enabled:
+                        type: boolean
+                        example: true
+                      current_points:
+                        type: integer
+                        example: 100
+                      lifetime_points:
+                        type: integer
+                        example: 500
+                      points_per_currency:
+                        type: integer
+                        example: 1
+                      point_conversion_rate:
+                        type: number
+                        format: float
+                        example: 1000
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/user/loyalty/history:
+    get:
+      tags:
+        - Loyalty
+      summary: 'Loyalty Points History'
+      operationId: b9723651ced32b0ce4578951bce1bdd4
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        action_type:
+                          type: string
+                          example: earn
+                        points_changed:
+                          type: integer
+                          example: 10
+                        order_id:
+                          type: integer
+                          example: 123
+                          nullable: true
+                        expired_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        created_at:
+                          type: string
+                          format: date-time
+                      type: object
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/menus:
+    get:
+      tags:
+        - Menus
+      summary: 'List of Menus'
+      operationId: 4a72ea527c1ae0a0c965c27b8f6471ce
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MenuResource'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+  '/api/v1/menus/{slug}':
+    get:
+      tags:
+        - Menus
+      summary: 'Menu Details (by Slug)'
+      operationId: 82d95e40b985fd0aa2001cf463935dfc
+      parameters:
+        -
+          name: slug
+          in: path
+          description: 'Menu Slug'
+          required: true
+          schema:
+            type: string
+            example: main-menu
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/MenuResource'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  /api/v1/orders:
+    get:
+      tags:
+        - Orders
+      summary: 'List of User Orders'
+      operationId: 6390e58970c6b576bd8c1ec198cb5fbb
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderResource'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    post:
+      tags:
+        - Orders
+      summary: 'Create New Order'
+      operationId: 8cb746eb001b58ac915930ba43cfdf0d
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - email
+                - first_name
+                - last_name
+                - phone
+                - address_line_1
+                - city
+                - country_id
+                - items
+                - payment_method_id
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: customer@example.com
+                first_name:
+                  type: string
+                  example: Nguyen
+                last_name:
+                  type: string
+                  example: 'Van A'
+                phone:
+                  type: string
+                  example: '0123456789'
+                address_line_1:
+                  type: string
+                  example: '123 Le Loi'
+                city:
+                  type: string
+                  example: 'Ho Chi Minh'
+                country_id:
+                  type: integer
+                  example: 1
+                items:
+                  type: array
+                  items:
+                    properties:
+                      product_id:
+                        type: integer
+                        example: 1
+                      qty:
+                        type: integer
+                        example: 2
+                    type: object
+                payment_method_id:
+                  type: integer
+                  example: 1
+                shipping_method_id:
+                  type: integer
+                  example: 1
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrderResource'
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/orders/{order}':
+    get:
+      tags:
+        - Orders
+      summary: 'Order Details'
+      operationId: 29e4676537faf0c969a79eb39e944a39
+      parameters:
+        -
+          name: order
+          in: path
+          description: 'Order ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrderResource'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    put:
+      tags:
+        - Orders
+      summary: 'Update Order Status/Notes'
+      operationId: ace1bfedfde36a3969443a23b40d5216
+      parameters:
+        -
+          name: order
+          in: path
+          description: 'Order ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                status:
+                  type: string
+                  example: processing
+                notes:
+                  type: string
+                  example: 'Giao nhanh nhé'
+              type: object
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrderResource'
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Orders
+      summary: 'Delete Order (Cancel)'
+      operationId: 08f6194f3f8ed73ee851c2fc5e20730d
+      parameters:
+        -
+          name: order
+          in: path
+          description: 'Order ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/pages:
+    get:
+      tags:
+        - Pages
+      summary: 'List of Pages'
+      operationId: e9a4e64163e698ee9f46326a9748e00f
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+    post:
+      tags:
+        - Pages
+      summary: 'Create Page'
+      operationId: 9cc33c499eca197350dd48cb7e087f78
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - title
+                - slug
+                - content
+              properties:
+                title:
+                  type: string
+                  example: 'About Us'
+                slug:
+                  type: string
+                  example: about-us
+                content:
+                  type: string
+                  example: 'Content here'
+                status:
+                  type: string
+                  example: published
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/pages/{page}':
+    get:
+      tags:
+        - Pages
+      summary: 'Page Details'
+      operationId: 4137e39e121fb91c9729e10389f4a1fe
+      parameters:
+        -
+          name: page
+          in: path
+          description: 'Page ID or Slug'
+          required: true
+          schema:
+            type: string
+            example: about-us
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+    put:
+      tags:
+        - Pages
+      summary: 'Update Page'
+      operationId: 116946dd0881c39af4ff51fa23f2727b
+      parameters:
+        -
+          name: page
+          in: path
+          description: 'Page ID'
+          required: true
+          schema:
+            type: string
+            example: '1'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                title:
+                  type: string
+                  example: 'About Us Updated'
+              type: object
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Pages
+      summary: 'Delete Page'
+      operationId: 15096464f1ac020fce9edd52f79b1479
+      parameters:
+        -
+          name: page
+          in: path
+          description: 'Page ID'
+          required: true
+          schema:
+            type: string
+            example: '1'
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/post-categories:
+    get:
+      tags:
+        - 'Post Categories'
+      summary: 'List of Post Categories'
+      operationId: 0632bfe348941ed8e342923d82ba1faa
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+    post:
+      tags:
+        - 'Post Categories'
+      summary: 'Create Post Category'
+      operationId: 53aa573c3729a24bd5831db616602910
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - name
+                - slug
+              properties:
+                name:
+                  type: string
+                  example: News
+                slug:
+                  type: string
+                  example: news
+                is_active:
+                  type: boolean
+                  example: true
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/post-categories/{postCategory}':
+    get:
+      tags:
+        - 'Post Categories'
+      summary: 'Post Category Details'
+      operationId: d432c7a649efcab51b7b1bce06fe5a68
+      parameters:
+        -
+          name: postCategory
+          in: path
+          description: 'Category ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+    put:
+      tags:
+        - 'Post Categories'
+      summary: 'Update Post Category'
+      operationId: 4ad72ee7dac080cd7e2513b626300d35
+      parameters:
+        -
+          name: postCategory
+          in: path
+          description: 'Category ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+                  example: 'News Updated'
+              type: object
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - 'Post Categories'
+      summary: 'Delete Post Category'
+      operationId: 8101ec3094faf615a9703cfd3a877609
+      parameters:
+        -
+          name: postCategory
+          in: path
+          description: 'Category ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/post-categories/{postCategory}/posts':
+    get:
+      tags:
+        - 'Post Categories'
+      summary: 'List of Posts in Category'
+      operationId: 8f76e1bbd8c89cd040a80e167991a57d
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+        -
+          name: postCategory
+          in: path
+          description: 'Category ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+  /api/v1/posts:
+    get:
+      tags:
+        - Posts
+      summary: 'List of Posts'
+      operationId: 92f08c82044f01535382e3f0785785b0
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+    post:
+      tags:
+        - Posts
+      summary: 'Create Post'
+      operationId: c599878a9a0c89930a40d45748861909
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - title
+                - slug
+                - content
+              properties:
+                title:
+                  type: string
+                  example: 'New Post'
+                slug:
+                  type: string
+                  example: new-post
+                content:
+                  type: string
+                  example: 'Content here'
+                status:
+                  type: string
+                  example: published
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/posts/{post}':
+    get:
+      tags:
+        - Posts
+      summary: 'Post Details'
+      operationId: f3d80e0d70e9871e01263372f9bc37e0
+      parameters:
+        -
+          name: post
+          in: path
+          description: 'Post ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+    put:
+      tags:
+        - Posts
+      summary: 'Update Post'
+      operationId: 0e51d4670cc69b6ea71dcb917e921db6
+      parameters:
+        -
+          name: post
+          in: path
+          description: 'Post ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                title:
+                  type: string
+                  example: 'Updated Post'
+                content:
+                  type: string
+                  example: 'Updated Content'
+              type: object
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - Posts
+      summary: 'Delete Post'
+      operationId: cde7bbf0832160a915191934f0664046
+      parameters:
+        -
+          name: post
+          in: path
+          description: 'Post ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/product-categories:
+    get:
+      tags:
+        - 'Product Categories'
+      summary: 'List of Product Categories'
+      operationId: f22384f48c66117d0254d2c3f08fe312
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductCategoryResource'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+    post:
+      tags:
+        - 'Product Categories'
+      summary: 'Create Product Category'
+      operationId: e03eaeaf2172309270cac4a2eb99ccb8
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              required:
+                - name
+                - slug
+              properties:
+                name:
+                  type: string
+                  example: Electronics
+                slug:
+                  type: string
+                  example: electronics
+                description:
+                  type: string
+                  example: 'Electronics category'
+                  nullable: true
+                is_active:
+                  type: boolean
+                  example: true
+              type: object
+      responses:
+        201:
+          description: 'Created successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductCategoryResource'
+                  message:
+                    type: string
+                    example: 'Created successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        500:
+          description: 'Server Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  '/api/v1/product-categories/{productCategory}':
+    get:
+      tags:
+        - 'Product Categories'
+      summary: 'Product Category Details'
+      operationId: bb0f51515a44b01e3c2a47a2e44acf89
+      parameters:
+        -
+          name: productCategory
+          in: path
+          description: 'Category ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductCategoryResource'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+    put:
+      tags:
+        - 'Product Categories'
+      summary: 'Update Product Category'
+      operationId: f2086b58e95efffad80058cf4fd94bda
+      parameters:
+        -
+          name: productCategory
+          in: path
+          description: 'Category ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+                  example: 'Electronics Updated'
+                slug:
+                  type: string
+                  example: electronics-updated
+                description:
+                  type: string
+                  example: 'Electronics category'
+                  nullable: true
+                is_active:
+                  type: boolean
+                  example: true
+              type: object
+      responses:
+        200:
+          description: 'Updated successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductCategoryResource'
+                  message:
+                    type: string
+                    example: 'Updated successfully'
+                type: object
+        400:
+          description: 'Validation Error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+    delete:
+      tags:
+        - 'Product Categories'
+      summary: 'Delete Product Category'
+      operationId: 3e3093d7194c3bd363e249cbf2138906
+      parameters:
+        -
+          name: productCategory
+          in: path
+          description: 'Category ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Deleted successfully'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: 'Deleted successfully'
+                type: object
+        204:
+          description: 'Deleted successfully (No Content)'
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security:
+        -
+          bearerAuth: []
+  /api/v1/products:
+    get:
+      tags:
+        - Products
+      summary: 'List of Products'
+      operationId: 072fd15d3be55577bb08c19d19f1e75c
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+        -
+          name: category_id
+          in: query
+          description: 'Filter by Category ID'
+          required: false
+          schema:
+            type: integer
+            example: 1
+        -
+          name: brand_id
+          in: query
+          description: 'Filter by Brand ID'
+          required: false
+          schema:
+            type: integer
+            example: 2
+        -
+          name: type
+          in: query
+          description: 'Filter by Product Type'
+          required: false
+          schema:
+            type: string
+            example: tour
+        -
+          name: search
+          in: query
+          description: 'Search by Name'
+          required: false
+          schema:
+            type: string
+            example: Beach
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductResource'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+  '/api/v1/products/by-slug/{slug}':
+    get:
+      tags:
+        - Products
+      summary: 'Product Details (by Slug)'
+      operationId: 12215f8f69aa13faf92641e0ceaed485
+      parameters:
+        -
+          name: slug
+          in: path
+          description: 'Product Slug'
+          required: true
+          schema:
+            type: string
+            example: san-pham-1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductResource'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  '/api/v1/products/{product}':
+    get:
+      tags:
+        - Products
+      summary: 'Product Details (by ID)'
+      operationId: 0cfb1994ca6b44b2da2f0a0347291a8c
+      parameters:
+        -
+          name: product
+          in: path
+          description: 'Product ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductResource'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  /api/v1/settings:
+    get:
+      tags:
+        - Settings
+      summary: 'Get Storefront Settings'
+      operationId: 906fb6de642f352d91c68a0b5dc8ba96
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    properties:
+                      general:
+                        type: object
+                      social:
+                        type: object
+                      store:
+                        type: object
+                    type: object
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+        404:
+          description: 'Not Found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundErrorResponse'
+      security: []
+  '/api/v1/products/{productId}/upsells':
+    get:
+      tags:
+        - Upsells
+      summary: 'List Upsells for Product'
+      operationId: 5db5a99e03ae95f27412b100e8ef45de
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'Page number (default: 1)'
+          required: false
+          schema:
+            type: integer
+            default: 1
+        -
+          name: per_page
+          in: query
+          description: 'Items per page'
+          required: false
+          schema:
+            type: integer
+            default: 15
+        -
+          name: productId
+          in: path
+          description: 'Original Product ID'
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        200:
+          description: 'Paginated list of items'
+          content:
+            application/json:
+              schema:
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UpsellResource'
+                  links:
+                    $ref: '#/components/schemas/PaginationLinks'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+                  message:
+                    type: string
+                    example: Success
+                type: object
+        401:
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedErrorResponse'
+        403:
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenErrorResponse'
+      security: []
+components:
+  schemas:
+    AddressResource:
+      title: 'User Address'
+      description: 'Địa chỉ người dùng'
+      properties:
+        id:
+          type: integer
+          example: 1
+        type:
+          type: string
+          example: shipping
+        first_name:
+          type: string
+          example: Nguyen
+        last_name:
+          type: string
+          example: 'Van A'
+        company:
+          type: string
+          example: 'HP Platform'
+          nullable: true
+        phone:
+          type: string
+          example: '0123456789'
+        email:
+          type: string
+          example: customer@example.com
+          nullable: true
+        country_code:
+          type: string
+          example: VN
+        street:
+          type: string
+          example: '123 Le Loi'
+        city_id:
+          type: string
+          example: HCM
+          nullable: true
+        state_id:
+          type: string
+          example: SG
+          nullable: true
+        ward_id:
+          type: string
+          example: W1
+          nullable: true
+        zip:
+          type: string
+          example: '700000'
+          nullable: true
+      type: object
+    AttributeResource:
+      title: Attribute
+      description: 'Chi tiết thuộc tính sản phẩm dùng chung'
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Size
+        slug:
+          type: string
+          example: size
+        type:
+          type: string
+          example: button
+        values:
+          type: array
+          items:
+            type: string
+          example:
+            - S
+            - M
+            - L
+            - XL
+        is_enabled:
+          type: boolean
+          example: true
+        products_count:
+          type: integer
+          example: 5
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      type: object
+    BrandResource:
+      title: Brand
+      description: 'Chi tiết thương hiệu'
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Nike
+        slug:
+          type: string
+          example: nike
+        website:
+          type: string
+          example: 'https://nike.com'
+          nullable: true
+        description:
+          type: string
+          example: 'Nike brand description'
+          nullable: true
+        is_visible:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      type: object
+    ComboResource:
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Combo Mùa Hè'
+        slug:
+          type: string
+          example: combo-mua-he
+        description:
+          type: string
+          example: 'Combo giá rẻ'
+          nullable: true
+        combo_price:
+          type: number
+          format: float
+          example: 1000000
+        original_price:
+          type: number
+          format: float
+          example: 1200000
+        discount_percent:
+          type: number
+          format: float
+          example: 16.67
+          nullable: true
+        is_active:
+          type: boolean
+          example: true
+        start_date:
+          type: string
+          format: date-time
+          nullable: true
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        items:
+          type: array
+          items:
+            properties:
+              id:
+                type: integer
+                example: 1
+              product:
+                $ref: '#/components/schemas/ProductResource'
+              quantity:
+                type: integer
+                example: 1
+            type: object
+      type: object
+    CrossSellResource:
+      properties:
+        id:
+          type: integer
+          example: 1
+        sort_order:
+          type: integer
+          example: 0
+        is_active:
+          type: boolean
+          example: true
+        product:
+          $ref: '#/components/schemas/ProductResource'
+      type: object
+    InventoryResource:
+      title: Inventory
+      description: 'Kho hàng'
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Kho Hồ Chí Minh'
+        slug:
+          type: string
+          example: kho-ho-chi-minh
+        location:
+          type: string
+          example: 'Q1, HCM'
+          nullable: true
+        is_active:
+          type: boolean
+          example: true
+        stock_quantity:
+          type: integer
+          example: 100
+      type: object
+    MediaResource:
+      title: Media
+      description: 'File phương tiện'
+      properties:
+        id:
+          type: integer
+          example: 1
+        disk:
+          type: string
+          example: public
+        directory:
+          type: string
+          example: media
+        visibility:
+          type: string
+          example: public
+        name:
+          type: string
+          example: image
+        path:
+          type: string
+          example: media/image.jpg
+        url:
+          type: string
+          example: /storage/media/image.jpg
+        width:
+          type: integer
+          example: 800
+          nullable: true
+        height:
+          type: integer
+          example: 600
+          nullable: true
+        size:
+          type: integer
+          example: 102400
+        type:
+          type: string
+          example: image/jpeg
+        ext:
+          type: string
+          example: jpg
+        alt:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        caption:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      type: object
+    MenuResource:
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Main Menu'
+        slug:
+          type: string
+          example: main-menu
+        menu_items:
+          type: array
+          items:
+            properties:
+              id:
+                type: integer
+                example: 1
+              label:
+                type: string
+                example: 'Trang chủ'
+              url:
+                type: string
+                example: /
+              parent_id:
+                type: integer
+                example: null
+                nullable: true
+              order:
+                type: integer
+                example: 0
+              children:
+                type: array
+                items:
+                  type: object
+            type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      type: object
+    OrderAddressResource:
+      title: 'Order Address'
+      description: 'Địa chỉ giao hàng/thanh toán'
+      properties:
+        id:
+          type: integer
+          example: 1
+        first_name:
+          type: string
+          example: Nguyen
+        last_name:
+          type: string
+          example: 'Van A'
+        email:
+          type: string
+          example: customer@example.com
+        phone:
+          type: string
+          example: '0123456789'
+        country:
+          type: string
+          example: VN
+        state:
+          type: integer
+          example: 1
+        city:
+          type: integer
+          example: 1
+        ward:
+          type: integer
+          example: 1
+        street:
+          type: string
+          example: '123 Le Loi'
+        type:
+          type: string
+          example: shipping
+      type: object
+    OrderItemResource:
+      title: 'Order Item'
+      description: 'Chi tiết sản phẩm trong đơn hàng'
+      properties:
+        id:
+          type: integer
+          example: 1
+        product_id:
+          type: integer
+          example: 1
+        product:
+          properties:
+            id:
+              type: integer
+              example: 1
+              nullable: true
+            name:
+              type: string
+              example: 'Sản phẩm 1'
+              nullable: true
+            image:
+              properties:
+                url:
+                  type: string
+                  example: 'https://example.com/image.jpg'
+              type: object
+              nullable: true
+          type: object
+        qty:
+          type: integer
+          example: 2
+        unit_price:
+          type: number
+          format: float
+          example: 500000
+        total:
+          type: number
+          format: float
+          example: 1000000
+        type:
+          type: string
+          example: product
+        metadata:
+          type: object
+          nullable: true
+      type: object
+    OrderResource:
+      title: Order
+      description: 'Chi tiết đơn hàng'
+      properties:
+        id:
+          type: integer
+          example: 1
+        number:
+          type: string
+          example: ORD-2023-001
+        status:
+          type: string
+          example: pending
+        currency:
+          type: string
+          example: VND
+        subtotal:
+          type: number
+          format: float
+          example: 1000000
+        tax_amount:
+          type: number
+          format: float
+          example: 100000
+        shipping_cost:
+          type: number
+          format: float
+          example: 30000
+        total:
+          type: number
+          format: float
+          example: 1130000
+        shipping_address:
+          oneOf:
+            -
+              $ref: '#/components/schemas/OrderAddressResource'
+          nullable: true
+        billing_address:
+          oneOf:
+            -
+              $ref: '#/components/schemas/OrderAddressResource'
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemResource'
+        status_history:
+          type: array
+          items:
+            properties:
+              status:
+                type: string
+                example: pending
+              time:
+                type: string
+                format: date-time
+            type: object
+        payment_method:
+          type: string
+          nullable: true
+        payment_status:
+          type: string
+          nullable: true
+        shipping_method:
+          type: string
+          nullable: true
+        discount_total:
+          type: number
+          format: float
+          example: 50000
+        loyalty_discount:
+          type: number
+          format: float
+          example: 10000
+        customer_notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      type: object
+    ProductCategoryResource:
+      title: 'Product Category'
+      description: 'Chi tiết danh mục sản phẩm'
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Electronics
+        slug:
+          type: string
+          example: electronics
+        description:
+          type: string
+          example: 'Electronics category'
+          nullable: true
+        is_visible:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      type: object
+    ProductResource:
+      title: Product
+      description: 'Chi tiết sản phẩm'
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Product Name'
+        description:
+          type: string
+          example: 'Product Description'
+          nullable: true
+        slug:
+          type: string
+          example: product-slug
+        type:
+          type: string
+          example: simple
+        product_type:
+          type: string
+          example: simple
+        image:
+          oneOf:
+            -
+              $ref: '#/components/schemas/MediaResource'
+          nullable: true
+        price:
+          type: number
+          format: float
+          example: 100000
+        sale_price:
+          type: number
+          format: float
+          example: 90000
+          nullable: true
+        effective_price:
+          type: number
+          format: float
+          example: 90000
+        is_on_sale:
+          type: boolean
+          example: true
+        sale_start_at:
+          type: string
+          format: date-time
+          nullable: true
+        sale_end_at:
+          type: string
+          format: date-time
+          nullable: true
+        apply_tax:
+          type: boolean
+          example: true
+        tax_class_id:
+          type: integer
+          example: 1
+          nullable: true
+        qty:
+          type: integer
+          example: 100
+        stock:
+          type: integer
+          example: 100
+        featured:
+          type: boolean
+          example: false
+        is_available:
+          type: boolean
+          example: true
+        brand:
+          oneOf:
+            -
+              $ref: '#/components/schemas/BrandResource'
+          nullable: true
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductCategoryResource'
+        inventories:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryResource'
+        attributes:
+          type: array
+          items:
+            type: object
+        variants:
+          type: array
+          items:
+            type: object
+        combo_components:
+          type: array
+          items:
+            type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      type: object
+    UpsellResource:
+      properties:
+        id:
+          type: integer
+          example: 1
+        sort_order:
+          type: integer
+          example: 0
+        is_active:
+          type: boolean
+          example: true
+        product:
+          $ref: '#/components/schemas/ProductResource'
+      type: object
+    UserResource:
+      title: 'User Profile'
+      description: 'Thông tin hồ sơ người dùng'
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Nguyen Van A'
+        email:
+          type: string
+          format: email
+          example: customer@example.com
+        phone:
+          type: string
+          example: '0123456789'
+          nullable: true
+        photo:
+          type: string
+          example: 'https://example.com/avatar.jpg'
+          nullable: true
+        default_shipping_address_id:
+          type: integer
+          example: 1
+          nullable: true
+        default_billing_address_id:
+          type: integer
+          example: 2
+          nullable: true
+      type: object
+    ErrorResponse:
+      title: 'Standard Error Response'
+      description: 'Standard system error response'
+      properties:
+        message:
+          type: string
+          example: 'Something went wrong'
+      type: object
+    ValidationErrorResponse:
+      title: 'Validation Error Response'
+      description: 'Error when input data is invalid'
+      properties:
+        message:
+          type: string
+          example: 'The given data was invalid.'
+        errors:
+          type: object
+          example:
+            email:
+              - 'The email field is required.'
+              - 'The email must be a valid email address.'
+            password:
+              - 'The password must be at least 8 characters.'
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      type: object
+    UnauthorizedErrorResponse:
+      title: 'Unauthorized Error Response'
+      description: 'Authentication error (not logged in or invalid token)'
+      properties:
+        message:
+          type: string
+          example: Unauthenticated.
+      type: object
+    ForbiddenErrorResponse:
+      title: 'Forbidden Error Response'
+      description: 'Authorization error (no permission to access this resource)'
+      properties:
+        message:
+          type: string
+          example: 'This action is unauthorized.'
+      type: object
+    NotFoundErrorResponse:
+      title: 'Not Found Error Response'
+      description: 'Requested resource not found'
+      properties:
+        message:
+          type: string
+          example: 'No query results for model [App\Models\User] 1'
+      type: object
+    ServerErrorResponse:
+      title: 'Server Error Response'
+      description: 'System server error'
+      properties:
+        message:
+          type: string
+          example: 'Server error occurred.'
+      type: object
+    PaginationMeta:
+      title: 'Pagination Metadata'
+      description: 'Thông tin phân trang trả về từ API'
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        from:
+          type: integer
+          example: 1
+        last_page:
+          type: integer
+          example: 5
+        links:
+          type: array
+          items:
+            properties:
+              url:
+                type: string
+                example: 'http://localhost/api/resource?page=1'
+                nullable: true
+              label:
+                type: string
+                example: '1'
+              active:
+                type: boolean
+                example: true
+            type: object
+        path:
+          type: string
+          example: 'http://localhost/api/resource'
+        per_page:
+          type: integer
+          example: 15
+        to:
+          type: integer
+          example: 15
+        total:
+          type: integer
+          example: 75
+      type: object
+    PaginationLinks:
+      title: 'Pagination Links'
+      description: 'Các link phân trang'
+      properties:
+        first:
+          type: string
+          example: 'http://localhost/api/resource?page=1'
+        last:
+          type: string
+          example: 'http://localhost/api/resource?page=5'
+        prev:
+          type: string
+          example: null
+          nullable: true
+        next:
+          type: string
+          example: 'http://localhost/api/resource?page=2'
+          nullable: true
+      type: object
+  securitySchemes:
+    bearerAuth:
+      type: http
+      name: bearerAuth
+      in: header
+      bearerFormat: 'JWT (Passport)'
+      scheme: bearer
+tags:
+  -
+    name: Address
+    description: Address
+  -
+    name: 'User Address'
+    description: 'User Address'
+  -
+    name: Attributes
+    description: Attributes
+  -
+    name: Authentication
+    description: Authentication
+  -
+    name: Brands
+    description: Brands
+  -
+    name: Cart
+    description: Cart
+  -
+    name: Combos
+    description: Combos
+  -
+    name: Coupons
+    description: Coupons
+  -
+    name: Cross-sells
+    description: Cross-sells
+  -
+    name: Loyalty
+    description: Loyalty
+  -
+    name: Menus
+    description: Menus
+  -
+    name: Orders
+    description: Orders
+  -
+    name: Pages
+    description: Pages
+  -
+    name: 'Post Categories'
+    description: 'Post Categories'
+  -
+    name: Posts
+    description: Posts
+  -
+    name: 'Product Categories'
+    description: 'Product Categories'
+  -
+    name: Products
+    description: Products
+  -
+    name: Settings
+    description: Settings
+  -
+    name: Upsells
+    description: Upsells

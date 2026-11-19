@@ -3,40 +3,37 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\DepartmentRequest;
 use App\Models\Department;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 
 class DepartmentController extends Controller
 {
     public function index()
     {
         $departments = Department::withCount('agents')->get();
+
         return view('admin.departments.index', compact('departments'));
     }
 
     public function create()
     {
-        return view('admin.departments.form', ['department' => new Department()]);
+        return view('admin.departments.form', ['department' => new Department]);
     }
 
-    public function store(Request $request)
+    public function store(DepartmentRequest $request)
     {
-        $validated = $request->validate([
-            'code' => 'required|string|unique:departments,code',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'risk_level_threshold' => 'required|in:low,medium,high,critical',
-        ]);
+        $validated = $request->validated();
 
         Department::create($validated);
 
-        return redirect()->route('admin.departments.index')->with('success', 'Department created successfully.');
+        return $this->redirectToIndex('Department created successfully.');
     }
 
     public function show(Department $department)
     {
         $department->load('agents');
+
         return view('admin.departments.show', compact('department'));
     }
 
@@ -45,23 +42,24 @@ class DepartmentController extends Controller
         return view('admin.departments.form', compact('department'));
     }
 
-    public function update(Request $request, Department $department)
+    public function update(DepartmentRequest $request, Department $department)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'risk_level_threshold' => 'required|in:low,medium,high,critical',
-        ]);
+        $validated = $request->validated();
 
         $department->update($validated);
 
-        return redirect()->route('admin.departments.index')->with('success', 'Department updated successfully.');
+        return $this->redirectToIndex('Department updated successfully.');
     }
 
     public function destroy(Department $department)
     {
         $department->delete();
-        return redirect()->route('admin.departments.index')->with('success', 'Department deleted successfully.');
+
+        return $this->redirectToIndex('Department deleted successfully.');
+    }
+
+    private function redirectToIndex(string $message): RedirectResponse
+    {
+        return redirect()->route('admin.departments.index')->with('success', $message);
     }
 }

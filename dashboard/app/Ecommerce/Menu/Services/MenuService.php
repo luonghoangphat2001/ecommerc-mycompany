@@ -4,6 +4,9 @@ namespace App\Ecommerce\Menu\Services;
 
 use App\Ecommerce\Menu\Contracts\MenuRepositoryInterface;
 use App\Ecommerce\Menu\Contracts\MenuServiceInterface;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class MenuService implements MenuServiceInterface
 {
@@ -14,8 +17,6 @@ class MenuService implements MenuServiceInterface
 
     /**
      * MenuService constructor.
-     *
-     * @param MenuRepositoryInterface $menuRepository
      */
     public function __construct(MenuRepositoryInterface $menuRepository)
     {
@@ -25,11 +26,11 @@ class MenuService implements MenuServiceInterface
     /**
      * Get all menus.
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public function getAllMenus()
     {
-        return \Illuminate\Support\Facades\Cache::rememberForever('all_menus', function () {
+        return Cache::rememberForever('all_menus', function () {
             return $this->menuRepository->all(['*'], ['items.children']);
         });
     }
@@ -37,22 +38,27 @@ class MenuService implements MenuServiceInterface
     /**
      * Get menu by slug.
      *
-     * @param string $slug
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @return Model|null
      */
     public function getMenuBySlug(string $slug)
     {
         return $this->menuRepository->findBySlug($slug);
     }
 
-    /**
-     * Get menu by handle.
-     *
-     * @param string $handle
-     * @return \Illuminate\Database\Eloquent\Model|null
-     */
-    public function getMenuByHandle(string $handle)
+    public function createMenu(array $data)
     {
-        return \App\Models\Menu::where('handle', $handle)->with('items.children')->first();
+        return $this->menuRepository->create($data);
+    }
+
+    public function updateMenu(int | string $id, array $data)
+    {
+        $this->menuRepository->update($id, $data);
+
+        return $this->menuRepository->findOrFail($id);
+    }
+
+    public function deleteMenu(int | string $id): bool
+    {
+        return $this->menuRepository->delete($id);
     }
 }

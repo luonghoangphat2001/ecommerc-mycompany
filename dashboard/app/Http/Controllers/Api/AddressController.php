@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Api\BaseApiController;
-use App\Ecommerce\Address\Services\Contracts\AddressServiceInterface;
 use App\Ecommerce\Address\Contracts\AddressBookServiceInterface;
+use App\Ecommerce\Address\Services\Contracts\AddressServiceInterface;
 use App\Http\Requests\API\AddressRequest;
+use App\Http\Resources\Api\AddressResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
@@ -18,6 +18,7 @@ use App\Swagger\Attributes\ApiDelete;
 class AddressController extends BaseApiController
 {
     protected AddressServiceInterface $addressService;
+
     protected AddressBookServiceInterface $addressBookService;
 
     public function __construct(
@@ -31,24 +32,26 @@ class AddressController extends BaseApiController
     #[ApiGet(
         path: '/addresses/countries',
         summary: 'List of Countries',
-        tags: 'Storefront - Address',
+        tags: 'Address',
         requiresAuth: false,
         responseData: [
             new OAT\Property(property: 'code', type: 'string', example: 'VN'),
             new OAT\Property(property: 'name', type: 'string', example: 'Vietnam')
         ]
     )]
+
+
     public function countries(): JsonResponse
     {
         $countries = $this->addressService->getCountries();
-        
+
         return $this->ok($countries);
     }
 
     #[ApiGet(
         path: '/addresses/countries/{countryCode}/states',
         summary: 'List of States by Country',
-        tags: 'Storefront - Address',
+        tags: 'Address',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'countryCode', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'VN'), description: 'Country code')
@@ -58,17 +61,19 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'name', type: 'string', example: 'Hồ Chí Minh')
         ]
     )]
+
+
     public function states(string $countryCode): JsonResponse
     {
         $states = $this->addressService->getStates($countryCode);
-        
+
         return $this->ok($states);
     }
 
     #[ApiGet(
         path: '/addresses/countries/{countryCode}/states/{stateId}/regions',
         summary: 'List of Regions by State',
-        tags: 'Storefront - Address',
+        tags: 'Address',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'countryCode', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'VN'), description: 'Country code'),
@@ -79,17 +84,19 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'name', type: 'string', example: 'Quận 1')
         ]
     )]
+
+
     public function regions(string $countryCode, string $stateId): JsonResponse
     {
         $regions = $this->addressService->getRegions($countryCode, $stateId);
-        
+
         return $this->ok($regions);
     }
 
     #[ApiGet(
         path: '/addresses/countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions',
         summary: 'List of Sub-Regions by Region',
-        tags: 'Storefront - Address',
+        tags: 'Address',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'countryCode', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'VN'), description: 'Country code'),
@@ -101,17 +108,19 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'name', type: 'string', example: 'Phường Bến Nghé')
         ]
     )]
+
+
     public function subRegions(string $countryCode, string $stateId, string $regionId): JsonResponse
     {
         $subRegions = $this->addressService->getSubRegions($countryCode, $stateId, $regionId);
-        
+
         return $this->ok($subRegions);
     }
 
     #[ApiGet(
         path: '/user-addresses',
         summary: 'List of User Addresses',
-        tags: 'Storefront - User Address',
+        tags: 'User Address',
         responseData: [
             new OAT\Property(property: 'id', type: 'integer', example: 1),
             new OAT\Property(property: 'first_name', type: 'string', example: 'Nguyen'),
@@ -122,18 +131,20 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'country', type: 'string', example: 'VN')
         ]
     )]
+
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
         $addresses = $this->addressBookService->listAddresses($user->id);
-        
-        return $this->ok(\App\Http\Resources\Api\AddressResource::collection($addresses));
+
+        return $this->ok(AddressResource::collection($addresses));
     }
 
     #[ApiPost(
         path: '/user-addresses',
         summary: 'Add New Address',
-        tags: 'Storefront - User Address',
+        tags: 'User Address',
         requestBody: new OAT\RequestBody(
             required: true,
             content: new OAT\JsonContent(
@@ -164,6 +175,8 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'country', type: 'string', example: 'VN')
         ]
     )]
+
+
     public function store(AddressRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -172,7 +185,7 @@ class AddressController extends BaseApiController
         $address = $this->addressBookService->addAddress($user->id, $validated);
 
         return $this->created(
-            new \App\Http\Resources\Api\AddressResource($address),
+            new AddressResource($address),
             __('messages.address_created') ?? 'Address saved successfully'
         );
     }
@@ -180,7 +193,7 @@ class AddressController extends BaseApiController
     #[ApiUpdate(
         path: '/user-addresses/{address}',
         summary: 'Update Address',
-        tags: 'Storefront - User Address',
+        tags: 'User Address',
         requestBody: new OAT\RequestBody(
             required: true,
             content: new OAT\JsonContent(
@@ -210,6 +223,8 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'country', type: 'string', example: 'VN')
         ]
     )]
+
+
     public function update(AddressRequest $request, $addressId): JsonResponse
     {
         $user = $request->user();
@@ -217,19 +232,20 @@ class AddressController extends BaseApiController
 
         try {
             $address = $this->addressBookService->updateAddress($user->id, (int) $addressId, $validated);
+
             return $this->ok(
-                new \App\Http\Resources\Api\AddressResource($address),
+                new AddressResource($address),
                 __('messages.address_updated') ?? 'Address updated successfully'
             );
         } catch (\Exception $e) {
-            return $this->badRequest($e->getMessage());
+            return $this->exceptionError($e);
         }
     }
 
     #[ApiDelete(
         path: '/user-addresses/{address}',
         summary: 'Delete Address',
-        tags: 'Storefront - User Address',
+        tags: 'User Address',
         parameters: [
             new OAT\Parameter(name: 'address', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Address ID')
         ],
@@ -237,12 +253,14 @@ class AddressController extends BaseApiController
             new OAT\Property(property: 'deleted', type: 'boolean', example: true)
         ]
     )]
+
+
     public function destroy(Request $request, $addressId): JsonResponse
     {
         $user = $request->user();
         $deleted = $this->addressBookService->deleteAddress($user->id, (int) $addressId);
 
-        if (!$deleted) {
+        if (! $deleted) {
             return $this->badRequest(__('messages.address_delete_failed') ?? 'Address deletion failed');
         }
 

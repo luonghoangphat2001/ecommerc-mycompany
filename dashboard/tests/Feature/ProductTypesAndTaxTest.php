@@ -5,10 +5,11 @@ namespace Tests\Feature;
 use App\Ecommerce\Checkout\Actions\PlaceOrderAction;
 use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 use App\Ecommerce\Order\DTOs\Order\OrderDataDTO;
+use App\Ecommerce\Order\Enums\OrderStatus;
 use App\Ecommerce\Product\Contracts\TaxServiceInterface;
-use App\Enums\OrderItemType;
 use App\Enums\ProductType;
-use App\Models\ComboProduct;
+use App\Http\Controllers\Api\Agent\AgentProductController;
+use App\Http\Resources\Api\ProductResource;
 use App\Models\ComboProductItem;
 use App\Models\Order;
 use App\Models\Product;
@@ -19,7 +20,6 @@ use App\Models\ShippingZone;
 use App\Models\TaxClass;
 use App\Models\TaxRate;
 use App\Models\User;
-use App\Settings\CheckoutSettings;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -462,9 +462,15 @@ class ProductTypesAndTaxTest extends TestCase
 
         $this->assertTrue($cancelled);
         $order->refresh();
-        $this->assertEquals(\App\Ecommerce\Order\Enums\OrderStatus::Cancelled, $order->status);
+        $this->assertEquals(OrderStatus::Cancelled, $order->status);
 
         // Verify stock is restored! 4 + 6 = 10
+        $comp->refresh();
+        $this->assertEquals(10, $comp->qty);
+        $this->assertEquals(10, $comp->total_stock);
+
+        // Replaying cancellation must not restore the same stock again.
+        $this->assertTrue($orderService->cancel($order, 'Repeated cancellation callback'));
         $comp->refresh();
         $this->assertEquals(10, $comp->qty);
         $this->assertEquals(10, $comp->total_stock);
@@ -610,7 +616,7 @@ class ProductTypesAndTaxTest extends TestCase
 
         $this->assertEquals(180000, $product->effective_price);
 
-        $resource = new \App\Http\Resources\Api\ProductResource($product);
+        $resource = new ProductResource($product);
         $resArray = $resource->toArray(request());
 
         $this->assertEquals(200000, $resArray['price']);
@@ -682,7 +688,7 @@ class ProductTypesAndTaxTest extends TestCase
             'is_visible' => true,
         ]);
 
-        $controller = app(\App\Http\Controllers\Api\Agent\AgentProductController::class);
+        $controller = app(AgentProductController::class);
         $response = $controller->show($product->id);
 
         $this->assertEquals(200, $response->getStatusCode());

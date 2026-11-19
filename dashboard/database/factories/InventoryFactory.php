@@ -29,4 +29,19 @@ class InventoryFactory extends Factory
             'is_active' => true,
         ];
     }
+
+    public function mainWarehouse(): static
+    {
+        return $this->state(['name' => 'Kho Tổng', 'slug' => 'wh-main', 'location' => 'Khu công nghiệp Tân Tạo, TP.HCM']);
+    }
+
+    public function hcmWarehouse(): static
+    {
+        return $this->state(['name' => 'Kho TP.HCM', 'slug' => 'wh-hcm', 'location' => 'Quận 7, TP.HCM']);
+    }
+
+    public function hnWarehouse(): static
+    {
+        return $this->state(['name' => 'Kho Hà Nội', 'slug' => 'wh-hn', 'location' => 'Quận Long Biên, Hà Nội']);
+    }
 }

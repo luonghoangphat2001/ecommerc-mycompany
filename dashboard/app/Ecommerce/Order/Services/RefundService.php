@@ -2,11 +2,13 @@
 
 namespace App\Ecommerce\Order\Services;
 
+use App\Ecommerce\Order\Concerns\LocksOrderForUpdate;
 use App\Ecommerce\Order\Contracts\OrderRefundRepositoryInterface;
 use App\Ecommerce\Order\Contracts\RefundServiceInterface;
 use App\Ecommerce\Payment\Services\PaymentManager;
 use App\Models\Order;
 use App\Models\OrderRefund;
+use App\Services\Logging\ModuleLogger;
 use App\Traits\HandleTransactions;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -14,8 +16,10 @@ use Illuminate\Support\Facades\Log;
 class RefundService implements RefundServiceInterface
 {
     use HandleTransactions;
+    use LocksOrderForUpdate;
 
     protected $refundRepository;
+
     protected $paymentManager;
 
     public function __construct(
@@ -27,7 +31,7 @@ class RefundService implements RefundServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function validateRefundAvailability(Order $order, float $amount): bool
     {
@@ -46,11 +50,13 @@ class RefundService implements RefundServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function processRefund(Order $order, float $amount, string $reason, string $type = 'full'): ?OrderRefund
     {
         return $this->useTransaction(function () use ($order, $amount, $reason, $type) {
+            /** @var Order $order */
+            $order = $this->lockOrderForUpdate($order);
             $this->validateRefundAvailability($order, $amount);
 
             $payment = $order->payments()->latest()->first();
@@ -64,7 +70,7 @@ class RefundService implements RefundServiceInterface
                 $driver = $this->paymentManager->driver($paymentMethod);
                 if ($driver) {
                     $refundSuccess = $driver->refund($transactionId, (int) $amount);
-                    if (!$refundSuccess) {
+                    if (! $refundSuccess) {
                         throw new Exception("Lỗi khi gọi API hoàn tiền từ cổng thanh toán {$paymentMethod}.");
                     }
                 }
@@ -72,9 +78,18 @@ class RefundService implements RefundServiceInterface
                 // For manual/cod methods, there might be no driver, which is fine, we just record it locally.
                 // We only log if it's an actual API failure.
                 if (str_contains($e->getMessage(), 'not supported') || str_contains($e->getMessage(), 'not found')) {
-                    \App\Services\Logging\ModuleLogger::refund()->info('refund_local_record', "No payment driver for {$paymentMethod}. Proceeding with local DB refund record.", ['order_id' => $order->id, 'payment_method' => $paymentMethod]);
+                    ModuleLogger::refund()->info(
+                        'refund_local_record',
+                        "No payment driver for {$paymentMethod}. Proceeding with local DB refund record.",
+                        $this->refundLogContext($order, $paymentMethod)
+                    );
                 } else {
-                    \App\Services\Logging\ModuleLogger::refund()->error('refund_gateway_error', "PaymentGateway Refund Error: " . $e->getMessage(), ['order_id' => $order->id, 'transaction_id' => $transactionId]);
+                    ModuleLogger::refund()->error(
+                        'refund_gateway_error',
+                        'Payment gateway refund failed.',
+                        $this->refundLogContext($order, $paymentMethod, $e)
+                    );
+
                     throw $e;
                 }
             }
@@ -89,7 +104,7 @@ class RefundService implements RefundServiceInterface
                     'type' => $type,
                     'status' => 'completed',
                     'gateway_transaction_id' => $transactionId,
-                ]
+                ],
             ]);
 
             // 3. Create a reversal payment record to balance the books
@@ -98,10 +113,24 @@ class RefundService implements RefundServiceInterface
                 'amount' => -$amount,
                 'status' => 'refunded',
                 'currency' => $order->currency ?? 'VND',
-                'reference' => 'Refund for order #' . $order->number . ' - ' . $reason
+                'reference' => 'Refund for order #' . $order->number . ' - ' . $reason,
             ]);
 
             return $refund;
         });
+    }
+
+    private function refundLogContext(Order $order, string $paymentMethod, ?\Throwable $exception = null): array
+    {
+        $context = [
+            'order_id' => $order->id,
+            'payment_method' => $paymentMethod,
+        ];
+
+        if ($exception !== null) {
+            $context['exception'] = get_class($exception);
+        }
+
+        return $context;
     }
 }

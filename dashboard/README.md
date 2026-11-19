@@ -6,7 +6,7 @@ Backend trung tâm của hệ thống My Ecommerce: admin dashboard Laravel và 
 
 - Laravel 11, PHP 8.2+.
 - Blade/Livewire, Alpine.js, Tailwind CSS và Vite cho admin UI.
-- MySQL/MariaDB, Laravel Sanctum, Horizon.
+- MySQL/MariaDB, Laravel Passport, Horizon.
 - Spatie Permission/Settings/Media Library/Activity Log.
 - Swagger, DomPDF và các module nghiệp vụ Ecommerce trong `app/Ecommerce`.
 
@@ -29,10 +29,10 @@ Dashboard admin bao gồm:
 | `/admin/login` | Đăng nhập admin | Public |
 | `/admin` | Dashboard analytics | `auth` + `admin.access` + `view_dashboard` hoặc `super_admin` |
 | `/docs/webhook` | Tài liệu webhook | Public |
-| `/api/v1/storefront/*` | REST API cho storefront | Tùy endpoint; Sanctum cho route protected |
-| `/api/v1/storefront/agents/*` | Health/metrics cho agent | Agent token |
+| `/api/v1/*` | REST API cho storefront | Tùy endpoint; Passport cho route protected |
+| `/api/v1/agents/*` | Health/metrics cho agent | Agent token |
 
-API được version tại `/api/v1`. Các nhóm public gồm settings, menus, products, categories, brands, pages, posts và auth login/refresh. Cart, profile, address và orders yêu cầu Laravel Sanctum; endpoint agent yêu cầu `VerifyAgentToken`.
+API được version tại `/api/v1`. Các nhóm public gồm settings, menus, products, categories, brands, pages, posts và auth login/refresh. Cart, profile, address và orders yêu cầu Laravel Passport; endpoint agent yêu cầu `VerifyAgentToken`.
 
 ## Cài đặt local
 

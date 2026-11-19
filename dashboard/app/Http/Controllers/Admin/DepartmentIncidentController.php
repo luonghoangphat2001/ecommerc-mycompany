@@ -2,16 +2,26 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Workspace\Services\OpsService;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
+use App\Http\Controllers\Admin\Traits\HasPermissionedServiceCrudActions;
 use App\Models\DepartmentIncident;
-use App\Models\Order;
-use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class DepartmentIncidentController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+    use HasPermissionedServiceCrudActions;
+
+    public function __construct(private readonly OpsService $opsService)
+    {
+        parent::__construct();
+    }
+
     protected function modelClass(): string
     {
         return DepartmentIncident::class;
@@ -39,7 +49,7 @@ class DepartmentIncidentController extends BaseCrudController
                 'label' => 'Phòng ban',
                 'type' => 'select',
                 'rules' => ['required', 'exists:departments,id'],
-                'options' => \App\Models\Department::pluck('name', 'id')->toArray(),
+                'options' => $this->departmentOptions(),
             ],
             'order_id' => [
                 'label' => 'ID Đơn hàng',
@@ -50,7 +60,7 @@ class DepartmentIncidentController extends BaseCrudController
                 'label' => 'Người xử lý',
                 'type' => 'select',
                 'rules' => ['nullable', 'exists:users,id'],
-                'options' => ['' => '-- Trống --'] + User::orderBy('name')->pluck('name', 'id')->toArray(),
+                'options' => ['' => '-- Trống --'] + $this->userOptions(),
             ],
             'type' => [
                 'label' => 'Loại sự cố',
@@ -72,56 +82,34 @@ class DepartmentIncidentController extends BaseCrudController
         ];
     }
 
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    protected function crudService(): object
     {
-        if (!$this->hasPermission('create')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $opsService = app(\App\Ecommerce\Workspace\Services\OpsService::class);
-        $opsService->createIncident($validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Tạo mới thành công.');
+        return $this->opsService;
     }
 
-    public function update(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    protected function createServiceMethod(): string
     {
-        if (!$this->hasPermission('update')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $opsService = app(\App\Ecommerce\Workspace\Services\OpsService::class);
-        $opsService->updateIncident($id, $validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Cập nhật thành công.');
+        return 'createIncident';
     }
 
-    public function destroy(int $id): \Illuminate\Http\RedirectResponse
+    protected function updateServiceMethod(): string
     {
-        if (!$this->hasPermission('delete')) {
-            abort(403);
-        }
-
-        $opsService = app(\App\Ecommerce\Workspace\Services\OpsService::class);
-        $opsService->deleteIncident($id);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Xóa thành công.');
+        return 'updateIncident';
     }
 
-    public function quickStatus(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    protected function deleteServiceMethod(): string
+    {
+        return 'deleteIncident';
+    }
+
+    public function quickStatus(Request $request, int $id): RedirectResponse
     {
         $status = $request->input('status');
-        if (!in_array($status, ['resolved', 'closed', 'investigating', 'open'], true)) {
+        if (! in_array($status, ['resolved', 'closed', 'investigating', 'open'], true)) {
             return back()->with('error', 'Trạng thái không hợp lệ.');
         }
 
-        $incident = DepartmentIncident::findOrFail($id);
-        $incident->status = $status;
-        $incident->save();
+        $incident = $this->opsService->updateIncidentStatus($id, $status);
 
         return back()->with('status', "Sự cố vận hành #{$incident->id} đã chuyển trạng thái sang [{$status}] thành công.");
     }

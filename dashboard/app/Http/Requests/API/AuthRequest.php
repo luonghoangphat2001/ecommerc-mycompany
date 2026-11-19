@@ -2,18 +2,8 @@
 
 namespace App\Http\Requests\API;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class AuthRequest extends FormRequest
+class AuthRequest extends ApiFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * Validation rules for authentication and profile updates.
      *
@@ -47,4 +37,3 @@ class AuthRequest extends FormRequest
         ];
     }
 }
-

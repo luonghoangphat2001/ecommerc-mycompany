@@ -20,7 +20,6 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProductInventoryController;
 use App\Http\Controllers\Api\StorefrontSettingsController;
 use App\Http\Controllers\Api\UpsellController;
-use App\Http\Middleware\CheckTokenExpiration;
 use App\Http\Middleware\HandleIdempotency;
 use App\Http\Middleware\VerifyAgentToken;
 use Illuminate\Http\Request;
@@ -40,7 +39,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['api'])->prefix('v1')->group(function () {
 
     // Storefront API Group
-    Route::prefix('storefront')->name('storefront.')->group(function () {
+    Route::name('storefront.')->group(function () {
 
         // Settings
         Route::get('settings', [StorefrontSettingsController::class, 'index']);
@@ -142,9 +141,7 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
 
         // Authenticated Routes
         Route::middleware([
-            'auth:sanctum',
-            CheckTokenExpiration::class,
-            HandleIdempotency::class,
+            'auth:api',
         ])->group(function () {
             // Auth (Protected)
             Route::prefix('auth')->group(function () {
@@ -194,8 +191,13 @@ Route::middleware(['api'])->prefix('v1')->group(function () {
             Route::get('coupons/my-usages', [CouponController::class, 'myUsages']);
 
             // Orders
-            Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
-            Route::apiResource('orders', OrderController::class)->middleware('throttle:checkout');
+            Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])
+                ->middleware(HandleIdempotency::class);
+            Route::post('orders', [OrderController::class, 'store'])
+                ->middleware(['throttle:checkout', HandleIdempotency::class]);
+            Route::apiResource('orders', OrderController::class)
+                ->except(['store'])
+                ->middleware('throttle:checkout');
         });
 
         // Agent API

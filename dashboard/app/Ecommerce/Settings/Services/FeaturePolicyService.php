@@ -4,12 +4,9 @@ namespace App\Ecommerce\Settings\Services;
 
 use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Shipping\Carriers\CarrierManager;
-use App\Settings\AdvancedSettings;
-use App\Settings\ApiSettings;
 use App\Settings\CheckoutSettings;
 use App\Settings\CouponSettings;
 use App\Settings\EcommerceSettings;
-use App\Settings\GeneralSettings;
 use App\Settings\InventorySettings;
 use App\Settings\LoyaltySettings;
 use App\Settings\MarketingSettings;
@@ -19,6 +16,7 @@ use Illuminate\Support\Facades\Cache;
 class FeaturePolicyService implements FeaturePolicyServiceInterface
 {
     private const CACHE_KEY = 'system_feature_policy_summary';
+
     private const CACHE_TTL = 3600;
 
     public function __construct(
@@ -28,11 +26,12 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
         protected MarketingSettings $marketingSettings,
         protected CouponSettings $couponSettings,
         protected LoyaltySettings $loyaltySettings,
-        protected ProductSettings $productSettings
+        protected ProductSettings $productSettings,
+        protected CarrierManager $carrierManager
     ) {}
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isEcommerceEnabled(): bool
     {
@@ -40,11 +39,11 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isCatalogMode(): bool
     {
-        if (!$this->isEcommerceEnabled()) {
+        if (! $this->isEcommerceEnabled()) {
             return true;
         }
 
@@ -52,7 +51,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isInventoryTrackingEnabled(): bool
     {
@@ -60,11 +59,11 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isMultiWarehouseEnabled(): bool
     {
-        if (!$this->isInventoryTrackingEnabled()) {
+        if (! $this->isInventoryTrackingEnabled()) {
             return false;
         }
 
@@ -72,7 +71,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isTaxCalculationEnabled(): bool
     {
@@ -83,7 +82,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isShippingEnabled(): bool
     {
@@ -94,7 +93,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isManualShippingEnabled(): bool
     {
@@ -102,24 +101,23 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isCarrierShippingEnabled(): bool
     {
-        if (!$this->isShippingEnabled()) {
+        if (! $this->isShippingEnabled()) {
             return false;
         }
 
         try {
-            $carrierManager = app(CarrierManager::class);
-            return count($carrierManager->getEnabledCarriers()) > 0;
+            return count($this->carrierManager->getEnabledCarriers()) > 0;
         } catch (\Throwable) {
             return false;
         }
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isCouponsEnabled(): bool
     {
@@ -130,7 +128,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isLoyaltyEnabled(): bool
     {
@@ -141,7 +139,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isComboEnabled(): bool
     {
@@ -149,7 +147,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isUpsellEnabled(): bool
     {
@@ -157,7 +155,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isCrossSellEnabled(): bool
     {
@@ -165,18 +163,18 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isPaymentMethodEnabled(string $method): bool
     {
-        $configured = $this->checkoutSettings->enabled_payment_gateways ?? ['cod'];
+        $configured = $this->enabledPaymentGateways();
         $clean = strtolower(trim($method));
 
         return in_array($clean, array_map('strtolower', $configured), true);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isReviewsEnabled(): bool
     {
@@ -184,7 +182,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isGuestCheckoutAllowed(): bool
     {
@@ -192,7 +190,7 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getFeatureSummary(): array
     {
@@ -213,17 +211,21 @@ class FeaturePolicyService implements FeaturePolicyServiceInterface
                 'cross_sell' => $this->isCrossSellEnabled(),
                 'reviews' => $this->isReviewsEnabled(),
                 'guest_checkout' => $this->isGuestCheckoutAllowed(),
-                'enabled_payment_gateways' => $this->checkoutSettings->enabled_payment_gateways ?? ['cod'],
+                'enabled_payment_gateways' => $this->enabledPaymentGateways(),
             ];
         });
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function flushCache(): void
     {
         Cache::forget(self::CACHE_KEY);
     }
-}
 
+    private function enabledPaymentGateways(): array
+    {
+        return array_values($this->checkoutSettings->enabled_payment_gateways ?? ['cod']);
+    }
+}

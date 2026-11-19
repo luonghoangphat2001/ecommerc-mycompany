@@ -8,48 +8,30 @@ use Illuminate\Support\Facades\Http;
 
 class UpsCarrierAdapter extends BaseCarrierAdapter
 {
+    protected string $carrierId = 'ups';
+
+    protected string $carrierName = 'UPS';
+
+    protected bool $supportsInternational = true;
+
     private const SANDBOX_URL = 'https://wwwcie.ups.com/api/';
+
     private const PRODUCTION_URL = 'https://onlinetools.ups.com/api/';
-
-    public function getId(): string
-    {
-        return 'ups';
-    }
-
-    public function getName(): string
-    {
-        return 'UPS';
-    }
-
-    public function isDomestic(): bool
-    {
-        return false;
-    }
-
-    public function isInternational(): bool
-    {
-        return true;
-    }
 
     public function isConfigured(): bool
     {
-        $config = $this->getConfig();
-        return !empty($config['client_id']) && !empty($config['client_secret']);
+        return $this->hasConfigValues('client_id', 'client_secret');
     }
 
     protected function getBaseUrl(): string
     {
-        return $this->isSandbox() ? self::SANDBOX_URL : self::PRODUCTION_URL;
+        return $this->environmentUrl(self::SANDBOX_URL, self::PRODUCTION_URL);
     }
 
     public function testConnection(): array
     {
-        if (!$this->isConfigured()) {
-            return [
-                'success' => false,
-                'message' => 'Chưa cấu hình API credentials UPS (Client ID / Secret trống).',
-                'details' => ['status' => 'missing_credentials'],
-            ];
+        if (! $this->isConfigured()) {
+            return $this->missingCredentialsResponse('Chưa cấu hình API credentials UPS (Client ID / Secret trống).');
         }
 
         try {
@@ -61,12 +43,11 @@ class UpsCarrierAdapter extends BaseCarrierAdapter
                 ->timeout(5)
                 ->post($url, ['grant_type' => 'client_credentials']);
 
-            if ($response->successful() && !empty($response->json()['access_token'])) {
-                return [
-                    'success' => true,
-                    'message' => 'Kết nối API UPS OAuth thành công (' . ($this->isSandbox() ? 'Sandbox' : 'Production') . ').',
-                    'details' => ['status' => 200],
-                ];
+            if ($response->successful() && ! empty($response->json()['access_token'])) {
+                return $this->successResponse(
+                    'Kết nối API UPS OAuth thành công (' . ($this->isSandbox() ? 'Sandbox' : 'Production') . ').',
+                    ['status' => 200]
+                );
             }
 
             return [
@@ -99,12 +80,7 @@ class UpsCarrierAdapter extends BaseCarrierAdapter
 
     public function createShipment(Order $order, array $options = []): array
     {
-        return [
-            'success' => true,
-            'tracking_number' => '1Z9999999999999999',
-            'carrier' => 'ups',
-            'raw' => ['mode' => 'sandbox_simulated'],
-        ];
+        return $this->sandboxShipmentResponse($order, '1Z9999999999999999', null, false);
     }
 
     public function cancelShipment(string $trackingNumber): bool
@@ -114,12 +90,6 @@ class UpsCarrierAdapter extends BaseCarrierAdapter
 
     public function getTracking(string $trackingNumber): array
     {
-        return [
-            'tracking_number' => $trackingNumber,
-            'carrier' => 'ups',
-            'status' => 'transit',
-            'status_text' => 'On the way to destination',
-            'history' => [],
-        ];
+        return $this->trackingResponse($trackingNumber, 'transit', 'On the way to destination');
     }
 }

@@ -3,9 +3,6 @@
 namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
-use App\Http\Middleware\IdempotencyMiddleware;
-
-
 class Kernel extends HttpKernel
 {
     /**
@@ -45,7 +42,6 @@ class Kernel extends HttpKernel
         'api' => [
             \App\Http\Middleware\SetLocale::class,
             'setting.check:ApiSettings,enabled',
-            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
@@ -59,7 +55,6 @@ class Kernel extends HttpKernel
      * @var array<string, class-string|string>
      */
     protected $routeMiddleware = [
-        'idempotency' => IdempotencyMiddleware::class,
         'auth' => \App\Http\Middleware\Authenticate::class,
         'admin.access' => \App\Http\Middleware\AdminAccess::class,
 

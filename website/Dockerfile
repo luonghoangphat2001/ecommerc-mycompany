@@ -31,7 +31,7 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-ARG REACT_APP_API_URL=http://localhost:8009/api/v1/storefront
+ARG REACT_APP_API_URL=http://localhost:8009/api/v1
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 RUN npm run build

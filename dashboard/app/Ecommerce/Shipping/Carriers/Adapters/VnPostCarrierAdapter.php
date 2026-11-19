@@ -4,53 +4,31 @@ namespace App\Ecommerce\Shipping\Carriers\Adapters;
 
 use App\Ecommerce\Shipping\Carriers\BaseCarrierAdapter;
 use App\Models\Order;
-use Illuminate\Support\Facades\Http;
 
 class VnPostCarrierAdapter extends BaseCarrierAdapter
 {
+    protected string $carrierId = 'vnpost';
+
+    protected string $carrierName = 'Vietnam Post (VNPost)';
+
+    protected bool $supportsDomestic = true;
+
+    protected bool $supportsInternational = true;
+
     private const BASE_URL = 'https://api.vnpost.vn/';
-
-    public function getId(): string
-    {
-        return 'vnpost';
-    }
-
-    public function getName(): string
-    {
-        return 'Vietnam Post (VNPost)';
-    }
-
-    public function isDomestic(): bool
-    {
-        return true;
-    }
-
-    public function isInternational(): bool
-    {
-        return true;
-    }
 
     public function isConfigured(): bool
     {
-        $config = $this->getConfig();
-        return !empty($config['api_token']);
+        return $this->hasConfigValues('api_token');
     }
 
     public function testConnection(): array
     {
-        if (!$this->isConfigured()) {
-            return [
-                'success' => false,
-                'message' => 'Chưa cấu hình API Token VNPost.',
-                'details' => ['status' => 'missing_credentials'],
-            ];
+        if (! $this->isConfigured()) {
+            return $this->missingCredentialsResponse('Chưa cấu hình API Token VNPost.');
         }
 
-        return [
-            'success' => true,
-            'message' => 'Đã xác nhận thông số kết nối VNPost.',
-            'details' => ['status' => 'configured'],
-        ];
+        return $this->successResponse('Đã xác nhận thông số kết nối VNPost.', ['status' => 'configured']);
     }
 
     public function supportsDestination(string $country, ?string $state = null): bool
@@ -73,12 +51,12 @@ class VnPostCarrierAdapter extends BaseCarrierAdapter
 
     public function createShipment(Order $order, array $options = []): array
     {
-        return [
-            'success' => true,
-            'tracking_number' => 'VNP-' . strtoupper(substr(md5($order->id . time()), 0, 9)),
-            'carrier' => 'vnpost',
-            'raw' => ['mode' => 'sandbox_simulated'],
-        ];
+        return $this->sandboxShipmentResponse(
+            $order,
+            'VNP-' . strtoupper(substr(md5($order->id . time()), 0, 9)),
+            null,
+            false
+        );
     }
 
     public function cancelShipment(string $trackingNumber): bool
@@ -88,12 +66,6 @@ class VnPostCarrierAdapter extends BaseCarrierAdapter
 
     public function getTracking(string $trackingNumber): array
     {
-        return [
-            'tracking_number' => $trackingNumber,
-            'carrier' => 'vnpost',
-            'status' => 'delivering',
-            'status_text' => 'Bưu cục VNPost đang phân loại bưu gửi',
-            'history' => [],
-        ];
+        return $this->trackingResponse($trackingNumber, 'delivering', 'Bưu cục VNPost đang phân loại bưu gửi');
     }
 }

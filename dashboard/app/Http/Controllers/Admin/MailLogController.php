@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasReadOnlyCrudActions;
 use App\Models\MailLog;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class MailLogController extends BaseCrudController
 {
+    use HasReadOnlyCrudActions;
+
     protected function modelClass(): string
     {
         return MailLog::class;
@@ -58,30 +58,5 @@ class MailLogController extends BaseCrudController
             'status' => ['label' => 'Status', 'rules' => ['nullable', 'string', 'max:50']],
             'opened' => ['label' => 'Opened (0/1)', 'type' => 'number', 'rules' => ['nullable', 'boolean']],
         ];
-    }
-
-    public function create(): never
-    {
-        throw new NotFoundHttpException();
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        abort(404);
-    }
-
-    public function edit(int $id): never
-    {
-        throw new NotFoundHttpException();
-    }
-
-    public function update(Request $request, int $id): RedirectResponse
-    {
-        abort(404);
-    }
-
-    public function destroy(int $id): RedirectResponse
-    {
-        abort(404);
     }
 }

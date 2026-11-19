@@ -219,7 +219,7 @@
                             <label class="form-label">{{ __('admin.order.order_status') }}</label>
                             <select name="status" class="form-control">
                                 @foreach(['pending', 'new', 'processing', 'delivering', 'completed', 'cancelled', 'refunded'] as $s)
-                                    <option value="{{ $s }}" @selected($statusValue === $s)>{{ \App\Support\AdminLabel::orderStatus($s) }}</option>
+                                    <option value="{{ $s }}" @selected($statusValue === $s)>{{ \App\Support\Admin::orderStatus($s) }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -344,8 +344,8 @@
                     <div class="form-row">
                         <label class="form-label">{{ __('admin.order.refund_type') }}</label>
                         <select name="refund_type" id="refund_type" class="form-control" onchange="document.getElementById('refund_amount_container').style.display = this.value === 'partial' ? 'block' : 'none'">
-                            <option value="full">{{ \App\Support\AdminLabel::refundType('full') }}</option>
-                            <option value="partial">{{ \App\Support\AdminLabel::refundType('partial') }}</option>
+                            <option value="full">{{ \App\Support\Admin::refundType('full') }}</option>
+                            <option value="partial">{{ \App\Support\Admin::refundType('partial') }}</option>
                         </select>
                     </div>
 

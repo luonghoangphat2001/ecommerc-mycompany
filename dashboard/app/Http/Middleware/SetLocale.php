@@ -2,16 +2,19 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Localization;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class SetLocale
 {
+    public function __construct(private readonly Localization $localeContext) {}
+
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -43,6 +46,7 @@ class SetLocale
         foreach ($candidates as $candidate) {
             if (is_string($candidate) && in_array($candidate, $supported, true)) {
                 $locale = $candidate;
+
                 break;
             }
         }
@@ -56,7 +60,7 @@ class SetLocale
             $request->session()->put('locale', $locale);
         }
 
-        app()->setLocale($locale);
+        $this->localeContext->set($locale);
 
         return $next($request);
     }

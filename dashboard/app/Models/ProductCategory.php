@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasLocalizedDisplayName;
+use App\Traits\HasWebhooks;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,22 +19,20 @@ use Spatie\Translatable\HasTranslations;
  *     description="User who created the post",
  *     type="object",
  *     required={"id", "name", "description"},
- *     
+ *
  * )
  */
-
-
 class ProductCategory extends Model implements HasMedia
 {
-    use HasTranslations;
     use HasFactory;
-    use \App\Traits\HasWebhooks;
+    use HasLocalizedDisplayName;
+    use HasTranslations;
+    use HasWebhooks;
     use InteractsWithMedia;
 
     /**
      * @var string
      */
-
     public $translatable = [
         'name',
         'description',
@@ -80,30 +80,19 @@ class ProductCategory extends Model implements HasMedia
             $depth++;
             $parent = $parent->parent;
         }
+
         return $depth;
     }
 
     public function getDisplayNameAttribute(): string
     {
-        $locale = app()->getLocale() ?: 'vi';
-        $name = $this->getTranslation('name', $locale) ?: $this->getTranslation('name', 'vi');
-        if (empty($name) && is_array($this->name)) {
-            $name = $this->name['vi'] ?? $this->name['en'] ?? '';
-        }
-        return (string) ($name ?: ($this->slug ?: 'Danh mục #' . $this->id));
+        return $this->localizedDisplayName('Danh mục');
     }
 
     public function getBreadcrumbsAttribute(): string
     {
-        $parts = [];
-        $curr = $this->parent;
-        while ($curr) {
-            array_unshift($parts, $curr->display_name);
-            $curr = $curr->parent;
-        }
-        return empty($parts) ? '—' : implode(' > ', $parts);
+        return $this->parentBreadcrumbs();
     }
-
 
     /** @return BelongsToMany<Product> */
     public function products(): BelongsToMany

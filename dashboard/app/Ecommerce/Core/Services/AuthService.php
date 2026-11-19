@@ -4,67 +4,34 @@ namespace App\Ecommerce\Core\Services;
 
 use App\Ecommerce\User\Contracts\UserRepositoryInterface;
 use App\Models\User;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class AuthService
 {
     private const ACCESS_TOKEN_TTL_SECONDS = 900;
+
     private const REFRESH_TOKEN_TTL_SECONDS = 604800;
 
-    /**
-     * @var UserRepositoryInterface
-     */
-    protected $userRepository;
+    public function __construct(protected UserRepositoryInterface $userRepository) {}
 
-    /**
-     * AuthService constructor.
-     *
-     * @param UserRepositoryInterface $userRepository
-     */
-    public function __construct(UserRepositoryInterface $userRepository)
-    {
-        $this->userRepository = $userRepository;
-    }
-
-    /**
-     * Authenticate user and return token.
-     *
-     * @param string $email
-     * @param string $password
-     * @param string $deviceName
-     * @return array
-     * @throws ValidationException
-     */
+    /** @throws ValidationException */
     public function login(string $email, string $password, string $deviceName): array
     {
         $user = $this->userRepository->findByEmail($email);
 
-        if (!$user || !Hash::check($password, $user->password)) {
+        if (! $user || ! Hash::check($password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
 
-        $user->tokens()->delete();
-        $expiresIn = self::ACCESS_TOKEN_TTL_SECONDS;
-        $token = $user->createToken($deviceName, ['*'], now()->addSeconds($expiresIn));
-
-        return $this->buildTokenResponse(
-            $token->plainTextToken,
-            $user->load(['defaultShippingAddress', 'defaultBillingAddress']),
-            $expiresIn
-        );
+        return $this->issueTokenPair($user, $deviceName);
     }
 
-    /**
-     * Register a new customer and return token.
-     *
-     * @param array $data
-     * @return array
-     */
     public function register(array $data): array
     {
         /** @var User $user */
@@ -76,91 +43,127 @@ class AuthService
         ]);
 
         try {
-            if (method_exists($user, 'assignRole') && \Spatie\Permission\Models\Role::where('name', 'customer')->exists()) {
+            if (method_exists($user, 'assignRole') && Role::where('name', 'customer')->exists()) {
                 $user->assignRole('customer');
             }
         } catch (\Throwable $e) {
-            // Role table or customer role may not be seeded in all environments
+            report($e);
         }
 
-        $deviceName = $data['device_name'] ?? 'storefront_web';
-        $expiresIn = self::ACCESS_TOKEN_TTL_SECONDS;
-        $token = $user->createToken($deviceName, ['*'], now()->addSeconds($expiresIn));
-
-        return $this->buildTokenResponse(
-            $token->plainTextToken,
-            $user->load(['defaultShippingAddress', 'defaultBillingAddress']),
-            $expiresIn
-        );
+        return $this->issueTokenPair($user, $data['device_name'] ?? 'storefront_web');
     }
 
-    /**
-     * Refresh the current access token using the bearer token provided by the client.
-     *
-     * @param string $plainTextToken
-     * @return array|null
-     */
+    public function findByEmail(string $email): ?User
+    {
+        return $this->userRepository->findByEmail($email);
+    }
+
+    public function updatePassword(User $user, string $password): User
+    {
+        $user->update(['password' => $password]);
+
+        return $user->fresh();
+    }
+
+    public function updateProfile(User $user, array $data): User
+    {
+        $user->update($data);
+
+        return $user->fresh(['defaultShippingAddress', 'defaultBillingAddress']);
+    }
+
     public function refreshToken(string $plainTextToken): ?array
     {
-        $accessToken = PersonalAccessToken::findToken($plainTextToken);
+        return DB::transaction(function () use ($plainTextToken): ?array {
+            $refreshToken = DB::table('auth_refresh_tokens')
+                ->lockForUpdate()
+                ->where('token_hash', hash('sha256', $plainTextToken))
+                ->whereNull('revoked_at')
+                ->first();
 
-        if (!$accessToken || !$accessToken->tokenable instanceof User) {
-            return null;
-        }
+            if (! $refreshToken || now()->greaterThan($refreshToken->expires_at)) {
+                if ($refreshToken) {
+                    DB::table('auth_refresh_tokens')->where('id', $refreshToken->id)->update(['revoked_at' => now()]);
+                }
 
-        $tokenCreatedAt = Carbon::parse($accessToken->created_at);
-        $tokenAgeInSeconds = $tokenCreatedAt->diffInSeconds(now());
+                return null;
+            }
 
-        if ($tokenAgeInSeconds > self::REFRESH_TOKEN_TTL_SECONDS) {
-            $accessToken->delete();
+            $user = User::query()->find($refreshToken->user_id);
+            DB::table('auth_refresh_tokens')->where('id', $refreshToken->id)->update(['revoked_at' => now()]);
 
-            return null;
-        }
+            if (! $user) {
+                return null;
+            }
 
-        $user = $accessToken->tokenable->load(['defaultShippingAddress', 'defaultBillingAddress']);
-        $deviceName = $accessToken->name ?: 'storefront_web';
-
-        $accessToken->delete();
-
-        $newToken = $user->createToken(
-            $deviceName,
-            $accessToken->abilities ? json_decode($accessToken->abilities, true) : ['*'],
-            now()->addSeconds(self::ACCESS_TOKEN_TTL_SECONDS)
-        );
-
-        return $this->buildTokenResponse(
-            $newToken->plainTextToken,
-            $user,
-            self::ACCESS_TOKEN_TTL_SECONDS
-        );
+            return $this->issueTokenPair($user, $refreshToken->device_name, false);
+        });
     }
 
-    /**
-     * Normalize token payload for frontend compatibility.
-     *
-     * @param string $plainTextToken
-     * @param User $user
-     * @param int $expiresIn
-     * @return array
-     */
-    private function buildTokenResponse(string $plainTextToken, User $user, int $expiresIn): array
+    /** @return array<string, mixed> */
+    private function issueTokenPair(User $user, string $deviceName, bool $revokeDevice = true): array
     {
+        $deviceName = trim($deviceName) ?: 'storefront_web';
+
+        if ($revokeDevice) {
+            $user->tokens()
+                ->where('name', "access:{$deviceName}")
+                ->update(['revoked' => true]);
+
+            DB::table('auth_refresh_tokens')
+                ->where('user_id', $user->id)
+                ->where('device_name', $deviceName)
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now()]);
+        }
+
+        $accessToken = $user->createToken(
+            "access:{$deviceName}",
+            ['access']
+        );
+        $plainRefreshToken = Str::random(80);
+
+        DB::table('auth_refresh_tokens')->insert([
+            'user_id' => $user->id,
+            'token_hash' => hash('sha256', $plainRefreshToken),
+            'device_name' => $deviceName,
+            'expires_at' => now()->addSeconds(self::REFRESH_TOKEN_TTL_SECONDS),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         return [
-            'access_token' => $plainTextToken,
+            'access_token' => $accessToken->accessToken,
+            'refresh_token' => $plainRefreshToken,
             'token_type' => 'Bearer',
-            'expires_in' => $expiresIn,
-            'user' => $user,
+            'expires_in' => self::ACCESS_TOKEN_TTL_SECONDS,
+            'refresh_expires_in' => self::REFRESH_TOKEN_TTL_SECONDS,
+            'user' => $user->load(['defaultShippingAddress', 'defaultBillingAddress']),
         ];
     }
 
-    /**
-     * Log out the current user.
-     *
-     * @param User $user
-     * @return void
-     */
     public function logout(User $user): void
     {
-        $user->currentAccessToken()?->delete();
+        $currentToken = $user->currentAccessToken();
+        $deviceName = preg_replace('/^access:/', '', (string) $currentToken?->name) ?: null;
+
+        $currentToken?->revoke();
+
+        if ($deviceName) {
+            DB::table('auth_refresh_tokens')
+                ->where('user_id', $user->id)
+                ->where('device_name', $deviceName)
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now()]);
+        }
+    }
+
+    public function revokeAll(User $user): void
+    {
+        $user->tokens()->update(['revoked' => true]);
+        DB::table('auth_refresh_tokens')
+            ->where('user_id', $user->id)
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
     }
 }

@@ -2,25 +2,28 @@
 
 namespace App\Ecommerce\Upsell\Services;
 
-use App\Ecommerce\Upsell\Contracts\UpsellServiceInterface;
 use App\Ecommerce\Upsell\Contracts\UpsellRepositoryInterface;
+use App\Ecommerce\Upsell\Contracts\UpsellServiceInterface;
+use App\Settings\MarketingSettings;
 use Illuminate\Support\Collection;
 
 class UpsellService implements UpsellServiceInterface
 {
     protected UpsellRepositoryInterface $upsellRepository;
 
-    public function __construct(UpsellRepositoryInterface $upsellRepository)
-    {
+    public function __construct(
+        UpsellRepositoryInterface $upsellRepository,
+        protected MarketingSettings $marketingSettings
+    ) {
         $this->upsellRepository = $upsellRepository;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getUpsellsForProduct(int $productId): Collection
     {
-        if (!$this->isEnabled()) {
+        if (! $this->isEnabled()) {
             return collect();
         }
 
@@ -28,10 +31,10 @@ class UpsellService implements UpsellServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isEnabled(): bool
     {
-        return app(\App\Settings\MarketingSettings::class)->upsell_enabled ?? false;
+        return (bool) ($this->marketingSettings->upsell_enabled ?? false);
     }
 }

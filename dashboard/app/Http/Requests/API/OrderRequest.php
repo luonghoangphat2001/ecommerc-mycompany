@@ -3,19 +3,10 @@
 namespace App\Http\Requests\API;
 
 use App\Ecommerce\Order\Enums\OrderStatus;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
-class OrderRequest extends FormRequest
+class OrderRequest extends ApiFormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * Get the validation rules that apply to the request.
      * Handles both Store (POST checkout) and Update (PUT/PATCH status/notes).

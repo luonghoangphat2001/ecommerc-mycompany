@@ -2,25 +2,28 @@
 
 namespace App\Ecommerce\CrossSell\Services;
 
-use App\Ecommerce\CrossSell\Contracts\CrossSellServiceInterface;
 use App\Ecommerce\CrossSell\Contracts\CrossSellRepositoryInterface;
+use App\Ecommerce\CrossSell\Contracts\CrossSellServiceInterface;
+use App\Settings\MarketingSettings;
 use Illuminate\Support\Collection;
 
 class CrossSellService implements CrossSellServiceInterface
 {
     protected CrossSellRepositoryInterface $crossSellRepository;
 
-    public function __construct(CrossSellRepositoryInterface $crossSellRepository)
-    {
+    public function __construct(
+        CrossSellRepositoryInterface $crossSellRepository,
+        protected MarketingSettings $marketingSettings
+    ) {
         $this->crossSellRepository = $crossSellRepository;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getCrossSellsForProduct(int $productId): Collection
     {
-        if (!$this->isEnabled()) {
+        if (! $this->isEnabled()) {
             return collect();
         }
 
@@ -28,10 +31,10 @@ class CrossSellService implements CrossSellServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function isEnabled(): bool
     {
-        return app(\App\Settings\MarketingSettings::class)->cross_sell_enabled ?? false;
+        return (bool) ($this->marketingSettings->cross_sell_enabled ?? false);
     }
 }

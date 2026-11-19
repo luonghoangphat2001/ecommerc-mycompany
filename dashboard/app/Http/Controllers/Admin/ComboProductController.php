@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
 use App\Models\ComboProduct;
 use App\Models\ComboProductItem;
-use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,17 +15,27 @@ use Illuminate\View\View;
 
 class ComboProductController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+
+    public function __construct(private readonly FeaturePolicyServiceInterface $featurePolicy)
+    {
+        parent::__construct();
+    }
+
     public function create(): View
     {
-        abort_unless(app(FeaturePolicyServiceInterface::class)->isComboEnabled(), 403, 'Chức năng sản phẩm combo đang bị tắt trong cấu hình.');
+        abort_unless($this->featurePolicy->isComboEnabled(), 403, 'Chức năng sản phẩm combo đang bị tắt trong cấu hình.');
+
         return parent::create();
     }
 
     public function store(Request $request): RedirectResponse
     {
-        abort_unless(app(FeaturePolicyServiceInterface::class)->isComboEnabled(), 403, 'Chức năng sản phẩm combo đang bị tắt trong cấu hình.');
+        abort_unless($this->featurePolicy->isComboEnabled(), 403, 'Chức năng sản phẩm combo đang bị tắt trong cấu hình.');
+
         return parent::store($request);
     }
+
     protected function modelClass(): string
     {
         return ComboProduct::class;
@@ -56,11 +66,11 @@ class ComboProductController extends BaseCrudController
         return [
             'name' => ['label' => 'Tên combo', 'rules' => ['required', 'string', 'max:255']],
             'slug' => ['label' => 'Slug', 'rules' => ['required', 'string', 'max:255']],
-            'sort_order' => ['label' => 'Sort order', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']],
+            'sort_order' => $this->sortOrderField(),
             'description' => ['label' => 'Description', 'type' => 'textarea', 'rules' => ['nullable', 'string']],
             'combo_price' => ['label' => 'Combo price', 'type' => 'number', 'rules' => ['required', 'integer', 'min:0']],
             'discount_percent' => ['label' => 'Discount %', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0', 'max:100']],
-            'is_active' => ['label' => 'Kích hoạt', 'type' => 'select', 'rules' => ['nullable', 'boolean'], 'options' => ['1' => 'Có', '0' => 'Không']],
+            'is_active' => $this->activeField(),
             'start_date' => ['label' => 'Start date', 'type' => 'datetime-local', 'rules' => ['nullable', 'date']],
             'end_date' => ['label' => 'End date', 'type' => 'datetime-local', 'rules' => ['nullable', 'date']],
             'items_json' => ['label' => 'Sản phẩm thành phần', 'type' => 'hidden', 'rules' => ['nullable'], 'virtual' => true, 'formOnly' => true],
@@ -104,7 +114,7 @@ class ComboProductController extends BaseCrudController
 
     protected function formData(?Model $record = null): array
     {
-        $products = Product::select('id', 'name', 'sku')->orderBy('name')->get();
+        $products = $this->productRecords();
         $items = $record ? $record->items()->get(['shop_product_id', 'quantity', 'sort_order'])->toArray() : [];
 
         if (empty($items) && $products->isNotEmpty()) {

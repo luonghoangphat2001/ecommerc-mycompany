@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\WebhookLog;
+use App\Ecommerce\Analytics\Contracts\WebhookAnalyticsServiceInterface;
 use Illuminate\Console\Command;
 
 class CleanupWebhookLogsCommand extends Command
@@ -24,11 +24,11 @@ class CleanupWebhookLogsCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(): void
+    public function handle(WebhookAnalyticsServiceInterface $analyticsService): void
     {
         $days = (int) $this->option('days');
-        
-        $count = app(\App\Ecommerce\Analytics\Contracts\WebhookAnalyticsServiceInterface::class)->cleanupLogs($days);
+
+        $count = $analyticsService->cleanupLogs($days);
 
         $this->info(__('admin.cleanup.webhook_logs_success', ['count' => $count, 'days' => $days]));
     }

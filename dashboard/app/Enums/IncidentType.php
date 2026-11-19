@@ -8,6 +8,7 @@ enum IncidentType: string
     case DamagedGoods = 'damaged_goods';
     case ColdStorageAlarm = 'cold_storage_alarm';
     case SystemError = 'system_error';
+    case ReturnRequest = 'return_request';
 
     /**
      * Default label (English).
@@ -19,6 +20,7 @@ enum IncidentType: string
             self::DamagedGoods => 'Damaged Goods',
             self::ColdStorageAlarm => 'Cold Storage Alarm',
             self::SystemError => 'System Error',
+            self::ReturnRequest => 'Return Request',
         };
     }
 
@@ -32,6 +34,7 @@ enum IncidentType: string
             self::DamagedGoods => 'Hàng hư hỏng',
             self::ColdStorageAlarm => 'Cảnh báo kho lạnh',
             self::SystemError => 'Lỗi hệ thống',
+            self::ReturnRequest => 'Yêu cầu trả hàng',
         };
     }
 

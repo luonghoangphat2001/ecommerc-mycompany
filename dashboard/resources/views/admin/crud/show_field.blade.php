@@ -41,10 +41,10 @@
 @elseif (isset($name) && in_array($name, ['price', 'old_price', 'sale_price', 'cost'], true) && is_numeric($value))
     <span class="mono" style="font-weight: 700; color: var(--fi-text); font-size: 13.5px;">{{ number_format((float) $value) }} <span style="font-size: 11px; font-weight: 500; color: var(--fi-muted);">VND</span></span>
 @elseif (isset($record) && $record instanceof \Spatie\Permission\Models\Permission && isset($name) && $name === 'name')
-    <span class="badge bg-blue">{{ \App\Support\AdminLabel::permission($value) }}</span>
+    <span class="badge bg-blue">{{ \App\Support\Admin::permissionLabel($value) }}</span>
     <small class="cell-muted mono" style="display: block; font-size: 11px; margin-top: 2px;">{{ $value }}</small>
 @elseif (isset($record) && $record instanceof \Spatie\Permission\Models\Role && isset($name) && $name === 'name')
-    <span class="badge bg-blue">{{ \App\Support\AdminLabel::role($value) }}</span>
+    <span class="badge bg-blue">{{ \App\Support\Admin::roleLabel($value) }}</span>
     <small class="cell-muted mono" style="display: block; font-size: 11px; margin-top: 2px;">{{ $value }}</small>
 @elseif ($type === 'image')
     @php
@@ -146,5 +146,5 @@
         @endif
     @endif
 @else
-    {!! nl2br(e(\App\Support\AdminValue::format($value, $compact))) !!}
+    {!! nl2br(e(\App\Support\Admin::format($value, $compact))) !!}
 @endif

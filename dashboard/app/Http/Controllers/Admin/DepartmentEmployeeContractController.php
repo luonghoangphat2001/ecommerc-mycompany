@@ -2,13 +2,22 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Workspace\Services\HrService;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
+use App\Http\Controllers\Admin\Traits\HasPermissionedServiceCrudActions;
 use App\Models\DepartmentEmployeeContract;
-use App\Models\User;
-use Illuminate\Http\Request;
 
 class DepartmentEmployeeContractController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+    use HasPermissionedServiceCrudActions;
+
+    public function __construct(private readonly HrService $hrService)
+    {
+        parent::__construct();
+    }
+
     protected function modelClass(): string
     {
         return DepartmentEmployeeContract::class;
@@ -36,13 +45,13 @@ class DepartmentEmployeeContractController extends BaseCrudController
                 'label' => 'Phòng ban',
                 'type' => 'select',
                 'rules' => ['required', 'exists:departments,id'],
-                'options' => \App\Models\Department::pluck('name', 'id')->toArray(),
+                'options' => $this->departmentOptions(),
             ],
             'user_id' => [
                 'label' => 'Nhân sự',
                 'type' => 'select',
                 'rules' => ['required', 'exists:users,id'],
-                'options' => User::orderBy('name')->pluck('name', 'id')->toArray(),
+                'options' => $this->userOptions(),
             ],
             'contract_code' => [
                 'label' => 'Mã hợp đồng',
@@ -70,43 +79,23 @@ class DepartmentEmployeeContractController extends BaseCrudController
         ];
     }
 
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    protected function crudService(): object
     {
-        if (!$this->hasPermission('create')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $hrService = app(\App\Ecommerce\Workspace\Services\HrService::class);
-        $hrService->createContract($validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Tạo mới thành công.');
+        return $this->hrService;
     }
 
-    public function update(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    protected function createServiceMethod(): string
     {
-        if (!$this->hasPermission('update')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $hrService = app(\App\Ecommerce\Workspace\Services\HrService::class);
-        $hrService->updateContract($id, $validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Cập nhật thành công.');
+        return 'createContract';
     }
 
-    public function destroy(int $id): \Illuminate\Http\RedirectResponse
+    protected function updateServiceMethod(): string
     {
-        if (!$this->hasPermission('delete')) {
-            abort(403);
-        }
+        return 'updateContract';
+    }
 
-        $hrService = app(\App\Ecommerce\Workspace\Services\HrService::class);
-        $hrService->deleteContract($id);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Xóa thành công.');
+    protected function deleteServiceMethod(): string
+    {
+        return 'deleteContract';
     }
 }

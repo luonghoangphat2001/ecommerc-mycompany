@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
 use App\Models\LoyaltyPoint;
 
 class LoyaltyPointController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+
     protected function modelClass(): string
     {
         return LoyaltyPoint::class;
@@ -36,7 +39,7 @@ class LoyaltyPointController extends BaseCrudController
     protected function fields(): array
     {
         return [
-            'user_id' => ['label' => __('admin.loyalty.customer'), 'type' => 'select', 'rules' => ['required', 'exists:users,id'], 'options' => \App\Models\User::pluck('name', 'id')->toArray()],
+            'user_id' => ['label' => __('admin.loyalty.customer'), 'type' => 'select', 'rules' => ['required', 'exists:users,id'], 'options' => $this->userOptions()],
             'current_points' => ['label' => __('admin.loyalty.current_points'), 'type' => 'number', 'rules' => ['required', 'integer', 'min:0']],
             'lifetime_points' => ['label' => __('admin.loyalty.lifetime_points'), 'type' => 'number', 'rules' => ['required', 'integer', 'min:0']],
         ];

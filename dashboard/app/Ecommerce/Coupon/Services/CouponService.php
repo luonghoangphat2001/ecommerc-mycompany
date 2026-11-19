@@ -10,6 +10,8 @@ use App\Ecommerce\Coupon\Services\Checkers\RequirementChecker;
 use App\Ecommerce\Coupon\Services\Checkers\RestrictionChecker;
 use App\Ecommerce\Coupon\Services\Checkers\UsageChecker;
 use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
+use App\Enums\CouponType;
 use App\Exceptions\CouponValidationException;
 use App\Models\Coupon;
 use Illuminate\Pipeline\Pipeline;
@@ -20,21 +22,22 @@ class CouponService implements CouponServiceInterface
     public function __construct(
         protected CouponRepositoryInterface $couponRepository,
         protected ProductRepositoryInterface $productRepository,
-        protected Pipeline $pipeline
+        protected Pipeline $pipeline,
+        protected FeaturePolicyServiceInterface $featurePolicy
     ) {}
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function validateCoupon(string $code, array $items, float $subtotal, ?int $userId = null): CouponValidationDTO
     {
-        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isCouponsEnabled()) {
+        if (! $this->featurePolicy->isCouponsEnabled()) {
             throw new CouponValidationException(trans('messages.coupon_disabled') ?: 'Mã giảm giá hiện đang bị tắt bởi hệ thống.');
         }
 
         $coupon = $this->couponRepository->findByCode($code);
 
-        if (!$coupon) {
+        if (! $coupon) {
             throw new CouponValidationException(trans('messages.coupon_not_found'));
         }
 
@@ -54,17 +57,18 @@ class CouponService implements CouponServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function calculateDiscount(Coupon $coupon, array $items, float $subtotal): float
     {
         $discountAmount = 0.0;
 
-        $couponType = $coupon->type instanceof \App\Enums\CouponType ? $coupon->type : \App\Enums\CouponType::tryFrom((string)$coupon->type);
+        $couponType = $coupon->type instanceof CouponType ? $coupon->type : CouponType::tryFrom((string) $coupon->type);
 
         // 1. Fixed Cart discount
-        if ($couponType === \App\Enums\CouponType::FixedCart) {
-            $discountAmount = (float)$coupon->amount;
+        if ($couponType === CouponType::FixedCart) {
+            $discountAmount = (float) $coupon->amount;
+
             return min($discountAmount, $subtotal);
         }
 
@@ -73,39 +77,53 @@ class CouponService implements CouponServiceInterface
 
         foreach ($items as $item) {
             $productId = $item['id'] ?? $item['product_id'] ?? null;
-            if (!$productId) continue;
-
-            $product = $this->productRepository->find($productId, ['*'], ['categories']);
-            if (!$product) continue;
-
-            // Apply restrictions logic again for exact discount mapping
-            if ($coupon->exclude_sale_items && $product->old_price > $product->price) continue;
-            if (!empty($coupon->product_ids) && !in_array($productId, $coupon->product_ids)) continue;
-            if (!empty($coupon->excluded_product_ids) && in_array($productId, $coupon->excluded_product_ids)) continue;
-
-            if (!empty($coupon->category_ids)) {
-                $productCategoryIds = $product->categories->pluck('id')->toArray();
-                if (empty(array_intersect($productCategoryIds, $coupon->category_ids))) continue;
+            if (! $productId) {
+                continue;
             }
 
-            if (!empty($coupon->excluded_category_ids)) {
+            $product = $this->productRepository->find($productId, ['*'], ['categories']);
+            if (! $product) {
+                continue;
+            }
+
+            // Apply restrictions logic again for exact discount mapping
+            if ($coupon->exclude_sale_items && $product->old_price > $product->price) {
+                continue;
+            }
+            if (! empty($coupon->product_ids) && ! in_array($productId, $coupon->product_ids)) {
+                continue;
+            }
+            if (! empty($coupon->excluded_product_ids) && in_array($productId, $coupon->excluded_product_ids)) {
+                continue;
+            }
+
+            if (! empty($coupon->category_ids)) {
                 $productCategoryIds = $product->categories->pluck('id')->toArray();
-                if (!empty(array_intersect($productCategoryIds, $coupon->excluded_category_ids))) continue;
+                if (empty(array_intersect($productCategoryIds, $coupon->category_ids))) {
+                    continue;
+                }
+            }
+
+            if (! empty($coupon->excluded_category_ids)) {
+                $productCategoryIds = $product->categories->pluck('id')->toArray();
+                if (! empty(array_intersect($productCategoryIds, $coupon->excluded_category_ids))) {
+                    continue;
+                }
             }
 
             $itemQty = $item['quantity'] ?? 1;
-            $itemPrice = (float)$product->price;
+            $itemPrice = (float) $product->price;
 
-            if ($couponType === \App\Enums\CouponType::Percentage) {
+            if ($couponType === CouponType::Percentage) {
                 $itemDiscount = ($itemPrice * $itemQty) * ($coupon->amount / 100);
                 $discountAmount += $itemDiscount;
-            } elseif ($couponType === \App\Enums\CouponType::FixedProduct) {
+            } elseif ($couponType === CouponType::FixedProduct) {
                 // Limit usage to X items if applicable
                 $allowedQty = $itemQty;
                 if ($coupon->limit_usage_to_x_items !== null) {
                     $allowedQty = min($allowedQty, $coupon->limit_usage_to_x_items);
                 }
-                $discountAmount += ((float)$coupon->amount * $allowedQty);
+                $discountAmount += ((float) $coupon->amount * $allowedQty);
             }
         }
 
@@ -113,7 +131,7 @@ class CouponService implements CouponServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function applyCoupon(string $code, array $items, float $subtotal, ?int $userId = null): array
     {

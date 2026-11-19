@@ -70,7 +70,7 @@
                             @foreach(\Spatie\Permission\Models\Role::orderBy('name')->pluck('name', 'name') as $role)
                                 <label class="shield-permission-pill">
                                     <input type="checkbox" name="roles[]" value="{{ $role }}" @checked(in_array($role, $userRoles, true))>
-                                    <span>{{ \App\Support\AdminLabel::role($role) }}</span>
+                                    <span>{{ \App\Support\Admin::roleLabel($role) }}</span>
                                 </label>
                             @endforeach
                         </div>

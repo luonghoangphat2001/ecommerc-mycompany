@@ -2,22 +2,27 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Menu\Contracts\MenuServiceInterface;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
+use App\Http\Requests\Admin\MenuRequest;
 use App\Models\Menu;
 use App\Models\MenuItem;
-use App\Models\Page;
-use App\Models\ProductCategory;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class MenuController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+
+    public function __construct(private readonly MenuServiceInterface $menuService)
+    {
+        parent::__construct();
+    }
+
     protected function modelClass(): string
     {
         return Menu::class;
@@ -83,8 +88,8 @@ class MenuController extends BaseCrudController
             $menuItems = $this->buildItemTree($allItems, null);
         }
 
-        $pages = Page::select('id', 'title', 'slug')->get();
-        $categories = ProductCategory::select('id', 'name', 'slug')->get();
+        $pages = $this->pageRecords();
+        $categories = $this->productCategoryRecords();
 
         return view('admin.menus.index', [
             'title' => __($this->title()),
@@ -105,65 +110,22 @@ class MenuController extends BaseCrudController
         return $this->index(request());
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(MenuRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'handle' => ['nullable', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $this->normalizeMenuData($request->validated());
 
-        if (empty($data['handle']) && ! empty($data['name'])) {
-            $data['handle'] = Str::slug($data['name']);
-        }
-
-        if (Schema::hasColumn('menus', 'slug')) {
-            if (empty($data['slug'])) {
-                $data['slug'] = $data['handle'] ?: Str::slug($data['name']);
-            }
-        } else {
-            unset($data['slug']);
-        }
-
-        if (! Schema::hasColumn('menus', 'handle')) {
-            unset($data['handle']);
-        }
-
-        $menu = Menu::create($data);
-        Cache::forget('all_menus');
+        $menu = $this->menuService->createMenu($data);
         $this->flushStorefrontCaches();
 
         return redirect()->route('admin.menus.index', ['menu_id' => $menu->id])
             ->with('status', __('admin.messages.created'));
     }
 
-    public function update(Request $request, int $id): RedirectResponse
+    public function update(MenuRequest $request, int $id): RedirectResponse
     {
-        $menu = Menu::findOrFail($id);
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'handle' => ['nullable', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $this->normalizeMenuData($request->validated());
 
-        if (empty($data['handle']) && ! empty($data['name'])) {
-            $data['handle'] = Str::slug($data['name']);
-        }
-
-        if (Schema::hasColumn('menus', 'slug')) {
-            if (empty($data['slug'])) {
-                $data['slug'] = $data['handle'] ?: Str::slug($data['name']);
-            }
-        } else {
-            unset($data['slug']);
-        }
-
-        if (! Schema::hasColumn('menus', 'handle')) {
-            unset($data['handle']);
-        }
-
-        $menu->update($data);
-        Cache::forget('all_menus');
+        $menu = $this->menuService->updateMenu($id, $data);
         $this->flushStorefrontCaches();
 
         return redirect()->route('admin.menus.index', ['menu_id' => $menu->id])
@@ -172,9 +134,7 @@ class MenuController extends BaseCrudController
 
     public function destroy(int $id): RedirectResponse
     {
-        $menu = Menu::findOrFail($id);
-        $menu->delete();
-        Cache::forget('all_menus');
+        $this->menuService->deleteMenu($id);
         $this->flushStorefrontCaches();
 
         return redirect()->route('admin.menus.index')
@@ -193,5 +153,22 @@ class MenuController extends BaseCrudController
         }
 
         return $branch;
+    }
+
+    private function normalizeMenuData(array $data): array
+    {
+        $data['handle'] = $data['handle'] ?? Str::slug($data['name']);
+
+        if (Schema::hasColumn('menus', 'slug')) {
+            $data['slug'] = $data['slug'] ?? $data['handle'];
+        } else {
+            unset($data['slug']);
+        }
+
+        if (! Schema::hasColumn('menus', 'handle')) {
+            unset($data['handle']);
+        }
+
+        return $data;
     }
 }

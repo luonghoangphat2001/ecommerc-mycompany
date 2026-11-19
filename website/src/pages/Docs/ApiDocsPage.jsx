@@ -4,7 +4,7 @@ import "swagger-ui-react/swagger-ui.css"
 
 const ApiDocsPage = () => {
     // Đổi thành đường dẫn tương đối để lừa trình duyệt đi qua Proxy (né lỗi CORS)
-    const swaggerUrl = "/docs/api.json"
+    const swaggerUrl = "/docs/api.yaml"
 
     return (
         <div className="space-y-6">

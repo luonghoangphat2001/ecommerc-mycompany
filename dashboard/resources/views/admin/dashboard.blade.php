@@ -399,7 +399,7 @@
                                         {{ $order->number ?: ('#' . $order->id) }}
                                     </a>
                                 </td>
-                                <td><span class="badge badge-{{ $status ?: 'secondary' }}">{{ \App\Support\AdminLabel::orderStatus($status ?: 'pending') }}</span></td>
+                                <td><span class="badge badge-{{ $status ?: 'secondary' }}">{{ \App\Support\Admin::orderStatus($status ?: 'pending') }}</span></td>
                                 <td class="text-right font-bold mono">{{ number_format($order->total) }} {{ $order->currency }}</td>
                                 <td class="text-right cell-muted mono">{{ optional($order->created_at)->format('d/m/Y H:i') }}</td>
                             </tr>
@@ -425,7 +425,7 @@
                         @endphp
                         <div class="metric-row" style="flex-direction: column; align-items: stretch; gap: 6px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span class="badge badge-{{ $status ?: 'secondary' }}">{{ \App\Support\AdminLabel::orderStatus($status ?: 'unknown') }}</span>
+                                <span class="badge badge-{{ $status ?: 'secondary' }}">{{ \App\Support\Admin::orderStatus($status ?: 'unknown') }}</span>
                                 <span class="mono" style="font-size: 12px;">
                                     <strong>{{ number_format($total) }}</strong>
                                     <span class="cell-muted">({{ $pct }}%)</span>

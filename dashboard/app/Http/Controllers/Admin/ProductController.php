@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Product\Services\ProductAttributeService;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
-use App\Models\Attribute;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
+use App\Http\Controllers\Admin\Traits\HasHierarchicalOptions;
 use App\Models\Brand;
 use App\Models\ComboProduct;
 use App\Models\ComboProductItem;
 use App\Models\Product;
 use App\Models\ProductCategory;
-use App\Models\ProductVariant;
-use App\Models\TaxClass;
+use App\Support\Media;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -18,6 +19,14 @@ use Spatie\Tags\Tag;
 
 class ProductController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+    use HasHierarchicalOptions;
+
+    public function __construct(private readonly ProductAttributeService $attributeService)
+    {
+        parent::__construct();
+    }
+
     protected function modelClass(): string
     {
         return Product::class;
@@ -49,7 +58,7 @@ class ProductController extends BaseCrudController
             'shop_brand_id' => [
                 'label' => __('admin.fields.brand'),
                 'placeholder' => __('admin.filters.all_brands'),
-                'options' => Brand::orderBy('id')->get()->mapWithKeys(fn ($b) => [$b->id => $b->name])->toArray(),
+                'options' => $this->brandOptions('id'),
             ],
             'type' => [
                 'label' => __('admin.fields.type'),
@@ -64,22 +73,22 @@ class ProductController extends BaseCrudController
             'is_visible' => [
                 'label' => __('admin.fields.is_visible'),
                 'placeholder' => __('admin.filters.all_statuses'),
-                'options' => ['1' => __('admin.common.yes'), '0' => __('admin.common.no')],
+                'options' => $this->booleanOptions(),
             ],
             'featured' => [
                 'label' => __('admin.fields.featured'),
                 'placeholder' => __('admin.filters.all'),
-                'options' => ['1' => __('admin.common.yes'), '0' => __('admin.common.no')],
+                'options' => $this->booleanOptions(),
             ],
             'apply_tax' => [
                 'label' => __('admin.fields.apply_tax'),
                 'placeholder' => __('admin.filters.all'),
-                'options' => ['1' => __('admin.common.yes'), '0' => __('admin.common.no')],
+                'options' => $this->booleanOptions(),
             ],
             'category_id' => [
                 'label' => __('admin.fields.category'),
                 'placeholder' => __('admin.filters.all_categories'),
-                'options' => ProductCategory::orderBy('id')->get()->pluck('name', 'id')->toArray(),
+                'options' => $this->productCategoryOptions('id'),
             ],
         ];
     }
@@ -141,10 +150,10 @@ class ProductController extends BaseCrudController
 
     protected function fields(): array
     {
-        $yesNo = ['1' => __('admin.common.yes'), '0' => __('admin.common.no')];
+        $yesNo = $this->booleanOptions();
 
         return [
-            'image' => ['label' => __('admin.fields.image'), 'type' => 'image', 'rules' => ['nullable', 'image', 'max:5120']],
+            'image' => $this->imageField(__('admin.fields.image')),
             'name' => ['label' => __('admin.fields.name'), 'rules' => ['required', 'string']],
             'sku' => ['label' => 'SKU', 'rules' => ['required', 'string', 'max:100']],
             'slug' => ['label' => 'Slug', 'rules' => ['required', 'string', 'max:255'], 'hideOnIndex' => true],
@@ -153,7 +162,7 @@ class ProductController extends BaseCrudController
                 'label' => __('admin.fields.brand'),
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:shop_brands,id'],
-                'options' => ['' => '-- ' . __('admin.fields.brand') . ' --'] + Brand::orderBy('id')->get()->mapWithKeys(fn ($b) => [$b->id => $b->name])->toArray(),
+                'options' => ['' => '-- ' . __('admin.fields.brand') . ' --'] + $this->brandOptions('id'),
                 'hideOnIndex' => true,
             ],
 
@@ -184,7 +193,7 @@ class ProductController extends BaseCrudController
                 'label' => 'Thuế suất (Tax Class)',
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:shop_tax_classes,id'],
-                'options' => ['' => '-- Mặc định / Không thuế --'] + TaxClass::pluck('name', 'id')->toArray(),
+                'options' => ['' => '-- Mặc định / Không thuế --'] + $this->taxClassOptions(),
                 'hideOnIndex' => true,
             ],
 
@@ -205,7 +214,7 @@ class ProductController extends BaseCrudController
                 'type' => 'tree-select',
                 'colspan' => 1,
                 'rules' => ['nullable', 'array'],
-                'tree_nodes' => ProductCategory::whereNull('parent_id')->with('children.children')->get(),
+                'tree_nodes' => $this->hierarchyTree(ProductCategory::class),
                 'hideOnIndex' => true,
             ],
 
@@ -246,11 +255,11 @@ class ProductController extends BaseCrudController
         $data = parent::mutateData($data, $record);
         $brands = request()->input('brands');
         if (is_array($brands)) {
-            $data['shop_brand_id'] = !empty($brands) ? (int) $brands[0] : null;
+            $data['shop_brand_id'] = ! empty($brands) ? (int) $brands[0] : null;
         }
         unset($data['categories'], $data['tags'], $data['brands'], $data['attributes_json'], $data['variants_json'], $data['combo_items_json']);
 
-        if (!isset($data['price']) || $data['price'] === '' || $data['price'] === null) {
+        if (! isset($data['price']) || $data['price'] === '' || $data['price'] === null) {
             $data['price'] = 0;
         }
 
@@ -264,14 +273,14 @@ class ProductController extends BaseCrudController
         if ($request->has('brands')) {
             $brandIds = (array) $request->input('brands', []);
             $record->brands()->sync($brandIds);
-            $primaryBrandId = !empty($brandIds) ? (int) $brandIds[0] : null;
+            $primaryBrandId = ! empty($brandIds) ? (int) $brandIds[0] : null;
             if ($record->shop_brand_id !== $primaryBrandId) {
                 $record->shop_brand_id = $primaryBrandId;
                 $record->saveQuietly();
             }
         }
         $tagsInput = $request->input('tags', []);
-        $tags = is_array($tagsInput) ? $tagsInput : collect(explode(',', (string) $tagsInput))->map(fn($tag) => trim($tag))->filter()->values()->all();
+        $tags = is_array($tagsInput) ? $tagsInput : collect(explode(',', (string) $tagsInput))->map(fn ($tag) => trim($tag))->filter()->values()->all();
         $record->syncTagsWithType($tags, 'Product');
 
         // 2. Variable Product handling
@@ -279,10 +288,8 @@ class ProductController extends BaseCrudController
             $attributes = json_decode((string) $request->input('attributes_json', '[]'), true) ?: [];
             $variants = json_decode((string) $request->input('variants_json', '[]'), true) ?: [];
 
-            /** @var \App\Ecommerce\Product\Services\ProductAttributeService $attrService */
-            $attrService = app(\App\Ecommerce\Product\Services\ProductAttributeService::class);
-            $attrService->syncProductAttributes($record, $attributes);
-            $attrService->syncProductVariants($record, $variants);
+            $this->attributeService->syncProductAttributes($record, $attributes);
+            $this->attributeService->syncProductVariants($record, $variants);
         }
 
         // 3. Combo Product handling
@@ -305,12 +312,12 @@ class ProductController extends BaseCrudController
             $comboProduct->items()->delete();
 
             foreach ($comboItems as $idx => $item) {
-                if (!empty($item['shop_product_id'])) {
+                if (! empty($item['shop_product_id'])) {
                     ComboProductItem::create([
                         'combo_product_id' => $comboProduct->id,
                         'parent_product_id' => $record->id,
                         'shop_product_id' => (int) $item['shop_product_id'],
-                        'product_variant_id' => !empty($item['product_variant_id']) ? (int) $item['product_variant_id'] : null,
+                        'product_variant_id' => ! empty($item['product_variant_id']) ? (int) $item['product_variant_id'] : null,
                         'quantity' => max(1, (int) ($item['quantity'] ?? 1)),
                         'sort_order' => $idx,
                     ]);
@@ -366,9 +373,7 @@ class ProductController extends BaseCrudController
 
     protected function formData(?Model $record = null): array
     {
-        /** @var \App\Ecommerce\Product\Services\ProductAttributeService $attrService */
-        $attrService = app(\App\Ecommerce\Product\Services\ProductAttributeService::class);
-        $availableAttributes = $attrService->getGlobalAttributes(true)->map(function ($attr) {
+        $availableAttributes = $this->attributeService->getGlobalAttributes(true)->map(function ($attr) {
             return [
                 'id' => $attr->id,
                 'name' => $attr->name,
@@ -378,8 +383,8 @@ class ProductController extends BaseCrudController
             ];
         })->values()->toArray();
 
-        $categoryTree = ProductCategory::whereNull('parent_id')->with('children.children')->orderBy('name')->get();
-        $brandTree = Brand::whereNull('parent_id')->with('children.children')->orderBy('name')->get();
+        $categoryTree = $this->hierarchyTree(ProductCategory::class);
+        $brandTree = $this->hierarchyTree(Brand::class);
 
         if (! $record) {
             return [
@@ -397,18 +402,7 @@ class ProductController extends BaseCrudController
             ];
         }
 
-        $imagePath = null;
-        if ($record->product_images) {
-            $imageId = is_array($record->product_images) ? ($record->product_images[0] ?? null) : $record->product_images;
-            if (is_numeric($imageId) && $record->featuredImage) {
-                $imagePath = $record->featuredImage->path;
-            } else {
-                $imagePath = $imageId;
-            }
-        }
-        if (!$imagePath && !empty($record->image)) {
-            $imagePath = $record->image;
-        }
+        $imagePath = Media::path($record->product_images, $record->featuredImage, $record->image);
 
         $attributes = $record->productAttributes()->get(['id', 'attribute_id', 'name', 'options', 'is_variation'])->toArray();
         $variants = $record->variants()->get(['id', 'sku', 'price', 'sale_price', 'sale_start_date', 'sale_end_date', 'qty', 'attributes', 'is_active'])->map(function ($v) {

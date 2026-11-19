@@ -3,23 +3,28 @@
 namespace App\Ecommerce\Settings\Services;
 
 use App\Ecommerce\Settings\Contracts\ShopSettingServiceInterface;
-use App\Settings\GeneralSettings;
-use App\Settings\ProductSettings;
-use App\Settings\CheckoutSettings;
-use App\Settings\EmailSettings;
 use App\Settings\AdvancedSettings;
 use App\Settings\ApiSettings;
-use App\Settings\WebhookSettings;
+use App\Settings\CheckoutSettings;
 use App\Settings\CouponSettings;
-use App\Settings\LoyaltySettings;
+use App\Settings\EmailSettings;
+use App\Settings\GeneralSettings;
 use App\Settings\InventorySettings;
+use App\Settings\LoyaltySettings;
 use App\Settings\MarketingSettings;
-
+use App\Settings\ProductSettings;
+use App\Settings\WebhookSettings;
+use Illuminate\Contracts\Container\Container;
 
 class ShopSettingService implements ShopSettingServiceInterface
 {
+    public function __construct(
+        protected GeneralSettings $generalSettings,
+        protected Container $container
+    ) {}
+
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function updateAllSettings(array $data): void
     {
@@ -40,20 +45,19 @@ class ShopSettingService implements ShopSettingServiceInterface
             'marketing' => MarketingSettings::class,
         ];
 
-
         foreach ($groups as $key => $class) {
             if (isset($data[$key])) {
-                app($class)->fill($data[$key])->save();
+                $this->container->make($class)->fill($data[$key])->save();
             }
         }
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function updateGeneralSettings(array $data): void
     {
-        $settings = app(GeneralSettings::class);
+        $settings = $this->generalSettings;
 
         $settings->store_name = $data['store_name'] ?? $settings->store_name;
         $settings->store_email = $data['store_email'] ?? $settings->store_email;
@@ -72,13 +76,13 @@ class ShopSettingService implements ShopSettingServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getLocalizationInfo(string $countryCode): array
     {
         $locales = config('locale-info');
 
-        if (!isset($locales[$countryCode])) {
+        if (! isset($locales[$countryCode])) {
             return [];
         }
 

@@ -22,6 +22,11 @@ class OpsService
         ];
     }
 
+    public function getMetrics(string $period = 'all'): array
+    {
+        return $this->opsRepository->getMetrics($period);
+    }
+
     public function createIncident(array $data)
     {
         return $this->opsRepository->createIncident($data);
@@ -35,5 +40,10 @@ class OpsService
     public function deleteIncident($id)
     {
         return $this->opsRepository->deleteIncident($id);
+    }
+
+    public function updateIncidentStatus($id, string $status)
+    {
+        return $this->opsRepository->updateIncidentStatus($id, $status);
     }
 }

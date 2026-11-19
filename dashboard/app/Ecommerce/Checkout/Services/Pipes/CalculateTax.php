@@ -4,17 +4,23 @@ namespace App\Ecommerce\Checkout\Services\Pipes;
 
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Settings\CheckoutSettings;
 use App\Settings\CouponSettings;
 use Closure;
 
 class CalculateTax
 {
+    public function __construct(
+        protected CheckoutSettings $checkoutSettings,
+        protected CouponSettings $couponSettings,
+        protected FeaturePolicyServiceInterface $featurePolicy
+    ) {}
+
     /**
      * Handle the pipe.
      *
-     * @param array $passable ['request' => CheckoutRequestDTO, 'result' => CheckoutResultDTO]
-     * @param Closure $next
+     * @param  array  $passable  ['request' => CheckoutRequestDTO, 'result' => CheckoutResultDTO]
      * @return mixed
      */
     public function handle(array $passable, Closure $next)
@@ -24,21 +30,17 @@ class CalculateTax
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        $checkoutSettings = app(CheckoutSettings::class);
-        $couponSettings = app(CouponSettings::class);
-
-        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
-
-        if (!$policy->isTaxCalculationEnabled()) {
+        if (! $this->featurePolicy->isTaxCalculationEnabled()) {
             $result->taxTotal = 0;
+
             return $next($passable);
         }
 
-        $includeTax = (bool) ($checkoutSettings->prices_include_tax ?? false);
-        $taxAfterCoupon = (bool) ($couponSettings->calculate_tax_after_coupon ?? true);
+        $includeTax = (bool) ($this->checkoutSettings->prices_include_tax ?? false);
+        $taxAfterCoupon = (bool) ($this->couponSettings->calculate_tax_after_coupon ?? true);
         $resolvedRates = $passable['resolved_tax_rates'] ?? [];
 
-        $totalEligibleSubtotal = collect($request->items)->sum(fn($i) => (int) ($i['total'] ?? 0));
+        $totalEligibleSubtotal = collect($request->items)->sum(fn ($i) => (int) ($i['total'] ?? 0));
         $totalDiscount = (int) ($result->discountTotal ?? 0);
 
         $taxTotal = 0;
@@ -55,7 +57,7 @@ class CalculateTax
         }
 
         $result->taxTotal = $taxTotal;
-        if (!$includeTax) {
+        if (! $includeTax) {
             $result->total += $taxTotal;
         }
 
@@ -80,7 +82,7 @@ class CalculateTax
         }
 
         // 1. Combo breakdown with mixed tax classes
-        if (!empty($item['tax_breakdown']) && is_array($item['tax_breakdown'])) {
+        if (! empty($item['tax_breakdown']) && is_array($item['tax_breakdown'])) {
             return $this->calculateComboBreakdownTax(
                 $item['tax_breakdown'],
                 $resolvedRates,
@@ -124,7 +126,7 @@ class CalculateTax
         foreach ($breakdown as $part) {
             $classId = $part['tax_class_id'] ?? null;
             $rate = $classId ? ($resolvedRates[$classId] ?? null) : null;
-            if (!$rate) {
+            if (! $rate) {
                 continue;
             }
 
@@ -160,12 +162,12 @@ class CalculateTax
         CheckoutResultDTO $result
     ): int {
         $classId = $item['tax_class_id'] ?? null;
-        if (!$classId) {
+        if (! $classId) {
             return 0;
         }
 
         $rate = $resolvedRates[$classId] ?? null;
-        if (!$rate) {
+        if (! $rate) {
             return 0;
         }
 

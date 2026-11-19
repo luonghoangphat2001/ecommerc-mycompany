@@ -2,21 +2,22 @@
 
 namespace App\Ecommerce\Checkout\Services\Pipes;
 
-use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
+use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
+use App\Ecommerce\Coupon\Contracts\CouponServiceInterface;
+use App\Exceptions\CouponValidationException;
 use Closure;
 
 class ApplyDiscount
 {
     public function __construct(
-        protected \App\Ecommerce\Coupon\Contracts\CouponServiceInterface $couponService
+        protected CouponServiceInterface $couponService
     ) {}
 
     /**
      * Handle the pipe.
      *
-     * @param array $passable ['request' => CheckoutRequestDTO, 'result' => CheckoutResultDTO]
-     * @param Closure $next
+     * @param  array  $passable  ['request' => CheckoutRequestDTO, 'result' => CheckoutResultDTO]
      * @return mixed
      */
     public function handle(array $passable, Closure $next)
@@ -26,7 +27,7 @@ class ApplyDiscount
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        if (!$request->couponCode) {
+        if (! $request->couponCode) {
             return $next($passable);
         }
 
@@ -35,16 +36,16 @@ class ApplyDiscount
             $dto = $this->couponService->validateCoupon(
                 $request->couponCode,
                 $request->items,
-                (float)$result->subtotal
+                (float) $result->subtotal
             );
 
             // 2. Calculate discount
             $discountAmount = $this->couponService->calculateDiscount(
                 $dto->coupon,
                 $request->items,
-                (float)$result->subtotal
+                (float) $result->subtotal
             );
-        } catch (\App\Exceptions\CouponValidationException $e) {
+        } catch (CouponValidationException $e) {
             // If validation fails during checkout calc, just ignore the discount
             $discountAmount = 0;
         }

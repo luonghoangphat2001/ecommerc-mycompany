@@ -2,28 +2,37 @@
 
 namespace App\Ecommerce\Settings\Services;
 
+use App\Ecommerce\Menu\Contracts\MenuServiceInterface;
 use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Settings\Contracts\StorefrontSettingsServiceInterface;
-use App\Settings\EcommerceSettings;
-use App\Settings\GeneralSettings;
-use App\Settings\InventorySettings;
-use App\Settings\ProductSettings;
-use App\Settings\CheckoutSettings;
-use App\Settings\FooterSettings;
-use App\Settings\CustomSettings;
-use App\Models\Menu;
 use App\Models\ShippingMethod;
+use App\Settings\CheckoutSettings;
+use App\Settings\CustomSettings;
+use App\Settings\DBSettings;
+use App\Settings\EcommerceSettings;
+use App\Settings\FooterSettings;
+use App\Settings\GeneralSettings;
+use App\Settings\LoyaltySettings;
+use App\Settings\ProductSettings;
+use App\Support\Localization;
+use App\Support\Media;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class StorefrontSettingsService implements StorefrontSettingsServiceInterface
 {
     public function __construct(
-        protected ?FeaturePolicyServiceInterface $featurePolicy = null
-    ) {
-        $this->featurePolicy = $this->featurePolicy ?: app(FeaturePolicyServiceInterface::class);
-    }
+        protected FeaturePolicyServiceInterface $featurePolicy,
+        protected GeneralSettings $general,
+        protected ProductSettings $product,
+        protected CheckoutSettings $checkout,
+        protected FooterSettings $footer,
+        protected CustomSettings $custom,
+        protected EcommerceSettings $ecommerce,
+        protected LoyaltySettings $loyaltySettings,
+        protected DBSettings $dbSettings,
+        protected Localization $localeContext,
+        protected MenuServiceInterface $menuService
+    ) {}
 
     public function getStorefrontSettings(): array
     {
@@ -35,37 +44,28 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
             : null;
 
         $locale = null;
-        foreach ([$queryLocale, $xLocale, $acceptLocale, app()->getLocale()] as $candidate) {
+        foreach ([$queryLocale, $xLocale, $acceptLocale, $this->localeContext->current()] as $candidate) {
             if (is_string($candidate) && in_array(strtolower(trim($candidate)), ['vi', 'en'], true)) {
                 $locale = strtolower(trim($candidate));
+
                 break;
             }
         }
         $locale = $locale ?: 'vi';
 
-        app()->setLocale($locale);
+        $this->localeContext->set($locale);
 
-        return Cache::remember('storefront_settings_v2_' . $locale, 3600, function () use ($locale) {
-            /** @var GeneralSettings $general */
-            $general = app(GeneralSettings::class);
-            /** @var ProductSettings $product */
-            $product = app(ProductSettings::class);
-            /** @var CheckoutSettings $checkout */
-            $checkout = app(CheckoutSettings::class);
-            /** @var FooterSettings $footer */
-            $footer = app(FooterSettings::class);
-            /** @var CustomSettings $custom */
-            $custom = app(CustomSettings::class);
-            /** @var \App\Settings\MarketingSettings $marketing */
-            $marketing = app(\App\Settings\MarketingSettings::class);
-            /** @var EcommerceSettings $ecommerce */
-            $ecommerce = app(EcommerceSettings::class);
-            /** @var InventorySettings $inventory */
-            $inventory = app(InventorySettings::class);
-            /** @var \App\Settings\LoyaltySettings $loyaltySettings */
-            $loyaltySettings = app(\App\Settings\LoyaltySettings::class);
-
-            $policy = $this->featurePolicy ?: app(FeaturePolicyServiceInterface::class);
+        return Cache::remember('storefront_settings_v2_' . $locale, 3600, function () {
+            $general = $this->general;
+            $product = $this->product;
+            $checkout = $this->checkout;
+            $footer = $this->footer;
+            $custom = $this->custom;
+            $ecommerce = $this->ecommerce;
+            $loyaltySettings = $this->loyaltySettings;
+            $policy = $this->featurePolicy;
+            $branding = $this->brandingAssets($general);
+            $loyaltyShared = $this->loyaltySharedConfig($loyaltySettings);
 
             $locales = config('app.supported_locales', ['vi', 'en']);
             $languages = [];
@@ -77,7 +77,7 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
 
                 $languages[] = [
                     'code' => $code,
-                    'name' => $name
+                    'name' => $name,
                 ];
                 $translations[$code] = trans('storefront', [], $code);
             }
@@ -88,7 +88,7 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
             ];
 
             $shippingMethods = $policy->isShippingEnabled()
-                ? ShippingMethod::where('is_enabled', true)->get()->map(fn($m) => [
+                ? ShippingMethod::where('is_enabled', true)->get()->map(fn ($m) => [
                     'id' => $m->id,
                     'name' => $this->localizeShippingMethodName($m),
                     'type' => $m->type instanceof \BackedEnum ? $m->type->value : $m->type,
@@ -97,7 +97,7 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                 : [];
 
             $footerMenuHandle = $footer->menu_handle ?: 'footer-menu';
-            $footerMenu = Menu::where('handle', $footerMenuHandle)->with('items')->first();
+            $footerMenu = $this->menuService->getMenuBySlug($footerMenuHandle);
             $footerLinks = ($footerMenu && $footerMenu->items->isNotEmpty())
                 ? $footerMenu->items->map(function ($item) {
                     return [
@@ -123,9 +123,8 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                     'thousand_separator' => $general->thousand_separator,
                     'decimal_separator' => $general->decimal_separator,
                     'decimal_places' => $general->decimal_places,
-                    'logo' => $general->logo ? Storage::url($general->logo) : null,
-                    'favicon' => $general->favicon ? Storage::url($general->favicon) : null,
-                    'primary_color' => app(\App\Settings\DBSettings::class)->primary_color,
+                    ...$branding,
+                    'primary_color' => $this->dbSettings->primary_color,
                     'currencies' => $currencies,
                 ],
                 'ecommerce' => [
@@ -139,8 +138,7 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                 ],
                 'header' => [
                     'site_name' => $general->store_name,
-                    'logo' => $general->logo ? Storage::url($general->logo) : null,
-                    'favicon' => $general->favicon ? Storage::url($general->favicon) : null,
+                    ...$branding,
                 ],
                 'products' => [
                     'add_to_cart_behavior' => $product->add_to_cart_behavior,
@@ -158,13 +156,11 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
                     'cross_sell_enabled' => $policy->isCrossSellEnabled(),
                     'combo_enabled' => $policy->isComboEnabled(),
                     'points_per_currency' => $loyaltySettings->points_per_currency ?? 1,
-                    'point_conversion_rate' => $loyaltySettings->point_conversion_rate ?? 1000,
-                    'spending_amount_per_point' => $loyaltySettings->spending_amount_per_point ?? 10000,
+                    ...$loyaltyShared,
                 ],
                 'loyalty' => [
                     'enabled' => $policy->isLoyaltyEnabled(),
-                    'spending_amount_per_point' => $loyaltySettings->spending_amount_per_point ?? 10000,
-                    'point_conversion_rate' => $loyaltySettings->point_conversion_rate ?? 1000,
+                    ...$loyaltyShared,
                     'minimum_points_to_redeem' => $loyaltySettings->minimum_points_to_redeem ?? 10,
                     'max_redeem_percentage' => $loyaltySettings->max_redeem_percentage ?? 50,
                     'exclude_sale_items' => (bool) ($loyaltySettings->exclude_sale_items ?? false),
@@ -201,7 +197,7 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
         if (is_string($rawName) && str_starts_with(trim($rawName), '{')) {
             $decoded = json_decode($rawName, true);
             if (is_array($decoded)) {
-                return (string) ($decoded[app()->getLocale()] ?? $decoded['vi'] ?? $decoded['en'] ?? reset($decoded));
+                return (string) Localization::value($decoded, $this->localeContext->current());
             }
         }
 
@@ -211,6 +207,22 @@ class StorefrontSettingsService implements StorefrontSettingsServiceInterface
         }
 
         return (string) $rawName;
+    }
+
+    private function brandingAssets(GeneralSettings $general): array
+    {
+        return [
+            'logo' => Media::pathUrl($general->logo),
+            'favicon' => Media::pathUrl($general->favicon),
+        ];
+    }
+
+    private function loyaltySharedConfig(LoyaltySettings $settings): array
+    {
+        return [
+            'point_conversion_rate' => $settings->conversionRate(),
+            'spending_amount_per_point' => $settings->spendingRate() ?: 10000,
+        ];
     }
 
     private function getPaymentGatewaysConfig($checkout): array

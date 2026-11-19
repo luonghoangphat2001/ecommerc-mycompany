@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
 use App\Models\Webhook;
+use Illuminate\Database\Eloquent\Model;
 
 class WebhookController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+
     protected function modelClass(): string
     {
         return Webhook::class;
@@ -33,12 +37,12 @@ class WebhookController extends BaseCrudController
             'name' => ['label' => 'Name', 'rules' => ['required', 'string', 'max:255']],
             'url' => ['label' => 'URL', 'rules' => ['required', 'url']],
             'secret' => ['label' => 'Secret', 'rules' => ['required', 'string', 'max:255']],
-            'is_active' => ['label' => 'Is Active', 'type' => 'select', 'rules' => ['required', 'boolean'], 'options' => ['1' => 'Yes', '0' => 'No']],
+            'is_active' => ['label' => 'Is Active', 'type' => 'select', 'rules' => ['required', 'boolean'], 'options' => $this->booleanOptions()],
             'events' => ['label' => 'Events JSON', 'type' => 'textarea', 'rules' => ['required', 'string']],
         ];
     }
 
-    protected function mutateData(array $data, ?\Illuminate\Database\Eloquent\Model $record = null): array
+    protected function mutateData(array $data, ?Model $record = null): array
     {
         if (isset($data['events']) && is_string($data['events'])) {
             $decoded = json_decode($data['events'], true);
@@ -48,7 +52,7 @@ class WebhookController extends BaseCrudController
         return $data;
     }
 
-    protected function formData(?\Illuminate\Database\Eloquent\Model $record = null): array
+    protected function formData(?Model $record = null): array
     {
         if (! $record) {
             return ['events' => '[]'];

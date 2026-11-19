@@ -2,21 +2,25 @@
 
 namespace App\Ecommerce\Workspace\Repositories;
 
+use App\Ecommerce\Workspace\Repositories\Concerns\HasWorkspaceCrudOperations;
 use App\Models\DepartmentEmployeeContract;
 use App\Models\User;
+use Carbon\Carbon;
 
 class HrRepository implements HrRepositoryInterface
 {
+    use HasWorkspaceCrudOperations;
+
     public function getMetrics(string $period = 'all'): array
     {
         $totalAgents = User::count();
         $activeAgents = DepartmentEmployeeContract::where('end_date', '>=', now())->count();
-        
+
         return [
             'total_agents' => $totalAgents,
             'active_agents' => $activeAgents,
-            'blocked_actions' => 0, // Mock
-            'risk_level' => 'Thấp', // Mock
+            'blocked_actions' => null,
+            'risk_level' => 'N/A',
         ];
     }
 
@@ -32,26 +36,23 @@ class HrRepository implements HrRepositoryInterface
         return DepartmentEmployeeContract::with('user')
             ->where(function ($q) {
                 $q->whereNull('end_date')
-                  ->orWhere('end_date', '>=', Carbon::today());
+                    ->orWhere('end_date', '>=', Carbon::today());
             })
             ->get();
     }
 
     public function createContract(array $data)
     {
-        return DepartmentEmployeeContract::create($data);
+        return $this->createWorkspaceModel(DepartmentEmployeeContract::class, $data);
     }
 
     public function updateContract($id, array $data)
     {
-        $contract = DepartmentEmployeeContract::findOrFail($id);
-        $contract->update($data);
-        return $contract;
+        return $this->updateWorkspaceModel(DepartmentEmployeeContract::class, $id, $data);
     }
 
     public function deleteContract($id)
     {
-        $contract = DepartmentEmployeeContract::findOrFail($id);
-        return $contract->delete();
+        return $this->deleteWorkspaceModel(DepartmentEmployeeContract::class, $id);
     }
 }

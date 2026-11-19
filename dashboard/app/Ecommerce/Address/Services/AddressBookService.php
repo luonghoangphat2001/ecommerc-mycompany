@@ -4,10 +4,12 @@ namespace App\Ecommerce\Address\Services;
 
 use App\Ecommerce\Address\Contracts\AddressBookServiceInterface;
 use App\Ecommerce\Address\Contracts\AddressRepositoryInterface;
-use Illuminate\Support\Facades\DB;
+use App\Traits\HandleTransactions;
 
 class AddressBookService implements AddressBookServiceInterface
 {
+    use HandleTransactions;
+
     protected AddressRepositoryInterface $addressRepository;
 
     public function __construct(AddressRepositoryInterface $addressRepository)
@@ -16,7 +18,7 @@ class AddressBookService implements AddressBookServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function listAddresses(int $customerId)
     {
@@ -24,47 +26,51 @@ class AddressBookService implements AddressBookServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function addAddress(int $customerId, array $data)
     {
-        return DB::transaction(function () use ($customerId, $data) {
+        return $this->useTransaction(function () use ($customerId, $data) {
             $address = $this->addressRepository->create($data);
             $this->addressRepository->associateWithCustomer($address->id, $customerId);
+
             return $address;
         });
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function updateAddress(int $customerId, int $addressId, array $data)
     {
-        // Verify relationship exists
-        $addresses = $this->listAddresses($customerId);
-        if (!$addresses->contains('id', $addressId)) {
+        if (! $this->addressBelongsToCustomer($customerId, $addressId)) {
             throw new \Exception(__('messages.address_not_found') ?? 'Address does not belong to customer');
         }
 
-        return DB::transaction(function () use ($addressId, $data) {
+        return $this->useTransaction(function () use ($addressId, $data) {
             return $this->addressRepository->update($addressId, $data);
         });
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function deleteAddress(int $customerId, int $addressId)
     {
-        $addresses = $this->listAddresses($customerId);
-        if (!$addresses->contains('id', $addressId)) {
+        if (! $this->addressBelongsToCustomer($customerId, $addressId)) {
             return false;
         }
 
-        return DB::transaction(function () use ($customerId, $addressId) {
+        return $this->useTransaction(function () use ($customerId, $addressId) {
             $this->addressRepository->dissociateFromCustomer($addressId, $customerId);
             $this->addressRepository->delete($addressId);
+
             return true;
         });
+    }
+
+    private function addressBelongsToCustomer(int $customerId, int $addressId): bool
+    {
+        return $this->listAddresses($customerId)->contains('id', $addressId);
     }
 }

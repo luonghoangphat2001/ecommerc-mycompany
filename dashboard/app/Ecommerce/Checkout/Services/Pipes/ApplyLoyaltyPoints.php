@@ -2,15 +2,23 @@
 
 namespace App\Ecommerce\Checkout\Services\Pipes;
 
-use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
-use App\Settings\LoyaltySettings;
+use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Loyalty\Contracts\LoyaltyRepositoryInterface;
-use App\Models\Product;
+use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
+use App\Settings\LoyaltySettings;
 use Closure;
 
 class ApplyLoyaltyPoints
 {
+    public function __construct(
+        protected FeaturePolicyServiceInterface $featurePolicy,
+        protected LoyaltySettings $loyaltySettings,
+        protected LoyaltyRepositoryInterface $loyaltyRepository,
+        protected ProductRepositoryInterface $productRepository
+    ) {}
+
     public function handle(array $passable, Closure $next)
     {
         /** @var CheckoutRequestDTO $request */
@@ -18,20 +26,16 @@ class ApplyLoyaltyPoints
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
-
-        if (!$policy->isLoyaltyEnabled() || !$request->redeemPoints || $request->redeemPoints <= 0) {
+        if (! $this->featurePolicy->isLoyaltyEnabled() || ! $request->redeemPoints || $request->redeemPoints <= 0) {
             return $next($passable);
         }
 
-        $loyaltySettings = app(LoyaltySettings::class);
-        $minPoints = (int) ($loyaltySettings->minimum_points_to_redeem ?? 0);
+        $minPoints = (int) ($this->loyaltySettings->minimum_points_to_redeem ?? 0);
 
         // Ensure points don't exceed current user balance if logged in
         $userId = auth()->id();
         if ($userId) {
-            $loyaltyRepo = app(LoyaltyRepositoryInterface::class);
-            $pointsRecord = $loyaltyRepo->findOrCreateByUserId($userId);
+            $pointsRecord = $this->loyaltyRepository->findOrCreateByUserId($userId);
             $userPoints = $pointsRecord->current_points ?? 0;
 
             $request->redeemPoints = min($request->redeemPoints, $userPoints);
@@ -44,13 +48,13 @@ class ApplyLoyaltyPoints
         // Calculate non-redeemable items total (products with is_loyalty_redeemable = false)
         $nonRedeemableTotal = 0;
         $productIds = collect($request->items)->pluck('product_id')->filter()->unique()->all();
-        if (!empty($productIds)) {
-            $nonRedeemableProductIds = Product::whereIn('id', $productIds)
+        if (! empty($productIds)) {
+            $nonRedeemableProductIds = $this->productRepository->findByIds($productIds)
                 ->where('is_loyalty_redeemable', false)
                 ->pluck('id')
                 ->all();
 
-            if (!empty($nonRedeemableProductIds)) {
+            if (! empty($nonRedeemableProductIds)) {
                 foreach ($request->items as $item) {
                     if (in_array($item['product_id'] ?? null, $nonRedeemableProductIds, true)) {
                         $nonRedeemableTotal += (float) ($item['total'] ?? (($item['price'] ?? 0) * ($item['qty'] ?? 1)));
@@ -65,11 +69,11 @@ class ApplyLoyaltyPoints
         }
 
         // Conversion rate (1 point = X currency)
-        $conversionRate = $loyaltySettings->point_conversion_rate > 0 ? $loyaltySettings->point_conversion_rate : 1000;
+        $conversionRate = $this->loyaltySettings->conversionRate();
         $pointsValue = $request->redeemPoints * $conversionRate;
 
         // Apply maximum redeemable percentage
-        $maxPercentage = (int) ($loyaltySettings->max_redeem_percentage ?? 100);
+        $maxPercentage = (int) ($this->loyaltySettings->max_redeem_percentage ?? 100);
         if ($maxPercentage <= 0 || $maxPercentage > 100) {
             $maxPercentage = 100;
         }

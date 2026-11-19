@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Api\BaseApiController;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
+use App\Http\Requests\API\LoyaltyHistoryRequest;
 use App\Settings\LoyaltySettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,13 +14,14 @@ use App\Swagger\Attributes\ApiList;
 class LoyaltyController extends BaseApiController
 {
     public function __construct(
-        protected LoyaltySettings $settings
+        protected LoyaltySettings $settings,
+        protected FeaturePolicyServiceInterface $featurePolicy
     ) {}
 
     #[ApiGet(
         path: '/user/loyalty/points',
         summary: 'Get User Loyalty Points',
-        tags: 'Storefront - Loyalty',
+        tags: 'Loyalty',
         requiresAuth: true,
         responseData: [
             new OAT\Property(property: 'enabled', type: 'boolean', example: true),
@@ -29,9 +31,11 @@ class LoyaltyController extends BaseApiController
             new OAT\Property(property: 'point_conversion_rate', type: 'number', format: 'float', example: 1000)
         ]
     )]
+
+
     public function getPoints(Request $request): JsonResponse
     {
-        $isEnabled = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isLoyaltyEnabled();
+        $isEnabled = $this->featurePolicy->isLoyaltyEnabled();
 
         $user = $request->user();
         $loyaltyPoint = $user?->loyaltyPoint;
@@ -54,7 +58,7 @@ class LoyaltyController extends BaseApiController
     #[ApiList(
         path: '/user/loyalty/history',
         summary: 'Loyalty Points History',
-        tags: 'Storefront - Loyalty',
+        tags: 'Loyalty',
         requiresAuth: true,
         responseData: [
             new OAT\Property(property: 'id', type: 'integer', example: 1),
@@ -65,15 +69,14 @@ class LoyaltyController extends BaseApiController
             new OAT\Property(property: 'created_at', type: 'string', format: 'date-time')
         ]
     )]
-    public function getHistory(Request $request): JsonResponse
+
+
+    public function getHistory(LoyaltyHistoryRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'per_page' => 'integer|min:1|max:100',
-            'page' => 'integer|min:1',
-        ]);
+        $validated = $request->validated();
 
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return $this->ok([]);
         }
 
@@ -81,7 +84,7 @@ class LoyaltyController extends BaseApiController
             ->orderBy('created_at', 'desc')
             ->paginate($validated['per_page'] ?? 15);
 
-        return $this->ok($logs->through(fn($log) => [
+        return $this->ok($logs->through(fn ($log) => [
             'id' => $log->id,
             'action_type' => $log->action_type instanceof \BackedEnum ? $log->action_type->value : $log->action_type,
             'points_changed' => $log->points_changed,

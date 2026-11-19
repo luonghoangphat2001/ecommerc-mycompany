@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
-use App\Models\TaxClass;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
 use App\Models\TaxRate;
 
 class TaxRateController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+
     protected function modelClass(): string
     {
         return TaxRate::class;
@@ -35,7 +37,7 @@ class TaxRateController extends BaseCrudController
                 'label' => 'Tax Class',
                 'type' => 'select',
                 'rules' => ['required', 'integer', 'exists:shop_tax_classes,id'],
-                'options' => TaxClass::orderBy('name')->pluck('name', 'id')->toArray(),
+                'options' => $this->taxClassOptions(),
             ],
             'name' => ['label' => 'Tên thuế', 'rules' => ['required', 'string', 'max:255']],
             'country' => ['label' => 'Country', 'rules' => ['nullable', 'string', 'max:2']],

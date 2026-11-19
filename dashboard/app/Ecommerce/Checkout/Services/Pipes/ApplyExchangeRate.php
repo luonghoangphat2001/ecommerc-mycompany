@@ -2,19 +2,20 @@
 
 namespace App\Ecommerce\Checkout\Services\Pipes;
 
-use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
-use App\Settings\DBSettings;
+use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
 use App\Ecommerce\Core\Helpers\PriceHelper;
+use App\Settings\DBSettings;
 use Closure;
 
 class ApplyExchangeRate
 {
+    public function __construct(protected DBSettings $settings) {}
+
     /**
      * Handle the pipe.
      *
-     * @param array $passable ['request' => CheckoutRequestDTO, 'result' => CheckoutResultDTO]
-     * @param Closure $next
+     * @param  array  $passable  ['request' => CheckoutRequestDTO, 'result' => CheckoutResultDTO]
      * @return mixed
      */
     public function handle(array $passable, Closure $next)
@@ -24,11 +25,10 @@ class ApplyExchangeRate
         /** @var CheckoutResultDTO $result */
         $result = $passable['result'];
 
-        $settings = app(DBSettings::class);
-        $baseCurrency = $settings->currency ?? 'VND';
+        $baseCurrency = $this->settings->currency ?? 'VND';
         $targetCurrency = $request->currency;
 
-        $rate = (float) ($settings->exchange_rates[$targetCurrency] ?? 1.0);
+        $rate = (float) ($this->settings->exchange_rates[$targetCurrency] ?? 1.0);
 
         if ($targetCurrency !== $baseCurrency) {
             // Adjust totals based on exchange rate

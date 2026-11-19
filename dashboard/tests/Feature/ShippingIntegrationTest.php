@@ -51,7 +51,7 @@ class ShippingIntegrationTest extends TestCase
         ]);
 
         // Domestic: Hanoi (Miền Bắc) - Vietnamese
-        $resHanoi = $this->withHeaders(['X-Locale' => 'vi'])->postJson('/api/v1/storefront/cart/shipping-methods', [
+        $resHanoi = $this->withHeaders(['X-Locale' => 'vi'])->postJson('/api/v1/cart/shipping-methods', [
             'country' => 'VN',
             'state' => 'Hà Nội',
             'items' => [
@@ -65,7 +65,7 @@ class ShippingIntegrationTest extends TestCase
         $this->assertTrue(collect($methodsHanoi)->contains(fn($m) => str_contains($m['name'], 'Miền Bắc')));
 
         // Domestic: Hanoi (Northern) - English
-        $resHanoiEn = $this->withHeaders(['X-Locale' => 'en'])->postJson('/api/v1/storefront/cart/shipping-methods', [
+        $resHanoiEn = $this->withHeaders(['X-Locale' => 'en'])->postJson('/api/v1/cart/shipping-methods', [
             'country' => 'VN',
             'state' => 'Hà Nội',
             'items' => [
@@ -77,7 +77,7 @@ class ShippingIntegrationTest extends TestCase
         $this->assertTrue(collect($methodsHanoiEn)->contains(fn($m) => str_contains($m['name'], 'Northern')));
 
         // Domestic: Ho Chi Minh (Miền Nam)
-        $resHcm = $this->withHeaders(['X-Locale' => 'vi'])->postJson('/api/v1/storefront/cart/shipping-methods', [
+        $resHcm = $this->withHeaders(['X-Locale' => 'vi'])->postJson('/api/v1/cart/shipping-methods', [
             'country' => 'VN',
             'state' => 'Thành phố Hồ Chí Minh',
             'items' => [
@@ -90,7 +90,7 @@ class ShippingIntegrationTest extends TestCase
         $this->assertTrue(collect($methodsHcm)->contains(fn($m) => str_contains($m['name'], 'Miền Nam')));
 
         // International: United States
-        $resUs = $this->withHeaders(['X-Locale' => 'vi'])->postJson('/api/v1/storefront/cart/shipping-methods', [
+        $resUs = $this->withHeaders(['X-Locale' => 'vi'])->postJson('/api/v1/cart/shipping-methods', [
             'country' => 'US',
             'state' => 'New York',
             'items' => [
@@ -173,7 +173,7 @@ class ShippingIntegrationTest extends TestCase
         $this->assertEquals('VN_NORTH', $orderShipping->metadata['zone_code']);
 
         // Verify Public Tracking API
-        $trackRes = $this->getJson('/api/v1/storefront/orders/track/' . $order->number);
+        $trackRes = $this->getJson('/api/v1/orders/track/' . $order->number);
         $trackRes->assertOk();
         $this->assertEquals($order->number, $trackRes->json('data.number') ?? $trackRes->json('number'));
         $this->assertEquals($shippingCost, $trackRes->json('data.shipping_cost') ?? $trackRes->json('shipping_cost'));
@@ -210,18 +210,18 @@ class ShippingIntegrationTest extends TestCase
         ];
 
         // 1. Zones
-        $resZones = $this->withHeaders($headers)->getJson('/api/v1/storefront/agents/shipping/zones');
+        $resZones = $this->withHeaders($headers)->getJson('/api/v1/agents/shipping/zones');
         $resZones->assertOk();
         $this->assertTrue($resZones->json('success'));
         $this->assertGreaterThanOrEqual(10, count($resZones->json('data')));
 
         // 2. Destinations
-        $resDest = $this->withHeaders($headers)->getJson('/api/v1/storefront/agents/shipping/destinations');
+        $resDest = $this->withHeaders($headers)->getJson('/api/v1/agents/shipping/destinations');
         $resDest->assertOk();
         $this->assertEquals(63, $resDest->json('data.domestic.total_provinces'));
 
         // 3. Rate Estimate
-        $resEst = $this->withHeaders($headers)->postJson('/api/v1/storefront/agents/shipping/estimate', [
+        $resEst = $this->withHeaders($headers)->postJson('/api/v1/agents/shipping/estimate', [
             'country' => 'VN',
             'state' => 'Đà Nẵng',
             'subtotal' => 600000,
@@ -232,7 +232,7 @@ class ShippingIntegrationTest extends TestCase
         $this->assertNotEmpty($resEst->json('shipping_options'));
 
         // 4. Policies
-        $resPol = $this->withHeaders($headers)->getJson('/api/v1/storefront/agents/shipping/policies');
+        $resPol = $this->withHeaders($headers)->getJson('/api/v1/agents/shipping/policies');
         $resPol->assertOk();
         $this->assertArrayHasKey('domestic', $resPol->json('data'));
     }

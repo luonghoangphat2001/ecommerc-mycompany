@@ -8,62 +8,38 @@ use Illuminate\Support\Facades\Http;
 
 class GhnCarrierAdapter extends BaseCarrierAdapter
 {
+    protected string $carrierId = 'ghn';
+
+    protected string $carrierName = 'Giao Hàng Nhanh (GHN)';
+
+    protected bool $supportsDomestic = true;
+
     private const SANDBOX_URL = 'https://dev-online-gateway.ghn.vn/shiip/public-api/';
+
     private const PRODUCTION_URL = 'https://online-gateway.ghn.vn/shiip/public-api/';
-
-    public function getId(): string
-    {
-        return 'ghn';
-    }
-
-    public function getName(): string
-    {
-        return 'Giao Hàng Nhanh (GHN)';
-    }
-
-    public function isDomestic(): bool
-    {
-        return true;
-    }
-
-    public function isInternational(): bool
-    {
-        return false;
-    }
 
     public function isConfigured(): bool
     {
-        $config = $this->getConfig();
-        return !empty($config['api_token']) && !empty($config['shop_id']);
+        return $this->hasConfigValues('api_token', 'shop_id');
     }
 
     protected function getBaseUrl(): string
     {
-        return $this->isSandbox() ? self::SANDBOX_URL : self::PRODUCTION_URL;
+        return $this->environmentUrl(self::SANDBOX_URL, self::PRODUCTION_URL);
     }
 
     protected function getHeaders(): array
     {
-        $config = $this->getConfig();
-        return [
-            'Token' => (string) ($config['api_token'] ?? ''),
-            'ShopId' => (string) ($config['shop_id'] ?? ''),
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-        ];
+        return $this->jsonTokenHeaders(['ShopId' => (string) $this->configValue('shop_id', '')]);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function testConnection(): array
     {
-        if (!$this->isConfigured()) {
-            return [
-                'success' => false,
-                'message' => 'Chưa cấu hình API credentials (API Token hoặc Shop ID còn trống).',
-                'details' => ['status' => 'missing_credentials'],
-            ];
+        if (! $this->isConfigured()) {
+            return $this->missingCredentialsResponse('Chưa cấu hình API credentials (API Token hoặc Shop ID còn trống).');
         }
 
         try {
@@ -71,34 +47,29 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
             $response = Http::withHeaders($this->getHeaders())->timeout(5)->get($url);
 
             if ($response->successful() && ($response->json()['code'] ?? 0) === 200) {
-                return [
-                    'success' => true,
-                    'message' => 'Kết nối API GHN thành công (' . ($this->isSandbox() ? 'Sandbox' : 'Production') . ').',
-                    'details' => [
+                return $this->successResponse(
+                    'Kết nối API GHN thành công (' . ($this->isSandbox() ? 'Sandbox' : 'Production') . ').',
+                    [
                         'code' => $response->json()['code'],
                         'mode' => $this->isSandbox() ? 'sandbox' : 'production',
                         'data_sample' => count($response->json()['data'] ?? []) . ' provinces available',
-                    ],
-                ];
+                    ]
+                );
             }
 
-            return [
-                'success' => false,
-                'message' => 'Lỗi kết nối GHN: ' . ($response->json()['message'] ?? $response->body()),
-                'details' => $response->json() ?? ['raw' => $response->body()],
-            ];
+            return $this->failureWithRaw(
+                'Lỗi kết nối GHN: ' . ($response->json()['message'] ?? $response->body()),
+                $response->json() ?? ['raw' => $response->body()]
+            );
         } catch (\Exception $e) {
             $this->log('error', 'Connection test failed: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Không thể kết nối đến máy chủ GHN: ' . $e->getMessage(),
-                'details' => ['exception' => $e->getMessage()],
-            ];
+
+            return $this->exceptionResponse('Không thể kết nối đến máy chủ GHN: ' . $e->getMessage(), $e);
         }
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function supportsDestination(string $country, ?string $state = null): bool
     {
@@ -106,25 +77,25 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getAvailableServices(array $destination, array $package = []): array
     {
-        if (!$this->supportsDestination($destination['country'] ?? 'VN')) {
+        if (! $this->supportsDestination($destination['country'] ?? 'VN')) {
             return [];
         }
 
-        if (!$this->isConfigured()) {
+        if (! $this->isConfigured()) {
             return [];
         }
 
         try {
-            $fromDistrict = (int) ($this->getConfig()['sender_district_id'] ?? 1442); // Default Quận 1 HCM
+            $fromDistrict = (int) $this->configValue('sender_district_id', 1442); // Default Quận 1 HCM
             $toDistrict = (int) ($destination['district_id'] ?? 1444);
 
             $url = $this->getBaseUrl() . 'v2/shipping-order/available-services';
             $response = Http::withHeaders($this->getHeaders())->timeout(5)->post($url, [
-                'shop_id' => (int) ($this->getConfig()['shop_id'] ?? 0),
+                'shop_id' => (int) $this->configValue('shop_id', 0),
                 'from_district' => $fromDistrict,
                 'to_district' => $toDistrict,
             ]);
@@ -149,33 +120,23 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function calculateRate(string $serviceCode, array $destination, array $package = []): ?array
     {
-        if (!$this->supportsDestination($destination['country'] ?? 'VN')) {
-            return null;
-        }
-
-        if (!$this->isConfigured()) {
+        if (! $this->canCalculateRate($destination)) {
             return null;
         }
 
         try {
-            $weight = max(100, (int) ($package['weight'] ?? 500));
-            $length = max(5, (int) ($package['length'] ?? 20));
-            $width = max(5, (int) ($package['width'] ?? 15));
-            $height = max(5, (int) ($package['height'] ?? 10));
+            $dimensions = $this->packageDimensions($package);
 
             $payload = [
                 'service_id' => is_numeric($serviceCode) ? (int) $serviceCode : 53320,
                 'service_type_id' => 2,
                 'to_district_id' => (int) ($destination['district_id'] ?? 1444),
                 'to_ward_code' => (string) ($destination['ward_code'] ?? '20101'),
-                'weight' => $weight,
-                'length' => $length,
-                'width' => $width,
-                'height' => $height,
+                ...$dimensions,
                 'insurance_value' => min(5000000, (int) ($destination['subtotal'] ?? 0)),
             ];
 
@@ -186,12 +147,7 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
                 $totalFee = (int) ($response->json()['data']['total'] ?? 0);
                 $finalAmount = $this->applyMarkup($totalFee);
 
-                return [
-                    'amount' => $finalAmount,
-                    'currency' => 'VND',
-                    'service_name' => 'GHN Tiêu chuẩn',
-                    'estimated_days' => 2,
-                ];
+                return $this->rateResponse($finalAmount, 'GHN Tiêu chuẩn', 2);
             }
 
             $this->log('warning', 'GHN fee API returned error: ' . $response->body());
@@ -203,23 +159,18 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function createShipment(Order $order, array $options = []): array
     {
-        if (!$this->isConfigured()) {
-            return ['success' => false, 'message' => 'GHN API credentials not configured'];
+        if (! $this->isConfigured()) {
+            return $this->credentialsMissing('GHN API');
         }
 
         if ($this->isSandbox() && empty($options['force_real_api'])) {
             $tracking = 'GHN-TEST-' . strtoupper(substr(md5($order->id . time()), 0, 8));
-            return [
-                'success' => true,
-                'tracking_number' => $tracking,
-                'reference' => 'SANDBOX-' . $order->number,
-                'carrier' => 'ghn',
-                'raw' => ['mode' => 'sandbox_simulated', 'tracking' => $tracking],
-            ];
+
+            return $this->sandboxShipmentResponse($order, $tracking);
         }
 
         // Live shipment creation with GHN API v2
@@ -227,7 +178,7 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
             $address = $order->shippingAddress;
             $items = $order->items()->where('type', 'product')->get();
 
-            $ghnItems = $items->map(fn($item) => [
+            $ghnItems = $items->map(fn ($item) => [
                 'name' => (string) ($item->name ?? 'Sản phẩm'),
                 'quantity' => (int) $item->qty,
                 'price' => (int) $item->unit_price,
@@ -241,10 +192,7 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
                 'to_address' => (string) ($address?->address_detail ?? '123 Đường ABC'),
                 'to_ward_code' => (string) ($address?->ward_id ?? '20101'),
                 'to_district_id' => (int) ($address?->city_id ?? 1444),
-                'weight' => 500,
-                'length' => 20,
-                'width' => 15,
-                'height' => 10,
+                ...$this->packageDimensions([]),
                 'service_id' => 53320,
                 'service_type_id' => 2,
                 'items' => $ghnItems,
@@ -255,13 +203,8 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
 
             if ($response->successful() && ($response->json()['code'] ?? 0) === 200) {
                 $orderCode = $response->json()['data']['order_code'] ?? null;
-                return [
-                    'success' => true,
-                    'tracking_number' => $orderCode,
-                    'reference' => $orderCode,
-                    'carrier' => 'ghn',
-                    'raw' => $response->json(),
-                ];
+
+                return $this->shipmentResponse($orderCode, $orderCode, $response->json());
             }
 
             return [
@@ -270,16 +213,16 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
                 'raw' => $response->json() ?? ['body' => $response->body()],
             ];
         } catch (\Exception $e) {
-            return ['success' => false, 'message' => $e->getMessage()];
+            return $this->failure($e->getMessage());
         }
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function cancelShipment(string $trackingNumber): bool
     {
-        if (!$this->isConfigured()) {
+        if (! $this->isConfigured()) {
             return false;
         }
 
@@ -292,25 +235,23 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
             return $response->successful() && ($response->json()['code'] ?? 0) === 200;
         } catch (\Exception $e) {
             $this->log('error', 'Failed to cancel GHN shipment: ' . $e->getMessage());
+
             return false;
         }
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTracking(string $trackingNumber): array
     {
-        if (!$this->isConfigured() || str_starts_with($trackingNumber, 'GHN-TEST-')) {
-            return [
-                'tracking_number' => $trackingNumber,
-                'carrier' => 'ghn',
-                'status' => 'processing',
-                'status_text' => 'Đang xử lý tại trung tâm điều phối',
-                'history' => [
-                    ['time' => now()->format('Y-m-d H:i:s'), 'status' => 'Đã tiếp nhận đơn hàng tại bưu cục'],
-                ],
-            ];
+        if (! $this->isConfigured() || str_starts_with($trackingNumber, 'GHN-TEST-')) {
+            return $this->trackingResponse(
+                $trackingNumber,
+                'processing',
+                'Đang xử lý tại trung tâm điều phối',
+                [['time' => now()->format('Y-m-d H:i:s'), 'status' => 'Đã tiếp nhận đơn hàng tại bưu cục']]
+            );
         }
 
         try {
@@ -323,24 +264,12 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
                 $data = $response->json()['data'] ?? [];
                 $status = $data['status'] ?? 'unknown';
 
-                return [
-                    'tracking_number' => $trackingNumber,
-                    'carrier' => 'ghn',
-                    'status' => $status,
-                    'status_text' => $data['status_name'] ?? $status,
-                    'history' => $data['log'] ?? [],
-                ];
+                return $this->trackingResponse($trackingNumber, $status, $data['status_name'] ?? $status, $data['log'] ?? []);
             }
         } catch (\Exception $e) {
             $this->log('error', 'Tracking query failed: ' . $e->getMessage());
         }
 
-        return [
-            'tracking_number' => $trackingNumber,
-            'carrier' => 'ghn',
-            'status' => 'unknown',
-            'status_text' => 'Không tìm thấy thông tin vận đơn',
-            'history' => [],
-        ];
+        return $this->unknownTracking($trackingNumber);
     }
 }

@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Ecommerce\Address\DTOs\Address\AddressDTO;
 use App\Ecommerce\Checkout\Actions\PlaceOrderAction;
 use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
 use App\Ecommerce\Checkout\DTOs\CheckoutResultDTO;
+use App\Ecommerce\Checkout\Services\CheckoutCalculatorService;
 use App\Ecommerce\Checkout\Services\Pipes\ApplyLoyaltyPoints;
 use App\Ecommerce\Loyalty\Contracts\LoyaltyRepositoryInterface;
 use App\Ecommerce\Order\DTOs\Order\OrderDataDTO;
@@ -12,10 +14,13 @@ use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Enums\ProductType;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ShippingMethod;
+use App\Models\ShippingZone;
 use App\Models\User;
 use App\Settings\LoyaltySettings;
 use App\Settings\MarketingSettings;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class LoyaltySystemTest extends TestCase
@@ -23,6 +28,7 @@ class LoyaltySystemTest extends TestCase
     use DatabaseTransactions;
 
     protected User $user;
+
     protected LoyaltySettings $loyaltySettings;
 
     protected function setUp(): void
@@ -52,8 +58,8 @@ class LoyaltySystemTest extends TestCase
 
         app(FeaturePolicyServiceInterface::class)->flushCache();
 
-        $zone = \App\Models\ShippingZone::firstOrCreate(['code' => 'VN_LOYALTY'], ['name' => 'VN Zone', 'is_active' => true]);
-        \App\Models\ShippingMethod::firstOrCreate(
+        $zone = ShippingZone::firstOrCreate(['code' => 'VN_LOYALTY'], ['name' => 'VN Zone', 'is_active' => true]);
+        ShippingMethod::firstOrCreate(
             ['type' => 'flat_rate', 'shipping_zone_id' => $zone->id],
             ['name' => 'Standard Rate', 'settings' => ['cost' => 30000], 'is_enabled' => true]
         );
@@ -66,7 +72,7 @@ class LoyaltySystemTest extends TestCase
             ['name' => 'Admin User', 'password' => bcrypt('secret123')]
         );
 
-        $role = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $role = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
         $admin->assignRole($role);
 
         $response = $this->actingAs($admin)->post(route('admin.settings.update-group'), [
@@ -123,7 +129,7 @@ class LoyaltySystemTest extends TestCase
         $loyaltyRepo = app(LoyaltyRepositoryInterface::class);
         $loyaltyRepo->incrementPoints($this->user->id, 100, 100);
 
-        $pipe = new ApplyLoyaltyPoints();
+        $pipe = app(ApplyLoyaltyPoints::class);
 
         // 1. Below minimum threshold (minimum is 10)
         $this->actingAs($this->user);
@@ -195,7 +201,7 @@ class LoyaltySystemTest extends TestCase
         );
         $result = new CheckoutResultDTO(total: 100000);
 
-        $pipe = new ApplyLoyaltyPoints();
+        $pipe = app(ApplyLoyaltyPoints::class);
         $pipe->handle(['request' => $request, 'result' => $result], fn ($p) => $p);
 
         $this->assertEquals(10000, $result->loyaltyDiscountTotal);
@@ -274,7 +280,7 @@ class LoyaltySystemTest extends TestCase
             ],
         ];
 
-        $shippingDto = new \App\Ecommerce\Address\DTOs\Address\AddressDTO(
+        $shippingDto = new AddressDTO(
             first_name: 'John',
             last_name: 'Doe',
             phone: '0901234567',
@@ -282,8 +288,8 @@ class LoyaltySystemTest extends TestCase
             country_code: 'VN'
         );
 
-        $calc = app(\App\Ecommerce\Checkout\Services\CheckoutCalculatorService::class)->calculate(
-            new \App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO(
+        $calc = app(CheckoutCalculatorService::class)->calculate(
+            new CheckoutRequestDTO(
                 items: [
                     ['product_id' => $normalProduct->id, 'qty' => 1, 'unit_price' => 50000, 'total' => 50000],
                     ['product_id' => $bonusProduct->id, 'qty' => 1, 'unit_price' => 30000, 'total' => 30000],

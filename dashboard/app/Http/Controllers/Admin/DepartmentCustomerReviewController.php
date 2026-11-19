@@ -2,15 +2,24 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Workspace\Services\CskhService;
 use App\Enums\CustomerReviewSentiment;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
-use App\Models\DepartmentCustomerReview;
-use App\Models\User;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
+use App\Http\Controllers\Admin\Traits\HasPermissionedServiceCrudActions;
 use App\Models\Coupon;
-use Illuminate\Http\Request;
+use App\Models\DepartmentCustomerReview;
 
 class DepartmentCustomerReviewController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+    use HasPermissionedServiceCrudActions;
+
+    public function __construct(private readonly CskhService $cskhService)
+    {
+        parent::__construct();
+    }
+
     protected function modelClass(): string
     {
         return DepartmentCustomerReview::class;
@@ -38,13 +47,13 @@ class DepartmentCustomerReviewController extends BaseCrudController
                 'label' => 'Phòng ban',
                 'type' => 'select',
                 'rules' => ['required', 'exists:departments,id'],
-                'options' => \App\Models\Department::pluck('name', 'id')->toArray(),
+                'options' => $this->departmentOptions(),
             ],
             'user_id' => [
                 'label' => 'Tài khoản KH (Nếu có)',
                 'type' => 'select',
                 'rules' => ['nullable', 'exists:users,id'],
-                'options' => ['' => '-- Trống --'] + User::orderBy('name')->pluck('name', 'id')->toArray(),
+                'options' => ['' => '-- Trống --'] + $this->userOptions(),
             ],
             'customer_name' => [
                 'label' => 'Tên khách hàng',
@@ -80,43 +89,23 @@ class DepartmentCustomerReviewController extends BaseCrudController
         ];
     }
 
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    protected function crudService(): object
     {
-        if (!$this->hasPermission('create')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $cskhService = app(\App\Ecommerce\Workspace\Services\CskhService::class);
-        $cskhService->createReview($validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Tạo mới thành công.');
+        return $this->cskhService;
     }
 
-    public function update(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    protected function createServiceMethod(): string
     {
-        if (!$this->hasPermission('update')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $cskhService = app(\App\Ecommerce\Workspace\Services\CskhService::class);
-        $cskhService->updateReview($id, $validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Cập nhật thành công.');
+        return 'createReview';
     }
 
-    public function destroy(int $id): \Illuminate\Http\RedirectResponse
+    protected function updateServiceMethod(): string
     {
-        if (!$this->hasPermission('delete')) {
-            abort(403);
-        }
+        return 'updateReview';
+    }
 
-        $cskhService = app(\App\Ecommerce\Workspace\Services\CskhService::class);
-        $cskhService->deleteReview($id);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Xóa thành công.');
+    protected function deleteServiceMethod(): string
+    {
+        return 'deleteReview';
     }
 }

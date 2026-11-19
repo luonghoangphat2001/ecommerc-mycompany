@@ -346,11 +346,11 @@ class ReusableProductAttributesTest extends TestCase
         ]);
 
         // 1. List attributes
-        $resList = $this->getJson('/api/v1/storefront/attributes');
+        $resList = $this->getJson('/api/v1/attributes');
         $resList->assertStatus(200);
 
         // 2. Generate variants preview API
-        $resPreview = $this->postJson('/api/v1/storefront/attributes/generate-variants', [
+        $resPreview = $this->postJson('/api/v1/attributes/generate-variants', [
             'attributes' => [
                 ['name' => 'RAM', 'options' => ['8GB', '16GB']],
                 ['name' => 'Storage', 'options' => ['256GB', '512GB']],

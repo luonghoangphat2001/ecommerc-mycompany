@@ -21,6 +21,11 @@ class HrService
         ];
     }
 
+    public function getMetrics(string $period = 'all'): array
+    {
+        return $this->hrRepository->getMetrics($period);
+    }
+
     public function createContract(array $data)
     {
         return $this->hrRepository->createContract($data);

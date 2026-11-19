@@ -4,18 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Ecommerce\Inventory\Services\InventoryService;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
 use App\Http\Controllers\Admin\Traits\HasInventoryTabs;
 use App\Models\Inventory;
 use App\Models\InventoryRecord;
-use App\Models\InventoryRecordItem;
-use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class InventoryRecordController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
     use HasInventoryTabs;
+
+    public function __construct(private readonly InventoryService $inventoryService)
+    {
+        parent::__construct();
+    }
 
     protected function activeTab(): ?string
     {
@@ -29,7 +34,7 @@ class InventoryRecordController extends BaseCrudController
 
     protected function title(): string
     {
-        return app()->getLocale() === 'en' ? 'Inventory Records' : 'Phiếu xuất nhập kho';
+        return $this->isEnglishLocale() ? 'Inventory Records' : 'Phiếu xuất nhập kho';
     }
 
     protected function routePrefix(): string
@@ -49,7 +54,7 @@ class InventoryRecordController extends BaseCrudController
 
     protected function fields(): array
     {
-        $isEn = app()->getLocale() === 'en';
+        $isEn = $this->isEnglishLocale();
 
         return [
             'type' => [
@@ -102,26 +107,12 @@ class InventoryRecordController extends BaseCrudController
             return;
         }
 
-        $record->items()->delete();
-
-        foreach ($items as $item) {
-            if (! isset($item['shop_product_id'], $item['warehouse_id'], $item['quantity']) || empty($item['shop_product_id'])) {
-                continue;
-            }
-
-            InventoryRecordItem::create([
-                'warehouse_record_id' => $record->id,
-                'shop_product_id' => (int) $item['shop_product_id'],
-                'warehouse_id' => (int) $item['warehouse_id'],
-                'target_warehouse_id' => !empty($item['target_warehouse_id']) ? (int) $item['target_warehouse_id'] : null,
-                'quantity' => max(1, (int) $item['quantity']),
-            ]);
-        }
+        $this->inventoryService->replaceRecordItems($record, $items);
     }
 
     protected function formData(?Model $record = null): array
     {
-        $products = Product::select('id', 'name', 'sku')->orderBy('name')->get();
+        $products = $this->productRecords();
         $warehouses = Inventory::select('id', 'name', 'code')->orderBy('name')->get();
 
         $items = [];
@@ -167,9 +158,9 @@ class InventoryRecordController extends BaseCrudController
         ];
     }
 
-    public function process(int $id, InventoryService $inventoryService): RedirectResponse
+    public function process(int $id): RedirectResponse
     {
-        $inventoryService->processRecord($id);
+        $this->inventoryService->processRecord($id);
 
         return redirect()->route('admin.inventory-records.index')->with('status', 'Đã xử lý phiếu kho');
     }

@@ -6,14 +6,37 @@ use App\Ecommerce\Agent\Contracts\AgentDashboardRepositoryInterface;
 use App\Ecommerce\Agent\Contracts\AgentDashboardServiceInterface;
 use App\Ecommerce\Agent\Repositories\EloquentAgentDashboardRepository;
 use App\Ecommerce\Agent\Services\AgentDashboardService;
+use App\Ecommerce\Audit\Contracts\FinancialAuditServiceInterface;
+use App\Ecommerce\Audit\Services\FinancialAuditService;
 use App\Ecommerce\Location\Services\Location\LocationManager;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
+use App\Ecommerce\Settings\Services\FeaturePolicyService;
 use App\Listeners\LogSentMessage;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Comment;
+use App\Models\Customer;
+use App\Models\Order;
+use App\Models\OrderAddress;
+use App\Models\OrderItem;
+use App\Models\OrderMeta;
+use App\Models\OrderShipping;
+use App\Models\OrderTax;
+use App\Models\Page;
+use App\Models\Post;
+use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\ProductVariant;
+use App\Models\User;
+use App\Observers\PriceChangeAuditObserver;
 use App\Settings\MailSettings;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passport\Passport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,13 +59,13 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(
-            \App\Ecommerce\Audit\Contracts\FinancialAuditServiceInterface::class,
-            \App\Ecommerce\Audit\Services\FinancialAuditService::class
+            FinancialAuditServiceInterface::class,
+            FinancialAuditService::class
         );
 
         $this->app->singleton(
-            \App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class,
-            \App\Ecommerce\Settings\Services\FeaturePolicyService::class
+            FeaturePolicyServiceInterface::class,
+            FeaturePolicyService::class
         );
     }
 
@@ -53,24 +76,34 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Passport::tokensCan([
+            'access' => 'Access the storefront API',
+        ]);
+        Passport::setDefaultScope(['access']);
+        Passport::personalAccessTokensExpireIn(now()->addMinutes(15));
+        Passport::refreshTokensExpireIn(now()->addDays(7));
+
         Model::unguard();
 
-        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
-            'product' => \App\Models\Product::class,
-            'post' => \App\Models\Post::class,
-            'user' => \App\Models\User::class,
-            'customer' => \App\Models\Customer::class,
-            'brand' => \App\Models\Brand::class,
-            'order' => \App\Models\Order::class,
-            'order_address' => \App\Models\OrderAddress::class,
-            'order_shipping' => \App\Models\OrderShipping::class,
-            'order_tax' => \App\Models\OrderTax::class,
-            'order_meta' => \App\Models\OrderMeta::class,
-            'order_item' => \App\Models\OrderItem::class,
-            'page' => \App\Models\Page::class,
-            'category' => \App\Models\Category::class,
-            'shop_category' => \App\Models\ProductCategory::class,
-            'comment' => \App\Models\Comment::class,
+        Product::observe(PriceChangeAuditObserver::class);
+        ProductVariant::observe(PriceChangeAuditObserver::class);
+
+        Relation::morphMap([
+            'product' => Product::class,
+            'post' => Post::class,
+            'user' => User::class,
+            'customer' => Customer::class,
+            'brand' => Brand::class,
+            'order' => Order::class,
+            'order_address' => OrderAddress::class,
+            'order_shipping' => OrderShipping::class,
+            'order_tax' => OrderTax::class,
+            'order_meta' => OrderMeta::class,
+            'order_item' => OrderItem::class,
+            'page' => Page::class,
+            'category' => Category::class,
+            'shop_category' => ProductCategory::class,
+            'comment' => Comment::class,
         ]);
 
         if (app()->environment('production')) {

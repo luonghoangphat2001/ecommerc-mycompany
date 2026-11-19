@@ -2,28 +2,32 @@
 
 namespace App\Ecommerce\Order\Services;
 
+use App\Ecommerce\Address\DTOs\Address\AddressDTO;
+use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
+use App\Ecommerce\Checkout\Services\CheckoutCalculatorService;
+use App\Ecommerce\Inventory\Actions\RevertStockAction;
 use App\Ecommerce\Order\Contracts\OrderRepositoryInterface;
 use App\Ecommerce\Order\Contracts\OrderServiceInterface;
-use App\Models\Order;
-use App\Models\OrderShipping;
+use App\Ecommerce\Order\Contracts\RefundServiceInterface;
 use App\Ecommerce\Order\Enums\OrderStatus;
-use App\Enums\PaymentStatus;
-use App\Traits\HandleTransactions;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
-
+use App\Ecommerce\Order\Events\OrderCreated;
+use App\Ecommerce\Order\Support\OrderItemPayload;
 use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
-use App\Ecommerce\Checkout\Services\CheckoutCalculatorService;
-use App\Ecommerce\Checkout\DTOs\CheckoutRequestDTO;
-use App\Ecommerce\Address\DTOs\Address\AddressDTO;
-
-use App\Ecommerce\Order\Events\OrderCreated;
-use App\Settings\MailSettings;
-use App\Mail\OrderCustomerMail;
-use App\Mail\OrderAdminMail;
+use App\Enums\OrderItemType;
+use App\Enums\PaymentStatus;
 use App\Jobs\SendOrderEmailJob;
+use App\Mail\OrderAdminMail;
+use App\Mail\OrderCustomerMail;
+use App\Models\Order;
+use App\Models\OrderShipping;
+use App\Services\Logging\ModuleLogger;
+use App\Settings\MailSettings;
+use App\Support\Infrastructure;
+use App\Traits\HandleTransactions;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Mail;
 
 class OrderService implements OrderServiceInterface
@@ -31,27 +35,39 @@ class OrderService implements OrderServiceInterface
     use HandleTransactions;
 
     protected $orderRepository;
+
     protected $taxService;
+
     protected $shippingService;
+
     protected $calculator;
+
     protected $refundService;
+
+    protected RevertStockAction $revertStockAction;
+
+    protected MailSettings $mailSettings;
 
     public function __construct(
         OrderRepositoryInterface $orderRepository,
         TaxServiceInterface $taxService,
         ShippingServiceInterface $shippingService,
         CheckoutCalculatorService $calculator,
-        \App\Ecommerce\Order\Contracts\RefundServiceInterface $refundService
+        RefundServiceInterface $refundService,
+        RevertStockAction $revertStockAction,
+        MailSettings $mailSettings
     ) {
         $this->orderRepository = $orderRepository;
         $this->taxService = $taxService;
         $this->shippingService = $shippingService;
         $this->calculator = $calculator;
         $this->refundService = $refundService;
+        $this->revertStockAction = $revertStockAction;
+        $this->mailSettings = $mailSettings;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function createOrder(array $data, array $items = []): Order
     {
@@ -59,7 +75,7 @@ class OrderService implements OrderServiceInterface
             /** @var Order $order */
             $order = $this->orderRepository->create($data);
 
-            if (!empty($items)) {
+            if (! empty($items)) {
                 foreach ($items as $item) {
                     $order->items()->create($item);
                 }
@@ -77,33 +93,36 @@ class OrderService implements OrderServiceInterface
     {
         return $this->useTransaction(function () use ($order, $data) {
             // 1. Update basic order data (if any other than status)
-            $orderData = \Illuminate\Support\Arr::except($data, [
+            $orderData = Arr::except($data, [
                 'items', 'internal_note', 'shipping', 'billing', 'status',
                 'shipping_method_id', 'coupon_code', 'redeemed_points', 'manual_tax_amount',
-                'refund_type', 'refund_amount', 'refund_reason'
+                'refund_type', 'refund_amount', 'refund_reason',
             ]);
-            if (!empty($orderData)) {
+            if (! empty($orderData)) {
                 $this->orderRepository->update($order->id, $orderData);
             }
 
             // 2. Handle Status Update
             if (isset($data['status']) && $data['status'] !== $order->status->value) {
-                $newStatus = \App\Ecommerce\Order\Enums\OrderStatus::from($data['status']);
+                $newStatus = OrderStatus::from($data['status']);
                 $this->updateStatus($order, $newStatus);
 
                 // Handle Refund creation if status changed to refunded
-                if ($newStatus->value === 'refunded') {
+                if ($newStatus === OrderStatus::Refunded) {
                     $refundType = $data['refund_type'] ?? 'full';
                     $refundAmount = $refundType === 'full' ? $order->total : (int) ($data['refund_amount'] ?? 0);
                     $refundReason = $data['refund_reason'] ?? '';
 
                     if ($refundAmount > 0) {
-                        try {
-                            $this->refundService->processRefund($order, $refundAmount, $refundReason, $refundType);
-                        } catch (\Exception $e) {
-                            \App\Services\Logging\ModuleLogger::order()->error('update_order_refund_failed', "Refund process failed during order update: " . $e->getMessage(), ['order_id' => $order->id, 'refund_amount' => $refundAmount]);
-                            throw $e; // Re-throw to rollback transaction
-                        }
+                        $this->processRefundOrThrow(
+                            $order,
+                            $refundAmount,
+                            $refundReason,
+                            $refundType,
+                            'update_order_refund_failed',
+                            'Refund process failed during order update.',
+                            ['refund_amount' => $refundAmount]
+                        );
                     }
                 }
             }
@@ -131,8 +150,8 @@ class OrderService implements OrderServiceInterface
             // 4.5 Update extra fees & promotions
             if (array_key_exists('shipping_method_id', $data)) {
                 if ($data['shipping_method_id']) {
-                    $method = \App\Models\ShippingMethod::find($data['shipping_method_id']);
-                    if (!$order->shipping) {
+                    $method = $this->shippingService->resolveMethod((int) $data['shipping_method_id']);
+                    if (! $order->shipping) {
                         $order->shipping()->create(['shop_shipping_method_id' => $data['shipping_method_id'], 'method' => $method?->name]);
                     } else {
                         $order->shipping->update(['shop_shipping_method_id' => $data['shipping_method_id'], 'method' => $method?->name]);
@@ -176,21 +195,21 @@ class OrderService implements OrderServiceInterface
             // 5. Update addresses
             if (isset($data['shipping']) && $order->shippingAddress) {
                 $validation = $this->shippingService->validateAddress($data['shipping']);
-                if (!$validation['is_valid']) {
-                    throw new \Exception("Địa chỉ giao hàng không hợp lệ: " . implode(", ", $validation['errors']));
+                if (! $validation['is_valid']) {
+                    throw new \Exception('Địa chỉ giao hàng không hợp lệ: ' . implode(', ', $validation['errors']));
                 }
                 $order->shippingAddress->update($data['shipping']);
             }
             if (isset($data['billing']) && $order->billingAddress) {
                 $order->billingAddress->update($data['billing']);
             }
-            
+
             return $this->recalculateTotals($order->fresh());
         });
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function updateStatus(Order $order, OrderStatus $newStatus): bool
     {
@@ -198,7 +217,7 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function recalculateTotals(Order $order): Order
     {
@@ -240,7 +259,7 @@ class OrderService implements OrderServiceInterface
 
             // Get coupon code from order coupon snapshot
             $couponCode = $order->coupons()->first()?->coupon_code ?? null;
-            
+
             // Get redeemed points from order meta if it exists
             $redeemedPoints = (int) $order->metas()->where('key', 'redeemed_points')->first()?->value ?? 0;
 
@@ -257,25 +276,17 @@ class OrderService implements OrderServiceInterface
 
             // 4. Save tax details from calculation
             foreach ($calcResult->appliedTaxes as $tax) {
-                $order->items()->create([
-                    'type' => 'tax',
-                    'name' => $tax['name'],
-                    'qty' => 1,
-                    'unit_price' => $tax['amount'],
-                    'total' => $tax['amount'],
-                ]);
+                $order->items()->create(OrderItemPayload::fee(OrderItemType::Tax->value, $tax['name'], $tax['amount']));
             }
 
             // 5. Save shipping item and update OrderShipping
             if ($calcResult->shippingTotal > 0) {
-                $order->items()->create([
-                    'type' => 'shipping',
-                    'name' => 'Giao hàng: ' . ($order->shipping?->method ?? 'Standard'),
-                    'qty' => 1,
-                    'unit_price' => $calcResult->shippingTotal,
-                    'total' => $calcResult->shippingTotal,
-                ]);
-                
+                $order->items()->create(OrderItemPayload::fee(
+                    OrderItemType::Shipping->value,
+                    'Giao hàng: ' . ($order->shipping?->method ?? 'Standard'),
+                    $calcResult->shippingTotal
+                ));
+
                 if ($order->shipping) {
                     $order->shipping->update(['amount' => $calcResult->shippingTotal]);
                 }
@@ -288,10 +299,10 @@ class OrderService implements OrderServiceInterface
             // 6. Update coupons
             if ($couponCode) {
                 $order->coupons()->where('coupon_code', $couponCode)->update([
-                    'discount_amount' => $calcResult->discountTotal
+                    'discount_amount' => $calcResult->discountTotal,
                 ]);
             }
-            
+
             // 6.5 Update loyalty discount meta
             if ($calcResult->loyaltyDiscountTotal > 0) {
                 $order->metas()->updateOrCreate(
@@ -306,7 +317,7 @@ class OrderService implements OrderServiceInterface
             $manualTaxMeta = $order->metas()->where('key', 'manual_tax_amount')->first();
             $taxAmount = $calcResult->taxTotal;
             $total = $calcResult->total;
-            
+
             if ($manualTaxMeta && $manualTaxMeta->value !== null && $manualTaxMeta->value !== '') {
                 $manualTax = (int) $manualTaxMeta->value;
                 // If manual tax is higher than calculated tax, or just override completely?
@@ -333,7 +344,7 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function deleteOrder(Order $order): bool
     {
@@ -341,11 +352,20 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function cancel(Order $order, string $reason): bool
     {
         return $this->useTransaction(function () use ($order, $reason) {
+            $order = $this->orderRepository->find($order->id) ?? $order;
+
+            // Cancellation is a state transition. Replaying it must not restore stock twice.
+            if ($order->status === OrderStatus::Cancelled
+                || ($order->status instanceof OrderStatus && $order->status === OrderStatus::Cancelled)
+                || $order->status === OrderStatus::Cancelled->value) {
+                return true;
+            }
+
             $order->metas()->updateOrCreate(
                 ['key' => 'cancellation_reason'],
                 ['value' => $reason]
@@ -356,47 +376,39 @@ class OrderService implements OrderServiceInterface
             );
 
             // Revert stock for all product items (simple, variable, combo)
-            $revertStockAction = app(\App\Ecommerce\Inventory\Actions\RevertStockAction::class);
             foreach ($order->items as $item) {
-                if ($item->type === \App\Enums\OrderItemType::Product) {
-                    $revertStockAction->revertOrderItem($item);
+                if ($item->type === OrderItemType::Product) {
+                    $this->revertStockAction->revertOrderItem($item);
                 }
             }
 
-            return $order->update(['status' => OrderStatus::Cancelled]);
+            return $this->updateStatus($order, OrderStatus::Cancelled);
         });
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function refund(Order $order, string $reason): bool
     {
         return $this->useTransaction(function () use ($order, $reason) {
-            $this->orderRepository->update($order->id, [
-                'status' => OrderStatus::Refunded,
-            ]);
+            $this->updateStatus($order, OrderStatus::Refunded);
 
-            try {
-                $this->refundService->processRefund($order, $order->total, $reason, 'full');
-            } catch (\Exception $e) {
-                \App\Services\Logging\ModuleLogger::order()->error('refund_failed', "Refund failed: " . $e->getMessage(), ['order_id' => $order->id]);
-                throw $e;
-            }
+            $this->processRefundOrThrow($order, $order->total, $reason, 'full', 'refund_failed', 'Refund failed.');
 
             return true;
         });
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function confirmPayment(Order $order): bool
     {
         return $this->useTransaction(function () use ($order) {
             $order->payments()->where('status', PaymentStatus::Pending->value)->update(['status' => PaymentStatus::Paid->value]);
-            
-            // If order was pending, move to processing if paid? 
+
+            // If order was pending, move to processing if paid?
             // Often business logic dictates that paid orders move to Processing.
             if ($order->status === OrderStatus::Pending) {
                 $this->updateStatus($order, OrderStatus::Processing);
@@ -407,17 +419,16 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sendOrderConfirmationMail(Order $order): void
     {
-        $settings = app(MailSettings::class);
         $mailClass = OrderCustomerMail::class;
 
-        if ($settings->use_queue_for_emails) {
-            SendOrderEmailJob::dispatch($order, $mailClass);
+        if ($this->mailSettings->use_queue_for_emails) {
+            $this->queueOrderMail($order, $mailClass);
         } else {
-            $customerEmail = $order->billingAddress?->email ?? $order->shippingAddress?->email ?? $order->user?->email;
+            $customerEmail = Infrastructure::customerEmail($order);
             if ($customerEmail) {
                 Mail::to($customerEmail)->send(new $mailClass($order));
             }
@@ -425,21 +436,26 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function sendAdminOrderNotification(Order $order): void
     {
-        $settings = app(MailSettings::class);
         $mailClass = OrderAdminMail::class;
 
-        if ($settings->use_queue_for_emails) {
-            SendOrderEmailJob::dispatch($order, $mailClass);
+        if ($this->mailSettings->use_queue_for_emails) {
+            $this->queueOrderMail($order, $mailClass);
         } else {
-            Mail::to(config('mail.from.address'))->send(new $mailClass($order));
+            Mail::to(Infrastructure::adminEmail())->send(new $mailClass($order));
         }
     }
+
+    private function queueOrderMail(Order $order, string $mailClass): void
+    {
+        SendOrderEmailJob::dispatch((int) $order->getKey(), $mailClass)->afterCommit();
+    }
+
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function hasPendingPayments(Order $order): bool
     {
@@ -447,7 +463,7 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function paginateFiltered(int $perPage = 15, ?int $userId = null): LengthAwarePaginator
     {
@@ -455,23 +471,23 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function getFullOrder(int|string $id): ?Order
+    public function getFullOrder(int | string $id): ?Order
     {
         return $this->orderRepository->getFullOrder($id);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
-    public function find(int|string $id): ?Order
+    public function find(int | string $id): ?Order
     {
         return $this->orderRepository->find($id);
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTaxTotal(Order $order): int
     {
@@ -479,7 +495,7 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTotalShipping(Order $order): int
     {
@@ -487,7 +503,7 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getShippingTotalWithTax(Order $order): int
     {
@@ -495,7 +511,7 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getLoyaltyDiscountTotal(Order $order): int
     {
@@ -503,7 +519,7 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getMetaValue(Order $order, string $key): ?string
     {
@@ -511,7 +527,7 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getDistinctStatuses(): array
     {
@@ -519,11 +535,42 @@ class OrderService implements OrderServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getTableQuery(): Builder
     {
         return $this->orderRepository->query()
             ->with(['shippingAddress', 'billingAddress', 'metas', 'taxes', 'shipping', 'payments', 'productItems.tax', 'shipping.tax']);
+    }
+
+    private function logRefundFailure(
+        string $event,
+        string $message,
+        Order $order,
+        \Throwable $exception,
+        array $context = []
+    ): void {
+        ModuleLogger::order()->error($event, $message, array_merge([
+            'order_id' => $order->id,
+            'exception' => get_class($exception),
+        ], $context));
+    }
+
+    private function processRefundOrThrow(
+        Order $order,
+        float $amount,
+        string $reason,
+        string $type,
+        string $event,
+        string $message,
+        array $context = []
+    ): void {
+        try {
+            $this->refundService->processRefund($order, $amount, $reason, $type);
+        } catch (\Exception $exception) {
+            $this->logRefundFailure($event, $message, $order, $exception, $context);
+
+            throw $exception;
+        }
     }
 }

@@ -56,7 +56,7 @@
                         <div class="field-label">Vai trò (Roles)</div>
                         <div class="field-value" style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px;">
                             @forelse($user->roles as $role)
-                                <span class="badge bg-blue">{{ \App\Support\AdminLabel::role($role->name) }}</span>
+                                <span class="badge bg-blue">{{ \App\Support\Admin::roleLabel($role->name) }}</span>
                             @empty
                                 <span class="val-empty">Chưa gán vai trò</span>
                             @endforelse
@@ -69,8 +69,8 @@
                                 $permissions = $user->getAllPermissions();
                                 $groupedPermissions = [];
                                 foreach ($permissions as $permission) {
-                                    [$action, $resource] = \App\Support\AdminLabel::splitPermission($permission->name);
-                                    $group = \App\Support\AdminLabel::resource($resource ?: 'general');
+                                    [$action, $resource] = \App\Support\Admin::splitPermission($permission->name);
+                                    $group = \App\Support\Admin::resourceLabel($resource ?: 'general');
                                     $groupedPermissions[$group][] = $permission->name;
                                 }
                                 ksort($groupedPermissions);
@@ -87,7 +87,7 @@
                                                 @foreach($perms as $perm)
                                                     <span style="font-size: 12px; color: var(--fi-text-secondary); display: flex; align-items: center; gap: 6px;">
                                                         <span style="width: 4px; height: 4px; border-radius: 50%; background: var(--fi-primary);"></span>
-                                                        {{ \App\Support\AdminLabel::permission($perm) }}
+                                                        {{ \App\Support\Admin::permissionLabel($perm) }}
                                                     </span>
                                                 @endforeach
                                             </div>

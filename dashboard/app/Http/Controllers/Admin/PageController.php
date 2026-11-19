@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
 use App\Models\Page;
+use Illuminate\Database\Eloquent\Model;
 
 class PageController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+
     protected function modelClass(): string
     {
         return Page::class;
@@ -37,7 +41,7 @@ class PageController extends BaseCrudController
                 'label' => __('admin.fields.parent'),
                 'type' => 'select',
                 'rules' => ['nullable', 'integer', 'exists:pages,id'],
-                'options' => ['' => '-- Root --'] + Page::orderBy('id')->get()->pluck('title', 'id')->toArray(),
+                'options' => ['' => '-- Root --'] + $this->pageRecords()->pluck('title', 'id')->toArray(),
             ],
             'blocks' => [
                 'label' => __('admin.page.fields.blocks'),
@@ -50,7 +54,7 @@ class PageController extends BaseCrudController
         ];
     }
 
-    protected function mutateData(array $data, ?\Illuminate\Database\Eloquent\Model $record = null): array
+    protected function mutateData(array $data, ?Model $record = null): array
     {
         $data = parent::mutateData($data, $record);
 
@@ -65,7 +69,7 @@ class PageController extends BaseCrudController
         return $data;
     }
 
-    protected function formData(?\Illuminate\Database\Eloquent\Model $record = null): array
+    protected function formData(?Model $record = null): array
     {
         if (! $record) {
             return [

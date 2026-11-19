@@ -15,13 +15,13 @@ class CurrencyService implements CurrencyServiceInterface
     /**
      * CurrencyService constructor.
      */
-    public function __construct()
+    public function __construct(GeneralSettings $settings)
     {
-        $this->settings = app(GeneralSettings::class);
+        $this->settings = $settings;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getCurrencySymbol(): string
     {
@@ -29,7 +29,7 @@ class CurrencyService implements CurrencyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getCurrencyCode(): string
     {
@@ -37,7 +37,7 @@ class CurrencyService implements CurrencyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function format(mixed $value, bool $withSymbol = true): string
     {
@@ -50,7 +50,7 @@ class CurrencyService implements CurrencyServiceInterface
 
         $formatted = number_format($value, $decimalPlaces, $decimalSep, $thousandSep);
 
-        if (!$withSymbol) {
+        if (! $withSymbol) {
             return $formatted;
         }
 
@@ -68,7 +68,7 @@ class CurrencyService implements CurrencyServiceInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function formatNumber(mixed $value, ?int $decimalPlaces = null): string
     {
@@ -76,7 +76,7 @@ class CurrencyService implements CurrencyServiceInterface
         $decimalPlaces = $decimalPlaces ?? ($this->settings->decimal_places ?? 0);
         $thousandSep = $this->settings->thousand_separator ?? '.';
         $decimalSep = $this->settings->decimal_separator ?? ',';
-        
+
         return number_format($value, $decimalPlaces, $decimalSep, $thousandSep);
     }
 }

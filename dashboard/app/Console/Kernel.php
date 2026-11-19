@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('webhooks:cleanup')->daily();
+        $schedule->command('auth:prune-tokens')->daily()->withoutOverlapping();
     }
 
     /**

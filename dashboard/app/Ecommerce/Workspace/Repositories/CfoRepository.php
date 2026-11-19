@@ -2,25 +2,36 @@
 
 namespace App\Ecommerce\Workspace\Repositories;
 
+use App\Ecommerce\Workspace\Repositories\Concerns\HasWorkspaceCrudOperations;
 use App\Models\DepartmentFinancialProposal;
-use App\Models\DepartmentPayroll;
 use App\Models\DepartmentMaterialPrice;
+use App\Models\DepartmentPayroll;
+use App\Models\Order;
 use Carbon\Carbon;
 
 class CfoRepository implements CfoRepositoryInterface
 {
+    use HasWorkspaceCrudOperations;
+
     public function getMetrics(string $period = 'all'): array
     {
         $queryProposals = DepartmentFinancialProposal::query();
         $queryPayrolls = DepartmentPayroll::query();
-        
+
         $this->applyPeriodFilter($queryProposals, 'created_at', $period);
         $this->applyPeriodFilter($queryPayrolls, 'created_at', $period);
 
-        $revenue = 500000000; // Mock revenue as we don't have sales income tables in this context
-        $expenses = $queryPayrolls->sum('net_salary') + $queryProposals->where('status', 'approved')->sum('amount');
-        $pendingCount = DepartmentFinancialProposal::where('status', 'pending')->count();
-        $urgentCount = DepartmentFinancialProposal::where('status', 'pending')->where('is_urgent', true)->count();
+        $revenueQuery = Order::query()->whereNotIn('status', ['cancelled', 'refunded']);
+        $this->applyPeriodFilter($revenueQuery, 'created_at', $period);
+        $revenue = (float) $revenueQuery->sum('total');
+        $approvedProposalExpenses = (clone $queryProposals)->where('status', 'approved')->sum('amount');
+        $expenses = $queryPayrolls->sum('net_salary') + $approvedProposalExpenses;
+        $proposalMetrics = (clone $queryProposals)
+            ->selectRaw("SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count")
+            ->selectRaw("SUM(CASE WHEN status = 'pending' AND is_urgent = 1 THEN 1 ELSE 0 END) as urgent_count")
+            ->first();
+        $pendingCount = (int) ($proposalMetrics->pending_count ?? 0);
+        $urgentCount = (int) ($proposalMetrics->urgent_count ?? 0);
         $cashflow = $revenue - $expenses;
 
         return [
@@ -37,6 +48,7 @@ class CfoRepository implements CfoRepositoryInterface
     {
         $query = DepartmentFinancialProposal::with('user');
         $this->applyPeriodFilter($query, 'created_at', $period);
+
         return $query->latest()->get();
     }
 
@@ -44,6 +56,7 @@ class CfoRepository implements CfoRepositoryInterface
     {
         $query = DepartmentPayroll::with('user');
         $this->applyPeriodFilter($query, 'created_at', $period);
+
         return $query->latest()->get();
     }
 
@@ -51,6 +64,7 @@ class CfoRepository implements CfoRepositoryInterface
     {
         $query = DepartmentMaterialPrice::query();
         $this->applyPeriodFilter($query, 'recorded_at', $period);
+
         return $query->orderBy('recorded_at', 'asc')->get();
     }
 
@@ -68,37 +82,36 @@ class CfoRepository implements CfoRepositoryInterface
 
     public function createProposal(array $data)
     {
-        return DepartmentFinancialProposal::create($data);
+        return $this->createWorkspaceModel(DepartmentFinancialProposal::class, $data);
     }
 
     public function updateProposal($id, array $data)
     {
-        $proposal = DepartmentFinancialProposal::findOrFail($id);
-        $proposal->update($data);
-        return $proposal;
+        return $this->updateWorkspaceModel(DepartmentFinancialProposal::class, $id, $data);
     }
 
     public function deleteProposal($id)
     {
-        $proposal = DepartmentFinancialProposal::findOrFail($id);
-        return $proposal->delete();
+        return $this->deleteWorkspaceModel(DepartmentFinancialProposal::class, $id);
+    }
+
+    public function updateProposalStatus($id, string $status)
+    {
+        return $this->updateWorkspaceModel(DepartmentFinancialProposal::class, $id, ['status' => $status]);
     }
 
     public function createPayroll(array $data)
     {
-        return DepartmentPayroll::create($data);
+        return $this->createWorkspaceModel(DepartmentPayroll::class, $data);
     }
 
     public function updatePayroll($id, array $data)
     {
-        $payroll = DepartmentPayroll::findOrFail($id);
-        $payroll->update($data);
-        return $payroll;
+        return $this->updateWorkspaceModel(DepartmentPayroll::class, $id, $data);
     }
 
     public function deletePayroll($id)
     {
-        $payroll = DepartmentPayroll::findOrFail($id);
-        return $payroll->delete();
+        return $this->deleteWorkspaceModel(DepartmentPayroll::class, $id);
     }
 }

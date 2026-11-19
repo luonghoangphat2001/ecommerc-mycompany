@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Ecommerce\Product\Contracts\ProductServiceInterface;
-use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\Api\ProductResource;
+use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 use App\Swagger\Attributes\ApiGet;
@@ -12,7 +13,6 @@ use App\Swagger\Attributes\ApiList;
 
 class ProductController extends BaseApiController
 {
-
     public function __construct(
         protected ProductServiceInterface $productService
     ) {}
@@ -20,7 +20,7 @@ class ProductController extends BaseApiController
     #[ApiList(
         path: '/products',
         summary: 'List of Products',
-        tags: 'Storefront - Products',
+        tags: 'Products',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'category_id', in: 'query', required: false, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Filter by Category ID'),
@@ -30,60 +30,66 @@ class ProductController extends BaseApiController
         ],
         responseData: '#/components/schemas/ProductResource'
     )]
+
+
     public function index(Request $request)
     {
         $products = $this->productService->paginate(
             perPage: (int) $request->get('per_page', 15),
-            relations: ['categories', 'brand', 'featuredImage', 'inventories', 'variants', 'productAttributes', 'comboComponents.product', 'comboComponents.variant'],
+            relations: $this->productListRelations(),
             filters: $request->all()
         );
-        
+
         return $this->ok(ProductResource::collection($products));
     }
 
     #[ApiGet(
         path: '/products/by-slug/{slug}',
         summary: 'Product Details (by Slug)',
-        tags: 'Storefront - Products',
+        tags: 'Products',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'slug', in: 'path', required: true, schema: new OAT\Schema(type: 'string', example: 'san-pham-1'), description: 'Product Slug')
         ],
         responseData: '#/components/schemas/ProductResource'
     )]
+
+
     public function showBySlug($slug)
     {
         $product = $this->productService->findBySlug(
             $slug,
-            ['categories', 'brand', 'featuredImage', 'comments', 'inventories', 'variants', 'productAttributes', 'comboComponents.product', 'comboComponents.variant']
+            $this->productDetailRelations()
         );
-        
-        if (!$product) {
+
+        if (! $product) {
             return $this->notFound(__('messages.product_not_found') ?? 'Product not found');
         }
-        
+
         return $this->ok(new ProductResource($product));
     }
 
     #[ApiGet(
         path: '/products/{product}',
         summary: 'Product Details (by ID)',
-        tags: 'Storefront - Products',
+        tags: 'Products',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'product', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Product ID')
         ],
         responseData: '#/components/schemas/ProductResource'
     )]
+
+
     public function show($id)
     {
-        $relations = ['categories', 'brand', 'featuredImage', 'comments', 'inventories', 'variants', 'productAttributes', 'comboComponents.product', 'comboComponents.variant'];
+        $relations = $this->productDetailRelations();
 
         if (is_numeric($id)) {
             $product = $this->productService->findOrFail($id, ['*'], $relations);
         } else {
             $product = $this->productService->findBySlug((string) $id, $relations);
-            if (!$product) {
+            if (! $product) {
                 return $this->notFound(__('messages.product_not_found') ?? 'Product not found');
             }
         }
@@ -106,19 +112,17 @@ class ProductController extends BaseApiController
         $limit = (int) $request->get('limit', 4);
         $relations = ['categories', 'brand', 'featuredImage', 'inventories'];
 
-        $product = is_numeric($productId)
-            ? \App\Models\Product::with('categories')->find($productId)
-            : \App\Models\Product::with('categories')->where('slug', (string) $productId)->first();
+        $product = $this->findProduct($productId, ['categories']);
 
-        $query = \App\Models\Product::with($relations)->where('is_visible', true);
+        $query = $this->visibleProductsQuery($relations);
 
         if ($product) {
             $query->where('id', '!=', $product->id);
             $categoryIds = $product->categories->pluck('id')->all();
 
-            if (!empty($categoryIds) || $product->shop_brand_id) {
+            if (! empty($categoryIds) || $product->shop_brand_id) {
                 $query->where(function ($q) use ($categoryIds, $product) {
-                    if (!empty($categoryIds)) {
+                    if (! empty($categoryIds)) {
                         $q->whereHas('categories', fn ($cq) => $cq->whereIn('shop_categories.id', $categoryIds));
                     }
                     if ($product->shop_brand_id) {
@@ -135,8 +139,7 @@ class ProductController extends BaseApiController
             if ($product) {
                 $excludeIds[] = $product->id;
             }
-            $fallback = \App\Models\Product::with($relations)
-                ->where('is_visible', true)
+            $fallback = $this->visibleProductsQuery($relations)
                 ->whereNotIn('id', $excludeIds)
                 ->orderByDesc('featured')
                 ->orderByDesc('id')
@@ -146,5 +149,38 @@ class ProductController extends BaseApiController
         }
 
         return $this->ok(ProductResource::collection($items));
+    }
+
+    protected function productListRelations(): array
+    {
+        return [
+            'categories',
+            'brand',
+            'featuredImage',
+            'inventories',
+            'variants',
+            'productAttributes',
+            'comboComponents.product',
+            'comboComponents.variant',
+        ];
+    }
+
+    protected function productDetailRelations(): array
+    {
+        return array_merge($this->productListRelations(), ['comments']);
+    }
+
+    private function findProduct(int | string $identifier, array $relations = []): ?Product
+    {
+        return Product::query()
+            ->with($relations)
+            ->when(is_numeric($identifier), fn (Builder $query) => $query->whereKey($identifier))
+            ->when(! is_numeric($identifier), fn (Builder $query) => $query->where('slug', (string) $identifier))
+            ->first();
+    }
+
+    private function visibleProductsQuery(array $relations): Builder
+    {
+        return Product::query()->with($relations)->where('is_visible', true);
     }
 }

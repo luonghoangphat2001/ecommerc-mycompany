@@ -3,15 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
 use App\Http\Controllers\Admin\Traits\HasShippingTabs;
 use App\Models\ShippingMethod;
-use App\Models\ShippingZone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 class ShippingMethodController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
     use HasShippingTabs;
 
     protected function modelClass(): string
@@ -62,7 +63,7 @@ class ShippingMethodController extends BaseCrudController
             'shipping_zone_id' => [
                 'label' => 'Khu vực (Shipping Zone)',
                 'type' => 'select',
-                'options' => ShippingZone::orderBy('sort')->get()->mapWithKeys(fn ($z) => [$z->id => $z->name])->toArray(),
+                'options' => $this->shippingZoneOptions(),
             ],
             'type' => [
                 'label' => 'Loại phương thức',
@@ -85,7 +86,7 @@ class ShippingMethodController extends BaseCrudController
                 'label' => 'Khu vực vận chuyển (Shipping Zone)',
                 'type' => 'select',
                 'rules' => ['required', 'integer', 'exists:shop_shipping_zones,id'],
-                'options' => ShippingZone::orderBy('sort')->get()->mapWithKeys(fn ($z) => [$z->id => $z->name])->toArray(),
+                'options' => $this->shippingZoneOptions(),
             ],
             'type' => [
                 'label' => 'Loại phương thức',
@@ -170,7 +171,7 @@ class ShippingMethodController extends BaseCrudController
         $mergedSettings = array_merge($defaultSettings, $currentSettings);
 
         return [
-            'zones' => ShippingZone::orderBy('sort')->get(),
+            'zones' => $this->shippingZoneRecords(),
             'initialSettings' => $mergedSettings,
             'currentType' => $record ? ($record->type instanceof \BackedEnum ? $record->type->value : (string) $record->type) : 'flat_rate',
             'is_enabled' => $record ? ($record->is_enabled ? '1' : '0') : '1',

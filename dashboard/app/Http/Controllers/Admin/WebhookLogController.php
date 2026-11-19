@@ -3,15 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasReadOnlyCrudActions;
 use App\Models\Webhook;
 use App\Models\WebhookLog;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class WebhookLogController extends BaseCrudController
 {
+    use HasReadOnlyCrudActions;
+
     protected function modelClass(): string
     {
         return WebhookLog::class;
@@ -71,30 +72,5 @@ class WebhookLogController extends BaseCrudController
             'duration' => ['label' => 'Duration (ms)', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:0']],
             'payload' => ['label' => 'Payload', 'type' => 'textarea', 'hide_index' => true],
         ];
-    }
-
-    public function create(): never
-    {
-        throw new NotFoundHttpException();
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        abort(404);
-    }
-
-    public function edit(int $id): never
-    {
-        throw new NotFoundHttpException();
-    }
-
-    public function update(Request $request, int $id): RedirectResponse
-    {
-        abort(404);
-    }
-
-    public function destroy(int $id): RedirectResponse
-    {
-        abort(404);
     }
 }

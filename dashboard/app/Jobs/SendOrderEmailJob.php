@@ -2,24 +2,34 @@
 
 namespace App\Jobs;
 
+use App\Mail\OrderAdminMail;
+use App\Mail\OrderCustomerMail;
 use App\Models\Order;
-use App\Models\MailLog;
+use App\Support\Infrastructure;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
-use Exception;
 
 class SendOrderEmailJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+
+    public int $tries = 3;
+
+    public int $timeout = 30;
+
+    public array $backoff = [60, 300, 900];
 
     /**
      * @var Order
      */
-    protected $order;
+    protected int $orderId;
 
     /**
      * @var string
@@ -29,9 +39,9 @@ class SendOrderEmailJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct(Order $order, string $mailClass)
+    public function __construct(int $orderId, string $mailClass)
     {
-        $this->order = $order;
+        $this->orderId = $orderId;
         $this->mailClass = $mailClass;
     }
 
@@ -40,20 +50,20 @@ class SendOrderEmailJob implements ShouldQueue
      */
     public function handle(): void
     {
-        try {
-            if (!$this->order->customer_email) {
-                return;
-            }
-
-            $mailable = new $this->mailClass($this->order);
-            
-            Mail::to($this->order->customer_email)->send($mailable);
-
-            // Optional: Log success to MailLog if needed, 
-            // but Laravel's Mailer often handles this via events.
-        } catch (Exception $e) {
-            // Log error or let it fail for retry
-            throw $e;
+        $order = Order::with(['shippingAddress', 'billingAddress', 'user'])->findOrFail($this->orderId);
+        $allowedMailClasses = [OrderCustomerMail::class, OrderAdminMail::class];
+        if (! in_array($this->mailClass, $allowedMailClasses, true)) {
+            throw new \InvalidArgumentException('Unsupported order mail class.');
         }
+
+        $recipient = $this->mailClass === OrderAdminMail::class
+            ? Infrastructure::adminEmail()
+            : (Infrastructure::customerEmail($order) ?? $order->customer_email);
+
+        if (! $recipient) {
+            return;
+        }
+
+        Mail::to($recipient)->send(new $this->mailClass($order));
     }
 }

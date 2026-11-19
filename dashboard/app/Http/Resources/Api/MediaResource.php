@@ -5,6 +5,7 @@ namespace App\Http\Resources\Api;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
 
+
 #[OAT\Schema(
     schema: 'MediaResource',
     title: 'Media',
@@ -46,7 +47,7 @@ class MediaResource extends BaseResource
             'visibility' => $this->visibility,
             'name' => $this->name,
             'path' => $this->path,
-            'url' => \Illuminate\Support\Facades\Storage::url($this->path),
+            'url' => $this->mediaUrl($this->resource),
             'width' => $this->width,
             'height' => $this->height,
             'size' => $this->size,

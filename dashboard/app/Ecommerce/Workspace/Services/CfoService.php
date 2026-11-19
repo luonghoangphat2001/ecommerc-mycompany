@@ -23,6 +23,11 @@ class CfoService
         ];
     }
 
+    public function getMetrics(string $period = 'all'): array
+    {
+        return $this->cfoRepository->getMetrics($period);
+    }
+
     public function createProposal(array $data)
     {
         // Business logic could go here (e.g., checking budget)
@@ -37,6 +42,11 @@ class CfoService
     public function deleteProposal($id)
     {
         return $this->cfoRepository->deleteProposal($id);
+    }
+
+    public function updateProposalStatus($id, string $status)
+    {
+        return $this->cfoRepository->updateProposalStatus($id, $status);
     }
 
     public function createPayroll(array $data)

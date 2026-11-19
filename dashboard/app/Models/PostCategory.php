@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\HasLocalizedDisplayName;
+use Database\Factories\PostCategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,8 +20,9 @@ use Spatie\Translatable\HasTranslations;
  */
 class PostCategory extends Model
 {
-    use HasTranslations;
     use HasFactory;
+    use HasLocalizedDisplayName;
+    use HasTranslations;
     use SoftDeletes;
 
     /**
@@ -69,42 +72,37 @@ class PostCategory extends Model
             $depth++;
             $parent = $parent->parent;
         }
+
         return $depth;
     }
 
     public function getDisplayNameAttribute(): string
     {
-        $locale = app()->getLocale() ?: 'vi';
-        $name = $this->getTranslation('name', $locale) ?: $this->getTranslation('name', 'vi');
-        if (empty($name) && is_array($this->name)) {
-            $name = $this->name['vi'] ?? $this->name['en'] ?? '';
-        }
-        return (string) ($name ?: ($this->slug ?: 'Danh mục #' . $this->id));
+        return $this->localizedDisplayName('Danh mục');
     }
 
     public function getBreadcrumbsAttribute(): string
     {
-        $parts = [];
-        $curr = $this->parent;
-        while ($curr) {
-            array_unshift($parts, $curr->display_name);
-            $curr = $curr->parent;
-        }
-        return empty($parts) ? '—' : implode(' > ', $parts);
+        return $this->parentBreadcrumbs();
     }
 
     public static function getTreeSortedIds(): array
     {
-        $categories = self::all();
-        $buildTree = function ($parentId = null) use (&$buildTree, $categories) {
+        // Adjacency list is retained because category edits are frequent and only
+        // tree reads need ordering. Load the narrow projection once and group it
+        // in memory to avoid the repeated collection scans in the old recursion.
+        $categories = self::query()->select(['id', 'parent_id', 'name'])->get();
+        $childrenByParent = $categories->groupBy(fn (self $category): string => (string) $category->parent_id);
+        $buildTree = function ($parentId = null) use (&$buildTree, $childrenByParent) {
             $ids = [];
-            foreach ($categories->where('parent_id', $parentId)->sortBy('name') as $category) {
+            foreach ($childrenByParent->get((string) $parentId, collect())->sortBy('name') as $category) {
                 $ids[] = $category->id;
                 $ids = array_merge($ids, $buildTree($category->id));
             }
+
             return $ids;
         };
-        
+
         return $buildTree(null);
     }
 
@@ -127,7 +125,7 @@ class PostCategory extends Model
 
     protected static function newFactory()
     {
-        return \Database\Factories\PostCategoryFactory::new();
+        return PostCategoryFactory::new();
     }
 
     public function scopeType($query, $type)

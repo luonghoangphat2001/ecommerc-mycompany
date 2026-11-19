@@ -34,7 +34,7 @@
         <div>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <h1 class="page-title">{{ __('admin.order.label') }} <span class="mono">#{{ $order->number }}</span></h1>
-                <span class="badge badge-{{ $statusValue }}">{{ \App\Support\AdminLabel::orderStatus($statusValue) }}</span>
+                <span class="badge badge-{{ $statusValue }}">{{ \App\Support\Admin::orderStatus($statusValue) }}</span>
             </div>
             <p class="page-description">
                 {{ $order->customer_display_name }} &bull; {{ $order->currency }} &bull; <span class="mono">{{ $order->created_at?->format('Y-m-d H:i') }}</span>
@@ -126,7 +126,7 @@
                                     <td><span class="mono" style="text-transform: uppercase; font-size: 11.5px; font-weight: 700;">{{ $payment->method }}</span></td>
                                     <td>
                                         <span class="badge {{ $payment->status === 'paid' ? 'bg-green' : ($payment->status === 'failed' ? 'bg-red' : 'bg-yellow') }}">
-                                            {{ \App\Support\AdminLabel::paymentStatus($payment->status) }}
+                                            {{ \App\Support\Admin::paymentStatus($payment->status) }}
                                         </span>
                                     </td>
                                     <td>{{ $payment->provider ?: '—' }}</td>
@@ -162,10 +162,10 @@
                             @forelse ($order->refunds as $refund)
                                 <tr>
                                     <td>
-                                        <span class="badge {{ ($refund->metadata['type'] ?? 'full') === 'full' ? 'bg-red' : 'bg-yellow' }}">{{ \App\Support\AdminLabel::refundType($refund->metadata['type'] ?? 'full') }}</span>
+                                    <span class="badge {{ ($refund->metadata['type'] ?? 'full') === 'full' ? 'bg-red' : 'bg-yellow' }}">{{ \App\Support\Admin::refundType($refund->metadata['type'] ?? 'full') }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge {{ ($refund->metadata['status'] ?? 'completed') === 'completed' ? 'bg-green' : 'bg-gray' }}">{{ \App\Support\AdminLabel::refundStatus($refund->metadata['status'] ?? 'completed') }}</span>
+                                        <span class="badge {{ ($refund->metadata['status'] ?? 'completed') === 'completed' ? 'bg-green' : 'bg-gray' }}">{{ \App\Support\Admin::refundStatus($refund->metadata['status'] ?? 'completed') }}</span>
                                     </td>
                                     <td>{{ $refund->reason ?: '—' }}</td>
                                     <td class="text-right font-bold mono" style="color: #b91c1c;">-{{ $money($refund->amount) }}</td>
@@ -201,9 +201,9 @@
                                         @if($activity->properties->has('attributes') && isset($activity->properties['attributes']['status']))
                                             <div class="cell-muted" style="margin-top: 3px;">
                                                 {{ __('admin.order.status_changed') }}:
-                                                {{ \App\Support\AdminLabel::orderStatus($activity->properties['old']['status'] ?? null) }}
+                                                {{ \App\Support\Admin::orderStatus($activity->properties['old']['status'] ?? null) }}
                                                 &rarr;
-                                                <strong style="color: var(--fi-text);">{{ \App\Support\AdminLabel::orderStatus($activity->properties['attributes']['status']) }}</strong>
+                                                <strong style="color: var(--fi-text);">{{ \App\Support\Admin::orderStatus($activity->properties['attributes']['status']) }}</strong>
                                             </div>
                                         @endif
                                     </td>
@@ -231,7 +231,7 @@
                         <div class="field-group" style="display: flex; justify-content: space-between; align-items: center;">
                             <div class="field-label" style="margin: 0;">{{ __('admin.order.status') }}</div>
                             <div class="field-value">
-                                <span class="badge badge-{{ $statusValue }}">{{ \App\Support\AdminLabel::orderStatus($statusValue) }}</span>
+                                <span class="badge badge-{{ $statusValue }}">{{ \App\Support\Admin::orderStatus($statusValue) }}</span>
                             </div>
                         </div>
                         <div class="field-group" style="display: flex; justify-content: space-between;">

@@ -13,7 +13,7 @@ class CustomerResolverService implements CustomerResolverServiceInterface
      */
     public function resolveCustomerId(Request $request, ?string $email = null): ?int
     {
-        // 1. Check via request user (Sanctum/Bearer token)
+        // 1. Check via request user (Passport/Bearer token)
         if ($request->user()) {
             return $request->user()->id;
         }

@@ -5,13 +5,122 @@ namespace App\Ecommerce\Product\Services;
 use App\Models\Attribute;
 use App\Models\Product;
 use App\Models\ProductAttribute;
-use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ProductAttributeService
 {
+    public function paginateGlobalAttributes(bool $onlyEnabled, int $perPage = 50)
+    {
+        $query = Attribute::query()->withCount('productAttributes');
+
+        if ($onlyEnabled) {
+            $query->where('is_enabled', true);
+        }
+
+        return $query->orderBy('name')->paginate($perPage);
+    }
+
+    public function findAttributeOrFail(int $id): Attribute
+    {
+        return Attribute::query()->withCount('productAttributes')->findOrFail($id);
+    }
+
+    public function updateAttribute(Attribute $attribute, array $data): Attribute
+    {
+        $attribute->fill(array_filter([
+            'name' => isset($data['name']) ? trim((string) $data['name']) : null,
+            'type' => $data['type'] ?? null,
+            'is_enabled' => array_key_exists('is_enabled', $data) ? (bool) $data['is_enabled'] : null,
+            'values' => array_key_exists('values', $data) ? $this->normalizeOptions($data['values'], true) : null,
+        ], static fn ($value) => $value !== null));
+        $attribute->save();
+
+        return $attribute->loadCount('productAttributes');
+    }
+
+    public function deleteAttribute(Attribute $attribute): void
+    {
+        $attribute->delete();
+    }
+
+    public function toggleAttribute(Attribute $attribute, ?bool $enabled = null): Attribute
+    {
+        $attribute->update([
+            'is_enabled' => $enabled ?? ! $attribute->is_enabled,
+        ]);
+
+        return $attribute->fresh();
+    }
+
+    public function getEnabledAttributes(): Collection
+    {
+        return Attribute::query()
+            ->where('is_enabled', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'type', 'values']);
+    }
+
+    public function addValues(Attribute $attribute, array $values): Attribute
+    {
+        $attribute->mergeValues($values);
+
+        return $attribute->loadCount('productAttributes');
+    }
+
+    public function generateVariantPreview(array $data): array
+    {
+        $baseSku = trim($data['base_sku'] ?? 'PROD');
+        $basePrice = (int) ($data['base_price'] ?? 0);
+        $arrays = [];
+
+        foreach ($data['attributes'] as $attribute) {
+            $name = $attribute['name'];
+            $options = array_values(array_filter(
+                array_map('trim', $attribute['options']),
+                static fn ($option) => $option !== ''
+            ));
+            if ($options !== []) {
+                $arrays[] = array_map(static fn ($option) => [$name => $option], $options);
+            }
+        }
+
+        if ($arrays === []) {
+            return [];
+        }
+
+        $combinations = array_reduce($arrays, static function (array $carry, array $current): array {
+            $result = [];
+            foreach ($carry as $left) {
+                foreach ($current as $right) {
+                    $result[] = array_merge($left, $right);
+                }
+            }
+
+            return $result;
+        }, [[]]);
+
+        $variants = array_map(static function (array $combination) use ($baseSku, $basePrice): array {
+            $suffix = implode('-', array_values($combination));
+
+            return [
+                'sku' => strtoupper(preg_replace('/\s+/', '', "{$baseSku}-{$suffix}")),
+                'attributes' => $combination,
+                'price' => $basePrice,
+                'sale_price' => null,
+                'qty' => 10,
+                'is_active' => true,
+            ];
+        }, $combinations);
+
+        return [
+            'combinations_count' => count($variants),
+            'variants' => $variants,
+        ];
+    }
+
     /**
      * Retrieve all global attributes, optionally filtering by enabled status.
      */
@@ -37,7 +146,7 @@ class ProductAttributeService
         string $type = 'button'
     ): Attribute {
         $cleanName = trim($name);
-        $cleanOptions = array_values(array_unique(array_filter(array_map('trim', $options), fn ($opt) => $opt !== '')));
+        $cleanOptions = $this->normalizeOptions($options, true);
 
         $globalAttr = null;
 
@@ -45,14 +154,14 @@ class ProductAttributeService
             $globalAttr = Attribute::find($attributeId);
         }
 
-        if (!$globalAttr) {
+        if (! $globalAttr) {
             $slug = Str::slug($cleanName);
             $globalAttr = Attribute::where('name', $cleanName)
                 ->orWhere('slug', $slug)
                 ->first();
         }
 
-        if (!$globalAttr) {
+        if (! $globalAttr) {
             $slug = Str::slug($cleanName);
             if (empty($slug)) {
                 $slug = 'attr-' . time() . '-' . Str::random(4);
@@ -69,7 +178,7 @@ class ProductAttributeService
             ]);
         } else {
             // Merge newly added values into the reusable global attribute
-            if (!empty($cleanOptions)) {
+            if (! empty($cleanOptions)) {
                 $globalAttr->mergeValues($cleanOptions);
             }
         }
@@ -97,16 +206,13 @@ class ProductAttributeService
             }
 
             $rawOptions = $attrData['options'] ?? [];
-            $options = is_array($rawOptions)
-                ? $rawOptions
-                : array_map('trim', explode(',', (string) $rawOptions));
-            $options = array_values(array_filter(array_map('trim', $options), fn ($o) => $o !== ''));
+            $options = $this->normalizeOptions($rawOptions);
 
             if (empty($options)) {
                 continue;
             }
 
-            $attrId = !empty($attrData['attribute_id']) ? (int) $attrData['attribute_id'] : null;
+            $attrId = ! empty($attrData['attribute_id']) ? (int) $attrData['attribute_id'] : null;
             $type = (string) ($attrData['type'] ?? 'button');
             $isVariation = array_key_exists('is_variation', $attrData)
                 ? (bool) $attrData['is_variation']
@@ -142,7 +248,7 @@ class ProductAttributeService
 
         // Check which variant IDs are referenced in orders
         $referencedVariantIds = [];
-        if (\Illuminate\Support\Facades\Schema::hasTable('shop_order_items') && \Illuminate\Support\Facades\Schema::hasColumn('shop_order_items', 'variant_id')) {
+        if (Schema::hasTable('shop_order_items') && Schema::hasColumn('shop_order_items', 'variant_id')) {
             $referencedVariantIds = DB::table('shop_order_items')
                 ->whereIn('variant_id', $existingVariants->pluck('id'))
                 ->pluck('variant_id')
@@ -160,15 +266,15 @@ class ProductAttributeService
                 : (json_decode($vData['attributes'] ?? '[]', true) ?: []);
 
             $vPrice = (int) ($vData['price'] ?? 0);
-            $vSalePrice = (!empty($vData['sale_price']) && is_numeric($vData['sale_price']))
+            $vSalePrice = (! empty($vData['sale_price']) && is_numeric($vData['sale_price']))
                 ? (int) $vData['sale_price']
                 : null;
-            $vSaleStartDate = !empty($vData['sale_start_date']) ? $vData['sale_start_date'] : null;
-            $vSaleEndDate = !empty($vData['sale_end_date']) ? $vData['sale_end_date'] : null;
+            $vSaleStartDate = ! empty($vData['sale_start_date']) ? $vData['sale_start_date'] : null;
+            $vSaleEndDate = ! empty($vData['sale_end_date']) ? $vData['sale_end_date'] : null;
             $vQty = (int) ($vData['qty'] ?? 0);
-            $vSku = !empty($vData['sku']) ? trim($vData['sku']) : null;
+            $vSku = ! empty($vData['sku']) ? trim($vData['sku']) : null;
             $isActive = array_key_exists('is_active', $vData) ? (bool) $vData['is_active'] : true;
-            $vCost = (!empty($vData['cost']) && is_numeric($vData['cost'])) ? (int) $vData['cost'] : null;
+            $vCost = (! empty($vData['cost']) && is_numeric($vData['cost'])) ? (int) $vData['cost'] : null;
 
             // Find an existing variant with matching attributes
             $matchedVariant = null;
@@ -177,6 +283,7 @@ class ProductAttributeService
             foreach ($existingVariants as $candidate) {
                 if ($this->buildCombinationKey($candidate->attributes ?? []) === $vAttrKey) {
                     $matchedVariant = $candidate;
+
                     break;
                 }
             }
@@ -223,7 +330,7 @@ class ProductAttributeService
 
         // Handle obsolete variants
         foreach ($existingVariants as $oldVariant) {
-            if (!in_array($oldVariant->id, $processedVariantIds)) {
+            if (! in_array($oldVariant->id, $processedVariantIds)) {
                 if (in_array($oldVariant->id, $referencedVariantIds)) {
                     // Do NOT delete variants linked to historical orders! Deactivate them safely.
                     $oldVariant->update(['is_active' => false]);
@@ -248,6 +355,18 @@ class ProductAttributeService
     protected function buildCombinationKey(array $attributes): string
     {
         ksort($attributes);
+
         return json_encode($attributes, JSON_UNESCAPED_UNICODE);
+    }
+
+    protected function normalizeOptions(mixed $options, bool $unique = false): array
+    {
+        $options = is_array($options)
+            ? $options
+            : explode(',', (string) $options);
+
+        $options = array_values(array_filter(array_map('trim', $options), fn ($option) => $option !== ''));
+
+        return $unique ? array_values(array_unique($options)) : $options;
     }
 }

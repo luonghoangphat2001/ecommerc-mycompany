@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Requests\Admin\MediaUploadRequest;
 use App\Models\Media;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -39,7 +39,7 @@ class MediaController extends BaseCrudController
 
         return view('admin.media.index', [
             'title' => 'Media',
-            'items' => $query->latest('id')->paginate(18)->withQueryString(),
+            'items' => $this->paginateIndex($query, 18),
             'fields' => $this->visibleFields('index'),
             'routePrefix' => $this->routePrefix(),
             'viewMode' => $viewMode,
@@ -71,12 +71,8 @@ class MediaController extends BaseCrudController
         ];
     }
 
-    public function upload(Request $request)
+    public function upload(MediaUploadRequest $request)
     {
-        $request->validate([
-            'file' => 'required|file|image|max:10240',
-        ]);
-
         $file = $request->file('file');
         $path = $file->store('uploads', 'public');
         $url = asset('storage/' . $path);
@@ -94,7 +90,7 @@ class MediaController extends BaseCrudController
                 'ext' => $file->getClientOriginalExtension(),
             ]);
         } catch (\Throwable $e) {
-            // Keep going even if media record insert has an issue
+            report($e);
         }
 
         return response()->json([

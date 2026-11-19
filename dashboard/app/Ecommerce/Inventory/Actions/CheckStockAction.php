@@ -2,23 +2,20 @@
 
 namespace App\Ecommerce\Inventory\Actions;
 
-use App\Models\Product;
-use Illuminate\Support\Facades\DB;
+use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
 
 class CheckStockAction
 {
+    public function __construct(protected ProductRepositoryInterface $productRepository) {}
+
     /**
      * Check stock availability for a given product across inventories.
-     *
-     * @param string $sku
-     * @param int $quantity
-     * @return bool
      */
     public function execute(string $sku, int $quantity): bool
     {
-        $product = Product::where('sku', $sku)->first();
+        $product = $this->productRepository->findBySku($sku);
 
-        if (!$product) {
+        if (! $product) {
             return false;
         }
 

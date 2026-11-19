@@ -25,7 +25,7 @@ class InventoryMovementController extends BaseCrudController
 
     protected function title(): string
     {
-        return app()->getLocale() === 'en' ? 'Inventory Movements' : 'Lịch sử biến động kho';
+        return $this->isEnglishLocale() ? 'Inventory Movements' : 'Lịch sử biến động kho';
     }
 
     protected function routePrefix(): string
@@ -35,24 +35,24 @@ class InventoryMovementController extends BaseCrudController
 
     protected function searchable(): array
     {
-        return ['reference_type'];
+        return ['movement_type'];
     }
 
     protected function indexQuery(Builder $query, Request $request): Builder
     {
         if ($warehouseId = $request->input('warehouse_id')) {
-            $query->where('warehouse_id', $warehouseId);
+            $query->whereHas('detail', fn ($detail) => $detail->where('warehouse_id', $warehouseId));
         }
-        if ($refType = $request->input('reference_type')) {
-            $query->where('reference_type', $refType);
+        if ($refType = $request->input('movement_type')) {
+            $query->where('movement_type', $refType);
         }
 
-        return $query->with(['product', 'warehouse'])->latest('id');
+        return $query->with(['detail.product', 'detail.warehouse'])->latest('id');
     }
 
     protected function filters(): array
     {
-        $isEn = app()->getLocale() === 'en';
+        $isEn = $this->isEnglishLocale();
 
         return [
             'warehouse_id' => [
@@ -60,7 +60,7 @@ class InventoryMovementController extends BaseCrudController
                 'type' => 'select',
                 'options' => Inventory::orderBy('name')->pluck('name', 'id')->toArray(),
             ],
-            'reference_type' => [
+            'movement_type' => [
                 'label' => $isEn ? 'Movement Type' : 'Loại biến động',
                 'type' => 'select',
                 'options' => $this->referenceTypeOptions(),
@@ -85,7 +85,7 @@ class InventoryMovementController extends BaseCrudController
 
     protected function fields(): array
     {
-        $isEn = app()->getLocale() === 'en';
+        $isEn = $this->isEnglishLocale();
 
         return [
             'product_display' => [
@@ -98,7 +98,7 @@ class InventoryMovementController extends BaseCrudController
                 'tableOnly' => true,
                 'virtual' => true,
             ],
-            'reference_type' => [
+            'movement_type' => [
                 'label' => $isEn ? 'Movement Type' : 'Loại biến động',
                 'type' => 'select',
                 'options' => $this->referenceTypeOptions(),
@@ -125,7 +125,7 @@ class InventoryMovementController extends BaseCrudController
 
     private function referenceTypeOptions(): array
     {
-        if (app()->getLocale() === 'en') {
+        if ($this->isEnglishLocale()) {
             return [
                 'inbound_shipment' => 'Inbound Shipment',
                 'transfer_out' => 'Transfer Out',

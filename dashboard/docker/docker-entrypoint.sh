@@ -18,15 +18,9 @@ mkdir -p /var/www/html/storage/framework/cache/data \
          /var/www/html/bootstrap/cache \
          /var/www/html/database
 
-# Ensure SQLite file exists if SQLite is used
-if [ ! -f /var/www/html/database/database.sqlite ]; then
-    touch /var/www/html/database/database.sqlite
-fi
-
-# Set permissions for storage, cache, and sqlite database
+# Set permissions for storage and cache
 chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
 chmod 777 /var/www/html/database 2>/dev/null || true
-chmod 666 /var/www/html/database/database.sqlite 2>/dev/null || true
 
 # Install dependencies if vendor is missing
 if [ ! -f /var/www/html/vendor/autoload.php ]; then

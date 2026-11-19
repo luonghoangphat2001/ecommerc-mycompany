@@ -2,13 +2,23 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Workspace\Services\LogisticsService;
 use App\Enums\PurchaseOrderStatus;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
+use App\Http\Controllers\Admin\Traits\HasPermissionedServiceCrudActions;
 use App\Models\DepartmentPurchaseOrder;
-use Illuminate\Http\Request;
 
 class DepartmentPurchaseOrderController extends BaseCrudController
 {
+    use HasAdminSelectOptions;
+    use HasPermissionedServiceCrudActions;
+
+    public function __construct(private readonly LogisticsService $logisticsService)
+    {
+        parent::__construct();
+    }
+
     protected function modelClass(): string
     {
         return DepartmentPurchaseOrder::class;
@@ -36,7 +46,7 @@ class DepartmentPurchaseOrderController extends BaseCrudController
                 'label' => 'Phòng ban',
                 'type' => 'select',
                 'rules' => ['required', 'exists:departments,id'],
-                'options' => \App\Models\Department::pluck('name', 'id')->toArray(),
+                'options' => $this->departmentOptions(),
             ],
             'po_number' => [
                 'label' => 'Mã PO',
@@ -65,43 +75,23 @@ class DepartmentPurchaseOrderController extends BaseCrudController
         ];
     }
 
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    protected function crudService(): object
     {
-        if (!$this->hasPermission('create')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $logisticsService = app(\App\Ecommerce\Workspace\Services\LogisticsService::class);
-        $logisticsService->createPO($validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Tạo mới thành công.');
+        return $this->logisticsService;
     }
 
-    public function update(Request $request, int $id): \Illuminate\Http\RedirectResponse
+    protected function createServiceMethod(): string
     {
-        if (!$this->hasPermission('update')) {
-            abort(403);
-        }
-
-        $validated = $this->validateRequest($request);
-        
-        $logisticsService = app(\App\Ecommerce\Workspace\Services\LogisticsService::class);
-        $logisticsService->updatePO($id, $validated);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Cập nhật thành công.');
+        return 'createPO';
     }
 
-    public function destroy(int $id): \Illuminate\Http\RedirectResponse
+    protected function updateServiceMethod(): string
     {
-        if (!$this->hasPermission('delete')) {
-            abort(403);
-        }
+        return 'updatePO';
+    }
 
-        $logisticsService = app(\App\Ecommerce\Workspace\Services\LogisticsService::class);
-        $logisticsService->deletePO($id);
-
-        return redirect()->route($this->routePrefix() . '.index')->with('success', 'Xóa thành công.');
+    protected function deleteServiceMethod(): string
+    {
+        return 'deletePO';
     }
 }

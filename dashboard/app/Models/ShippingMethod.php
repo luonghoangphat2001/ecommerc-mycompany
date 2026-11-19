@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ShippingMethodType;
+use App\Support\Localization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Translatable\HasTranslations;
@@ -24,7 +26,7 @@ class ShippingMethod extends Model
     ];
 
     protected $casts = [
-        'type' => \App\Enums\ShippingMethodType::class,
+        'type' => ShippingMethodType::class,
         'settings' => 'array',
         'is_enabled' => 'boolean',
     ];
@@ -38,8 +40,7 @@ class ShippingMethod extends Model
     {
         $desc = $this->settings['description'] ?? null;
         if (is_array($desc)) {
-            $locale = app()->getLocale();
-            return $desc[$locale] ?? $desc['vi'] ?? $desc['en'] ?? reset($desc) ?: null;
+            return Localization::value($desc);
         }
 
         return is_string($desc) ? $desc : null;

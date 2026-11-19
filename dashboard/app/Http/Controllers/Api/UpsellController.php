@@ -22,17 +22,19 @@ class UpsellController extends BaseApiController
     #[ApiList(
         path: '/products/{productId}/upsells',
         summary: 'List Upsells for Product',
-        tags: 'Storefront - Upsells',
+        tags: 'Upsells',
         requiresAuth: false,
         parameters: [
             new OAT\Parameter(name: 'productId', in: 'path', required: true, schema: new OAT\Schema(type: 'integer', example: 1), description: 'Original Product ID')
         ],
         responseData: '#/components/schemas/UpsellResource'
     )]
+
+
     public function index(int $productId): JsonResponse
     {
         $upsells = $this->upsellService->getUpsellsForProduct($productId);
-        
+
         return $this->ok(UpsellResource::collection($upsells));
     }
 }

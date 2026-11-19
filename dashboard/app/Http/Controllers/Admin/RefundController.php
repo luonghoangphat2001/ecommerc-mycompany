@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Models\OrderRefund;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class RefundController extends BaseCrudController
 {
@@ -36,14 +38,14 @@ class RefundController extends BaseCrudController
         ];
     }
 
-    public function index(\Illuminate\Http\Request $request): \Illuminate\View\View
+    public function index(Request $request): View
     {
         $query = OrderRefund::with(['order.user']);
-        
+
         // Search
         $this->applySearch($query, $request);
 
-        $items = $query->latest('id')->paginate(15)->withQueryString();
+        $items = $this->paginateIndex($query);
 
         return view('admin.refunds.index', [
             'title' => __($this->title()),

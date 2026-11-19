@@ -29,7 +29,7 @@
                 <select id="perm-role-filter" class="perm-role-select" title="Lọc và kiểm tra quyền theo vai trò">
                     <option value="">-- Tất cả vai trò (Audit) --</option>
                     @foreach ($roles as $r)
-                        <option value="{{ $r->name }}">{{ \App\Support\AdminLabel::role($r->name) }} ({{ $r->name }})</option>
+                        <option value="{{ $r->name }}">{{ \App\Support\Admin::roleLabel($r->name) }} ({{ $r->name }})</option>
                     @endforeach
                 </select>
 
@@ -140,7 +140,7 @@
                                     @if (!empty($mod['roles']))
                                         <div class="acl-roles-group">
                                             @foreach ($mod['roles'] as $r)
-                                                <span class="acl-role-pill {{ $r === 'super_admin' ? 'super' : '' }}">{{ \App\Support\AdminLabel::role($r) }}</span>
+                                                <span class="acl-role-pill {{ $r === 'super_admin' ? 'super' : '' }}">{{ \App\Support\Admin::roleLabel($r) }}</span>
                                             @endforeach
                                         </div>
                                     @else

@@ -7,18 +7,18 @@
     },
     "servers": [
         {
-            "url": "http://127.0.0.1:8000",
+            "url": "http://localhost:8009",
             "description": "Primary API Server"
         }
     ],
     "paths": {
-        "/api/v1/storefront/addresses/countries": {
+        "/api/v1/addresses/countries": {
             "get": {
                 "tags": [
-                    "Storefront - Address"
+                    "Address"
                 ],
                 "summary": "List of Countries",
-                "operationId": "9e9c96aa92845c9b8ab5db03e13a364b",
+                "operationId": "0e75bbf1edae22c138d66e0487843511",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -87,13 +87,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/addresses/countries/{countryCode}/states": {
+        "/api/v1/addresses/countries/{countryCode}/states": {
             "get": {
                 "tags": [
-                    "Storefront - Address"
+                    "Address"
                 ],
                 "summary": "List of States by Country",
-                "operationId": "e27128002557a902a2edb75a456adac5",
+                "operationId": "84f0d4f2fa7c1d1476b467bb113d0c42",
                 "parameters": [
                     {
                         "name": "countryCode",
@@ -174,13 +174,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/addresses/countries/{countryCode}/states/{stateId}/regions": {
+        "/api/v1/addresses/countries/{countryCode}/states/{stateId}/regions": {
             "get": {
                 "tags": [
-                    "Storefront - Address"
+                    "Address"
                 ],
                 "summary": "List of Regions by State",
-                "operationId": "706aa33a6503c3af6c4b6bc4bd233678",
+                "operationId": "176ea2736143db2269227a9e4983a6c0",
                 "parameters": [
                     {
                         "name": "countryCode",
@@ -271,13 +271,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/addresses/countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions": {
+        "/api/v1/addresses/countries/{countryCode}/states/{stateId}/regions/{regionId}/sub-regions": {
             "get": {
                 "tags": [
-                    "Storefront - Address"
+                    "Address"
                 ],
                 "summary": "List of Sub-Regions by Region",
-                "operationId": "15b430873069dd2e01fe4feec5643176",
+                "operationId": "a280bb3ff5fc6268439b8eca538df602",
                 "parameters": [
                     {
                         "name": "countryCode",
@@ -378,13 +378,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/user-addresses": {
+        "/api/v1/user-addresses": {
             "get": {
                 "tags": [
-                    "Storefront - User Address"
+                    "User Address"
                 ],
                 "summary": "List of User Addresses",
-                "operationId": "e436aab4294dc25bc3b0ff3dd3e31f3b",
+                "operationId": "24b61e9adc63c22870c0ebf69707b551",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -478,10 +478,10 @@
             },
             "post": {
                 "tags": [
-                    "Storefront - User Address"
+                    "User Address"
                 ],
                 "summary": "Add New Address",
-                "operationId": "ee7052c4a29ab729d93b5f1d3829f947",
+                "operationId": "b4ce5399eead9bf18905c6bb19d498f2",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -662,13 +662,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/user-addresses/{address}": {
+        "/api/v1/user-addresses/{address}": {
             "put": {
                 "tags": [
-                    "Storefront - User Address"
+                    "User Address"
                 ],
                 "summary": "Update Address",
-                "operationId": "b93127c61a7c8bea28aad4455c1b29a9",
+                "operationId": "dc40367419d18f4d3f875b40d657b250",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -843,10 +843,10 @@
             },
             "delete": {
                 "tags": [
-                    "Storefront - User Address"
+                    "User Address"
                 ],
                 "summary": "Delete Address",
-                "operationId": "e9ccd429f3afb4ce839fb6c6c09afbb7",
+                "operationId": "73c19a14848dc5242799cb6ce4378864",
                 "parameters": [
                     {
                         "name": "address",
@@ -930,13 +930,388 @@
                 ]
             }
         },
-        "/api/v1/storefront/auth/login": {
+        "/api/v1/attributes": {
+            "get": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "List of Global Attributes",
+                "operationId": "6169302bc2163b9f3c11df1e9d80ba55",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number (default: 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list of items",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AttributeResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "$ref": "#/components/schemas/PaginationLinks"
+                                        },
+                                        "meta": {
+                                            "$ref": "#/components/schemas/PaginationMeta"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UnauthorizedErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            },
             "post": {
                 "tags": [
-                    "Storefront - Authentication"
+                    "Attributes"
+                ],
+                "summary": "Create Global Attribute",
+                "operationId": "50dcf21178ac204ad2d37aea18157383",
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Created successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UnauthorizedErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/attributes/{id}": {
+            "get": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Get Attribute by ID",
+                "operationId": "bddd86e7d274ac5f9175e5cf80115038",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/AttributeResource"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UnauthorizedErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotFoundErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            },
+            "put": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Update Global Attribute",
+                "operationId": "202e35258e910f124406a2ed16c55785",
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UnauthorizedErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotFoundErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Delete Global Attribute",
+                "operationId": "11c4f6a56f4788caaaaf83e3a9fd1177",
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Deleted successfully (No Content)"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UnauthorizedErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotFoundErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
                 ],
                 "summary": "Storefront Login",
-                "operationId": "c3d00ce9260b0ed68439aa13e373060e",
+                "operationId": "fb66b153966d9fac2e999136ef0ade67",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -983,7 +1358,7 @@
                                             "properties": {
                                                 "access_token": {
                                                     "type": "string",
-                                                    "example": "1|xyz..."
+                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.signature"
                                                 },
                                                 "token_type": {
                                                     "type": "string",
@@ -991,23 +1366,104 @@
                                                 },
                                                 "expires_in": {
                                                     "type": "integer",
-                                                    "example": 3600
+                                                    "example": 900
                                                 },
                                                 "user": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 1
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "John Doe"
-                                                        },
-                                                        "email": {
-                                                            "type": "string",
-                                                            "example": "customer@example.com"
-                                                        }
-                                                    },
+                                                    "$ref": "#/components/schemas/UserResource"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Created successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UnauthorizedErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ServerErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/v1/auth/refresh-token": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Refresh Access Token",
+                "operationId": "e7effffad81d43535c7bad0b99aac84e",
+                "requestBody": {
+                    "required": false
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "access_token": {
+                                                    "type": "string",
+                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.signature"
+                                                },
+                                                "token_type": {
+                                                    "type": "string",
+                                                    "example": "Bearer"
+                                                },
+                                                "expires_in": {
+                                                    "type": "integer",
+                                                    "example": 900
+                                                },
+                                                "user": {
                                                     "type": "object"
                                                 }
                                             },
@@ -1067,13 +1523,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/auth/logout": {
+        "/api/v1/auth/logout": {
             "post": {
                 "tags": [
-                    "Storefront - Authentication"
+                    "Authentication"
                 ],
                 "summary": "Logout",
-                "operationId": "2c96da0fbb424babb22599256f1d695a",
+                "operationId": "307ed0512855922b2280792376bb2095",
                 "responses": {
                     "201": {
                         "description": "Created successfully",
@@ -1146,13 +1602,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/profile": {
+        "/api/v1/profile": {
             "put": {
                 "tags": [
-                    "Storefront - Authentication"
+                    "Authentication"
                 ],
                 "summary": "Update Profile",
-                "operationId": "42abf7ae211a1ff57200d1b431c6cb31",
+                "operationId": "6d255c691abf88d993b6ab831ccec25d",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1195,36 +1651,7 @@
                                             "example": true
                                         },
                                         "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "name": {
-                                                    "type": "string",
-                                                    "example": "John Doe"
-                                                },
-                                                "email": {
-                                                    "type": "string",
-                                                    "example": "customer@example.com"
-                                                },
-                                                "phone": {
-                                                    "type": "string",
-                                                    "example": "0123456789",
-                                                    "nullable": true
-                                                },
-                                                "default_shipping_address_id": {
-                                                    "type": "integer",
-                                                    "example": 1,
-                                                    "nullable": true
-                                                },
-                                                "default_billing_address_id": {
-                                                    "type": "integer",
-                                                    "example": 2,
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
+                                            "$ref": "#/components/schemas/UserResource"
                                         },
                                         "message": {
                                             "type": "string",
@@ -1284,13 +1711,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/brands": {
+        "/api/v1/brands": {
             "get": {
                 "tags": [
-                    "Storefront - Brands"
+                    "Brands"
                 ],
                 "summary": "List of Brands",
-                "operationId": "cfc179b1bf6f5ed8c8ae5f9e42b85931",
+                "operationId": "41ee8c5ca737e71782e6d058a4c4a36f",
                 "parameters": [
                     {
                         "name": "page",
@@ -1371,10 +1798,10 @@
             },
             "post": {
                 "tags": [
-                    "Storefront - Brands"
+                    "Brands"
                 ],
                 "summary": "Create Brand",
-                "operationId": "1c049dd06161b87e7c098232c622a0ed",
+                "operationId": "ee7e7f8fcd9a6991653c61e4570359b7",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1480,13 +1907,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/brands/{brand}": {
+        "/api/v1/brands/{brand}": {
             "get": {
                 "tags": [
-                    "Storefront - Brands"
+                    "Brands"
                 ],
                 "summary": "Brand Details",
-                "operationId": "b98db1cbf87fd57c944009a91a47b954",
+                "operationId": "19733754f5362552de76e50f0160166a",
                 "parameters": [
                     {
                         "name": "brand",
@@ -1558,10 +1985,10 @@
             },
             "put": {
                 "tags": [
-                    "Storefront - Brands"
+                    "Brands"
                 ],
                 "summary": "Update Brand",
-                "operationId": "24760249427391dd0ef3028068603255",
+                "operationId": "d150c02e7b85f9406804d7e3f6281824",
                 "parameters": [
                     {
                         "name": "brand",
@@ -1676,10 +2103,10 @@
             },
             "delete": {
                 "tags": [
-                    "Storefront - Brands"
+                    "Brands"
                 ],
                 "summary": "Delete Brand",
-                "operationId": "935164163ffc3a66a7c5293d3251af86",
+                "operationId": "522ee6c27bebdc9597fae34639fad0a5",
                 "parameters": [
                     {
                         "name": "brand",
@@ -1757,13 +2184,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/cart": {
+        "/api/v1/cart": {
             "post": {
                 "tags": [
-                    "Storefront - Cart"
+                    "Cart"
                 ],
                 "summary": "Get Cart Information",
-                "operationId": "8b948a32e240866388391193ecc7b7f8",
+                "operationId": "ab7b89747a46a9ae964f7cf0d84bcdc5",
                 "requestBody": {
                     "required": false,
                     "content": {
@@ -1898,10 +2325,10 @@
             },
             "delete": {
                 "tags": [
-                    "Storefront - Cart"
+                    "Cart"
                 ],
                 "summary": "Clear Cart",
-                "operationId": "a6689801bcb00174f74a522f12a3d237",
+                "operationId": "04b1d3cc7ae99bb87fedc6fb97b30908",
                 "responses": {
                     "200": {
                         "description": "Deleted successfully",
@@ -1969,13 +2396,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/cart/sync": {
+        "/api/v1/cart/sync": {
             "post": {
                 "tags": [
-                    "Storefront - Cart"
+                    "Cart"
                 ],
                 "summary": "Sync Cart",
-                "operationId": "a0e92cf7306ffafd2afe1ca626f48fd3",
+                "operationId": "fffb20f03d4864692ca1101090c17d00",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2109,13 +2536,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/cart/items": {
+        "/api/v1/cart/items": {
             "post": {
                 "tags": [
-                    "Storefront - Cart"
+                    "Cart"
                 ],
                 "summary": "Add Item to Cart",
-                "operationId": "bb219d4cedf0e6b34cfc512bd99c2938",
+                "operationId": "74026a355fc7660c73027713706dce92",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2236,13 +2663,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/cart/items/{itemId}": {
+        "/api/v1/cart/items/{itemId}": {
             "put": {
                 "tags": [
-                    "Storefront - Cart"
+                    "Cart"
                 ],
                 "summary": "Update Item Quantity",
-                "operationId": "931d1f747ff75f285c0f633c2edef856",
+                "operationId": "7c60baa0fc0e4a3f3dc9f29b407187fe",
                 "parameters": [
                     {
                         "name": "itemId",
@@ -2357,10 +2784,10 @@
             },
             "delete": {
                 "tags": [
-                    "Storefront - Cart"
+                    "Cart"
                 ],
                 "summary": "Remove Item from Cart",
-                "operationId": "e6c33ab2cd7faffb3215106a51dddd7b",
+                "operationId": "a55b9d660d126a4b4ec6c1aae613eea4",
                 "parameters": [
                     {
                         "name": "itemId",
@@ -2440,13 +2867,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/cart/shipping-methods": {
+        "/api/v1/cart/shipping-methods": {
             "post": {
                 "tags": [
-                    "Storefront - Cart"
+                    "Cart"
                 ],
                 "summary": "Get Shipping Methods",
-                "operationId": "f84a19da421f266f953c0b9d8c10cb94",
+                "operationId": "c212838604ef7acc23b4f2f47d1a938d",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2564,13 +2991,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/combos": {
+        "/api/v1/combos": {
             "get": {
                 "tags": [
-                    "Storefront - Combos"
+                    "Combos"
                 ],
                 "summary": "List of Combos",
-                "operationId": "dfd1ab28f6270b94ab24aa0e0a31e642",
+                "operationId": "7c9ae2c5ad3552d00b60daf6a65c34b5",
                 "parameters": [
                     {
                         "name": "page",
@@ -2650,13 +3077,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/combos/{slug}": {
+        "/api/v1/combos/{slug}": {
             "get": {
                 "tags": [
-                    "Storefront - Combos"
+                    "Combos"
                 ],
                 "summary": "Combo Details",
-                "operationId": "e2082b1bd36537573924dfae372ce97e",
+                "operationId": "95f0276afa90203628264c355d8eb6d7",
                 "parameters": [
                     {
                         "name": "slug",
@@ -2727,13 +3154,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/coupons/apply": {
+        "/api/v1/coupons/apply": {
             "post": {
                 "tags": [
-                    "Storefront - Coupons"
+                    "Coupons"
                 ],
                 "summary": "Apply Coupon",
-                "operationId": "2a9866ee5fcd2771a8f610a337da3440",
+                "operationId": "acd68b67b817c20655d076768252570b",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2853,13 +3280,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/products/{productId}/cross-sells": {
+        "/api/v1/products/{productId}/cross-sells": {
             "get": {
                 "tags": [
-                    "Storefront - Cross-sells"
+                    "Cross-sells"
                 ],
                 "summary": "List Cross-sells for Product",
-                "operationId": "7824784435da5d9e4ffd08d1a5f4402a",
+                "operationId": "0b744766f0cbffdce274196b8b10bfda",
                 "parameters": [
                     {
                         "name": "page",
@@ -2949,13 +3376,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/user/loyalty/points": {
+        "/api/v1/user/loyalty/points": {
             "get": {
                 "tags": [
-                    "Storefront - Loyalty"
+                    "Loyalty"
                 ],
                 "summary": "Get User Loyalty Points",
-                "operationId": "bbcf40401996dbe05532392414d5f4f0",
+                "operationId": "8f2d8876ec4401891b9021e3a73c7d08",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -3041,13 +3468,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/user/loyalty/history": {
+        "/api/v1/user/loyalty/history": {
             "get": {
                 "tags": [
-                    "Storefront - Loyalty"
+                    "Loyalty"
                 ],
                 "summary": "Loyalty Points History",
-                "operationId": "898ecf324c5742fd4049ab05d0b05be4",
+                "operationId": "b9723651ced32b0ce4578951bce1bdd4",
                 "parameters": [
                     {
                         "name": "page",
@@ -3159,13 +3586,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/menus": {
+        "/api/v1/menus": {
             "get": {
                 "tags": [
-                    "Storefront - Menus"
+                    "Menus"
                 ],
                 "summary": "List of Menus",
-                "operationId": "09ff234aef19bc4695efa3c1cb490d44",
+                "operationId": "4a72ea527c1ae0a0c965c27b8f6471ce",
                 "parameters": [
                     {
                         "name": "page",
@@ -3245,13 +3672,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/menus/{slug}": {
+        "/api/v1/menus/{slug}": {
             "get": {
                 "tags": [
-                    "Storefront - Menus"
+                    "Menus"
                 ],
                 "summary": "Menu Details (by Slug)",
-                "operationId": "632180fc1012c2f4dc4b38906af3c396",
+                "operationId": "82d95e40b985fd0aa2001cf463935dfc",
                 "parameters": [
                     {
                         "name": "slug",
@@ -3322,13 +3749,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/orders": {
+        "/api/v1/orders": {
             "get": {
                 "tags": [
-                    "Storefront - Orders"
+                    "Orders"
                 ],
                 "summary": "List of User Orders",
-                "operationId": "f0caceb419e29e803555f65b9a30a54e",
+                "operationId": "6390e58970c6b576bd8c1ec198cb5fbb",
                 "parameters": [
                     {
                         "name": "page",
@@ -3413,10 +3840,10 @@
             },
             "post": {
                 "tags": [
-                    "Storefront - Orders"
+                    "Orders"
                 ],
                 "summary": "Create New Order",
-                "operationId": "b99e4895349f8a95b64e4a0ebc469057",
+                "operationId": "8cb746eb001b58ac915930ba43cfdf0d",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -3565,13 +3992,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/orders/{order}": {
+        "/api/v1/orders/{order}": {
             "get": {
                 "tags": [
-                    "Storefront - Orders"
+                    "Orders"
                 ],
                 "summary": "Order Details",
-                "operationId": "395580f900dec5473cc06da3df062861",
+                "operationId": "29e4676537faf0c969a79eb39e944a39",
                 "parameters": [
                     {
                         "name": "order",
@@ -3647,10 +4074,10 @@
             },
             "put": {
                 "tags": [
-                    "Storefront - Orders"
+                    "Orders"
                 ],
                 "summary": "Update Order Status/Notes",
-                "operationId": "bfbc5fc195ad949567033c253ceed2d3",
+                "operationId": "ace1bfedfde36a3969443a23b40d5216",
                 "parameters": [
                     {
                         "name": "order",
@@ -3756,10 +4183,10 @@
             },
             "delete": {
                 "tags": [
-                    "Storefront - Orders"
+                    "Orders"
                 ],
                 "summary": "Delete Order (Cancel)",
-                "operationId": "b87783d731a08eccac837713452fa81a",
+                "operationId": "08f6194f3f8ed73ee851c2fc5e20730d",
                 "parameters": [
                     {
                         "name": "order",
@@ -3837,13 +4264,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/pages": {
+        "/api/v1/pages": {
             "get": {
                 "tags": [
-                    "Storefront - Pages"
+                    "Pages"
                 ],
                 "summary": "List of Pages",
-                "operationId": "0c17c15acc9377588d36e928f78df096",
+                "operationId": "e9a4e64163e698ee9f46326a9748e00f",
                 "parameters": [
                     {
                         "name": "page",
@@ -3924,10 +4351,10 @@
             },
             "post": {
                 "tags": [
-                    "Storefront - Pages"
+                    "Pages"
                 ],
                 "summary": "Create Page",
-                "operationId": "a3a58e740ade1d0e1a8ee4d7497f6b2f",
+                "operationId": "9cc33c499eca197350dd48cb7e087f78",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -4033,13 +4460,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/pages/{page}": {
+        "/api/v1/pages/{page}": {
             "get": {
                 "tags": [
-                    "Storefront - Pages"
+                    "Pages"
                 ],
                 "summary": "Page Details",
-                "operationId": "be9f50fb6b09e2b2629bea7a04b08061",
+                "operationId": "4137e39e121fb91c9729e10389f4a1fe",
                 "parameters": [
                     {
                         "name": "page",
@@ -4111,10 +4538,10 @@
             },
             "put": {
                 "tags": [
-                    "Storefront - Pages"
+                    "Pages"
                 ],
                 "summary": "Update Page",
-                "operationId": "09a073d7627dc97d85962f2bb14677c5",
+                "operationId": "116946dd0881c39af4ff51fa23f2727b",
                 "parameters": [
                     {
                         "name": "page",
@@ -4216,10 +4643,10 @@
             },
             "delete": {
                 "tags": [
-                    "Storefront - Pages"
+                    "Pages"
                 ],
                 "summary": "Delete Page",
-                "operationId": "026abef487cd47342909bd9927d3a991",
+                "operationId": "15096464f1ac020fce9edd52f79b1479",
                 "parameters": [
                     {
                         "name": "page",
@@ -4297,13 +4724,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/post-categories": {
+        "/api/v1/post-categories": {
             "get": {
                 "tags": [
-                    "Storefront - Post Categories"
+                    "Post Categories"
                 ],
                 "summary": "List of Post Categories",
-                "operationId": "e54f2b2a933bb33f6d5200d0dbd03807",
+                "operationId": "0632bfe348941ed8e342923d82ba1faa",
                 "parameters": [
                     {
                         "name": "page",
@@ -4384,10 +4811,10 @@
             },
             "post": {
                 "tags": [
-                    "Storefront - Post Categories"
+                    "Post Categories"
                 ],
                 "summary": "Create Post Category",
-                "operationId": "2eab9fa55c91908f52a42aefb3919ddb",
+                "operationId": "53aa573c3729a24bd5831db616602910",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -4488,13 +4915,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/post-categories/{postCategory}": {
+        "/api/v1/post-categories/{postCategory}": {
             "get": {
                 "tags": [
-                    "Storefront - Post Categories"
+                    "Post Categories"
                 ],
                 "summary": "Post Category Details",
-                "operationId": "c722eda62d09120b989c8a97f0129b80",
+                "operationId": "d432c7a649efcab51b7b1bce06fe5a68",
                 "parameters": [
                     {
                         "name": "postCategory",
@@ -4566,10 +4993,10 @@
             },
             "put": {
                 "tags": [
-                    "Storefront - Post Categories"
+                    "Post Categories"
                 ],
                 "summary": "Update Post Category",
-                "operationId": "4063c29259491a6e22520ae585793f42",
+                "operationId": "4ad72ee7dac080cd7e2513b626300d35",
                 "parameters": [
                     {
                         "name": "postCategory",
@@ -4671,10 +5098,10 @@
             },
             "delete": {
                 "tags": [
-                    "Storefront - Post Categories"
+                    "Post Categories"
                 ],
                 "summary": "Delete Post Category",
-                "operationId": "8fa241c14a2597451d57e870a9b51f06",
+                "operationId": "8101ec3094faf615a9703cfd3a877609",
                 "parameters": [
                     {
                         "name": "postCategory",
@@ -4752,13 +5179,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/post-categories/{postCategory}/posts": {
+        "/api/v1/post-categories/{postCategory}/posts": {
             "get": {
                 "tags": [
-                    "Storefront - Post Categories"
+                    "Post Categories"
                 ],
                 "summary": "List of Posts in Category",
-                "operationId": "221538f4f387d0705b3b5e012af579b7",
+                "operationId": "8f76e1bbd8c89cd040a80e167991a57d",
                 "parameters": [
                     {
                         "name": "page",
@@ -4848,13 +5275,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/posts": {
+        "/api/v1/posts": {
             "get": {
                 "tags": [
-                    "Storefront - Posts"
+                    "Posts"
                 ],
                 "summary": "List of Posts",
-                "operationId": "e7394b71a5dcb0f385507c712b042f37",
+                "operationId": "92f08c82044f01535382e3f0785785b0",
                 "parameters": [
                     {
                         "name": "page",
@@ -4935,10 +5362,10 @@
             },
             "post": {
                 "tags": [
-                    "Storefront - Posts"
+                    "Posts"
                 ],
                 "summary": "Create Post",
-                "operationId": "ea0ff024c9e9ac350df619a14e436bd3",
+                "operationId": "c599878a9a0c89930a40d45748861909",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -5044,13 +5471,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/posts/{post}": {
+        "/api/v1/posts/{post}": {
             "get": {
                 "tags": [
-                    "Storefront - Posts"
+                    "Posts"
                 ],
                 "summary": "Post Details",
-                "operationId": "71532f15d646ba54f8fd0643664c7bd2",
+                "operationId": "f3d80e0d70e9871e01263372f9bc37e0",
                 "parameters": [
                     {
                         "name": "post",
@@ -5122,10 +5549,10 @@
             },
             "put": {
                 "tags": [
-                    "Storefront - Posts"
+                    "Posts"
                 ],
                 "summary": "Update Post",
-                "operationId": "95e003348b71abd7f16dac88119c397c",
+                "operationId": "0e51d4670cc69b6ea71dcb917e921db6",
                 "parameters": [
                     {
                         "name": "post",
@@ -5231,10 +5658,10 @@
             },
             "delete": {
                 "tags": [
-                    "Storefront - Posts"
+                    "Posts"
                 ],
                 "summary": "Delete Post",
-                "operationId": "8c13c79e655d0edf7b99ed430a6e5ac8",
+                "operationId": "cde7bbf0832160a915191934f0664046",
                 "parameters": [
                     {
                         "name": "post",
@@ -5312,13 +5739,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/product-categories": {
+        "/api/v1/product-categories": {
             "get": {
                 "tags": [
-                    "Storefront - Product Categories"
+                    "Product Categories"
                 ],
                 "summary": "List of Product Categories",
-                "operationId": "ec976f3e52eafe0c5b4b08c4d2e6327e",
+                "operationId": "f22384f48c66117d0254d2c3f08fe312",
                 "parameters": [
                     {
                         "name": "page",
@@ -5399,10 +5826,10 @@
             },
             "post": {
                 "tags": [
-                    "Storefront - Product Categories"
+                    "Product Categories"
                 ],
                 "summary": "Create Product Category",
-                "operationId": "de6bb75fd259a1155398c5ed0533d11e",
+                "operationId": "e03eaeaf2172309270cac4a2eb99ccb8",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -5508,13 +5935,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/product-categories/{productCategory}": {
+        "/api/v1/product-categories/{productCategory}": {
             "get": {
                 "tags": [
-                    "Storefront - Product Categories"
+                    "Product Categories"
                 ],
                 "summary": "Product Category Details",
-                "operationId": "7e5c056b0df01457549d1ba423ecd1e8",
+                "operationId": "bb0f51515a44b01e3c2a47a2e44acf89",
                 "parameters": [
                     {
                         "name": "productCategory",
@@ -5586,10 +6013,10 @@
             },
             "put": {
                 "tags": [
-                    "Storefront - Product Categories"
+                    "Product Categories"
                 ],
                 "summary": "Update Product Category",
-                "operationId": "862111035472d4ee7596d2655a5e24cf",
+                "operationId": "f2086b58e95efffad80058cf4fd94bda",
                 "parameters": [
                     {
                         "name": "productCategory",
@@ -5704,10 +6131,10 @@
             },
             "delete": {
                 "tags": [
-                    "Storefront - Product Categories"
+                    "Product Categories"
                 ],
                 "summary": "Delete Product Category",
-                "operationId": "7f28b840948062d8c7ef97fbc5e3ff83",
+                "operationId": "3e3093d7194c3bd363e249cbf2138906",
                 "parameters": [
                     {
                         "name": "productCategory",
@@ -5785,13 +6212,13 @@
                 ]
             }
         },
-        "/api/v1/storefront/products": {
+        "/api/v1/products": {
             "get": {
                 "tags": [
-                    "Storefront - Products"
+                    "Products"
                 ],
                 "summary": "List of Products",
-                "operationId": "f0ef2455e6308adf0e077efe3d6d1f9a",
+                "operationId": "072fd15d3be55577bb08c19d19f1e75c",
                 "parameters": [
                     {
                         "name": "page",
@@ -5911,13 +6338,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/products/by-slug/{slug}": {
+        "/api/v1/products/by-slug/{slug}": {
             "get": {
                 "tags": [
-                    "Storefront - Products"
+                    "Products"
                 ],
                 "summary": "Product Details (by Slug)",
-                "operationId": "5404e3640549c861c8bfbc3ffc8ebe91",
+                "operationId": "12215f8f69aa13faf92641e0ceaed485",
                 "parameters": [
                     {
                         "name": "slug",
@@ -5988,13 +6415,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/products/{product}": {
+        "/api/v1/products/{product}": {
             "get": {
                 "tags": [
-                    "Storefront - Products"
+                    "Products"
                 ],
                 "summary": "Product Details (by ID)",
-                "operationId": "62a1d6979ded55349cd4cc972bf8a3e3",
+                "operationId": "0cfb1994ca6b44b2da2f0a0347291a8c",
                 "parameters": [
                     {
                         "name": "product",
@@ -6065,13 +6492,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/settings": {
+        "/api/v1/settings": {
             "get": {
                 "tags": [
-                    "Storefront - Settings"
+                    "Settings"
                 ],
                 "summary": "Get Storefront Settings",
-                "operationId": "6ef92c75028566572157c4d41f12a49e",
+                "operationId": "906fb6de642f352d91c68a0b5dc8ba96",
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -6141,13 +6568,13 @@
                 "security": []
             }
         },
-        "/api/v1/storefront/products/{productId}/upsells": {
+        "/api/v1/products/{productId}/upsells": {
             "get": {
                 "tags": [
-                    "Storefront - Upsells"
+                    "Upsells"
                 ],
                 "summary": "List Upsells for Product",
-                "operationId": "5f60f1a20c897a3b90fb38e60c6d37cf",
+                "operationId": "5db5a99e03ae95f27412b100e8ef45de",
                 "parameters": [
                     {
                         "name": "page",
@@ -6240,6 +6667,123 @@
     },
     "components": {
         "schemas": {
+            "AddressResource": {
+                "title": "User Address",
+                "description": "Địa chỉ người dùng",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "shipping"
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "example": "Nguyen"
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "example": "Van A"
+                    },
+                    "company": {
+                        "type": "string",
+                        "example": "HP Platform",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "0123456789"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "customer@example.com",
+                        "nullable": true
+                    },
+                    "country_code": {
+                        "type": "string",
+                        "example": "VN"
+                    },
+                    "street": {
+                        "type": "string",
+                        "example": "123 Le Loi"
+                    },
+                    "city_id": {
+                        "type": "string",
+                        "example": "HCM",
+                        "nullable": true
+                    },
+                    "state_id": {
+                        "type": "string",
+                        "example": "SG",
+                        "nullable": true
+                    },
+                    "ward_id": {
+                        "type": "string",
+                        "example": "W1",
+                        "nullable": true
+                    },
+                    "zip": {
+                        "type": "string",
+                        "example": "700000",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "AttributeResource": {
+                "title": "Attribute",
+                "description": "Chi tiết thuộc tính sản phẩm dùng chung",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Size"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "size"
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "button"
+                    },
+                    "values": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "S",
+                            "M",
+                            "L",
+                            "XL"
+                        ]
+                    },
+                    "is_enabled": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "products_count": {
+                        "type": "integer",
+                        "example": 5,
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "BrandResource": {
                 "title": "Brand",
                 "description": "Chi tiết thương hiệu",
@@ -6736,6 +7280,32 @@
                             "type": "object"
                         }
                     },
+                    "payment_method": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "payment_status": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "shipping_method": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "discount_total": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 50000
+                    },
+                    "loyalty_discount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 10000
+                    },
+                    "customer_notes": {
+                        "type": "string",
+                        "nullable": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
@@ -6804,6 +7374,14 @@
                         "type": "string",
                         "example": "product-slug"
                     },
+                    "type": {
+                        "type": "string",
+                        "example": "simple"
+                    },
+                    "product_type": {
+                        "type": "string",
+                        "example": "simple"
+                    },
                     "image": {
                         "oneOf": [
                             {
@@ -6816,6 +7394,40 @@
                         "type": "number",
                         "format": "float",
                         "example": 100000
+                    },
+                    "sale_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 90000,
+                        "nullable": true
+                    },
+                    "effective_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 90000
+                    },
+                    "is_on_sale": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "sale_start_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "sale_end_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "apply_tax": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "tax_class_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
                     },
                     "qty": {
                         "type": "integer",
@@ -6853,25 +7465,23 @@
                             "$ref": "#/components/schemas/InventoryResource"
                         }
                     },
-                    "meta_seo": {
-                        "properties": {
-                            "title": {
-                                "type": "string"
-                            },
-                            "description": {
-                                "type": "string"
-                            }
-                        },
-                        "type": "object"
+                    "attributes": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
                     },
-                    "og_image": {
-                        "type": "string",
-                        "example": "/storage/media/image.jpg",
-                        "nullable": true
+                    "variants": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
                     },
-                    "is_visible": {
-                        "type": "boolean",
-                        "example": true
+                    "combo_components": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
                     },
                     "created_at": {
                         "type": "string",
@@ -6900,6 +7510,46 @@
                     },
                     "product": {
                         "$ref": "#/components/schemas/ProductResource"
+                    }
+                },
+                "type": "object"
+            },
+            "UserResource": {
+                "title": "User Profile",
+                "description": "Thông tin hồ sơ người dùng",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Nguyen Van A"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "customer@example.com"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "0123456789",
+                        "nullable": true
+                    },
+                    "photo": {
+                        "type": "string",
+                        "example": "https://example.com/avatar.jpg",
+                        "nullable": true
+                    },
+                    "default_shipping_address_id": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "default_billing_address_id": {
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -7075,83 +7725,87 @@
                 "type": "http",
                 "name": "bearerAuth",
                 "in": "header",
-                "bearerFormat": "JWT",
+                "bearerFormat": "JWT (Passport)",
                 "scheme": "bearer"
             }
         }
     },
     "tags": [
         {
-            "name": "Storefront - Address",
-            "description": "Storefront - Address"
+            "name": "Address",
+            "description": "Address"
         },
         {
-            "name": "Storefront - User Address",
-            "description": "Storefront - User Address"
+            "name": "User Address",
+            "description": "User Address"
         },
         {
-            "name": "Storefront - Authentication",
-            "description": "Storefront - Authentication"
+            "name": "Attributes",
+            "description": "Attributes"
         },
         {
-            "name": "Storefront - Brands",
-            "description": "Storefront - Brands"
+            "name": "Authentication",
+            "description": "Authentication"
         },
         {
-            "name": "Storefront - Cart",
-            "description": "Storefront - Cart"
+            "name": "Brands",
+            "description": "Brands"
         },
         {
-            "name": "Storefront - Combos",
-            "description": "Storefront - Combos"
+            "name": "Cart",
+            "description": "Cart"
         },
         {
-            "name": "Storefront - Coupons",
-            "description": "Storefront - Coupons"
+            "name": "Combos",
+            "description": "Combos"
         },
         {
-            "name": "Storefront - Cross-sells",
-            "description": "Storefront - Cross-sells"
+            "name": "Coupons",
+            "description": "Coupons"
         },
         {
-            "name": "Storefront - Loyalty",
-            "description": "Storefront - Loyalty"
+            "name": "Cross-sells",
+            "description": "Cross-sells"
         },
         {
-            "name": "Storefront - Menus",
-            "description": "Storefront - Menus"
+            "name": "Loyalty",
+            "description": "Loyalty"
         },
         {
-            "name": "Storefront - Orders",
-            "description": "Storefront - Orders"
+            "name": "Menus",
+            "description": "Menus"
         },
         {
-            "name": "Storefront - Pages",
-            "description": "Storefront - Pages"
+            "name": "Orders",
+            "description": "Orders"
         },
         {
-            "name": "Storefront - Post Categories",
-            "description": "Storefront - Post Categories"
+            "name": "Pages",
+            "description": "Pages"
         },
         {
-            "name": "Storefront - Posts",
-            "description": "Storefront - Posts"
+            "name": "Post Categories",
+            "description": "Post Categories"
         },
         {
-            "name": "Storefront - Product Categories",
-            "description": "Storefront - Product Categories"
+            "name": "Posts",
+            "description": "Posts"
         },
         {
-            "name": "Storefront - Products",
-            "description": "Storefront - Products"
+            "name": "Product Categories",
+            "description": "Product Categories"
         },
         {
-            "name": "Storefront - Settings",
-            "description": "Storefront - Settings"
+            "name": "Products",
+            "description": "Products"
         },
         {
-            "name": "Storefront - Upsells",
-            "description": "Storefront - Upsells"
+            "name": "Settings",
+            "description": "Settings"
+        },
+        {
+            "name": "Upsells",
+            "description": "Upsells"
         }
     ]
 }

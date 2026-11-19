@@ -3,8 +3,8 @@
 namespace App\Ecommerce\Post\Contracts;
 
 use App\Models\Post;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 interface PostServiceInterface
 {
@@ -20,7 +20,9 @@ interface PostServiceInterface
 
     public function firstOrNew(array $attributes): Post;
 
-    public function findOrFail(int|string $id): Post;
+    public function findOrFail(int | string $id): Post;
+
+    public function getFeaturedPosts(int $limit = 4);
 
     public function getTableQuery(): Builder;
 }

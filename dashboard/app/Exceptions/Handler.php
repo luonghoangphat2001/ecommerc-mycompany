@@ -76,7 +76,7 @@ class Handler extends ExceptionHandler
             $response['message'] = 'Route not found';
             $code = 404;
         } else {
-            $response['message'] = $e->getMessage() ?: 'Server Error';
+            $response['message'] = 'Server Error';
             if (config('app.debug')) {
                 $response['data'] = [
                     'exception' => get_class($e),

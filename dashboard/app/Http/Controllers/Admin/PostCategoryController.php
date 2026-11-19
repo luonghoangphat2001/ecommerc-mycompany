@@ -3,16 +3,26 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Controllers\Admin\Traits\HasHierarchicalOptions;
+use App\Http\Controllers\Admin\Traits\HasVisibilityMetrics;
+use App\Http\Controllers\Admin\Traits\HasVisibilityToggle;
 use App\Models\PostCategory;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PostCategoryController extends BaseCrudController
 {
+    use HasHierarchicalOptions;
+    use HasVisibilityMetrics;
+    use HasVisibilityToggle;
+
+    protected function visibilityEntityLabel(): string
+    {
+        return 'danh mục bài viết';
+    }
+
     protected function modelClass(): string
     {
         return PostCategory::class;
@@ -31,27 +41,6 @@ class PostCategoryController extends BaseCrudController
     protected function searchable(): array
     {
         return ['name', 'slug', 'type'];
-    }
-
-    public function getParentCategoryOptions(?int $excludeId = null): array
-    {
-        $categories = PostCategory::orderBy('order_column')->orderBy('id')->get();
-        $options = ['' => '-- ' . __('admin.common.none') . ' (Danh mục gốc) --'];
-
-        $buildTree = function ($parentId, $prefix = '') use (&$buildTree, &$options, $categories, $excludeId) {
-            foreach ($categories->where('parent_id', $parentId) as $category) {
-                if ($excludeId && $category->id == $excludeId) {
-                    continue;
-                }
-                $name = $category->getTranslation('name', 'vi') ?: $category->slug;
-                $options[$category->id] = $prefix ? ($prefix . '↳ ' . $name) : $name;
-                $buildTree($category->id, $prefix . '    ');
-            }
-        };
-
-        $buildTree(null);
-
-        return $options;
     }
 
     protected function fields(): array
@@ -89,7 +78,7 @@ class PostCategoryController extends BaseCrudController
         ];
     }
 
-    protected function mutateData(array $data, ?\Illuminate\Database\Eloquent\Model $record = null): array
+    protected function mutateData(array $data, ?Model $record = null): array
     {
         $data = parent::mutateData($data, $record);
 
@@ -102,42 +91,24 @@ class PostCategoryController extends BaseCrudController
 
     public function index(Request $request): View
     {
-        $totalCount = PostCategory::count();
-        $visibleCount = PostCategory::where('is_visible', true)->count();
-        $hiddenCount = PostCategory::where('is_visible', false)->count();
-        $rootCount = PostCategory::whereNull('parent_id')->count();
         $totalPostsCount = DB::table('post_category')->distinct('post_id')->count('post_id');
 
-        $metrics = [
-            'total' => $totalCount,
-            'visible' => $visibleCount,
-            'hidden' => $hiddenCount,
-            'root' => $rootCount,
+        $metrics = $this->visibilityMetrics([
             'total_items' => $totalPostsCount,
-        ];
+        ]);
 
         $allCategories = PostCategory::withCount('posts')
             ->orderBy('order_column')
             ->orderBy('id')
             ->get();
 
-        $groupedCategories = $allCategories->groupBy('parent_id');
-        $rootCategories = $groupedCategories->get(null, collect());
-
-        $allCategoryIds = $allCategories->pluck('id')->toArray();
-        $orphans = $allCategories->filter(function ($item) use ($allCategoryIds) {
-            return ! is_null($item->parent_id) && ! in_array($item->parent_id, $allCategoryIds, true);
-        });
-
-        if ($orphans->isNotEmpty()) {
-            $rootCategories = $rootCategories->merge($orphans);
-        }
+        $hierarchy = $this->hierarchyCollections($allCategories);
 
         return view('admin.crud.tree', [
             'title' => __($this->title()),
             'allCategories' => $allCategories,
-            'groupedCategories' => $groupedCategories,
-            'rootCategories' => $rootCategories,
+            'groupedCategories' => $hierarchy['grouped'],
+            'rootCategories' => $hierarchy['roots'],
             'metrics' => $metrics,
             'routePrefix' => $this->routePrefix(),
             'entityLabel' => 'danh mục bài viết',
@@ -151,34 +122,7 @@ class PostCategoryController extends BaseCrudController
         ]);
     }
 
-    public function toggleStatus(Request $request, int $id): JsonResponse|RedirectResponse
-    {
-        $category = PostCategory::findOrFail($id);
-        $newStatus = $request->has('is_visible')
-            ? $request->boolean('is_visible')
-            : ! $category->is_visible;
-
-        $category->is_visible = $newStatus;
-        $category->save();
-
-        $this->flushStorefrontCaches();
-
-        $message = $category->is_visible
-            ? 'Đã bật hiển thị danh mục bài viết "' . $category->display_name . '"'
-            : 'Đã tạm ẩn danh mục bài viết "' . $category->display_name . '"';
-
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'is_visible' => (bool) $category->is_visible,
-                'message' => $message,
-            ]);
-        }
-
-        return back()->with('status', $message);
-    }
-
-    protected function formData(?\Illuminate\Database\Eloquent\Model $record = null): array
+    protected function formData(?Model $record = null): array
     {
         return [
             'parent_id' => request()->integer('parent_id') ?: null,

@@ -5,6 +5,7 @@ namespace Database\Seeders\Demo;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class DemoDatabaseSeeder extends Seeder
 {
@@ -16,6 +17,7 @@ class DemoDatabaseSeeder extends Seeder
         // 1. Mandatory Environment Safety Gate
         if (App::environment('production')) {
             $this->command?->error('CRITICAL SAFETY STOP: Demo data seeding is forbidden in production environment!');
+
             return;
         }
 
@@ -27,10 +29,11 @@ class DemoDatabaseSeeder extends Seeder
         $startTime = microtime(true);
 
         DB::beginTransaction();
+
         try {
             // Ensure core roles exist
-            \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
-            \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Thành viên đăng ký', 'guard_name' => 'web']);
+            Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+            Role::firstOrCreate(['name' => 'Thành viên đăng ký', 'guard_name' => 'web']);
 
             // 2. Admin & Store Settings
             $this->command?->info(PHP_EOL . '[1/7] Seeding Admin & Club Store Settings...');
@@ -55,6 +58,7 @@ class DemoDatabaseSeeder extends Seeder
             // 7. Realistic Orders, Addresses, Items, Payments & Refunds
             $this->command?->info(PHP_EOL . '[6/7] Seeding Realistic Orders, Payments & Service Recalculations...');
             $this->call(OrderSeeder::class);
+            $this->call(WarehouseMovementScenarioSeeder::class);
 
             // 8. AI Agent Swarm, Departments, Proposals, POs, Incidents, Reviews & Audit Logs
             $this->command?->info(PHP_EOL . '[7/7] Seeding AI Agent Departments, Workflows & Audit Logs...');
@@ -70,6 +74,7 @@ class DemoDatabaseSeeder extends Seeder
             DB::rollBack();
             $this->command?->error(PHP_EOL . 'Demo Seeding Failed: ' . $e->getMessage());
             $this->command?->error($e->getTraceAsString());
+
             throw $e;
         }
     }

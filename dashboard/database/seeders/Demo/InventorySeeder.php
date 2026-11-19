@@ -10,6 +10,7 @@ use App\Models\InventoryRecord;
 use App\Models\InventoryRecordItem;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class InventorySeeder extends Seeder
@@ -19,19 +20,12 @@ class InventorySeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Seed Warehouses
-        $warehouses = $this->seedWarehouses();
+        $this->call(WarehouseSeeder::class);
 
-        // 2. Allocate stocks across warehouses for all products
-        $this->seedProductStocks($warehouses);
-
-        // 3. Seed Inventory Records and Movements
-        $this->seedRecordsAndMovements($warehouses);
-
-        $this->command?->info("InventorySeeder completed: Warehouses, stock levels, records, and movements synchronized.");
+        $this->command?->info('InventorySeeder completed without overwriting existing stock quantities.');
     }
 
-    protected function seedWarehouses(): \Illuminate\Support\Collection
+    protected function seedWarehouses(): Collection
     {
         $warehousesData = [
             [
@@ -66,7 +60,7 @@ class InventorySeeder extends Seeder
         return $warehouses;
     }
 
-    protected function seedProductStocks(\Illuminate\Support\Collection $warehouses): void
+    protected function seedProductStocks(Collection $warehouses): void
     {
         $products = Product::all();
         if ($products->isEmpty()) {
@@ -163,7 +157,7 @@ class InventorySeeder extends Seeder
         }
     }
 
-    protected function seedRecordsAndMovements(\Illuminate\Support\Collection $warehouses): void
+    protected function seedRecordsAndMovements(Collection $warehouses): void
     {
         $mainWh = $warehouses->where('slug', 'kho-tong-nova-central')->first() ?? $warehouses->first();
         $barWh = $warehouses->where('slug', 'kho-cua-hang-nova-arena')->first() ?? $warehouses->skip(1)->first() ?? $mainWh;

@@ -3,9 +3,9 @@ import toast from 'react-hot-toast';
 import useSettingsStore from '../store/useSettingsStore';
 import viLocales from '../locales/vi.json';
 import enLocales from '../locales/en.json';
+import tokenManager from '../features/auth/services/tokenManager';
 
-const rawApiUrl = (process.env.REACT_APP_API_URL || '/api/v1/storefront').replace(/\/$/, '');
-const apiBaseUrl = rawApiUrl.endsWith('/api/v1') ? `${rawApiUrl}/storefront` : rawApiUrl;
+const apiBaseUrl = (process.env.REACT_APP_API_URL || '/api/v1').replace(/\/$/, '');
 
 const getActiveLanguage = () => {
   try {
@@ -41,18 +41,14 @@ const axiosClient = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
+  withCredentials: true,
 });
 
 axiosClient.interceptors.request.use(
   (config) => {
-    try {
-      const authStorage = JSON.parse(localStorage.getItem('auth-storage'));
-      const token = authStorage?.state?.access_token;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    } catch (e) {
-      console.error('Error reading auth token', e);
+    const token = tokenManager.getAccessToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     const lang = getActiveLanguage();
@@ -95,7 +91,9 @@ axiosClient.interceptors.response.use(
       const { status, data } = error.response;
 
       // Handle 401 Unauthorized
-      if (status === 401 && originalRequest && !originalRequest._retry && !String(originalRequest.url).includes('auth/login')) {
+      if (status === 401 && originalRequest && !originalRequest._retry
+        && !String(originalRequest.url).includes('auth/login')
+        && !String(originalRequest.url).includes('auth/refresh-token')) {
         if (isRefreshing) {
           return new Promise(function (resolve, reject) {
             failedQueue.push({ resolve, reject });
@@ -118,15 +116,7 @@ axiosClient.interceptors.response.use(
             .then((refreshResponse) => {
               const newAccessToken =
                 refreshResponse?.data?.access_token || refreshResponse?.access_token;
-              try {
-                const authStorage = JSON.parse(localStorage.getItem('auth-storage'));
-                if (authStorage && authStorage.state && newAccessToken) {
-                  authStorage.state.access_token = newAccessToken;
-                  localStorage.setItem('auth-storage', JSON.stringify(authStorage));
-                }
-              } catch (e) {
-                console.error('Failed to update token in storage', e);
-              }
+              if (newAccessToken) tokenManager.setAccessToken(newAccessToken);
 
               axiosClient.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
               originalRequest.headers['Authorization'] = 'Bearer ' + newAccessToken;
@@ -135,6 +125,7 @@ axiosClient.interceptors.response.use(
             })
             .catch((err) => {
               processQueue(err, null);
+              tokenManager.clearAccessToken();
               localStorage.removeItem('auth-storage');
               window.location.href = '/login';
               reject(err);

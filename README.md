@@ -74,7 +74,7 @@ npm start                    # http://localhost:3000
 ## 🔧 Quy ước phát triển
 
 - **API versioning**: tất cả endpoint đặt sau `/api/v1/`.
-- **Auth**: Laravel Sanctum (token lưu trong `localStorage` ở frontend).
+- **Auth**: Laravel Passport (access token Bearer; refresh token HttpOnly cookie).
 - **Phân quyền**: `bezhansalleh/filament-shield` (RBAC ở admin).
 - **Code style frontend**: 4-space indent, double quotes, không semicolon (Prettier).
 - **Code style backend**: Laravel Pint (chuẩn PSR-12).

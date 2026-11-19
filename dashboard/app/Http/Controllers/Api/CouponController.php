@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Requests\API\CouponRequest;
-use App\Http\Controllers\Api\BaseApiController;
 use App\Ecommerce\Coupon\Contracts\CouponServiceInterface;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Exceptions\CouponValidationException;
+use App\Http\Requests\API\CouponRequest;
+use App\Models\Coupon;
+use App\Models\OrderCoupon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OAT;
@@ -13,15 +15,15 @@ use App\Swagger\Attributes\ApiPost;
 
 class CouponController extends BaseApiController
 {
-
     public function __construct(
-        protected CouponServiceInterface $couponService
+        protected CouponServiceInterface $couponService,
+        protected FeaturePolicyServiceInterface $featurePolicy
     ) {}
 
     #[ApiPost(
         path: '/coupons/apply',
         summary: 'Apply Coupon',
-        tags: 'Storefront - Coupons',
+        tags: 'Coupons',
         requiresAuth: true,
         requestBody: new OAT\RequestBody(
             required: true,
@@ -40,18 +42,20 @@ class CouponController extends BaseApiController
             new OAT\Property(property: 'type', type: 'string', example: 'fixed')
         ]
     )]
+
+
     public function apply(CouponRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $code = $validated['code'];
         $items = $validated['items'];
-        $subtotal = (float)$validated['subtotal'];
-        $userId = auth('sanctum')->id();
+        $subtotal = (float) $validated['subtotal'];
+        $userId = auth('api')->id();
 
         try {
             // 1. Validate logic
             $dto = $this->couponService->validateCoupon($code, $items, $subtotal, $userId);
-            
+
             // 2. Calculate discount amount
             $discountAmount = $this->couponService->calculateDiscount($dto->coupon, $items, $subtotal);
 
@@ -62,17 +66,17 @@ class CouponController extends BaseApiController
             ], trans('messages.coupon_applied_success'));
 
         } catch (CouponValidationException $e) {
-            return $this->error($e->getMessage(), 422);
+            return $this->exceptionError($e, 422);
         }
     }
 
     public function index(Request $request): JsonResponse
     {
-        if (!app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class)->isCouponsEnabled()) {
+        if (! $this->featurePolicy->isCouponsEnabled()) {
             return $this->ok([]);
         }
 
-        $coupons = \App\Models\Coupon::query()
+        $coupons = Coupon::query()
             ->where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
@@ -99,11 +103,11 @@ class CouponController extends BaseApiController
     public function myUsages(Request $request): JsonResponse
     {
         $user = $request->user();
-        if (!$user) {
+        if (! $user) {
             return $this->unauthorized();
         }
 
-        $usages = \App\Models\OrderCoupon::query()
+        $usages = OrderCoupon::query()
             ->with(['order', 'coupon'])
             ->whereHas('order', fn ($q) => $q->where('user_id', $user->id))
             ->orderByDesc('id')

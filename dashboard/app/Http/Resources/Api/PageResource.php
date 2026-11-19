@@ -2,17 +2,18 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Support\Localization;
 use Illuminate\Http\Request;
 
 class PageResource extends BaseResource
 {
     public function toArray(Request $request): array
     {
-        $locale = app()->getLocale() ?: 'vi';
+        $locale = $this->currentLocale();
         $blocks = is_array($this->blocks) ? $this->localizeBlocks($this->blocks, $locale) : [];
         $content = $this->translate('content');
 
-        if (empty($content) && !empty($blocks)) {
+        if (empty($content) && ! empty($blocks)) {
             $content = $this->renderBlocksToHtml($blocks);
         }
 
@@ -30,20 +31,20 @@ class PageResource extends BaseResource
     protected function localizeBlocks(array $blocks, string $locale): array
     {
         return array_map(function ($block) use ($locale) {
-            if (!is_array($block)) {
+            if (! is_array($block)) {
                 return $block;
             }
 
             foreach (['value', 'caption', 'title', 'subtitle', 'content', 'heading'] as $key) {
                 if (isset($block[$key]) && is_array($block[$key])) {
-                    $block[$key] = $block[$key][$locale] ?? $block[$key]['vi'] ?? $block[$key]['en'] ?? reset($block[$key]);
+                    $block[$key] = Localization::value($block[$key], $locale);
                 }
             }
 
             if (isset($block['data']) && is_array($block['data'])) {
                 foreach ($block['data'] as $dKey => $dVal) {
                     if (is_array($dVal) && (isset($dVal['vi']) || isset($dVal['en']))) {
-                        $block['data'][$dKey] = $dVal[$locale] ?? $dVal['vi'] ?? $dVal['en'] ?? reset($dVal);
+                        $block['data'][$dKey] = Localization::value($dVal, $locale);
                     }
                 }
             }
@@ -56,12 +57,12 @@ class PageResource extends BaseResource
     {
         $parts = [];
         foreach ($blocks as $block) {
-            if (!is_array($block)) {
+            if (! is_array($block)) {
                 continue;
             }
             $type = $block['type'] ?? 'markdown';
             $val = $block['value'] ?? $block['content'] ?? ($block['data']['content'] ?? $block['data']['heading'] ?? '');
-            if (!is_string($val) || trim($val) === '') {
+            if (! is_string($val) || trim($val) === '') {
                 continue;
             }
             if ($type === 'heading' || isset($block['data']['heading'])) {
@@ -74,7 +75,7 @@ class PageResource extends BaseResource
                 $parts[] = '<div class="media-block"><img src="' . e($val) . '" alt="" class="img-fluid" /></div>';
             } elseif ($type === 'gallery') {
                 $images = is_array($val) ? $val : (is_array($block['images'] ?? null) ? $block['images'] : []);
-                $imgTags = array_map(fn($u) => '<img src="' . e($u) . '" alt="" />', $images);
+                $imgTags = array_map(fn ($u) => '<img src="' . e($u) . '" alt="" />', $images);
                 $parts[] = '<div class="gallery-block grid grid-cols-2 gap-4">' . implode('', $imgTags) . '</div>';
             } else {
                 $parts[] = str_starts_with(trim($val), '<') ? $val : '<div class="prose-block">' . nl2br(e($val)) . '</div>';

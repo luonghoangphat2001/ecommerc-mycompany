@@ -2948,7 +2948,7 @@
                         <div class="sidebar-user-meta">
                             <div class="sidebar-user-name">{{ auth()->user()->name ?? auth()->user()->email }}</div>
                             <div class="sidebar-user-role">
-                                {{ auth()->user()->roles->pluck('name')->map(fn($r) => \App\Support\AdminLabel::role($r))->join(', ') ?: 'Administrator' }}
+                                {{ auth()->user()->roles->pluck('name')->map(fn($r) => \App\Support\Admin::roleLabel($r))->join(', ') ?: 'Administrator' }}
                             </div>
                         </div>
                     </div>

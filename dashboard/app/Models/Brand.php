@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
-use App\Models\Address;
+use App\Traits\HasLocalizedDisplayName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Translatable\HasTranslations;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  *     schema="Brand",
@@ -18,15 +19,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  *     description="User who created the post",
  *     type="object",
  *     required={"id", "name", "description"},
- *     
+ *
  * )
  */
-
-
 class Brand extends Model implements HasMedia
 {
-    use HasTranslations;
     use HasFactory;
+    use HasLocalizedDisplayName;
+    use HasTranslations;
     use InteractsWithMedia;
 
     /**
@@ -36,6 +36,7 @@ class Brand extends Model implements HasMedia
         'name',
         'description',
     ];
+
     protected $table = 'shop_brands';
 
     /**
@@ -58,40 +59,29 @@ class Brand extends Model implements HasMedia
         'is_visible' => 'boolean',
     ];
 
-    public function parent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(Brand::class, 'parent_id');
     }
 
-    public function children(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function children(): HasMany
     {
         return $this->hasMany(Brand::class, 'parent_id');
     }
 
-    public function directProducts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function directProducts(): HasMany
     {
         return $this->hasMany(Product::class, 'shop_brand_id');
     }
 
     public function getDisplayNameAttribute(): string
     {
-        $locale = app()->getLocale() ?: 'vi';
-        $name = $this->getTranslation('name', $locale) ?: $this->getTranslation('name', 'vi');
-        if (empty($name) && is_array($this->name)) {
-            $name = $this->name['vi'] ?? $this->name['en'] ?? '';
-        }
-        return (string) ($name ?: ($this->slug ?: 'Thương hiệu #' . $this->id));
+        return $this->localizedDisplayName('Thương hiệu');
     }
 
     public function getBreadcrumbsAttribute(): string
     {
-        $parts = [];
-        $curr = $this->parent;
-        while ($curr) {
-            array_unshift($parts, $curr->display_name);
-            $curr = $curr->parent;
-        }
-        return empty($parts) ? '—' : implode(' > ', $parts);
+        return $this->parentBreadcrumbs();
     }
 
     /** @return MorphToMany<Address> */

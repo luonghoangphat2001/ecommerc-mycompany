@@ -2,16 +2,22 @@
 
 namespace App\Ecommerce\Cart\Actions;
 
+use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
+use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use Illuminate\Support\Facades\Storage;
+use App\Support\Media;
 
 class CartValidationAction
 {
+    public function __construct(
+        protected FeaturePolicyServiceInterface $featurePolicy,
+        protected ProductRepositoryInterface $productRepository
+    ) {}
+
     /**
      * Validate an array of raw cart items against database catalog and stock.
      *
-     * @param array $items
      * @return array{items: array, notifications: array}
      */
     public function execute(array $items): array
@@ -43,30 +49,30 @@ class CartValidationAction
         $clientPrice = (float) ($item['price'] ?? 0);
 
         $product = $this->findActiveProduct($productId);
-        if (!$product) {
+        if (! $product) {
             $notifications[] = [
                 'type' => 'item_removed',
                 'message' => 'Sản phẩm không còn tồn tại hoặc đã bị ẩn.',
                 'product_id' => $productId,
             ];
+
             return null;
         }
 
-        $policy = app(\App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface::class);
-
-        if ($product->isCombo() && !$policy->isComboEnabled()) {
+        if ($product->isCombo() && ! $this->featurePolicy->isComboEnabled()) {
             $notifications[] = [
                 'type' => 'item_removed',
                 'message' => "Sản phẩm combo {$product->name} hiện đang tạm ngừng hỗ trợ.",
                 'product_id' => $productId,
             ];
+
             return null;
         }
 
         $variant = null;
         if ($product->isVariable()) {
             $variant = $this->resolveActiveVariant($product, $variantId, $notifications);
-            if (!$variant) {
+            if (! $variant) {
                 return null;
             }
         }
@@ -74,7 +80,7 @@ class CartValidationAction
         $itemName = $this->buildItemDisplayName($product, $variant);
         $effectivePrice = (float) ($variant ? $variant->effective_price : $product->effective_price);
 
-        if ($policy->isInventoryTrackingEnabled()) {
+        if ($this->featurePolicy->isInventoryTrackingEnabled()) {
             $availableStock = $this->resolveAvailableStock($product, $variant);
             $finalQty = $this->adjustQtyForStock($itemName, $qty, $availableStock, $productId, $variantId, $notifications);
             if ($finalQty <= 0) {
@@ -94,13 +100,11 @@ class CartValidationAction
      */
     private function findActiveProduct(?int $productId): ?Product
     {
-        if (!$productId) {
+        if (! $productId) {
             return null;
         }
 
-        return Product::with(['comboComponents.product', 'comboComponents.variant', 'variants'])
-            ->where('is_visible', true)
-            ->find($productId);
+        return $this->productRepository->findForCheckout($productId, true);
     }
 
     /**
@@ -108,23 +112,26 @@ class CartValidationAction
      */
     private function resolveActiveVariant(Product $product, ?int $variantId, array &$notifications): ?ProductVariant
     {
-        if (!$variantId) {
+        if (! $variantId) {
             $notifications[] = [
                 'type' => 'item_removed',
                 'message' => "Vui lòng chọn phiên bản cho sản phẩm {$product->name}.",
                 'product_id' => $product->id,
             ];
+
             return null;
         }
 
-        $variant = $product->variants->firstWhere('id', $variantId) ?: ProductVariant::find($variantId);
-        if (!$variant || $variant->product_id != $product->id || !$variant->is_active) {
+        $variant = $product->variants->firstWhere('id', $variantId)
+            ?: $this->productRepository->findVariantForProduct($variantId, $product->id);
+        if (! $variant || $variant->product_id != $product->id || ! $variant->is_active) {
             $notifications[] = [
                 'type' => 'item_removed',
                 'message' => 'Phiên bản sản phẩm đã chọn không hợp lệ hoặc đã ngừng bán.',
                 'product_id' => $product->id,
                 'variant_id' => $variantId,
             ];
+
             return null;
         }
 
@@ -136,8 +143,9 @@ class CartValidationAction
      */
     private function buildItemDisplayName(Product $product, ?ProductVariant $variant): string
     {
-        if ($variant && !empty($variant->attributes) && is_array($variant->attributes)) {
+        if ($variant && ! empty($variant->attributes) && is_array($variant->attributes)) {
             $variantDesc = implode(', ', $variant->attributes);
+
             return "{$product->name} ({$variantDesc})";
         }
 
@@ -176,6 +184,7 @@ class CartValidationAction
                 'product_id' => $productId,
                 'variant_id' => $variantId,
             ];
+
             return 0;
         }
 
@@ -217,7 +226,7 @@ class CartValidationAction
             'price' => $price,
             'quantity' => $quantity,
             'subtotal' => $price * $quantity,
-            'image' => $product->featuredImage ? Storage::url($product->featuredImage->path) : null,
+            'image' => Media::url($product->featuredImage),
             'attributes' => $variant?->attributes ?? null,
         ];
     }

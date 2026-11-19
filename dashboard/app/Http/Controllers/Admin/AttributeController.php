@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Ecommerce\Product\Services\ProductAttributeService;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
+use App\Http\Requests\Admin\InlineAttributeRequest;
 use App\Models\Attribute;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,11 @@ use Illuminate\Support\Str;
 
 class AttributeController extends BaseCrudController
 {
+    public function __construct(private readonly ProductAttributeService $attributeService)
+    {
+        parent::__construct();
+    }
+
     protected function modelClass(): string
     {
         return Attribute::class;
@@ -135,7 +141,7 @@ class AttributeController extends BaseCrudController
     {
         $data = parent::mutateData($data, $record);
 
-        if (empty($data['slug']) && !empty($data['name'])) {
+        if (empty($data['slug']) && ! empty($data['name'])) {
             $data['slug'] = Str::slug($data['name']);
         }
 
@@ -148,7 +154,7 @@ class AttributeController extends BaseCrudController
                 $items = preg_split('/[\r\n,]+/', $data['values']);
                 $cleaned = array_values(array_filter(array_map('trim', $items), fn ($v) => $v !== ''));
                 $data['values'] = $cleaned;
-            } elseif (!is_array($data['values'])) {
+            } elseif (! is_array($data['values'])) {
                 $data['values'] = [];
             }
         }
@@ -159,15 +165,13 @@ class AttributeController extends BaseCrudController
     /**
      * Quick toggle enabled/disabled status.
      */
-    public function toggleStatus(Request $request, int $id): JsonResponse|RedirectResponse
+    public function toggleStatus(Request $request, int $id): JsonResponse | RedirectResponse
     {
-        $attribute = Attribute::findOrFail($id);
-        $newStatus = $request->has('is_enabled')
-            ? $request->boolean('is_enabled')
-            : ! $attribute->is_enabled;
-
-        $attribute->is_enabled = $newStatus;
-        $attribute->save();
+        $attribute = $this->attributeService->findAttributeOrFail($id);
+        $attribute = $this->attributeService->toggleAttribute(
+            $attribute,
+            $request->has('is_enabled') ? $request->boolean('is_enabled') : null
+        );
 
         $message = $attribute->is_enabled
             ? 'Đã kích hoạt thuộc tính "' . $attribute->name . '"'
@@ -187,13 +191,9 @@ class AttributeController extends BaseCrudController
     /**
      * AJAX endpoint for inline creation from product form.
      */
-    public function inlineStore(Request $request): JsonResponse
+    public function inlineStore(InlineAttributeRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'type' => ['nullable', 'string', 'in:select,button,color'],
-            'values' => ['nullable'],
-        ]);
+        $validated = $request->validated();
 
         $name = trim($validated['name']);
         $rawValues = $validated['values'] ?? [];
@@ -202,9 +202,7 @@ class AttributeController extends BaseCrudController
         }
         $values = array_values(array_filter(array_map('trim', (array) $rawValues), fn ($v) => $v !== ''));
 
-        /** @var ProductAttributeService $service */
-        $service = app(ProductAttributeService::class);
-        $attribute = $service->findOrCreateAttribute(
+        $attribute = $this->attributeService->findOrCreateAttribute(
             $name,
             null,
             $values,
@@ -229,9 +227,7 @@ class AttributeController extends BaseCrudController
      */
     public function listJson(): JsonResponse
     {
-        $attributes = Attribute::where('is_enabled', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'slug', 'type', 'values']);
+        $attributes = $this->attributeService->getEnabledAttributes();
 
         return response()->json([
             'success' => true,

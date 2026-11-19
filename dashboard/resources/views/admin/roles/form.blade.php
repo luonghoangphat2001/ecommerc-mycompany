@@ -94,7 +94,7 @@
                                     @php($isChecked = in_array($permission, old('permissions', $selectedPermissions), true))
                                     <label class="shield-permission-pill" title="{{ $permission }}">
                                         <input type="checkbox" name="permissions[]" value="{{ $permission }}" @checked($isChecked)>
-                                        <span class="shield-action-tag">{{ \App\Support\AdminLabel::action($action) }}</span>
+                                        <span class="shield-action-tag">{{ \App\Support\Admin::actionLabel($action) }}</span>
                                         <code class="shield-perm-code">{{ $permission }}</code>
                                     </label>
                                 @endforeach
