@@ -18,7 +18,7 @@ use OpenApi\Attributes as OAT;
     type: "http",
     name: "bearerAuth",
     in: "header",
-    bearerFormat: "JWT",
+    bearerFormat: "JWT (Passport)",
     scheme: "bearer"
 )]
 class StorefrontInfo
