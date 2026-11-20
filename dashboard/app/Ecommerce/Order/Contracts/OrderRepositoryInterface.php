@@ -76,15 +76,6 @@ interface OrderRepositoryInterface extends BaseRepositoryInterface
     public function getDistinctStatuses(): array;
 
     /**
-     * Get a meta value for an order.
-     *
-     * @param Order $order
-     * @param string $key
-     * @return string|null
-     */
-    public function getMetaValue(Order $order, string $key): ?string;
-
-    /**
      * Get filtered and paginated orders.
      *
      * @param int $perPage

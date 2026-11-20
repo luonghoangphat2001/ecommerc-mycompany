@@ -40,7 +40,7 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
      */
     public function getFullOrder(int|string $id): ?Order
     {
-        return $this->model->with(['items.product.media', 'shippingAddress', 'billingAddress', 'payments', 'customer', 'metas', 'coupons', 'refunds', 'shipping', 'activities'])
+        return $this->model->with(['items.product.media', 'shippingAddress', 'billingAddress', 'payments', 'customer', 'coupons', 'taxes', 'refunds', 'shipping', 'activities'])
             ->find($id);
     }
 
@@ -63,7 +63,7 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
             return 0;
         }
 
-        return (int) ($shipping->amount + ($shipping->tax?->amount ?? 0));
+        return (int) ($shipping->amount + $shipping->taxes()->sum('amount'));
     }
 
     /**
@@ -79,8 +79,7 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
      */
     public function getLoyaltyDiscountTotal(Order $order): int
     {
-        $meta = $order->metas()->where('key', 'loyalty_discount')->first();
-        return $meta ? (int) $meta->value : 0;
+        return (int) $order->loyalty_discount_total;
     }
 
     /**
@@ -89,14 +88,6 @@ class EloquentOrderRepository extends BaseRepository implements OrderRepositoryI
     public function getDistinctStatuses(): array
     {
         return $this->model->select('status')->distinct()->pluck('status')->toArray();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getMetaValue(Order $order, string $key): ?string
-    {
-        return $order->metas()->where('key', $key)->first()?->value;
     }
 
     /**

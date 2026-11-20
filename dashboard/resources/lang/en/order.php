@@ -125,6 +125,8 @@ return [
     'country' => 'Country',
     'postal_code' => 'Postal code',
     'internal_note' => 'Internal note',
+    'customer_notes' => 'Customer note',
+    'notes' => 'Notes',
     'internal_note_placeholder' => 'Staff-only note, hidden from customer',
     'order_status' => 'Order status',
     'adjustments' => 'Adjustments & Promotions',

@@ -110,9 +110,9 @@ class MenuController extends BaseCrudController
         return $this->index(request());
     }
 
-    public function store(MenuRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $data = $this->normalizeMenuData($request->validated());
+        $data = $this->normalizeMenuData(app(MenuRequest::class)->validated());
 
         $menu = $this->menuService->createMenu($data);
         $this->flushStorefrontCaches();
@@ -121,9 +121,9 @@ class MenuController extends BaseCrudController
             ->with('status', __('admin.messages.created'));
     }
 
-    public function update(MenuRequest $request, int $id): RedirectResponse
+    public function update(Request $request, int $id): RedirectResponse
     {
-        $data = $this->normalizeMenuData($request->validated());
+        $data = $this->normalizeMenuData(app(MenuRequest::class)->validated());
 
         $menu = $this->menuService->updateMenu($id, $data);
         $this->flushStorefrontCaches();

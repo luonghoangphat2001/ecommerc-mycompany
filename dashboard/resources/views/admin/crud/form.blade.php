@@ -665,11 +665,7 @@
                             @php
                                 $defaultValue = $formData[$name] ?? data_get($record, $name);
                                 $imgSrc = old($name, $defaultValue);
-                                if (is_numeric($imgSrc)) {
-                                    $media = \Awcodes\Curator\Models\Media::find($imgSrc);
-                                    $imgSrc = $media ? $media->path : $imgSrc;
-                                }
-                                $resolvedImgUrl = $imgSrc ? (Str::startsWith($imgSrc, ['http', '/']) ? $imgSrc : asset('storage/' . $imgSrc)) : null;
+                                $resolvedImgUrl = $imageUrls[$name] ?? null;
                             @endphp
                             <div class="card">
                                 <div class="card-header">

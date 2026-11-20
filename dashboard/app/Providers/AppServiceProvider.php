@@ -19,7 +19,6 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\OrderAddress;
 use App\Models\OrderItem;
-use App\Models\OrderMeta;
 use App\Models\OrderShipping;
 use App\Models\OrderTax;
 use App\Models\Page;
@@ -98,7 +97,6 @@ class AppServiceProvider extends ServiceProvider
             'order_address' => OrderAddress::class,
             'order_shipping' => OrderShipping::class,
             'order_tax' => OrderTax::class,
-            'order_meta' => OrderMeta::class,
             'order_item' => OrderItem::class,
             'page' => Page::class,
             'category' => Category::class,

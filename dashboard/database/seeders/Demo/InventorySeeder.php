@@ -195,10 +195,11 @@ class InventorySeeder extends Seeder
 
             // Movement for Inbound
             InventoryMovement::create([
+                'movement_type' => 'inbound_shipment',
                 'shop_product_id' => $p->id,
                 'warehouse_id' => $mainWh->id,
-                'reference_type' => 'inbound_shipment',
-                'reference_id' => $inboundRecord->id,
+                'source_type' => InventoryRecord::class,
+                'source_id' => $inboundRecord->id,
                 'prev_stock' => 0,
                 'quantity_changed' => 100,
                 'new_stock' => 100,
@@ -235,10 +236,11 @@ class InventorySeeder extends Seeder
 
             // Movement out of main
             InventoryMovement::create([
+                'movement_type' => 'transfer_out',
                 'shop_product_id' => $p->id,
                 'warehouse_id' => $mainWh->id,
-                'reference_type' => 'transfer_out',
-                'reference_id' => $transferRecord->id,
+                'source_type' => InventoryRecord::class,
+                'source_id' => $transferRecord->id,
                 'prev_stock' => 100,
                 'quantity_changed' => -20,
                 'new_stock' => 80,
@@ -248,10 +250,11 @@ class InventorySeeder extends Seeder
 
             // Movement into bar
             InventoryMovement::create([
+                'movement_type' => 'transfer_in',
                 'shop_product_id' => $p->id,
                 'warehouse_id' => $barWh->id,
-                'reference_type' => 'transfer_in',
-                'reference_id' => $transferRecord->id,
+                'source_type' => InventoryRecord::class,
+                'source_id' => $transferRecord->id,
                 'prev_stock' => 10,
                 'quantity_changed' => 20,
                 'new_stock' => 30,

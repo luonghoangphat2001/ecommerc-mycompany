@@ -41,13 +41,13 @@ class InventoryMovementController extends BaseCrudController
     protected function indexQuery(Builder $query, Request $request): Builder
     {
         if ($warehouseId = $request->input('warehouse_id')) {
-            $query->whereHas('detail', fn ($detail) => $detail->where('warehouse_id', $warehouseId));
+            $query->where('warehouse_id', $warehouseId);
         }
         if ($refType = $request->input('movement_type')) {
             $query->where('movement_type', $refType);
         }
 
-        return $query->with(['detail.product', 'detail.warehouse'])->latest('id');
+        return $query->with(['product', 'warehouse'])->latest('id');
     }
 
     protected function filters(): array

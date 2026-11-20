@@ -11,6 +11,7 @@ use App\Models\ProductAttribute;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use App\Http\Middleware\VerifyCsrfToken;
 use Tests\TestCase;
 
 class ReusableProductAttributesTest extends TestCase
@@ -23,6 +24,7 @@ class ReusableProductAttributesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutMiddleware(VerifyCsrfToken::class);
         $this->service = app(ProductAttributeService::class);
         $this->adminUser = User::firstOrCreate(
             ['email' => 'admin_attr_test@example.com'],

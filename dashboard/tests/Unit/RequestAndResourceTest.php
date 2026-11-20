@@ -100,7 +100,6 @@ class RequestAndResourceTest extends TestCase
         $this->assertEquals('pending', \App\Ecommerce\Order\Enums\OrderStatus::Pending->value);
         $this->assertEquals('paid', \App\Enums\PaymentStatus::Paid->value);
         $this->assertEquals('fixed_cart', \App\Enums\CouponType::FixedCart->value);
-        $this->assertEquals('product', \App\Enums\OrderItemType::Product->value);
         $this->assertEquals('shipping', \App\Enums\AddressType::Shipping->value);
         $this->assertEquals('flat_rate', \App\Enums\ShippingMethodType::FlatRate->value);
     }

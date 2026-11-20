@@ -7,6 +7,7 @@ use Closure;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Spatie\Permission\Models\Role;
@@ -73,6 +74,28 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             DepartmentDataSeeder::class,
         ]);
+
+        if (App::environment('production')) {
+            $this->command?->warn('Demo seeders skipped in production.');
+
+            return;
+        }
+
+        DB::transaction(function (): void {
+            Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+            Role::firstOrCreate(['name' => 'Thành viên đăng ký', 'guard_name' => 'web']);
+
+            $this->call([
+                \Database\Seeders\Demo\AdminSettingSeeder::class,
+                \Database\Seeders\Demo\CmsSeeder::class,
+                \Database\Seeders\Demo\CustomerSeeder::class,
+                \Database\Seeders\Demo\CatalogSeeder::class,
+                \Database\Seeders\Demo\InventorySeeder::class,
+                \Database\Seeders\Demo\OrderSeeder::class,
+                \Database\Seeders\Demo\WarehouseMovementScenarioSeeder::class,
+                \Database\Seeders\Demo\AiAgentSeeder::class,
+            ]);
+        });
     }
 
     protected function withProgressBar(int $amount, Closure $createCollectionOfOne): Collection

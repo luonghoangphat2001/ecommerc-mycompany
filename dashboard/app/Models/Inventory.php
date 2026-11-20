@@ -24,7 +24,7 @@ class Inventory extends Model
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'shop_product_inventory_stocks', 'warehouse_id', 'shop_product_id')
-            ->withPivot('stock_quantity')
+            ->withPivot(['stock_quantity', 'variant_id'])
             ->withTimestamps();
     }
 }

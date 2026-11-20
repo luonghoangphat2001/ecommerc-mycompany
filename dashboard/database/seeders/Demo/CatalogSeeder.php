@@ -81,12 +81,12 @@ class CatalogSeeder extends Seeder
             'shop_upsell_products',
             'shop_cross_sell_products',
             'shop_product_inventory_stocks',
+            'shop_inventory_movements',
             'shop_product_variants',
             'shop_product_attributes',
             'shop_attributes',
             'shop_category_product',
             'shop_brand_product',
-            'shop_product_meta',
             'shop_products',
         ];
 
@@ -403,7 +403,8 @@ class CatalogSeeder extends Seeder
     {
         $tax = TaxClass::where('slug', 'standard')->first() ?? TaxClass::first();
         $reducedTax = TaxClass::where('slug', 'reduced')->first() ?? $tax;
-        $mediaCount = Media::count();
+        $mediaIds = Media::query()->orderBy('id')->pluck('id');
+        $mediaCount = $mediaIds->count();
         $authorId = $admin ? $admin->id : 1;
 
         $brandMap = $brands->keyBy('slug');
@@ -577,7 +578,7 @@ class CatalogSeeder extends Seeder
         foreach ($simpleItems as $index => $item) {
             $brandObj = $brandMap->get($item['brand']) ?? $brands->first();
             $catObj = $catMap->get($item['category']) ?? $categories->first();
-            $mediaId = $mediaCount > 0 ? (($index % $mediaCount) + 1) : null;
+            $mediaId = $mediaCount > 0 ? $mediaIds[$index % $mediaCount] : null;
 
             $product = Product::create([
                 'sku' => $item['sku'],
@@ -733,7 +734,7 @@ class CatalogSeeder extends Seeder
         foreach ($variableCatalog as $vIndex => $vItem) {
             $brandObj = $brandMap->get($vItem['brand']) ?? $brands->first();
             $catObj = $catMap->get($vItem['category']) ?? $categories->first();
-            $mediaId = $mediaCount > 0 ? ((($simpleItemsCount ?? 20) + $vIndex) % $mediaCount + 1) : null;
+            $mediaId = $mediaCount > 0 ? $mediaIds[(($simpleItemsCount ?? 20) + $vIndex) % $mediaCount] : null;
 
             // Total stock across variants
             $totalVarStock = collect($vItem['variants'])->sum('qty');

@@ -124,12 +124,12 @@ class OrderController extends BaseCrudController
     {
         $order = $this->findOrder($id, [
             'items.product.featuredImage',
+            'items.taxes',
             'payments',
             'refunds',
-            'metas',
             'coupons',
             'shipping',
-            'shipping.tax',
+            'shipping.taxes',
             'shippingAddress',
             'billingAddress',
             'user',
@@ -198,7 +198,6 @@ class OrderController extends BaseCrudController
             'items.product.featuredImage',
             'payments',
             'refunds',
-            'metas',
             'coupons',
             'shipping',
             'shippingAddress',
@@ -216,18 +215,18 @@ class OrderController extends BaseCrudController
         return view('admin.orders.edit', compact('order', 'checkoutSettings', 'couponSettings', 'loyaltySettings', 'orderService', 'shippingMethods'));
     }
 
-    public function update(UpdateOrderRequest $request, int $id): RedirectResponse
+    public function update(Request $request, int $id): RedirectResponse
     {
         $order = $this->findOrder($id);
-        $data = $request->validated();
+        $data = app(UpdateOrderRequest::class)->validated();
 
-        // 1. Delegate entirely to OrderService
         try {
             $this->orderService->updateOrder($order, $data);
 
-            return redirect()->route('admin.orders.show', $order->id)->with('status', __('admin.messages.updated'));
-        } catch (\Exception $e) {
-            return $this->redirectBackWithError($e);
+            return redirect()->route('admin.orders.show', $order->id)
+                ->with('status', __('admin.messages.updated'));
+        } catch (\Throwable $exception) {
+            return $this->redirectBackWithError($exception);
         }
     }
 

@@ -88,11 +88,6 @@ class Product extends Model implements HasMedia
         return $this->belongsTo(TaxClass::class, 'tax_class_id');
     }
 
-    public function meta()
-    {
-        return $this->hasMany(ProductMeta::class, 'shop_product_id');
-    }
-
     /**
      * @var array<string, string>
      */
@@ -279,14 +274,13 @@ class Product extends Model implements HasMedia
 
         if ($this->relationLoaded('inventories')) {
             $sum = (int) $this->inventories->sum('pivot.stock_quantity');
-            if ($sum > 0 || $this->inventories->isNotEmpty()) {
+            if ($this->inventories->isNotEmpty()) {
                 return $sum;
             }
         } else {
-            $stockSum = $this->inventoryStockSum('shop_product_id');
-
-            if ($stockSum !== null && (int) $stockSum > 0) {
-                return (int) $stockSum;
+            $stockTotal = $this->inventoryStockTotalIfPresent('shop_product_id');
+            if ($stockTotal !== null) {
+                return $stockTotal;
             }
         }
 

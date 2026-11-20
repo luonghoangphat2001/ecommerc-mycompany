@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
@@ -33,7 +33,17 @@ class Order extends Model
         'user_id',
         'number',
         'subtotal',
+        'discount_total',
+        'loyalty_discount_total',
+        'shipping_total',
         'tax_amount',
+        'manual_tax_amount',
+        'redeemed_points',
+        'earned_points',
+        'internal_note',
+        'customer_notes',
+        'cancellation_reason',
+        'cancelled_at',
         'total',
         'status',
         'currency',
@@ -41,20 +51,14 @@ class Order extends Model
         'type',
     ];
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany */
-    public function metas()
-    {
-        return $this->hasMany(OrderMeta::class, 'order_id');
-    }
-
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany */
-    public function taxes()
+    /** @return HasMany<OrderTax> */
+    public function taxes(): HasMany
     {
         return $this->hasMany(OrderTax::class, 'order_id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasOne */
-    public function shipping()
+    /** @return HasOne<OrderShipping> */
+    public function shipping(): HasOne
     {
         return $this->hasOne(OrderShipping::class, 'order_id');
     }
@@ -87,14 +91,17 @@ class Order extends Model
     protected $casts = [
         'status' => OrderStatus::class,
         'subtotal' => 'integer',
+        'discount_total' => 'integer',
+        'loyalty_discount_total' => 'integer',
+        'shipping_total' => 'integer',
+        'tax_amount' => 'integer',
+        'manual_tax_amount' => 'integer',
+        'redeemed_points' => 'integer',
+        'earned_points' => 'integer',
+        'cancelled_at' => 'datetime',
         'total' => 'integer',
         'exchange_rate' => 'decimal:4',
     ];
-
-    public function productItems()
-    {
-        return $this->items()->where('type', \App\Enums\OrderItemType::Product->value);
-    }
 
     public function getSubtotalAttribute(): int
     {
@@ -156,15 +163,21 @@ class Order extends Model
         return $this->hasMany(OrderItem::class, 'order_id');
     }
 
-    public function inventoryMovementDetails(): MorphMany
+    public function inventoryMovements(): MorphMany
     {
-        return $this->morphMany(InventoryMovementDetail::class, 'source');
+        return $this->morphMany(InventoryMovement::class, 'source');
     }
 
     /** @return HasMany<Payment> */
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /** @return MorphMany<PaymentData, $this> */
+    public function paymentData(): MorphMany
+    {
+        return $this->morphMany(PaymentData::class, 'paymentable');
     }
 
     public function scopeCreatedAtBetween($query, $from = null, $until = null)

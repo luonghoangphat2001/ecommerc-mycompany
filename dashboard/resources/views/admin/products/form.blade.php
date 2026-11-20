@@ -7,14 +7,8 @@
         $productType = 'simple';
     }
 
-    // Resolve featured image URL (matching Blog edit form)
     $rawImgPath = old('image', $formData['image'] ?? null);
-    $resolvedImgUrl = null;
-    if ($rawImgPath) {
-        $resolvedImgUrl = \Illuminate\Support\Str::startsWith($rawImgPath, ['http://', 'https://', '/'])
-            ? $rawImgPath
-            : \Illuminate\Support\Facades\Storage::url($rawImgPath);
-    }
+    $resolvedImgUrl = $formData['imageUrl'] ?? null;
 
     $selectedCats = old('categories', $formData['categories'] ?? []);
     $categoryTree = $formData['categoryTree'] ?? \App\Models\ProductCategory::whereNull('parent_id')->with('children.children')->orderBy('name')->get();

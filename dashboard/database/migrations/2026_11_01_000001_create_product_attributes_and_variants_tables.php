@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -47,6 +48,8 @@ return new class extends Migration
                 $table->string('sku')->nullable()->index();
                 $table->bigInteger('price')->default(0);
                 $table->bigInteger('sale_price')->nullable();
+                $table->dateTime('sale_start_date')->nullable();
+                $table->dateTime('sale_end_date')->nullable();
                 $table->bigInteger('cost')->nullable();
                 $table->integer('qty')->default(0);
                 $table->json('attributes'); // e.g. {"Size": "M", "Color": "Black"}
@@ -93,6 +96,42 @@ return new class extends Migration
                 $table->foreignId('variant_id')->nullable()->after('shop_product_id')->constrained('shop_product_variants')->cascadeOnDelete();
             });
         }
+
+        if (Schema::hasTable('shop_product_inventory_stocks') && Schema::hasColumn('shop_product_inventory_stocks', 'variant_id')) {
+            $duplicates = DB::table('shop_product_inventory_stocks')
+                ->select('shop_product_id', 'warehouse_id', 'variant_id', DB::raw('COUNT(*) as duplicate_count'))
+                ->groupBy('shop_product_id', 'warehouse_id', 'variant_id')
+                ->having('duplicate_count', '>', 1)
+                ->exists();
+
+            if ($duplicates) {
+                throw new RuntimeException(
+                    'Cannot enforce inventory identity: duplicate product/warehouse/variant rows require reconciliation.'
+                );
+            }
+
+            Schema::table('shop_product_inventory_stocks', function (Blueprint $table): void {
+                $table->index('shop_product_id', 'shop_prod_inv_product_fk_idx');
+                $table->index(['variant_id', 'warehouse_id'], 'shop_prod_inv_var_wh_idx');
+            });
+
+            Schema::table('shop_product_inventory_stocks', function (Blueprint $table): void {
+                $table->dropUnique('product_inventory_unique');
+            });
+
+            if (DB::connection()->getDriverName() === 'sqlite') {
+                DB::statement(
+                    'CREATE UNIQUE INDEX shop_product_inventory_identity_unique '
+                    . 'ON shop_product_inventory_stocks (shop_product_id, warehouse_id, COALESCE(variant_id, 0))'
+                );
+            } else {
+                DB::statement(
+                    'CREATE UNIQUE INDEX shop_product_inventory_identity_unique '
+                    . 'ON shop_product_inventory_stocks '
+                    . '(shop_product_id, warehouse_id, (COALESCE(variant_id, 0)))'
+                );
+            }
+        }
     }
 
     /**
@@ -101,8 +140,20 @@ return new class extends Migration
     public function down(): void
     {
         if (Schema::hasTable('shop_product_inventory_stocks') && Schema::hasColumn('shop_product_inventory_stocks', 'variant_id')) {
+            if (DB::connection()->getDriverName() === 'sqlite') {
+                DB::statement('DROP INDEX IF EXISTS shop_product_inventory_identity_unique');
+            } else {
+                DB::statement('DROP INDEX shop_product_inventory_identity_unique ON shop_product_inventory_stocks');
+            }
+
             Schema::table('shop_product_inventory_stocks', function (Blueprint $table) {
+                $table->dropIndex('shop_prod_inv_var_wh_idx');
                 $table->dropConstrainedForeignId('variant_id');
+                $table->unique(['shop_product_id', 'warehouse_id'], 'product_inventory_unique');
+            });
+
+            Schema::table('shop_product_inventory_stocks', function (Blueprint $table): void {
+                $table->dropIndex('shop_prod_inv_product_fk_idx');
             });
         }
 

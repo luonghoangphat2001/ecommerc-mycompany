@@ -23,13 +23,20 @@ return new class extends Migration
             $table->boolean('featured')->default(false);
             $table->boolean('is_visible')->default(false);
             $table->bigInteger('old_price')->nullable();
-             $table->bigInteger('price')->nullable();
+            $table->bigInteger('price')->nullable();
+            $table->bigInteger('sale_price')->nullable();
+            $table->dateTime('sale_start_date')->nullable();
+            $table->dateTime('sale_end_date')->nullable();
             $table->bigInteger('cost')->nullable();
             $table->foreignId('tax_class_id')->nullable()->constrained('shop_tax_classes')->nullOnDelete();
             $table->string('shipping_class_id')->nullable(); // Can be string or foreignId if we add a table later
             $table->string('type')->default('deliverable'); 
             $table->boolean('backorder')->default(false);
             $table->boolean('requires_shipping')->default(false);
+            $table->boolean('apply_tax')->default(true);
+            $table->boolean('is_loyalty_earnable')->default(true);
+            $table->boolean('is_loyalty_redeemable')->default(true);
+            $table->unsignedInteger('loyalty_points_reward')->nullable();
             $table->date('published_at')->nullable();
             $table->string('seo_title')->nullable();
             $table->string('seo_description')->nullable();
@@ -44,15 +51,6 @@ return new class extends Migration
             $table->index('type', 'shop_products_type_idx');
         });
 
-
-        // Product Meta
-        Schema::create('shop_product_meta', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('shop_product_id')->constrained('shop_products')->cascadeOnDelete();
-            $table->string('key')->index();
-            $table->json('value')->nullable();
-            $table->timestamps();
-        });
 
         // Junctions
         Schema::create('shop_category_product', function (Blueprint $table) {
@@ -74,7 +72,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('shop_product_meta');
         Schema::dropIfExists('shop_brand_product');
         Schema::dropIfExists('shop_category_product');
         Schema::dropIfExists('shop_products');

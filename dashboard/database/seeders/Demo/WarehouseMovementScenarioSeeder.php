@@ -51,9 +51,8 @@ class WarehouseMovementScenarioSeeder extends Seeder
         }
 
         $alreadyRecorded = DB::table('shop_inventory_movements')
-            ->join('shop_inventory_movement_details as movement_details', 'movement_details.inventory_movement_id', '=', 'shop_inventory_movements.id')
-            ->where('shop_inventory_movements.movement_type', 'demo_order_stock_deduction')
-            ->where('movement_details.source_id', $item->id)
+            ->where('movement_type', 'demo_order_stock_deduction')
+            ->where('source_id', $item->id)
             ->exists();
         if ($alreadyRecorded) {
             return;
@@ -74,24 +73,16 @@ class WarehouseMovementScenarioSeeder extends Seeder
                 ->when($item->variant_id, fn ($query) => $query->where('variant_id', $item->variant_id), fn ($query) => $query->whereNull('variant_id'))
                 ->value('stock_quantity');
 
-            $movementId = DB::table('shop_inventory_movements')->insertGetId([
+            DB::table('shop_inventory_movements')->insert([
                 'movement_type' => 'demo_order_stock_deduction',
+                'shop_product_id' => $item->shop_product_id,
+                'warehouse_id' => $warehouseId,
+                'variant_id' => $item->variant_id,
+                'source_type' => $item->getMorphClass(),
+                'source_id' => $item->id,
                 'prev_stock' => $before,
                 'quantity_changed' => -1,
                 'new_stock' => $after,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            DB::table('shop_inventory_movement_details')->insert([
-                'inventory_movement_id' => $movementId,
-                'shop_product_id' => $item->shop_product_id,
-                'warehouse_id' => $warehouseId,
-                'inventory_id' => $warehouseId,
-                'variant_id' => $item->variant_id,
-                'deducted_quantity' => 1,
-                'source_type' => OrderItem::class,
-                'source_id' => $item->id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

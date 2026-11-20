@@ -176,7 +176,7 @@ class GhnCarrierAdapter extends BaseCarrierAdapter
         // Live shipment creation with GHN API v2
         try {
             $address = $order->shippingAddress;
-            $items = $order->items()->where('type', 'product')->get();
+            $items = $order->items()->get();
 
             $ghnItems = $items->map(fn ($item) => [
                 'name' => (string) ($item->name ?? 'Sản phẩm'),

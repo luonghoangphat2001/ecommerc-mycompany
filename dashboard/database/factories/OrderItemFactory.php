@@ -19,7 +19,6 @@ class OrderItemFactory extends Factory
             'qty' => $this->faker->numberBetween(1, 5),
             'unit_price' => $this->faker->numberBetween(10000, 1000000),
             'total' => 0, // Will be calculated
-            'type' => 'product',
             'name' => null, // Will be filled from product name or custom
         ];
     }

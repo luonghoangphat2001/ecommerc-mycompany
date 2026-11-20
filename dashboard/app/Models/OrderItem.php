@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class OrderItem extends Model
@@ -18,8 +18,9 @@ class OrderItem extends Model
         'order_id',
         'shop_product_id',
         'variant_id',
-        'type',
         'name',
+        'sku',
+        'variant_attributes',
         'qty',
         'unit_price',
         'original_price',
@@ -31,8 +32,8 @@ class OrderItem extends Model
     ];
 
     protected $casts = [
-        'type' => \App\Enums\OrderItemType::class,
         'metadata' => 'array',
+        'variant_attributes' => 'array',
         'unit_price' => 'integer',
         'original_price' => 'integer',
         'sale_price' => 'integer',
@@ -57,13 +58,14 @@ class OrderItem extends Model
         return $this->belongsTo(Order::class, 'order_id');
     }
 
-    public function tax(): HasOne
+    /** @return HasMany<OrderTax> */
+    public function taxes(): HasMany
     {
-        return $this->hasOne(OrderTax::class, 'shop_order_item_id');
+        return $this->hasMany(OrderTax::class, 'shop_order_item_id');
     }
 
-    public function inventoryMovementDetails(): MorphMany
+    public function inventoryMovements(): MorphMany
     {
-        return $this->morphMany(InventoryMovementDetail::class, 'source');
+        return $this->morphMany(InventoryMovement::class, 'source');
     }
 }

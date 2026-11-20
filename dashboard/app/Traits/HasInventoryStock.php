@@ -6,10 +6,13 @@ use Illuminate\Support\Facades\DB;
 
 trait HasInventoryStock
 {
-    protected function inventoryStockSum(string $foreignKey): int
+    protected function inventoryStockTotalIfPresent(string $foreignKey): ?int
     {
-        return (int) DB::table('shop_product_inventory_stocks')
+        $stock = DB::table('shop_product_inventory_stocks')
             ->where($foreignKey, $this->getKey())
-            ->sum('stock_quantity');
+            ->selectRaw('COUNT(*) as row_count, COALESCE(SUM(stock_quantity), 0) as total')
+            ->first();
+
+        return (int) $stock->row_count > 0 ? (int) $stock->total : null;
     }
 }

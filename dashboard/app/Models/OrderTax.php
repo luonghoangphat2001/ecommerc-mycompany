@@ -29,6 +29,8 @@ class OrderTax extends Model
     protected $casts = [
         'metadata' => 'array',
         'amount' => 'integer',
+        'is_shipping' => 'boolean',
+        'shop_order_item_id' => 'integer',
         'shop_tax_rate_id' => 'integer',
     ];
 

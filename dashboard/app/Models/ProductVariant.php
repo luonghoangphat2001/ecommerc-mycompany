@@ -90,10 +90,9 @@ class ProductVariant extends Model
 
     public function getAvailableStockAttribute(): int
     {
-        $stockSum = $this->inventoryStockSum('variant_id');
-
-        if ($stockSum !== null && (int) $stockSum > 0) {
-            return (int) $stockSum;
+        $stockTotal = $this->inventoryStockTotalIfPresent('variant_id');
+        if ($stockTotal !== null) {
+            return $stockTotal;
         }
 
         return (int) $this->qty;

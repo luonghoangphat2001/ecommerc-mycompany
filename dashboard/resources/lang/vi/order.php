@@ -125,6 +125,8 @@ return [
     'country' => 'Quốc gia',
     'postal_code' => 'Mã bưu điện',
     'internal_note' => 'Ghi chú nội bộ',
+    'customer_notes' => 'Ghi chú khách hàng',
+    'notes' => 'Ghi chú',
     'internal_note_placeholder' => 'Ghi chú dành cho nhân viên, khách hàng không thấy',
     'order_status' => 'Trạng thái đơn hàng',
     'adjustments' => 'Phụ phí & Khuyến mãi',

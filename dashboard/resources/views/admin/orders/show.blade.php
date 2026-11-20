@@ -8,9 +8,8 @@
         $subtotal = $order->subtotal ?? 0;
         $shippingTotal = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTotalShipping($order);
         $taxTotal = app(\App\Ecommerce\Order\Contracts\OrderServiceInterface::class)->getTaxTotal($order);
-        $discountTotal = $order->coupons->sum('discount_amount');
-        $loyaltyDiscountTotal = $orderService->getLoyaltyDiscountTotal($order);
-        $internalMetas = ['loyalty_discount', 'redeemed_points'];
+        $discountTotal = (int) $order->discount_total;
+        $loyaltyDiscountTotal = (int) $order->loyalty_discount_total;
         $productImageUrl = function ($product) {
             if (! $product) {
                 return null;
@@ -402,24 +401,26 @@
             </div>
             @endif
 
-            <!-- Internal Notes / Meta -->
-            @php
-                $displayMetas = $order->metas->filter(fn($m) => !in_array($m->key, $internalMetas));
-            @endphp
-            @if($displayMetas->count() > 0)
+            @if(filled($order->internal_note) || filled($order->customer_notes) || filled($order->cancellation_reason))
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">{{ __('admin.order.metadata_notes') }}</h3>
+                    <h3 class="card-title">{{ __('admin.order.notes') }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="field-list">
-                        @foreach ($displayMetas as $meta)
+                        @foreach ([
+                            __('admin.order.internal_note') => $order->internal_note,
+                            __('admin.order.customer_notes') => $order->customer_notes,
+                            __('admin.order.cancellation_reason') => $order->cancellation_reason,
+                        ] as $label => $value)
+                            @if(filled($value))
                             <div class="field-group">
-                                <div class="field-label">{{ $meta->key }}</div>
+                                <div class="field-label">{{ $label }}</div>
                                 <div class="val-html">
-                                    {{ is_array($meta->value) ? json_encode($meta->value, JSON_UNESCAPED_UNICODE) : $meta->value }}
+                                    {{ $value }}
                                 </div>
                             </div>
+                            @endif
                         @endforeach
                     </div>
                 </div>

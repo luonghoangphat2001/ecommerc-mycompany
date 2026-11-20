@@ -242,7 +242,6 @@ class UnifiedShopSeeder extends Seeder
                     OrderItem::create([
                         'order_id' => $order->id,
                         'shop_product_id' => $product->id,
-                        'type' => 'product',
                         'name' => $product->getTranslation('name', 'vi'),
                         'qty' => $qty,
                         'unit_price' => $price,

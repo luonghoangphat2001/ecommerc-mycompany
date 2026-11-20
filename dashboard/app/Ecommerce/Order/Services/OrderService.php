@@ -11,16 +11,13 @@ use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 use App\Ecommerce\Order\Contracts\RefundServiceInterface;
 use App\Ecommerce\Order\Enums\OrderStatus;
 use App\Ecommerce\Order\Events\OrderCreated;
-use App\Ecommerce\Order\Support\OrderItemPayload;
 use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
-use App\Enums\OrderItemType;
 use App\Enums\PaymentStatus;
 use App\Jobs\SendOrderEmailJob;
 use App\Mail\OrderAdminMail;
 use App\Mail\OrderCustomerMail;
 use App\Models\Order;
-use App\Models\OrderShipping;
 use App\Services\Logging\ModuleLogger;
 use App\Settings\MailSettings;
 use App\Support\Infrastructure;
@@ -131,7 +128,7 @@ class OrderService implements OrderServiceInterface
             if (isset($data['items']) && is_array($data['items'])) {
                 foreach ($data['items'] as $itemData) {
                     // Only update existing product items
-                    $order->productItems()->where('id', $itemData['id'])->update([
+                    $order->items()->where('id', $itemData['id'])->update([
                         'qty' => $itemData['qty'],
                         'unit_price' => $itemData['unit_price'],
                         'total' => $itemData['qty'] * $itemData['unit_price'],
@@ -141,10 +138,7 @@ class OrderService implements OrderServiceInterface
 
             // 4. Update internal note
             if (array_key_exists('internal_note', $data)) {
-                $order->metas()->updateOrCreate(
-                    ['key' => 'internal_note'],
-                    ['value' => $data['internal_note']]
-                );
+                $order->internal_note = $data['internal_note'];
             }
 
             // 4.5 Update extra fees & promotions
@@ -175,22 +169,13 @@ class OrderService implements OrderServiceInterface
             }
 
             if (array_key_exists('redeemed_points', $data)) {
-                $order->metas()->updateOrCreate(
-                    ['key' => 'redeemed_points'],
-                    ['value' => (string) ($data['redeemed_points'] ?? 0)]
-                );
+                $order->redeemed_points = (int) ($data['redeemed_points'] ?? 0);
             }
 
             if (array_key_exists('manual_tax_amount', $data)) {
-                if ($data['manual_tax_amount'] !== null) {
-                    $order->metas()->updateOrCreate(
-                        ['key' => 'manual_tax_amount'],
-                        ['value' => (string) $data['manual_tax_amount']]
-                    );
-                } else {
-                    $order->metas()->where('key', 'manual_tax_amount')->delete();
-                }
+                $order->manual_tax_amount = $data['manual_tax_amount'];
             }
+            $order->save();
 
             // 5. Update addresses
             if (isset($data['shipping']) && $order->shippingAddress) {
@@ -222,12 +207,12 @@ class OrderService implements OrderServiceInterface
     public function recalculateTotals(Order $order): Order
     {
         return $this->useTransaction(function () use ($order) {
-            // 1. Flush volatile pricing line items
-            $order->items()->whereIn('type', ['tax', 'shipping', 'fee'])->delete();
+            // 1. Product rows remain the only records in shop_order_items.
+            $order->taxes()->delete();
 
             // 2. Build items for checkout calculation
             $itemsForCalc = [];
-            foreach ($order->productItems as $item) {
+            foreach ($order->items as $item) {
                 // Determine tax_class_id based on product apply_tax setting
                 $taxClassId = null;
                 if ($item->product) {
@@ -261,7 +246,7 @@ class OrderService implements OrderServiceInterface
             $couponCode = $order->coupons()->first()?->coupon_code ?? null;
 
             // Get redeemed points from order meta if it exists
-            $redeemedPoints = (int) $order->metas()->where('key', 'redeemed_points')->first()?->value ?? 0;
+            $redeemedPoints = (int) $order->redeemed_points;
 
             $calcRequest = new CheckoutRequestDTO(
                 items: $itemsForCalc,
@@ -274,26 +259,19 @@ class OrderService implements OrderServiceInterface
 
             $calcResult = $this->calculator->calculate($calcRequest);
 
-            // 4. Save tax details from calculation
+            // 4. Save tax breakdown in its dedicated table.
             foreach ($calcResult->appliedTaxes as $tax) {
-                $order->items()->create(OrderItemPayload::fee(OrderItemType::Tax->value, $tax['name'], $tax['amount']));
+                $order->taxes()->create([
+                    'name' => $tax['name'],
+                    'amount' => (int) $tax['amount'],
+                    'is_shipping' => false,
+                    'metadata' => ['rate' => $tax['rate'] ?? null],
+                ]);
             }
 
-            // 5. Save shipping item and update OrderShipping
-            if ($calcResult->shippingTotal > 0) {
-                $order->items()->create(OrderItemPayload::fee(
-                    OrderItemType::Shipping->value,
-                    'Giao hàng: ' . ($order->shipping?->method ?? 'Standard'),
-                    $calcResult->shippingTotal
-                ));
-
-                if ($order->shipping) {
-                    $order->shipping->update(['amount' => $calcResult->shippingTotal]);
-                }
-            } else {
-                if ($order->shipping) {
-                    $order->shipping->update(['amount' => 0]);
-                }
+            // 5. Keep shipping charge on its dedicated shipping record.
+            if ($order->shipping) {
+                $order->shipping->update(['amount' => $calcResult->shippingTotal]);
             }
 
             // 6. Update coupons
@@ -303,36 +281,30 @@ class OrderService implements OrderServiceInterface
                 ]);
             }
 
-            // 6.5 Update loyalty discount meta
-            if ($calcResult->loyaltyDiscountTotal > 0) {
-                $order->metas()->updateOrCreate(
-                    ['key' => 'loyalty_discount'],
-                    ['value' => (string) $calcResult->loyaltyDiscountTotal]
-                );
-            } else {
-                $order->metas()->where('key', 'loyalty_discount')->delete();
-            }
-
-            // 7. Handle manual tax override
-            $manualTaxMeta = $order->metas()->where('key', 'manual_tax_amount')->first();
+            // 7. Apply the optional admin tax override.
             $taxAmount = $calcResult->taxTotal;
             $total = $calcResult->total;
 
-            if ($manualTaxMeta && $manualTaxMeta->value !== null && $manualTaxMeta->value !== '') {
-                $manualTax = (int) $manualTaxMeta->value;
-                // If manual tax is higher than calculated tax, or just override completely?
-                // The user said: "nếu admin ko edit thì lấy tự động theo hệ thông admin có edit thì lấy cao hơn" -> wait, does that mean max(auto, manual) or override?
-                // "có edit thì lấy cao hơn" usually means "if edited, prioritize the edit". Let's just override it if it is set.
-                // Wait, "lấy cao hơn" could literally mean max(). I will use max to be safe.
-                if ($manualTax > $taxAmount) {
-                    $taxAmount = $manualTax;
-                    $total = $calcResult->subtotal - $calcResult->discountTotal - $calcResult->loyaltyDiscountTotal + $calcResult->shippingTotal + $taxAmount;
-                }
+            if ($order->manual_tax_amount !== null) {
+                $taxAmount = max($taxAmount, (int) $order->manual_tax_amount);
+                $total = $calcResult->subtotal - $calcResult->discountTotal - $calcResult->loyaltyDiscountTotal + $calcResult->shippingTotal + $taxAmount;
+            }
+
+            if ($taxAmount > $calcResult->taxTotal) {
+                $order->taxes()->create([
+                    'name' => 'Manual tax adjustment',
+                    'amount' => $taxAmount - $calcResult->taxTotal,
+                    'is_shipping' => false,
+                    'metadata' => ['source' => 'admin_override'],
+                ]);
             }
 
             // 8. Update order totals with all calculations
             $order->update([
                 'subtotal' => $calcResult->subtotal,
+                'discount_total' => $calcResult->discountTotal,
+                'loyalty_discount_total' => $calcResult->loyaltyDiscountTotal,
+                'shipping_total' => $calcResult->shippingTotal,
                 'tax_amount' => $taxAmount,
                 'total' => $total,
                 'currency' => $calcResult->currency,
@@ -366,20 +338,14 @@ class OrderService implements OrderServiceInterface
                 return true;
             }
 
-            $order->metas()->updateOrCreate(
-                ['key' => 'cancellation_reason'],
-                ['value' => $reason]
-            );
-            $order->metas()->updateOrCreate(
-                ['key' => 'cancelled_at'],
-                ['value' => now()->toDateTimeString()]
-            );
+            $order->update([
+                'cancellation_reason' => $reason,
+                'cancelled_at' => now(),
+            ]);
 
             // Revert stock for all product items (simple, variable, combo)
             foreach ($order->items as $item) {
-                if ($item->type === OrderItemType::Product) {
-                    $this->revertStockAction->revertOrderItem($item);
-                }
+                $this->revertStockAction->revertOrderItem($item);
             }
 
             return $this->updateStatus($order, OrderStatus::Cancelled);
@@ -521,14 +487,6 @@ class OrderService implements OrderServiceInterface
     /**
      * {@inheritDoc}
      */
-    public function getMetaValue(Order $order, string $key): ?string
-    {
-        return $this->orderRepository->getMetaValue($order, $key);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public function getDistinctStatuses(): array
     {
         return $this->orderRepository->getDistinctStatuses();
@@ -540,7 +498,7 @@ class OrderService implements OrderServiceInterface
     public function getTableQuery(): Builder
     {
         return $this->orderRepository->query()
-            ->with(['shippingAddress', 'billingAddress', 'metas', 'taxes', 'shipping', 'payments', 'productItems.tax', 'shipping.tax']);
+            ->with(['shippingAddress', 'billingAddress', 'taxes', 'shipping', 'payments', 'items.taxes', 'shipping.taxes']);
     }
 
     private function logRefundFailure(

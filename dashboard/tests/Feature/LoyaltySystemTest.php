@@ -325,6 +325,6 @@ class LoyaltySystemTest extends TestCase
         $pointsRecord = $loyaltyRepo->findOrCreateByUserId($this->user->id);
 
         $this->assertEquals(20, $pointsRecord->current_points);
-        $this->assertEquals('20', $order->metas()->where('key', 'earned_points')->first()?->value);
+        $this->assertSame(20, (int) $order->fresh()->earned_points);
     }
 }

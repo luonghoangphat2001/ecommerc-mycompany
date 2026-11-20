@@ -47,19 +47,13 @@
     <span class="badge bg-blue">{{ \App\Support\Admin::roleLabel($value) }}</span>
     <small class="cell-muted mono" style="display: block; font-size: 11px; margin-top: 2px;">{{ $value }}</small>
 @elseif ($type === 'image')
-    @php
-        $imagePath = $value;
-        if (is_numeric($value) && method_exists($record, 'featuredImage') && $record->featuredImage) {
-            $imagePath = $record->featuredImage->path;
-        } elseif (is_numeric($value)) {
-            $media = \Awcodes\Curator\Models\Media::find($value);
-            $imagePath = $media ? $media->path : $value;
-        }
-        $imageUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($imagePath);
-    @endphp
-    <a href="{{ $imageUrl }}" target="_blank">
-        <img src="{{ $imageUrl }}" alt="Preview" class="preview-img" style="{{ $compact ? 'width: 38px; height: 38px; object-fit: cover; border-radius: 6px; padding: 0;' : '' }}">
-    </a>
+    @if ($imageUrl ?? null)
+        <a href="{{ $imageUrl }}" target="_blank">
+            <img src="{{ $imageUrl }}" alt="Preview" class="preview-img" style="{{ $compact ? 'width: 38px; height: 38px; object-fit: cover; border-radius: 6px; padding: 0;' : '' }}">
+        </a>
+    @else
+        <span class="val-empty">—</span>
+    @endif
 @elseif ($type === 'editor')
     @if ($compact)
         <span class="badge badge-secondary">HTML</span>

@@ -4,7 +4,10 @@ namespace App\Ecommerce\Inventory\Repositories;
 
 use App\Ecommerce\Core\Repositories\BaseRepository;
 use App\Ecommerce\Inventory\Contracts\InventoryRepositoryInterface;
+use App\Models\Inventory;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -52,25 +55,22 @@ class EloquentInventoryRepository extends BaseRepository implements InventoryRep
     public function recordMovement(array $data): int
     {
         return DB::transaction(function () use ($data): int {
+            $sourceType = $data['source_type'] ?? null;
+            if ($sourceType) {
+                $sourceType = array_search($sourceType, Relation::morphMap(), true) ?: $sourceType;
+            }
+
             $movementId = DB::table('shop_inventory_movements')->insertGetId(array_filter([
                 'movement_type' => $data['movement_type'],
+                'shop_product_id' => $data['shop_product_id'],
+                'warehouse_id' => $data['warehouse_id'],
+                'source_type' => $sourceType,
+                'source_id' => $data['source_id'] ?? null,
+                'variant_id' => $data['variant_id'] ?? null,
+                'restoration_of_movement_id' => $data['restoration_of_movement_id'] ?? null,
                 'prev_stock' => $data['prev_stock'],
                 'quantity_changed' => $data['quantity_changed'],
                 'new_stock' => $data['new_stock'],
-                'created_at' => $data['created_at'] ?? now(),
-                'updated_at' => $data['updated_at'] ?? now(),
-            ], static fn ($value) => $value !== null));
-
-            DB::table('shop_inventory_movement_details')->insert(array_filter([
-                'inventory_movement_id' => $movementId,
-                'shop_product_id' => $data['shop_product_id'],
-                'warehouse_id' => $data['warehouse_id'],
-                'source_type' => $data['source_type'] ?? null,
-                'source_id' => $data['source_id'] ?? null,
-                'variant_id' => $data['variant_id'] ?? null,
-                'inventory_id' => $data['inventory_id'] ?? $data['warehouse_id'] ?? null,
-                'deducted_quantity' => $data['deducted_quantity'] ?? null,
-                'restoration_of_movement_id' => $data['restoration_of_movement_id'] ?? null,
                 'created_at' => $data['created_at'] ?? now(),
                 'updated_at' => $data['updated_at'] ?? now(),
             ], static fn ($value) => $value !== null));
@@ -127,5 +127,32 @@ class EloquentInventoryRepository extends BaseRepository implements InventoryRep
 
             return $newStock;
         }, 3);
+    }
+    /**
+     * Find a warehouse by ID.
+     *
+     * @param  int  $warehouseId
+     * @return Inventory
+     */
+    public function findWarehouseOrFail(int $warehouseId): Inventory
+    {
+        return Inventory::query()->findOrFail($warehouseId);
+    }
+
+    /**
+     * Paginate product stock rows for a warehouse.
+     *
+     * @param  int  $warehouseId
+     * @param  int  $perPage
+     * @return LengthAwarePaginator
+     */
+    public function paginateWarehouseStocks(int $warehouseId, int $perPage = 25): LengthAwarePaginator
+    {
+        return Inventory::query()->findOrFail($warehouseId)
+            ->products()
+            ->with(['variants', 'featuredImage'])
+            ->orderBy('shop_products.name')
+            ->paginate($perPage)
+            ->withQueryString();
     }
 }

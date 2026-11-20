@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Models\Activity;
@@ -21,7 +22,6 @@ class OrderShipping extends Model
         'shop_shipping_method_id',
         'method',
         'amount',
-        'tax_amount',
         'tracking_number',
         'metadata',
     ];
@@ -29,7 +29,6 @@ class OrderShipping extends Model
     protected $casts = [
         'metadata' => 'array',
         'amount' => 'integer',
-        'tax_amount' => 'integer',
         'shop_shipping_method_id' => 'integer',
     ];
 
@@ -45,15 +44,16 @@ class OrderShipping extends Model
         return $this->belongsTo(ShippingMethod::class, 'shop_shipping_method_id');
     }
 
-    public function tax()
+    /** @return HasMany<OrderTax> */
+    public function taxes(): HasMany
     {
-        return $this->hasOne(OrderTax::class, 'order_id', 'order_id')->where('is_shipping', true);
+        return $this->hasMany(OrderTax::class, 'order_id', 'order_id')->where('is_shipping', true);
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['method', 'amount', 'tax_amount', 'tracking_number'])
+            ->logOnly(['method', 'amount', 'tracking_number'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

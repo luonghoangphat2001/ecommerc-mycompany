@@ -105,11 +105,9 @@ class RevertStockAction
 
         $remaining = $quantity;
         $deductions = DB::table('shop_inventory_movements')
-            ->join('shop_inventory_movement_details as movement_details', 'movement_details.inventory_movement_id', '=', 'shop_inventory_movements.id')
-            ->where('movement_details.source_type', OrderItem::class)
-            ->where('movement_details.source_id', $item->id)
-            ->where('shop_inventory_movements.quantity_changed', '<', 0)
-            ->select('shop_inventory_movements.*', 'movement_details.inventory_id', 'movement_details.shop_product_id', 'movement_details.variant_id')
+            ->where('source_type', $item->getMorphClass())
+            ->where('source_id', $item->id)
+            ->where('quantity_changed', '<', 0)
             ->orderBy('shop_inventory_movements.id')
             ->get();
 
@@ -120,7 +118,7 @@ class RevertStockAction
 
             $restored = $this->restoreFromSource(
                 $item,
-                ['inventory_id' => $deduction->inventory_id ?? $deduction->warehouse_id],
+                ['inventory_id' => $deduction->warehouse_id],
                 (int) $deduction->shop_product_id,
                 $remaining,
                 $deduction->variant_id ? (int) $deduction->variant_id : null,
@@ -138,15 +136,13 @@ class RevertStockAction
 
         return DB::transaction(function () use ($item, $productId, $quantity, $variantId, $inventoryId, $deductionId): int {
             $deduction = DB::table('shop_inventory_movements')
-                ->join('shop_inventory_movement_details as movement_details', 'movement_details.inventory_movement_id', '=', 'shop_inventory_movements.id')
-                ->where('movement_details.source_type', OrderItem::class)
-                ->where('movement_details.source_id', $item->id)
-                ->where('movement_details.inventory_id', $inventoryId)
-                ->when($variantId === null, fn ($query) => $query->whereNull('movement_details.variant_id'))
-                ->when($variantId !== null, fn ($query) => $query->where('movement_details.variant_id', $variantId))
-                ->where('shop_inventory_movements.quantity_changed', '<', 0)
-                ->when($deductionId !== null, fn ($query) => $query->where('shop_inventory_movements.id', $deductionId))
-                ->select('shop_inventory_movements.*', 'movement_details.variant_id')
+                ->where('source_type', $item->getMorphClass())
+                ->where('source_id', $item->id)
+                ->where('warehouse_id', $inventoryId)
+                ->when($variantId === null, fn ($query) => $query->whereNull('variant_id'))
+                ->when($variantId !== null, fn ($query) => $query->where('variant_id', $variantId))
+                ->where('quantity_changed', '<', 0)
+                ->when($deductionId !== null, fn ($query) => $query->where('id', $deductionId))
                 ->latest('shop_inventory_movements.id')
                 ->first();
 
@@ -155,8 +151,7 @@ class RevertStockAction
             }
 
             $alreadyRestored = (int) DB::table('shop_inventory_movements')
-                ->join('shop_inventory_movement_details as movement_details', 'movement_details.inventory_movement_id', '=', 'shop_inventory_movements.id')
-                ->where('movement_details.restoration_of_movement_id', $deduction->id)
+                ->where('restoration_of_movement_id', $deduction->id)
                 ->sum('quantity_changed');
             $quantity = min($quantity, max(0, abs((int) $deduction->quantity_changed) - $alreadyRestored));
             if ($quantity <= 0) {
@@ -169,7 +164,6 @@ class RevertStockAction
             $this->inventoryRepository->recordMovement([
                 'shop_product_id' => $productId,
                 'warehouse_id' => $inventoryId,
-                'inventory_id' => $inventoryId,
                 'variant_id' => $variantId,
                 'movement_type' => 'order_stock_restoration',
                 'source_type' => OrderItem::class,

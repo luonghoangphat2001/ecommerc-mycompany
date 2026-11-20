@@ -17,13 +17,11 @@ use App\Ecommerce\Order\Contracts\OrderRepositoryInterface;
 use App\Ecommerce\Order\DTOs\Order\OrderDataDTO;
 use App\Ecommerce\Order\Enums\OrderStatus;
 use App\Ecommerce\Order\Events\OrderCreated;
-use App\Ecommerce\Order\Support\OrderItemPayload;
 use App\Ecommerce\Product\Contracts\ProductRepositoryInterface;
 use App\Ecommerce\Product\Contracts\TaxServiceInterface;
 use App\Ecommerce\Settings\Contracts\FeaturePolicyServiceInterface;
 use App\Ecommerce\Shipping\Contracts\ShippingServiceInterface;
 use App\Enums\AddressType;
-use App\Enums\OrderItemType;
 use App\Exceptions\CouponValidationException;
 use App\Models\Inventory;
 use App\Models\Order;
@@ -99,7 +97,7 @@ class PlaceOrderAction
 
             // 5. Create order items and manage inventory
             $this->createProductOrderItems($order, $itemsForCalc);
-            $this->createFeeOrderItems($order, $dto, $calcResult);
+            $this->saveOrderTaxes($order, $calcResult);
 
             // 6. Create addresses
             $this->createOrderAddresses($order, $dto);
@@ -193,6 +191,9 @@ class PlaceOrderAction
             $itemsForCalc[] = [
                 'product_id' => $product->id,
                 'variant_id' => $variantId,
+                'name' => $product->name,
+                'sku' => $variant?->sku ?? $product->sku,
+                'variant_attributes' => $variant?->attributes,
                 'qty' => $qty,
                 'unit_price' => $effectivePrice,
                 'total' => $effectivePrice * $qty,
@@ -346,6 +347,10 @@ class PlaceOrderAction
             'user_id' => $dto->customerId,
             'number' => 'ORD-' . strtoupper(Str::random(10)),
             'subtotal' => $calcResult->subtotal,
+            'discount_total' => $calcResult->discountTotal,
+            'loyalty_discount_total' => $calcResult->loyaltyDiscountTotal,
+            'shipping_total' => $calcResult->shippingTotal,
+            'redeemed_points' => 0,
             'tax_amount' => $calcResult->taxTotal,
             'total' => $calcResult->total,
             'currency' => $calcResult->currency,
@@ -399,10 +404,7 @@ class PlaceOrderAction
             "Redeemed for Order #{$order->id}"
         );
 
-        $order->metas()->createMany([
-            ['key' => 'redeemed_points', 'value' => (string) $redeemedPoints],
-            ['key' => 'loyalty_discount', 'value' => (string) $calcResult->loyaltyDiscountTotal],
-        ]);
+        $order->update(['redeemed_points' => $redeemedPoints]);
     }
 
     /**
@@ -480,10 +482,7 @@ class PlaceOrderAction
 
         if ($earnedPoints > 0) {
             $this->loyaltyService->awardPoints($dto->customerId, $order->id, $earnedPoints);
-            $order->metas()->create([
-                'key' => 'earned_points',
-                'value' => (string) $earnedPoints,
-            ]);
+            $order->update(['earned_points' => $earnedPoints]);
         }
     }
 
@@ -495,9 +494,11 @@ class PlaceOrderAction
         foreach ($itemsForCalc as $item) {
             /** @var OrderItem $orderItem */
             $orderItem = $order->items()->create([
-                'type' => OrderItemType::Product->value,
                 'shop_product_id' => $item['product_id'],
                 'variant_id' => $item['variant_id'] ?? null,
+                'name' => $item['name'],
+                'sku' => $item['sku'],
+                'variant_attributes' => $item['variant_attributes'],
                 'qty' => $item['qty'],
                 'unit_price' => $item['unit_price'],
                 'original_price' => $item['original_price'] ?? $item['unit_price'],
@@ -679,14 +680,12 @@ class PlaceOrderAction
             $movementId = $this->inventoryRepository->recordMovement([
                 'shop_product_id' => $product->id,
                 'warehouse_id' => $inventory->id,
-                'inventory_id' => $inventory->id,
                 'variant_id' => $variantId,
                 'movement_type' => 'order_stock_deduction',
                 'source_type' => \App\Models\OrderItem::class,
                 'source_id' => $orderItem->id,
                 'prev_stock' => $before,
                 'quantity_changed' => -$qty,
-                'deducted_quantity' => $qty,
                 'new_stock' => $after,
             ]);
 
@@ -705,20 +704,17 @@ class PlaceOrderAction
     }
 
     /**
-     * Create fee order items (shipping, tax, etc.).
+     * Save calculated tax rows in the order tax table.
      */
-    private function createFeeOrderItems(Order $order, OrderDataDTO $dto, CheckoutResultDTO $calcResult): void
+    private function saveOrderTaxes(Order $order, CheckoutResultDTO $calcResult): void
     {
-        if ($this->featurePolicy->isShippingEnabled() && $calcResult->shippingTotal > 0) {
-            $order->items()->create(OrderItemPayload::fee(
-                OrderItemType::Shipping->value,
-                'Giao hàng: ' . ($dto->shippingMethod ?? 'Standard'),
-                $calcResult->shippingTotal
-            ));
-        }
-
         foreach ($calcResult->appliedTaxes as $tax) {
-            $order->items()->create(OrderItemPayload::fee(OrderItemType::Tax->value, $tax['name'], $tax['amount']));
+            $order->taxes()->create([
+                'name' => $tax['name'],
+                'amount' => (int) $tax['amount'],
+                'is_shipping' => false,
+                'metadata' => ['rate' => $tax['rate'] ?? null],
+            ]);
         }
     }
 
@@ -792,7 +788,6 @@ class PlaceOrderAction
             'shop_shipping_method_id' => $shippingMethodModel?->id,
             'method' => $shippingMethodModel?->name ?? (string) $dto->shippingMethod,
             'amount' => $calcResult->shippingTotal,
-            'tax_amount' => 0,
             'tracking_number' => $trackingNumber,
             'metadata' => [
                 'carrier' => $shippingMethodModel?->settings['carrier'] ?? 'standard',
@@ -820,10 +815,7 @@ class PlaceOrderAction
         $order->load('shippingAddress', 'billingAddress');
 
         if ($dto->notes) {
-            $order->metas()->create([
-                'key' => 'customer_notes',
-                'value' => $dto->notes,
-            ]);
+            $order->update(['customer_notes' => $dto->notes]);
         }
 
         event(new OrderCreated($order));

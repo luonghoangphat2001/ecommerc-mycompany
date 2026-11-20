@@ -35,7 +35,7 @@ interface OrderServiceInterface
     public function updateStatus(Order $order, OrderStatus $newStatus): bool;
 
     /**
-     * Recalculate order totals (taxes, shipping, fees).
+     * Recalculate order totals and persist tax and shipping breakdowns.
      *
      * @param Order $order
      * @return Order
@@ -113,8 +113,6 @@ interface OrderServiceInterface
     public function getShippingTotalWithTax(Order $order): int;
 
     public function getLoyaltyDiscountTotal(Order $order): int;
-
-    public function getMetaValue(Order $order, string $key): ?string;
 
     public function getDistinctStatuses(): array;
 

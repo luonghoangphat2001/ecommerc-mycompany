@@ -17,6 +17,8 @@ use OpenApi\Attributes as OAT;
         new OAT\Property(property: 'product', type: 'object', properties: [
             new OAT\Property(property: 'id', type: 'integer', nullable: true, example: 1),
             new OAT\Property(property: 'name', type: 'string', nullable: true, example: 'Sản phẩm 1'),
+            new OAT\Property(property: 'sku', type: 'string', nullable: true),
+            new OAT\Property(property: 'variant_attributes', type: 'object', nullable: true),
             new OAT\Property(property: 'image', type: 'object', nullable: true, properties: [
                 new OAT\Property(property: 'url', type: 'string', example: 'https://example.com/image.jpg')
             ]),
@@ -24,7 +26,6 @@ use OpenApi\Attributes as OAT;
         new OAT\Property(property: 'qty', type: 'integer', example: 2),
         new OAT\Property(property: 'unit_price', type: 'number', format: 'float', example: 500000),
         new OAT\Property(property: 'total', type: 'number', format: 'float', example: 1000000),
-        new OAT\Property(property: 'type', type: 'string', example: 'product'),
         new OAT\Property(property: 'metadata', type: 'object', nullable: true),
     ]
 )]
@@ -46,7 +47,9 @@ class OrderItemResource extends BaseResource
             'product_id' => $this->shop_product_id,
             'product' => [
                 'id' => $product?->id,
-                'name' => $product ? $this->translateField($product, 'name') : null,
+                'name' => $this->name ?: ($product ? $this->translateField($product, 'name') : null),
+                'sku' => $this->sku,
+                'variant_attributes' => $this->variant_attributes,
                 'image' => $imageUrl ? [
                     'url' => $imageUrl,
                 ] : null,
@@ -54,7 +57,6 @@ class OrderItemResource extends BaseResource
             'qty' => $this->qty,
             'unit_price' => $this->unit_price,
             'total' => $this->total,
-            'type' => $this->type,
             'metadata' => $this->metadata,
         ];
     }

@@ -131,11 +131,11 @@ class ImportDatabaseSeeder extends Seeder
         $tables = [
             // Product & Catalog
             'shop_brands', 'shop_categories', 'shop_category_product', 'shop_products',
-            'shop_product_inventory_stocks', 'shop_stock_reservations',
+            'shop_product_inventory_stocks',
             // Orders & Related
             'shop_orders', 'shop_order_items', 'shop_order_coupons', 'shop_order_taxes',
-            'shop_order_shippings', 'shop_order_metas', 'shop_order_refunds', 'shop_order_addresses',
-            'shop_payments',
+            'shop_order_shippings', 'shop_order_refunds', 'shop_order_addresses',
+            'shop_payment_data', 'shop_payments',
             // Marketing
             'shop_coupons', 'shop_upsell_products', 'shop_cross_sell_products',
             'shop_combo_products', 'shop_combo_product_items',
@@ -732,12 +732,12 @@ class ImportDatabaseSeeder extends Seeder
             OrderItem::create([
                 'order_id' => $order->id,
                 'shop_product_id' => $product->id,
-                'type' => 'product',
                 'name' => $product->getTranslation('name', 'vi') ?? $product->name ?? 'Sản phẩm',
+                'sku' => $product->sku,
                 'qty' => $qty,
                 'unit_price' => $unitPrice,
                 'total' => $itemTotal,
-                'metadata' => json_encode(['sku' => $product->sku ?? '']),
+                'metadata' => null,
             ]);
         }
         
@@ -765,7 +765,6 @@ class ImportDatabaseSeeder extends Seeder
             'shop_shipping_method_id' => $this->defaultShippingMethod?->id,
             'method' => $shippingAmount === 0 ? 'Miễn phí vận chuyển' : 'Giao hàng tiêu chuẩn',
             'amount' => $shippingAmount,
-            'tax_amount' => (int) round($shippingAmount * $taxRate),
             'tracking_number' => 'VN' . rand(100000000, 999999999) . 'VN',
             'metadata' => json_encode(['estimated_days' => 3]),
         ]);
@@ -834,6 +833,9 @@ class ImportDatabaseSeeder extends Seeder
         
         $order->update([
             'subtotal' => $subtotal,
+            'discount_total' => $discountAmount,
+            'loyalty_discount_total' => 0,
+            'shipping_total' => $shippingAmount,
             'tax_amount' => $taxAmount,
             'total' => max(0, $total),
         ]);

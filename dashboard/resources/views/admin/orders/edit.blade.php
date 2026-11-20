@@ -5,7 +5,7 @@
         $statusValue = $order->status instanceof \BackedEnum ? $order->status->value : (string) $order->status;
         $discountTotal = $order->coupons->sum('discount_amount');
         $loyaltyDiscountTotal = $orderService->getLoyaltyDiscountTotal($order);
-        $internalNote = $order->metas->where('key', 'internal_note')->first()?->value ?? '';
+        $internalNote = $order->internal_note ?? '';
     @endphp
 
     <style>
@@ -257,7 +257,7 @@
                         <div class="form-row">
                             <label class="form-label">{{ __('admin.order.redeemed_points') }}</label>
                             @php
-                                $redeemedPoints = (int) ($order->metas->where('key', 'redeemed_points')->first()?->value ?? 0);
+                                $redeemedPoints = (int) $order->redeemed_points;
                             @endphp
                             <input type="number" name="redeemed_points" class="form-control mono" value="{{ $redeemedPoints }}" min="0" step="1">
                         </div>
@@ -267,7 +267,7 @@
                         <div class="form-row">
                             <label class="form-label">{{ __('admin.order.manual_tax_override') }}</label>
                             @php
-                                $manualTaxAmount = $order->metas->where('key', 'manual_tax_amount')->first()?->value;
+                                $manualTaxAmount = $order->manual_tax_amount;
                             @endphp
                             <input type="number" name="manual_tax_amount" class="form-control mono" value="{{ $manualTaxAmount }}" min="0" step="1" placeholder="{{ __('admin.order.manual_tax_placeholder') }}">
                             <small class="field-hint">{{ __('admin.order.current_system_tax', ['amount' => number_format($order->tax_amount ?? 0, 0, ',', '.')]) }}</small>

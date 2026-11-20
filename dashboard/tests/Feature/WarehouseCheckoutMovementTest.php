@@ -75,16 +75,14 @@ class WarehouseCheckoutMovementTest extends TestCase
         ));
 
         $movement = DB::table('shop_inventory_movements')
-            ->join('shop_inventory_movement_details as movement_details', 'movement_details.inventory_movement_id', '=', 'shop_inventory_movements.id')
-            ->where('movement_details.source_type', \App\Models\OrderItem::class)
-            ->where('movement_details.source_id', $order->items()->first()->id)
-            ->select('shop_inventory_movements.id as movement_id', 'shop_inventory_movements.quantity_changed', 'movement_details.*')
+            ->where('source_type', $order->items()->first()->getMorphClass())
+            ->where('source_id', $order->items()->first()->id)
+            ->select('id as movement_id', 'quantity_changed', 'source_id', 'warehouse_id', 'shop_product_id', 'variant_id')
             ->first();
         $item = $order->items()->first();
         $this->assertNotNull($movement);
         $this->assertSame($item->id, (int) $movement->source_id);
         $this->assertSame($main->id, (int) $movement->warehouse_id);
-        $this->assertSame($main->id, (int) $movement->inventory_id);
         $this->assertSame(-1, (int) $movement->quantity_changed);
         $this->assertSame(19, (int) DB::table('shop_product_inventory_stocks')->where('id', DB::table('shop_product_inventory_stocks')->where('warehouse_id', $main->id)->value('id'))->value('stock_quantity'));
 
@@ -97,7 +95,7 @@ class WarehouseCheckoutMovementTest extends TestCase
         );
         $this->assertNotNull($refund);
         $this->assertSame(20, (int) DB::table('shop_product_inventory_stocks')->where('warehouse_id', $main->id)->value('stock_quantity'));
-        $this->assertSame(1, DB::table('shop_inventory_movement_details')->where('restoration_of_movement_id', $movement->movement_id)->count());
+        $this->assertSame(1, DB::table('shop_inventory_movements')->where('restoration_of_movement_id', $movement->movement_id)->count());
 
         $duplicateRefund = app(RefundOrderAction::class)->execute(
             $order,
@@ -111,9 +109,8 @@ class WarehouseCheckoutMovementTest extends TestCase
 
         app(OrderServiceInterface::class)->cancel($order, 'Warehouse test cancellation');
 
-        $restoration = DB::table('shop_inventory_movement_details')
-            ->join('shop_inventory_movements', 'shop_inventory_movements.id', '=', 'shop_inventory_movement_details.inventory_movement_id')
-            ->where('shop_inventory_movements.movement_type', 'order_stock_restoration')
+        $restoration = DB::table('shop_inventory_movements')
+            ->where('movement_type', 'order_stock_restoration')
             ->first();
         $this->assertNotNull($restoration);
         $this->assertSame($movement->movement_id, (int) $restoration->restoration_of_movement_id);
@@ -135,13 +132,13 @@ class WarehouseCheckoutMovementTest extends TestCase
         ]);
 
         $order = $this->placeOrder($product->id, $variant->id, 100000, 'variant@example.com');
-        $movement = DB::table('shop_inventory_movement_details')
-            ->where('source_type', \App\Models\OrderItem::class)
+        $movement = DB::table('shop_inventory_movements')
+            ->where('source_type', $order->items()->first()->getMorphClass())
             ->where('source_id', $order->items()->first()->id)
             ->first();
         $this->assertSame($variant->id, (int) $movement->variant_id);
-        $this->assertSame($warehouse->id, (int) $movement->inventory_id);
-        $this->assertSame(-1, (int) DB::table('shop_inventory_movements')->where('id', $movement->inventory_movement_id)->value('quantity_changed'));
+        $this->assertSame($warehouse->id, (int) $movement->warehouse_id);
+        $this->assertSame(-1, (int) $movement->quantity_changed);
 
         app(OrderServiceInterface::class)->cancel($order, 'Variant cancellation');
         $this->assertSame(10, (int) DB::table('shop_product_inventory_stocks')->where('warehouse_id', $warehouse->id)->value('stock_quantity'));
@@ -165,12 +162,12 @@ class WarehouseCheckoutMovementTest extends TestCase
         ]);
 
         $order = $this->placeOrder($combo->id, null, 100000, 'combo@example.com');
-        $movement = DB::table('shop_inventory_movement_details')
-            ->where('source_type', \App\Models\OrderItem::class)
+        $movement = DB::table('shop_inventory_movements')
+            ->where('source_type', $order->items()->first()->getMorphClass())
             ->where('source_id', $order->items()->first()->id)
             ->first();
         $this->assertSame($component->id, (int) $movement->shop_product_id);
-        $this->assertSame(-2, (int) DB::table('shop_inventory_movements')->where('id', $movement->inventory_movement_id)->value('quantity_changed'));
+        $this->assertSame(-2, (int) $movement->quantity_changed);
         $this->assertSame($warehouse->id, (int) $movement->warehouse_id);
 
         app(OrderServiceInterface::class)->cancel($order, 'Combo cancellation');

@@ -14,7 +14,17 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('number', 32)->unique();
             $table->bigInteger('subtotal')->default(0);
-            $table->bigInteger('tax_amount')->default(0); 
+            $table->bigInteger('discount_total')->default(0);
+            $table->bigInteger('loyalty_discount_total')->default(0);
+            $table->bigInteger('shipping_total')->default(0);
+            $table->bigInteger('tax_amount')->default(0);
+            $table->bigInteger('manual_tax_amount')->nullable();
+            $table->unsignedInteger('redeemed_points')->default(0);
+            $table->unsignedInteger('earned_points')->default(0);
+            $table->text('internal_note')->nullable();
+            $table->text('customer_notes')->nullable();
+            $table->text('cancellation_reason')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
             $table->bigInteger('total')->default(0);
             $table->string('currency')->default('VND');
             $table->decimal('exchange_rate', 10, 4)->default(1.0);
@@ -35,52 +45,47 @@ return new class extends Migration
             $table->foreignId('shop_shipping_method_id')->nullable()->constrained('shop_shipping_methods')->nullOnDelete();
             $table->string('method')->nullable();
             $table->bigInteger('amount')->default(0);
-            $table->bigInteger('tax_amount')->default(0);
             $table->string('tracking_number')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
+            $table->unique('order_id', 'shop_order_shippings_order_unique');
         });
 
-        // 3. Order Metadata (EAV Structure: Key-Value pairs)
-        Schema::create('shop_order_metas', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('order_id')->constrained('shop_orders')->cascadeOnDelete();
-            $table->string('key')->index();
-            $table->text('value')->nullable();
-            $table->timestamps();
-        });
-
-        // 4. Order Items
+        // 3. Purchased product snapshots
         Schema::create('shop_order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('shop_orders')->cascadeOnDelete();
             $table->foreignId('shop_product_id')->nullable()->constrained('shop_products')->nullOnDelete();
-            $table->string('type')->default('product'); 
             $table->string('name')->nullable();
+            $table->string('sku')->nullable();
+            $table->json('variant_attributes')->nullable();
             $table->unsignedInteger('qty')->default(1);
             $table->bigInteger('unit_price')->default(0);
+            $table->unsignedBigInteger('original_price')->nullable();
+            $table->unsignedBigInteger('sale_price')->nullable();
+            $table->unsignedBigInteger('discount_amount')->default(0);
             $table->bigInteger('total')->default(0);
             $table->json('metadata')->nullable();
             $table->unsignedInteger('sort')->default(0);
             $table->timestamps();
-
-            $table->index(['order_id', 'type'], 'shop_order_items_order_type_idx');
+            $table->index(['order_id', 'shop_product_id'], 'shop_order_items_order_product_idx');
         });
 
-        // 5. Order Taxes (Separated for Multiple Tax support)
+        // 4. Order tax breakdown
         Schema::create('shop_order_taxes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('shop_orders')->cascadeOnDelete();
-            $table->foreignId('shop_order_item_id')->nullable()->constrained('shop_order_items')->cascadeOnDelete();
+            $table->foreignId('shop_order_item_id')->nullable()->constrained('shop_order_items')->nullOnDelete();
             $table->boolean('is_shipping')->default(false);
             $table->foreignId('shop_tax_rate_id')->nullable()->constrained('shop_tax_rates')->nullOnDelete();
             $table->string('name')->nullable();
             $table->bigInteger('amount')->default(0);
             $table->json('metadata')->nullable();
             $table->timestamps();
+            $table->index(['order_id', 'is_shipping'], 'shop_order_taxes_order_shipping_idx');
         });
 
-        // 6. Order Refunds
+        // 5. Refund history
         Schema::create('shop_order_refunds', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('shop_orders')->cascadeOnDelete();
@@ -90,7 +95,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 7. Order Addresses
+        // 6. Address snapshots
         Schema::create('shop_order_addresses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('shop_orders')->cascadeOnDelete();
@@ -111,7 +116,7 @@ return new class extends Migration
             $table->index(['order_id', 'type'], 'shop_order_addresses_order_type_idx');
         });
 
-        // 8. Payments
+        // 7. Payments
         Schema::create('shop_payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained('shop_orders')->cascadeOnDelete();
@@ -129,10 +134,9 @@ return new class extends Migration
     {
         Schema::dropIfExists('shop_payments');
         Schema::dropIfExists('shop_order_addresses');
-        Schema::dropIfExists('shop_order_items');
         Schema::dropIfExists('shop_order_refunds');
         Schema::dropIfExists('shop_order_taxes');
-        Schema::dropIfExists('shop_order_metas');
+        Schema::dropIfExists('shop_order_items');
         Schema::dropIfExists('shop_order_shippings');
         Schema::dropIfExists('shop_orders');
     }

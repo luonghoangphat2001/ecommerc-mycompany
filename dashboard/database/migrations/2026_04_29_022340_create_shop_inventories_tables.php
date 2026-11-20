@@ -31,24 +31,10 @@ return new class extends Migration
             $table->unique(['shop_product_id', 'warehouse_id'], 'product_inventory_unique');
         });
 
-        Schema::create('shop_stock_reservations', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('order_id')->nullable();
-            $table->unsignedBigInteger('order_item_id')->nullable();
-            $table->foreignId('warehouse_id')->constrained('shop_inventories')->cascadeOnDelete();
-            $table->string('sku');
-            $table->integer('quantity');
-            $table->timestamp('expires_at');
-            $table->timestamps();
-
-            $table->index('expires_at', 'shop_stock_reservations_expires_at_idx');
-            $table->index(['order_id', 'sku'], 'shop_stock_reservations_order_sku_idx');
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('shop_stock_reservations');
         Schema::dropIfExists('shop_product_inventory_stocks');
         Schema::dropIfExists('shop_inventories');
     }

@@ -5,7 +5,6 @@ namespace Database\Seeders\Demo;
 use App\Ecommerce\Order\Contracts\OrderServiceInterface;
 use App\Ecommerce\Order\Enums\OrderStatus;
 use App\Enums\AddressType;
-use App\Enums\OrderItemType;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Coupon;
@@ -56,13 +55,8 @@ class OrderSeeder extends Seeder
             OrderStatus::Refunded,
         ];
 
-        $paymentMethods = [
-            PaymentMethod::Cod,
-            PaymentMethod::BankTransfer,
-            PaymentMethod::CreditCard,
-            PaymentMethod::BankTransfer,
-            PaymentMethod::Cod,
-        ];
+        // Keep demo payment records representative of every supported payment integration.
+        $paymentMethods = PaymentMethod::cases();
 
         $guestNames = [
             ['first' => 'Văn Hùng', 'last' => 'Nguyễn', 'phone' => '0912111333', 'email' => 'guest.hung@gmail.com', 'street' => '88 Nguyễn Huệ, P. Bến Nghé, Quận 1'],
@@ -105,6 +99,7 @@ class OrderSeeder extends Seeder
             foreach ($selectedProducts as $prod) {
                 $qty = rand(1, 3);
                 $variantId = null;
+                $variant = null;
                 $itemName = $prod->getTranslation('name', 'vi');
                 $originalPrice = $prod->price;
                 $salePrice = $prod->sale_price;
@@ -126,8 +121,9 @@ class OrderSeeder extends Seeder
                     'order_id' => $order->id,
                     'shop_product_id' => $prod->id,
                     'variant_id' => $variantId,
-                    'type' => OrderItemType::Product->value,
                     'name' => $itemName,
+                    'sku' => isset($variant) ? $variant->sku : $prod->sku,
+                    'variant_attributes' => isset($variant) ? $variant->attributes : null,
                     'qty' => $qty,
                     'unit_price' => $unitPrice,
                     'total' => $lineTotal,
@@ -187,7 +183,6 @@ class OrderSeeder extends Seeder
                     'shop_shipping_method_id' => $shippingMethod->id,
                     'method' => $shippingMethod->name,
                     'amount' => $shippingCost,
-                    'tax_amount' => 0,
                     'tracking_number' => 'VNPOST-' . strtoupper(Str::random(8)),
                     'created_at' => $orderDate,
                     'updated_at' => $orderDate,
@@ -216,7 +211,7 @@ class OrderSeeder extends Seeder
                 $orderService->recalculateTotals($order);
             } catch (\Throwable $e) {
                 // Fallback manual calculation if tax rule throws
-                $subtotal = (int) $order->items()->where('type', OrderItemType::Product->value)->sum('total');
+                $subtotal = (int) $order->items()->sum('total');
                 $discount = (int) $order->coupons()->sum('discount_amount');
                 $order->update([
                     'subtotal' => $subtotal,
@@ -233,7 +228,7 @@ class OrderSeeder extends Seeder
             ]);
 
             // 7. Seed Payment
-            $method = $paymentMethods[($i % count($paymentMethods))];
+            $method = $paymentMethods[($i - 1) % count($paymentMethods)];
             $paymentStatus = match ($status) {
                 OrderStatus::Completed, OrderStatus::Delivering => PaymentStatus::Paid,
                 OrderStatus::Refunded => PaymentStatus::Refunded,

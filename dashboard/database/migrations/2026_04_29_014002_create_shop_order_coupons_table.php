@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained('shop_orders')->cascadeOnDelete();
             $table->string('coupon_code');
-            $table->decimal('discount_amount', 12, 2);
+            $table->bigInteger('discount_amount')->default(0);
             $table->timestamps();
         });
     }

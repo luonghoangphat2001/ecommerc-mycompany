@@ -100,7 +100,7 @@ class OrderController extends BaseApiController
         $order = $this->placeOrderAction->execute($dto);
 
         return $this->created(
-            new OrderResource($order->load(['items', 'shippingAddress', 'billingAddress'])),
+            new OrderResource($order->load(['items', 'shippingAddress', 'billingAddress', 'taxes'])),
             __('admin.api.order_placed')
         );
     }
@@ -169,7 +169,7 @@ class OrderController extends BaseApiController
             $this->orderService->updateOrder($order, $updatePayload);
         }
 
-        return $this->ok(new OrderResource($order->fresh(['items', 'shippingAddress', 'billingAddress'])));
+        return $this->ok(new OrderResource($order->fresh(['items', 'shippingAddress', 'billingAddress', 'taxes'])));
     }
 
     public function cancel(Request $request, $id)
@@ -191,7 +191,7 @@ class OrderController extends BaseApiController
         $this->orderService->cancel($order, $reason);
 
         return $this->ok(
-            new OrderResource($order->fresh(['items', 'shippingAddress', 'billingAddress', 'payments', 'shipping'])),
+            new OrderResource($order->fresh(['items', 'shippingAddress', 'billingAddress', 'payments', 'shipping', 'taxes'])),
             __('storefront.order.cancelled_success')
         );
     }
@@ -200,7 +200,7 @@ class OrderController extends BaseApiController
     {
         $cleanNumber = trim(ltrim(urldecode($number), '#'));
 
-        $order = Order::with(['shippingAddress', 'items', 'payments', 'shipping', 'activities'])
+        $order = Order::with(['shippingAddress', 'items', 'payments', 'shipping', 'taxes', 'activities'])
             ->where('number', $cleanNumber)
             ->when(is_numeric($cleanNumber), fn ($q) => $q->orWhere('id', (int) $cleanNumber))
             ->first();
@@ -215,7 +215,7 @@ class OrderController extends BaseApiController
             ? $latestPayment->status->value
             : ($latestPayment?->status ?? 'pending');
 
-        $productItems = $order->items->whereNotIn('type', ['tax', 'shipping', 'fee'])->values();
+        $productItems = $order->items;
 
         $timeline = [
             [

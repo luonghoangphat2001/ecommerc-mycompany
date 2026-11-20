@@ -6,11 +6,13 @@ use App\Ecommerce\Inventory\Contracts\InventoryRepositoryInterface;
 use App\Ecommerce\Inventory\Contracts\InventoryServiceInterface;
 use App\Enums\InventoryRecordStatus;
 use App\Enums\InventoryRecordType;
+use App\Models\Inventory;
 use App\Models\InventoryRecord;
 use App\Models\InventoryRecordItem;
 use App\Models\Product;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class InventoryService implements InventoryServiceInterface
 {
@@ -19,6 +21,16 @@ class InventoryService implements InventoryServiceInterface
     public function __construct(InventoryRepositoryInterface $inventoryRepository)
     {
         $this->inventoryRepository = $inventoryRepository;
+    }
+
+    public function paginateWarehouseStocks(int $warehouseId, int $perPage = 25): LengthAwarePaginator
+    {
+        return $this->inventoryRepository->paginateWarehouseStocks($warehouseId, $perPage);
+    }
+
+    public function findWarehouseOrFail(int $warehouseId): Inventory
+    {
+        return $this->inventoryRepository->findWarehouseOrFail($warehouseId);
     }
 
     /**
