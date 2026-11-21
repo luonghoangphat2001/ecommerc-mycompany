@@ -1,56 +1,7 @@
 @extends('admin.layouts.app', ['title' => $title])
 
 @section('content')
-@php
-    // Categorize fields into dedicated groups for clean enterprise layout
-    $sidebarMediaFields = [];
-    $sidebarTaxonomyFields = [];
-    $sidebarMetaFields = [];
-    $seoFields = [];
-    $pricingFields = [];
-    $mainFields = [];
 
-    $metaFieldKeys = [
-        'is_visible', 'status', 'post_type', 'type', 'featured', 'is_featured',
-        'published_at', 'author_id', 'shop_brand_id', 'department_id',
-        'apply_tax', 'backorder', 'requires_shipping', 'is_active', 'is_urgent'
-    ];
-    $pricingFieldKeys = [
-        'price', 'old_price', 'sale_price', 'sale_start_date', 'sale_end_date',
-        'cost', 'qty', 'security_stock', 'stock_quantity', 'low_stock_threshold',
-        'amount', 'base_salary', 'allowance', 'tax', 'insurance', 'net_salary'
-    ];
-
-    foreach ($fields as $name => $field) {
-        $type = $field['type'] ?? 'text';
-        if ($type === 'image') {
-            $sidebarMediaFields[$name] = $field;
-        } elseif (in_array($name, ['categories', 'tags'], true) || in_array($type, ['tree-select', 'tags-checkboxes'], true)) {
-            $sidebarTaxonomyFields[$name] = $field;
-        } elseif (in_array($name, ['seo_title', 'seo_description'], true) || \Illuminate\Support\Str::startsWith($name, 'seo_')) {
-            $seoFields[$name] = $field;
-        } elseif (in_array($name, $metaFieldKeys, true)) {
-            $sidebarMetaFields[$name] = $field;
-        } elseif (in_array($name, $pricingFieldKeys, true)) {
-            $pricingFields[$name] = $field;
-        } else {
-            $mainFields[$name] = $field;
-        }
-    }
-
-    // Sort main fields so title/name & slug/sku appear at the very top
-    $topKeys = ['title', 'name', 'slug', 'sku'];
-    $orderedMain = [];
-    foreach ($topKeys as $k) {
-        if (isset($mainFields[$k])) {
-            $orderedMain[$k] = $mainFields[$k];
-            unset($mainFields[$k]);
-        }
-    }
-    $mainFields = array_merge($orderedMain, $mainFields);
-
-    $hasSidebar = !empty($sidebarMetaFields) || !empty($sidebarMediaFields) || !empty($sidebarTaxonomyFields);
-@endphp
 
     <x-admin.page-header
         :title="$title"
@@ -114,23 +65,7 @@
                     <div class="card-body">
                         <div class="form-grid">
                             @foreach ($mainFields as $name => $field)
-                                @php
-                                    $type = $field['type'] ?? 'text';
-                                    $defaultValue = $formData[$name] ?? data_get($record, $name);
-                                    if ($defaultValue instanceof \DateTimeInterface) {
-                                        $displayValue = $type === 'datetime-local' ? $defaultValue->format('Y-m-d\TH:i') : $defaultValue->format('Y-m-d');
-                                    } elseif ($defaultValue instanceof \BackedEnum) {
-                                        $displayValue = $defaultValue->value;
-                                    } elseif (is_array($defaultValue)) {
-                                        $displayValue = json_encode($defaultValue, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-                                    } else {
-                                        $displayValue = $defaultValue;
-                                    }
-
-                                    $isWide = in_array($type, ['textarea', 'editor', 'blocks'], true) || in_array($name, ['content', 'description', 'blocks'], true) || ($field['colspan'] ?? null) === 'full';
-                                @endphp
-
-                                <div class="form-row" style="{{ $isWide ? 'grid-column: 1 / -1;' : '' }}">
+                                <div class="form-row" style="{{ $field['isWide'] ? 'grid-column: 1 / -1;' : '' }}">
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                         <label for="{{ $name }}" style="margin: 0; font-weight: 600;">
                                             {{ $field['label'] ?? $name }}
@@ -145,53 +80,40 @@
                                         @endif
                                     </div>
 
-                                    @if ($type === 'textarea')
-                                        <textarea id="{{ $name }}" name="{{ $name }}" rows="4" class="form-control">{{ old($name, $displayValue) }}</textarea>
-                                    @elseif ($type === 'editor')
-                                        <textarea id="{{ $name }}" name="{{ $name }}" class="ckeditor-input">{{ old($name, $displayValue) }}</textarea>
-                                    @elseif ($type === 'select')
+                                    @if (($field['type'] ?? 'text') === 'textarea')
+                                        <textarea id="{{ $name }}" name="{{ $name }}" rows="4" class="form-control">{{ $field['displayValue'] }}</textarea>
+                                    @elseif (($field['type'] ?? 'text') === 'editor')
+                                        <textarea id="{{ $name }}" name="{{ $name }}" class="ckeditor-input">{{ $field['displayValue'] }}</textarea>
+                                    @elseif (($field['type'] ?? 'text') === 'select')
                                         <select id="{{ $name }}" name="{{ $name }}" class="form-control">
                                             @foreach (($field['options'] ?? []) as $value => $label)
-                                                <option value="{{ $value }}" @selected((string) old($name, $displayValue) === (string) $value)>{{ $label }}</option>
+                                                <option value="{{ $value }}" @selected((string) $field['displayValue'] === (string) $value)>{{ $label }}</option>
                                             @endforeach
                                         </select>
-                                    @elseif ($type === 'boolean')
+                                    @elseif (($field['type'] ?? 'text') === 'boolean')
                                         <select id="{{ $name }}" name="{{ $name }}" class="form-control">
-                                            <option value="1" @selected((string) old($name, (int) $displayValue) === '1')>{{ __('admin.common.yes') }} (Hiển thị)</option>
-                                            <option value="0" @selected((string) old($name, (int) $displayValue) === '0')>{{ __('admin.common.no') }} (Tạm ẩn)</option>
+                                            <option value="1" @selected((string) (int) $field['displayValue'] === '1')>{{ __('admin.common.yes') }} (Hiển thị)</option>
+                                            <option value="0" @selected((string) (int) $field['displayValue'] === '0')>{{ __('admin.common.no') }} (Tạm ẩn)</option>
                                         </select>
-                                    @elseif ($type === 'multiselect')
-                                        @php
-                                            $selected = old($name, isset($formData[$name]) ? $formData[$name] : (is_iterable(data_get($record, $name)) ? collect(data_get($record, $name))->pluck('name')->toArray() : []));
-                                        @endphp
+                                    @elseif (($field['type'] ?? 'text') === 'multiselect')
                                         <x-admin.multi-select
                                             :name="$name"
                                             :id="$name"
                                             :options="$field['options'] ?? []"
-                                            :selected="(array) $selected"
+                                            :selected="$field['selected']"
                                             :placeholder="'Chọn ' . strtolower($field['label'] ?? $name) . '...'"
                                         />
-                                    @elseif ($type === 'checkboxgroup')
-                                        @php
-                                            $selected = old($name, $formData[$name] ?? []);
-                                        @endphp
+                                    @elseif (($field['type'] ?? 'text') === 'checkboxgroup')
                                         <div class="checkbox-grid" id="{{ $name }}">
                                             @foreach (($field['options'] ?? []) as $value => $label)
                                                 <label class="checkbox-item">
-                                                    <input type="checkbox" name="{{ $name }}[]" value="{{ $value }}" @checked(in_array((string) $value, array_map('strval', (array) $selected), true))>
+                                                    <input type="checkbox" name="{{ $name }}[]" value="{{ $value }}" @checked(in_array((string) $value, array_map('strval', $field['selected']), true))>
                                                     <span>{{ $label }}</span>
                                                 </label>
                                             @endforeach
                                         </div>
-                                    @elseif ($type === 'blocks')
-                                        @php
-                                            $blocksData = old($name, $displayValue);
-                                            if (is_string($blocksData)) {
-                                                $blocksData = json_decode($blocksData, true);
-                                                if (json_last_error() !== JSON_ERROR_NONE) $blocksData = [];
-                                            }
-                                        @endphp
-                                        <div x-data="blockManager({{ json_encode($blocksData ?: []) }})" class="blocks-editor-wrapper" style="margin-top: 6px;">
+                                    @elseif (($field['type'] ?? 'text') === 'blocks')
+                                        <div x-data="blockManager({{ json_encode($field['blocksData']) }})" class="blocks-editor-wrapper" style="margin-top: 6px;">
                                             <input type="hidden" name="{{ $name }}" :value="JSON.stringify(serializeBlocks())">
 
                                             <div id="sortable-{{ $name }}" class="blocks-container" style="display: flex; flex-direction: column; gap: 14px;">
@@ -373,7 +295,7 @@
                                             </div>
                                         </div>
                                     @else
-                                        <input id="{{ $name }}" type="{{ $type }}" name="{{ $name }}" value="{{ old($name, $displayValue) }}" class="form-control">
+                                        <input id="{{ $name }}" type="{{ $field['type'] ?? 'number' }}" name="{{ $name }}" value="{{ $field['displayValue'] }}" class="form-control">
                                     @endif
 
                                     @if (!empty($field['hint']))
@@ -402,25 +324,17 @@
                             <div class="form-grid">
                                 @foreach ($pricingFields as $name => $field)
                                     @if ($name === 'sale_start_date' && isset($pricingFields['sale_end_date']))
-                                        @php
-                                            $startField = $field;
-                                            $endField = $pricingFields['sale_end_date'];
-                                            $startVal = $formData['sale_start_date'] ?? data_get($record, 'sale_start_date');
-                                            $startDisplay = ($startVal instanceof \DateTimeInterface) ? (($startField['type'] ?? 'datetime-local') === 'datetime-local' ? $startVal->format('Y-m-d\TH:i') : $startVal->format('Y-m-d')) : $startVal;
-                                            $endVal = $formData['sale_end_date'] ?? data_get($record, 'sale_end_date');
-                                            $endDisplay = ($endVal instanceof \DateTimeInterface) ? (($endField['type'] ?? 'datetime-local') === 'datetime-local' ? $endVal->format('Y-m-d\TH:i') : $endVal->format('Y-m-d')) : $endVal;
-                                        @endphp
                                         <div class="form-row-wide" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
                                             <div class="form-row">
                                                 <label for="sale_start_date">
-                                                    {{ $startField['label'] ?? 'Ngày bắt đầu KM' }}
-                                                    @if(!empty($startField['rules']) && in_array('required', (array) $startField['rules'], true))
+                                                    {{ $field['label'] ?? 'Ngày bắt đầu KM' }}
+                                                    @if(!empty($field['rules']) && in_array('required', (array) $field['rules'], true))
                                                         <span style="color: #ef4444;">*</span>
                                                     @endif
                                                 </label>
-                                                <input id="sale_start_date" type="{{ $startField['type'] ?? 'datetime-local' }}" name="sale_start_date" value="{{ old('sale_start_date', $startDisplay) }}" class="form-control mono">
-                                                @if (!empty($startField['hint']))
-                                                    <small class="field-hint">{{ $startField['hint'] }}</small>
+                                                <input id="sale_start_date" type="{{ $field['type'] ?? 'datetime-local' }}" name="sale_start_date" value="{{ $field['displayValue'] }}" class="form-control mono">
+                                                @if (!empty($field['hint']))
+                                                    <small class="field-hint">{{ $field['hint'] }}</small>
                                                 @endif
                                                 @error('sale_start_date')
                                                     <div class="error" style="color: #dc2626; font-size: 12px; margin-top: 4px;">{{ $message }}</div>
@@ -428,14 +342,14 @@
                                             </div>
                                             <div class="form-row">
                                                 <label for="sale_end_date">
-                                                    {{ $endField['label'] ?? 'Ngày kết thúc KM' }}
-                                                    @if(!empty($endField['rules']) && in_array('required', (array) $endField['rules'], true))
+                                                    {{ $pricingFields['sale_end_date']['label'] ?? 'Ngày kết thúc KM' }}
+                                                    @if(!empty($pricingFields['sale_end_date']['rules']) && in_array('required', (array) $pricingFields['sale_end_date']['rules'], true))
                                                         <span style="color: #ef4444;">*</span>
                                                     @endif
                                                 </label>
-                                                <input id="sale_end_date" type="{{ $endField['type'] ?? 'datetime-local' }}" name="sale_end_date" value="{{ old('sale_end_date', $endDisplay) }}" class="form-control mono">
-                                                @if (!empty($endField['hint']))
-                                                    <small class="field-hint">{{ $endField['hint'] }}</small>
+                                                <input id="sale_end_date" type="{{ $pricingFields['sale_end_date']['type'] ?? 'datetime-local' }}" name="sale_end_date" value="{{ $pricingFields['sale_end_date']['displayValue'] }}" class="form-control mono">
+                                                @if (!empty($pricingFields['sale_end_date']['hint']))
+                                                    <small class="field-hint">{{ $pricingFields['sale_end_date']['hint'] }}</small>
                                                 @endif
                                                 @error('sale_end_date')
                                                     <div class="error" style="color: #dc2626; font-size: 12px; margin-top: 4px;">{{ $message }}</div>
@@ -445,15 +359,6 @@
                                     @elseif ($name === 'sale_end_date' && isset($pricingFields['sale_start_date']))
                                         @continue
                                     @else
-                                        @php
-                                            $type = $field['type'] ?? 'number';
-                                            $defaultValue = $formData[$name] ?? data_get($record, $name);
-                                            if ($defaultValue instanceof \DateTimeInterface) {
-                                                $displayValue = $type === 'datetime-local' ? $defaultValue->format('Y-m-d\TH:i') : $defaultValue->format('Y-m-d');
-                                            } else {
-                                                $displayValue = $defaultValue;
-                                            }
-                                        @endphp
                                         <div class="form-row">
                                             <label for="{{ $name }}">
                                                 {{ $field['label'] ?? $name }}
@@ -461,7 +366,7 @@
                                                     <span style="color: #ef4444;">*</span>
                                                 @endif
                                             </label>
-                                            <input id="{{ $name }}" type="{{ $type }}" name="{{ $name }}" value="{{ old($name, $displayValue) }}" class="form-control mono">
+                                            <input id="{{ $name }}" type="{{ $field['type'] ?? 'number' }}" name="{{ $name }}" value="{{ $field['displayValue'] }}" class="form-control mono">
                                             @if (!empty($field['hint']))
                                                 <small class="field-hint">{{ $field['hint'] }}</small>
                                             @endif
@@ -504,11 +409,6 @@
 
                             <div style="display: flex; flex-direction: column; gap: 14px;">
                                 @foreach ($seoFields as $name => $field)
-                                    @php
-                                        $type = $field['type'] ?? 'text';
-                                        $defaultValue = $formData[$name] ?? data_get($record, $name);
-                                        $displayValue = is_array($defaultValue) ? json_encode($defaultValue, JSON_UNESCAPED_UNICODE) : $defaultValue;
-                                    @endphp
                                     <div class="form-row">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                             <label for="{{ $name }}" style="margin: 0;">{{ $field['label'] ?? $name }}</label>
@@ -519,10 +419,10 @@
                                             @endif
                                         </div>
 
-                                        @if ($type === 'textarea')
-                                            <textarea id="{{ $name }}" name="{{ $name }}" rows="3" class="form-control js-seo-input" data-seo-target="desc" placeholder="Tóm tắt nội dung hấp dẫn cho công cụ tìm kiếm">{{ old($name, $displayValue) }}</textarea>
+                                        @if (($field['type'] ?? 'text') === 'textarea')
+                                            <textarea id="{{ $name }}" name="{{ $name }}" rows="3" class="form-control js-seo-input" data-seo-target="desc" placeholder="Tóm tắt nội dung hấp dẫn cho công cụ tìm kiếm">{{ $field['displayValue'] }}</textarea>
                                         @else
-                                            <input id="{{ $name }}" type="text" name="{{ $name }}" value="{{ old($name, $displayValue) }}" class="form-control js-seo-input" data-seo-target="title" placeholder="Tiêu đề trang xuất hiện trên Google">
+                                            <input id="{{ $name }}" type="text" name="{{ $name }}" value="{{ $field['displayValue'] }}" class="form-control js-seo-input" data-seo-target="title" placeholder="Tiêu đề trang xuất hiện trên Google">
                                         @endif
 
                                         @if (!empty($field['hint']))
@@ -539,18 +439,14 @@
                 @endif
 
                 <!-- Card 4: Đánh giá & Bình luận sản phẩm / Bình luận bài viết nếu có -->
-                @php
-                    $isProduct = ($record instanceof \App\Models\Product) || ($routePrefix === 'admin.products') || (isset($routePrefix) && str_contains($routePrefix, 'products')) || request()->is('*products*');
-                    $isPost = ($record instanceof \App\Models\Post) || ($routePrefix === 'admin.posts') || (isset($routePrefix) && str_contains($routePrefix, 'posts')) || request()->is('*posts*');
-                @endphp
-                @if($record && ($isProduct || $isPost) && method_exists($record, 'comments'))
+                @if ($hasCommentSection)
                     <div class="card" style="margin-top: 18px; overflow: hidden;">
                         <div class="card-header">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #64748b;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                                 <h3 class="card-title">
                                     {{ $isProduct ? 'Đánh giá & Bình luận sản phẩm' : 'Bình luận bài viết' }}
-                                    ({{ $record->comments->count() }})
+                                    ({{ $comments->count() }})
                                 </h3>
                             </div>
                         </div>
@@ -565,7 +461,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($record->comments as $comment)
+                                    @forelse($comments as $comment)
                                         <tr>
                                             <td style="font-weight: 600; color: var(--fi-text); padding: 10px 14px;">{{ $comment->author->name ?? $comment->author_name ?? 'Khách' }}</td>
                                             <td style="padding: 10px 14px;">{{ Str::limit($comment->content, 100) }}</td>
@@ -600,18 +496,6 @@
                         <div class="card-body">
                             <div style="display: flex; flex-direction: column; gap: 14px;">
                                 @foreach ($sidebarMetaFields as $name => $field)
-                                    @php
-                                        $type = $field['type'] ?? 'text';
-                                        $defaultValue = $formData[$name] ?? data_get($record, $name);
-                                        if ($defaultValue instanceof \DateTimeInterface) {
-                                            $displayValue = $type === 'datetime-local' ? $defaultValue->format('Y-m-d\TH:i') : $defaultValue->format('Y-m-d');
-                                        } elseif ($defaultValue instanceof \BackedEnum) {
-                                            $displayValue = $defaultValue->value;
-                                        } else {
-                                            $displayValue = $defaultValue;
-                                        }
-                                    @endphp
-
                                     <div class="form-row">
                                         <label for="{{ $name }}" style="margin-bottom: 5px; font-weight: 600;">
                                             {{ $field['label'] ?? $name }}
@@ -620,21 +504,21 @@
                                             @endif
                                         </label>
 
-                                        @if ($type === 'select')
+                                        @if (($field['type'] ?? 'text') === 'select')
                                             <select id="{{ $name }}" name="{{ $name }}" class="form-control">
                                                 @foreach (($field['options'] ?? []) as $value => $label)
-                                                    <option value="{{ $value }}" @selected((string) old($name, $displayValue) === (string) $value)>{{ $label }}</option>
+                                                    <option value="{{ $value }}" @selected((string) $field['displayValue'] === (string) $value)>{{ $label }}</option>
                                                 @endforeach
                                             </select>
-                                        @elseif ($type === 'boolean')
+                                        @elseif (($field['type'] ?? 'text') === 'boolean')
                                             <select id="{{ $name }}" name="{{ $name }}" class="form-control">
-                                                <option value="1" @selected((string) old($name, (int) $displayValue) === '1')>{{ __('admin.common.yes') }} (Hiển thị)</option>
-                                                <option value="0" @selected((string) old($name, (int) $displayValue) === '0')>{{ __('admin.common.no') }} (Tạm ẩn)</option>
+                                                <option value="1" @selected((string) (int) $field['displayValue'] === '1')>{{ __('admin.common.yes') }} (Hiển thị)</option>
+                                                <option value="0" @selected((string) (int) $field['displayValue'] === '0')>{{ __('admin.common.no') }} (Tạm ẩn)</option>
                                             </select>
-                                        @elseif ($type === 'date' || $type === 'datetime-local')
-                                            <input id="{{ $name }}" type="{{ $type }}" name="{{ $name }}" value="{{ old($name, $displayValue) }}" class="form-control">
+                                        @elseif (($field['type'] ?? 'text') === 'date' || ($field['type'] ?? 'text') === 'datetime-local')
+                                            <input id="{{ $name }}" type="{{ $field['type'] }}" name="{{ $name }}" value="{{ $field['displayValue'] }}" class="form-control">
                                         @else
-                                            <input id="{{ $name }}" type="{{ $type }}" name="{{ $name }}" value="{{ old($name, $displayValue) }}" class="form-control">
+                                            <input id="{{ $name }}" type="{{ $field['type'] ?? 'text' }}" name="{{ $name }}" value="{{ $field['displayValue'] }}" class="form-control">
                                         @endif
 
                                         @if (!empty($field['hint']))
@@ -662,11 +546,6 @@
                     <!-- Card B: Hình ảnh đại diện (Featured Image) -->
                     @if (!empty($sidebarMediaFields))
                         @foreach ($sidebarMediaFields as $name => $field)
-                            @php
-                                $defaultValue = $formData[$name] ?? data_get($record, $name);
-                                $imgSrc = old($name, $defaultValue);
-                                $resolvedImgUrl = $imageUrls[$name] ?? null;
-                            @endphp
                             <div class="card">
                                 <div class="card-header">
                                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -677,8 +556,8 @@
                                 <div class="card-body">
                                     <div class="featured-media-card">
                                         <div class="featured-media-frame">
-                                            <img id="preview-{{ $name }}" src="{{ $resolvedImgUrl ?: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' }}" alt="Preview" style="{{ $resolvedImgUrl ? '' : 'display: none;' }}">
-                                            <div id="placeholder-{{ $name }}" class="featured-media-placeholder" style="{{ $resolvedImgUrl ? 'display: none;' : '' }}">
+                                            <img id="preview-{{ $name }}" src="{{ $imageUrls[$name] ?? 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' }}" alt="Preview" style="{{ !empty($imageUrls[$name]) ? '' : 'display: none;' }}">
+                                            <div id="placeholder-{{ $name }}" class="featured-media-placeholder" style="{{ !empty($imageUrls[$name]) ? 'display: none;' : '' }}">
                                                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color: #94a3b8;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                                                 <span style="font-size: 11.5px; color: #64748b;">Chưa có ảnh đại diện</span>
                                             </div>
@@ -688,9 +567,9 @@
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                                             <span>Chọn / Tải lên hình ảnh</span>
                                         </div>
-                                        @if($imgSrc)
+                                        @if($field['fileName'])
                                             <div style="margin-top: 8px; font-size: 11px; color: var(--fi-muted); font-family: var(--fi-font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                {{ is_string($imgSrc) ? basename($imgSrc) : 'image.jpg' }}
+                                                {{ $field['fileName'] }}
                                             </div>
                                         @endif
                                     </div>
@@ -705,9 +584,6 @@
                     <!-- Card C: Danh mục & Phân loại (Tree Select) -->
                     @foreach ($sidebarTaxonomyFields as $name => $field)
                         @if(($field['type'] ?? '') === 'tree-select' || $name === 'categories')
-                            @php
-                                $selected = old($name, $formData[$name] ?? []);
-                            @endphp
                             <div class="card">
                                 <div class="card-header">
                                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -717,7 +593,7 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="tree-select-wrapper">
-                                        @include('admin.crud.tree_node', ['nodes' => $field['tree_nodes'] ?? [], 'level' => 0, 'name' => $name, 'selected' => $selected])
+                                        @include('admin.crud.tree_node', ['nodes' => $field['tree_nodes'] ?? [], 'level' => 0, 'name' => $name, 'selected' => $field['selected']])
                                     </div>
                                     @error($name)
                                         <div class="error" style="color: #dc2626; font-size: 12px; margin-top: 6px;">{{ $message }}</div>
@@ -730,9 +606,6 @@
                     <!-- Card D: Thẻ / Nhãn (Tags) -->
                     @foreach ($sidebarTaxonomyFields as $name => $field)
                         @if(($field['type'] ?? '') === 'tags-checkboxes' || $name === 'tags')
-                            @php
-                                $selected = old($name, $formData[$name] ?? []);
-                            @endphp
                             <div class="card">
                                 <div class="card-header">
                                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -744,7 +617,7 @@
                                     <div class="tag-pills-grid">
                                         @forelse (($field['options'] ?? []) as $value => $label)
                                             <label class="tag-pill-label">
-                                                <input type="checkbox" name="{{ $name }}[]" value="{{ $value }}" @checked(in_array((string) $value, array_map('strval', (array) $selected), true))>
+                                                <input type="checkbox" name="{{ $name }}[]" value="{{ $value }}" @checked(in_array((string) $value, array_map('strval', $field['selected']), true))>
                                                 <span>{{ $label }}</span>
                                             </label>
                                         @empty

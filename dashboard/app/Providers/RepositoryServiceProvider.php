@@ -12,6 +12,11 @@ class RepositoryServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(
+            \App\Ecommerce\Media\Contracts\MediaRepositoryInterface::class,
+            \App\Ecommerce\Media\Repositories\EloquentMediaRepository::class
+        );
+
+        $this->app->bind(
             \App\Ecommerce\Loyalty\Contracts\LoyaltyRepositoryInterface::class,
             \App\Ecommerce\Loyalty\Repositories\EloquentLoyaltyRepository::class
         );

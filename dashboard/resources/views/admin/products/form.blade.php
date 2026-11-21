@@ -1,26 +1,6 @@
 @extends('admin.layouts.app', ['title' => $title])
 
 @section('content')
-@php
-    $productType = old('type', $record->type?->value ?? ($formData['type'] ?? 'simple'));
-    if (!in_array($productType, ['simple', 'variable'])) {
-        $productType = 'simple';
-    }
-
-    $rawImgPath = old('image', $formData['image'] ?? null);
-    $resolvedImgUrl = $formData['imageUrl'] ?? null;
-
-    $selectedCats = old('categories', $formData['categories'] ?? []);
-    $categoryTree = $formData['categoryTree'] ?? \App\Models\ProductCategory::whereNull('parent_id')->with('children.children')->orderBy('name')->get();
-
-    $selectedBrands = old('brands', $formData['brands'] ?? []);
-    $brandTree = $formData['brandTree'] ?? \App\Models\Brand::whereNull('parent_id')->with('children.children')->orderBy('name')->get();
-
-    $taxClasses = \App\Models\TaxClass::with('rates')->get();
-    $allTags = \Spatie\Tags\Tag::getWithType('Product');
-    $selectedTags = old('tags', $formData['tags'] ?? []);
-@endphp
-
     <style>
         /* ==========================================================================
            IMPECCABLE CRAFT FLOOR: ATTRIBUTES & VARIANTS ARCHITECTURE (Operate Mode)
@@ -480,8 +460,8 @@
             </div>
             <div style="min-width: 250px;">
                 <select name="type" id="field_type" class="product-type-select" onchange="switchProductType(this.value)">
-                    <option value="simple" {{ $productType === 'simple' ? 'selected' : '' }}>Sản phẩm đơn giản (Simple Product)</option>
-                    <option value="variable" {{ $productType === 'variable' ? 'selected' : '' }}>Sản phẩm có biến thể (Variable Product)</option>
+                    <option value="simple" {{ ($formData['type'] ?? 'simple') === 'simple' ? 'selected' : '' }}>Sản phẩm đơn giản (Simple Product)</option>
+                    <option value="variable" {{ ($formData['type'] ?? 'simple') === 'variable' ? 'selected' : '' }}>Sản phẩm có biến thể (Variable Product)</option>
                 </select>
             </div>
         </div>
@@ -757,7 +737,7 @@
                                 </label>
                                 <select name="tax_class_id" id="field_tax_class_id" class="form-control">
                                     <option value="">-- Mặc định hệ thống / Miễn thuế --</option>
-                                    @foreach ($taxClasses as $tc)
+                                    @foreach ($formData['taxClasses'] as $tc)
                                         <option value="{{ $tc->id }}" {{ old('tax_class_id', $record->tax_class_id ?? '') == $tc->id ? 'selected' : '' }}>
                                             {{ $tc->name }} ({{ $tc->rates->first()?->rate ?? 0 }}%)
                                         </option>
@@ -914,8 +894,8 @@
                     <div class="card-body">
                         <div class="featured-media-card">
                             <div class="featured-media-frame">
-                                <img id="preview-image" src="{{ $resolvedImgUrl ?: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' }}" alt="Preview" style="{{ $resolvedImgUrl ? '' : 'display: none;' }}">
-                                <div id="placeholder-image" class="featured-media-placeholder" style="{{ $resolvedImgUrl ? 'display: none;' : '' }}">
+                                <img id="preview-image" src="{{ $formData['imageUrl'] ?: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' }}" alt="Preview" style="{{ $formData['imageUrl'] ? '' : 'display: none;' }}">
+                                <div id="placeholder-image" class="featured-media-placeholder" style="{{ $formData['imageUrl'] ? 'display: none;' : '' }}">
                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color: #94a3b8;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                                     <span style="font-size: 11.5px; color: #64748b;">Chưa có ảnh đại diện</span>
                                 </div>
@@ -925,9 +905,9 @@
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                                 <span>Chọn / Tải lên hình ảnh</span>
                             </div>
-                            @if($rawImgPath)
+                            @if($formData['image'])
                                 <div style="margin-top: 8px; font-size: 11px; color: var(--fi-muted, #64748b); font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    {{ basename($rawImgPath) }}
+                                    {{ basename($formData['image']) }}
                                 </div>
                             @endif
                         </div>
@@ -950,7 +930,7 @@
                     </div>
                     <div class="card-body">
                         <div class="tree-select-wrapper" style="max-height: 280px; overflow-y: auto; padding-right: 4px;">
-                            @include('admin.crud.tree_node', ['nodes' => $brandTree, 'level' => 0, 'name' => 'brands', 'selected' => $selectedBrands])
+                            @include('admin.crud.tree_node', ['nodes' => $formData['brandTree'], 'level' => 0, 'name' => 'brands', 'selected' => $formData['brands']])
                         </div>
                         @error('brands')
                             <div class="error" style="color: #dc2626; font-size: 12px; margin-top: 6px;">{{ $message }}</div>
@@ -968,7 +948,7 @@
                     </div>
                     <div class="card-body">
                         <div class="tree-select-wrapper" style="max-height: 280px; overflow-y: auto; padding-right: 4px;">
-                            @include('admin.crud.tree_node', ['nodes' => $categoryTree, 'level' => 0, 'name' => 'categories', 'selected' => $selectedCats])
+                            @include('admin.crud.tree_node', ['nodes' => $formData['categoryTree'], 'level' => 0, 'name' => 'categories', 'selected' => $formData['categories']])
                         </div>
                         @error('categories')
                             <div class="error" style="color: #dc2626; font-size: 12px; margin-top: 6px;">{{ $message }}</div>
@@ -977,7 +957,7 @@
                 </div>
 
                 <!-- Card E: Thẻ / Nhãn (Tags) -->
-                @if(isset($allTags) && count($allTags) > 0)
+                @if(count($formData['allTags']) > 0)
                     <div class="card">
                         <div class="card-header">
                             <div style="display: flex; align-items: center; gap: 8px;">
@@ -987,9 +967,9 @@
                         </div>
                         <div class="card-body">
                             <div class="tag-pills-grid" style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                @foreach ($allTags as $t)
+                                @foreach ($formData['allTags'] as $t)
                                     <label class="tag-pill-label" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 9999px; background: #f1f5f9; border: 1px solid #cbd5e1; font-size: 12px; cursor: pointer;">
-                                        <input type="checkbox" name="tags[]" value="{{ $t->name }}" {{ in_array($t->name, (array) $selectedTags) ? 'checked' : '' }}>
+                                        <input type="checkbox" name="tags[]" value="{{ $t->name }}" {{ in_array($t->name, (array) $formData['tags']) ? 'checked' : '' }}>
                                         <span>{{ $t->name }}</span>
                                     </label>
                                 @endforeach
@@ -1006,7 +986,7 @@
 
     <script>
         let availableAttributes = @json($formData['availableAttributes'] ?? []);
-        let currentProductType = "{{ $productType }}";
+        let currentProductType = "{{ $formData['type'] }}";
         let attributesData = {!! old('attributes_json', $formData['attributes_json'] ?? '[]') !!};
         let variantsData = {!! old('variants_json', $formData['variants_json'] ?? '[]') !!};
         let productEditorInstance = null;

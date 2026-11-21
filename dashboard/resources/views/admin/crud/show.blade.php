@@ -1,65 +1,6 @@
 @extends('admin.layouts.app', ['title' => $title])
 
-@php
-    $mainFields = [];
-    $pricingFields = [];
-    $seoFields = [];
-    $sidebarMetaFields = [];
-    $sidebarMediaFields = [];
-    $sidebarTaxonomyFields = [];
 
-    $metaFieldKeys = [
-        'is_visible', 'featured', 'type', 'status', 'is_approved', 'role',
-        'published_at', 'author_id', 'shop_brand_id', 'department_id',
-        'apply_tax', 'backorder', 'requires_shipping', 'is_active', 'is_urgent'
-    ];
-    $pricingFieldKeys = [
-        'price', 'old_price', 'cost', 'sale_price', 'sale_start_date', 'sale_end_date',
-        'qty', 'security_stock', 'stock_quantity', 'low_stock_threshold',
-        'amount', 'base_salary', 'allowance', 'tax', 'insurance', 'net_salary'
-    ];
-
-    foreach ($fields as $name => $field) {
-        $type = $field['type'] ?? 'text';
-        if ($type === 'image') {
-            $sidebarMediaFields[$name] = $field;
-        } elseif (in_array($name, ['categories', 'tags'], true) || in_array($type, ['tree-select', 'tags-checkboxes'], true)) {
-            $sidebarTaxonomyFields[$name] = $field;
-        } elseif (in_array($name, ['seo_title', 'seo_description'], true) || \Illuminate\Support\Str::startsWith($name, 'seo_')) {
-            $seoFields[$name] = $field;
-        } elseif (in_array($name, $metaFieldKeys, true)) {
-            $sidebarMetaFields[$name] = $field;
-        } elseif (in_array($name, $pricingFieldKeys, true)) {
-            $pricingFields[$name] = $field;
-        } else {
-            $mainFields[$name] = $field;
-        }
-    }
-
-    // Ensure main fields order has title/name & slug/sku first
-    $topKeys = ['title', 'name', 'slug', 'sku'];
-    $orderedMain = [];
-    foreach ($topKeys as $k) {
-        if (isset($mainFields[$k])) {
-            $orderedMain[$k] = $mainFields[$k];
-            unset($mainFields[$k]);
-        }
-    }
-    $mainFields = array_merge($orderedMain, $mainFields);
-
-    // Reorder pricing fields so sale_start_date and sale_end_date are side-by-side on the same row
-    $pricingOrder = ['price', 'old_price', 'cost', 'sale_price', 'sale_start_date', 'sale_end_date', 'qty', 'security_stock', 'backorder', 'requires_shipping'];
-    $orderedPricing = [];
-    foreach ($pricingOrder as $pk) {
-        if (isset($pricingFields[$pk])) {
-            $orderedPricing[$pk] = $pricingFields[$pk];
-            unset($pricingFields[$pk]);
-        }
-    }
-    $pricingFields = array_merge($orderedPricing, $pricingFields);
-
-    $hasSidebar = !empty($sidebarMetaFields) || !empty($sidebarMediaFields) || !empty($sidebarTaxonomyFields);
-@endphp
 
 @section('content')
     <x-admin.page-header
@@ -104,17 +45,12 @@
                 <div class="card-body">
                     <div class="form-grid">
                         @foreach ($mainFields as $name => $field)
-                            @php
-                                $type = $field['type'] ?? 'text';
-                                $value = data_get($record, $name);
-                                $isWide = in_array($type, ['textarea', 'editor', 'blocks'], true) || in_array($name, ['content', 'description', 'blocks'], true) || ($field['colspan'] ?? null) === 'full';
-                            @endphp
-                            <div class="form-row {{ $isWide ? 'form-row-wide' : '' }}">
+                            <div class="form-row {{ $field['isWide'] ? 'form-row-wide' : '' }}">
                                 <div class="field-label" style="font-size: 11.5px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px;">
                                     {{ $field['label'] ?? $name }}
                                 </div>
                                 <div class="field-value" style="font-size: 13.5px; color: var(--fi-text);">
-                                    @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record, 'name' => $name, 'field' => $field])
+                                    @include('admin.crud.show_field', ['type' => $field['type'], 'value' => data_get($record, $name), 'record' => $record, 'name' => $name, 'field' => $field, 'imageUrl' => $imageUrls[$name] ?? null, 'brandLabel' => $brandLabels[$name] ?? null])
                                 </div>
                             </div>
                         @endforeach
@@ -135,43 +71,33 @@
                         <div class="form-grid">
                             @foreach ($pricingFields as $name => $field)
                                 @if ($name === 'sale_start_date' && isset($pricingFields['sale_end_date']))
-                                    @php
-                                        $startField = $field;
-                                        $endField = $pricingFields['sale_end_date'];
-                                        $startVal = data_get($record, 'sale_start_date');
-                                        $endVal = data_get($record, 'sale_end_date');
-                                    @endphp
                                     <div class="form-row form-row-wide" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
                                         <div>
                                             <div class="field-label" style="font-size: 11.5px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px;">
-                                                {{ $startField['label'] ?? 'Ngày bắt đầu KM' }}
+                                                {{ $field['label'] ?? 'Ngày bắt đầu KM' }}
                                             </div>
                                             <div class="field-value" style="font-size: 13.5px; color: var(--fi-text);">
-                                                @include('admin.crud.show_field', ['type' => $startField['type'] ?? 'datetime-local', 'value' => $startVal, 'record' => $record, 'name' => 'sale_start_date', 'field' => $startField])
+                                                @include('admin.crud.show_field', ['type' => $field['type'] ?? 'datetime-local', 'value' => data_get($record, 'sale_start_date'), 'record' => $record, 'name' => 'sale_start_date', 'field' => $field, 'imageUrl' => null])
                                             </div>
                                         </div>
                                         <div>
                                             <div class="field-label" style="font-size: 11.5px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px;">
-                                                {{ $endField['label'] ?? 'Ngày kết thúc KM' }}
+                                                {{ $pricingFields['sale_end_date']['label'] ?? 'Ngày kết thúc KM' }}
                                             </div>
                                             <div class="field-value" style="font-size: 13.5px; color: var(--fi-text);">
-                                                @include('admin.crud.show_field', ['type' => $endField['type'] ?? 'datetime-local', 'value' => $endVal, 'record' => $record, 'name' => 'sale_end_date', 'field' => $endField])
+                                                @include('admin.crud.show_field', ['type' => $pricingFields['sale_end_date']['type'] ?? 'datetime-local', 'value' => data_get($record, 'sale_end_date'), 'record' => $record, 'name' => 'sale_end_date', 'field' => $pricingFields['sale_end_date'], 'imageUrl' => null])
                                             </div>
                                         </div>
                                     </div>
                                 @elseif ($name === 'sale_end_date' && isset($pricingFields['sale_start_date']))
                                     @continue
                                 @else
-                                    @php
-                                        $type = $field['type'] ?? 'number';
-                                        $value = data_get($record, $name);
-                                    @endphp
                                     <div class="form-row">
                                         <div class="field-label" style="font-size: 11.5px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px;">
                                             {{ $field['label'] ?? $name }}
                                         </div>
                                         <div class="field-value" style="font-size: 13.5px; color: var(--fi-text);">
-                                            @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record, 'name' => $name, 'field' => $field])
+                                            @include('admin.crud.show_field', ['type' => $field['type'] ?? 'number', 'value' => data_get($record, $name), 'record' => $record, 'name' => $name, 'field' => $field, 'imageUrl' => $imageUrls[$name] ?? null, 'brandLabel' => $brandLabels[$name] ?? null])
                                         </div>
                                     </div>
                                 @endif
@@ -208,16 +134,12 @@
 
                         <div class="form-grid">
                             @foreach ($seoFields as $name => $field)
-                                @php
-                                    $type = $field['type'] ?? 'text';
-                                    $value = data_get($record, $name);
-                                @endphp
                                 <div class="form-row form-row-wide">
                                     <div class="field-label" style="font-size: 11.5px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px;">
                                         {{ $field['label'] ?? $name }}
                                     </div>
                                     <div class="field-value" style="font-size: 13.5px; color: var(--fi-text);">
-                                        @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record, 'name' => $name, 'field' => $field])
+                                        @include('admin.crud.show_field', ['type' => $field['type'] ?? 'text', 'value' => data_get($record, $name), 'record' => $record, 'name' => $name, 'field' => $field, 'imageUrl' => $imageUrls[$name] ?? null, 'brandLabel' => $brandLabels[$name] ?? null])
                                     </div>
                                 </div>
                             @endforeach
@@ -227,18 +149,14 @@
             @endif
 
             <!-- Card 4: Đánh giá & Bình luận sản phẩm / Bình luận bài viết nếu có -->
-            @php
-                $isProduct = ($record instanceof \App\Models\Product) || ($routePrefix === 'admin.products') || (isset($routePrefix) && str_contains($routePrefix, 'products')) || request()->is('*products*');
-                $isPost = ($record instanceof \App\Models\Post) || ($routePrefix === 'admin.posts') || (isset($routePrefix) && str_contains($routePrefix, 'posts')) || request()->is('*posts*');
-            @endphp
-            @if($record && ($isProduct || $isPost) && method_exists($record, 'comments'))
+            @if ($hasCommentSection)
                 <div class="card" style="overflow: hidden;">
                     <div class="card-header">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #64748b;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                             <h3 class="card-title">
                                 {{ $isProduct ? 'Đánh giá & Bình luận sản phẩm' : 'Bình luận bài viết' }}
-                                ({{ $record->comments->count() }})
+                                ({{ $comments->count() }})
                             </h3>
                         </div>
                     </div>
@@ -253,7 +171,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($record->comments as $comment)
+                                @forelse($comments as $comment)
                                     <tr>
                                         <td style="font-weight: 600; color: var(--fi-text); padding: 10px 14px;">{{ $comment->author->name ?? $comment->author_name ?? 'Khách' }}</td>
                                         <td style="padding: 10px 14px;">{{ Str::limit($comment->content, 100) }}</td>
@@ -289,16 +207,12 @@
                         <div class="card-body">
                             <div style="display: flex; flex-direction: column; gap: 14px;">
                                 @foreach ($sidebarMetaFields as $name => $field)
-                                    @php
-                                        $type = $field['type'] ?? 'text';
-                                        $value = data_get($record, $name);
-                                    @endphp
                                     <div class="form-row">
                                         <div class="field-label" style="font-size: 11.5px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 5px;">
                                             {{ $field['label'] ?? $name }}
                                         </div>
                                         <div class="field-value" style="font-size: 13.5px; color: var(--fi-text);">
-                                            @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record, 'name' => $name, 'field' => $field])
+                                            @include('admin.crud.show_field', ['type' => $field['type'] ?? 'text', 'value' => data_get($record, $name), 'record' => $record, 'name' => $name, 'field' => $field, 'imageUrl' => $imageUrls[$name] ?? null, 'brandLabel' => $brandLabels[$name] ?? null])
                                         </div>
                                     </div>
                                 @endforeach
@@ -319,13 +233,9 @@
                         <div class="card-body">
                             <div style="display: flex; flex-direction: column; gap: 14px;">
                                 @foreach ($sidebarMediaFields as $name => $field)
-                                    @php
-                                        $type = $field['type'] ?? 'image';
-                                        $value = data_get($record, $name);
-                                    @endphp
                                     <div class="form-row">
                                         <div class="field-value">
-                                            @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record, 'name' => $name, 'field' => $field])
+                                            @include('admin.crud.show_field', ['type' => $field['type'] ?? 'image', 'value' => data_get($record, $name), 'record' => $record, 'name' => $name, 'field' => $field, 'imageUrl' => $imageUrls[$name] ?? null, 'brandLabel' => $brandLabels[$name] ?? null])
                                         </div>
                                     </div>
                                 @endforeach
@@ -346,33 +256,29 @@
                         <div class="card-body">
                             <div style="display: flex; flex-direction: column; gap: 14px;">
                                 @foreach ($sidebarTaxonomyFields as $name => $field)
-                                    @php
-                                        $type = $field['type'] ?? 'text';
-                                        $value = data_get($record, $name);
-                                    @endphp
                                     <div class="form-row">
                                         <div class="field-label" style="font-size: 11.5px; font-weight: 700; color: var(--fi-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 5px;">
                                             {{ $field['label'] ?? $name }}
                                         </div>
                                         <div class="field-value">
-                                            @if (in_array($name, ['categories', 'shop_categories'], true) && method_exists($record, 'categories'))
+                                            @if (in_array($name, ['categories', 'shop_categories'], true))
                                                 <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                                    @forelse ($record->categories as $cat)
+                                                    @forelse ($categories as $cat)
                                                         <span class="badge bg-blue" style="font-size: 12px; font-weight: 600;">{{ $cat->name }}</span>
                                                     @empty
                                                         <span class="val-empty">—</span>
                                                     @endforelse
                                                 </div>
-                                            @elseif ($name === 'tags' && method_exists($record, 'tags'))
+                                            @elseif ($name === 'tags')
                                                 <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                                                    @forelse ($record->tags as $t)
+                                                    @forelse ($tags as $t)
                                                         <span class="badge badge-secondary" style="font-size: 11px;">#{{ $t->name }}</span>
                                                     @empty
                                                         <span class="val-empty">—</span>
                                                     @endforelse
                                                 </div>
                                             @else
-                                                @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $record, 'name' => $name, 'field' => $field])
+                                                @include('admin.crud.show_field', ['type' => $field['type'] ?? 'text', 'value' => data_get($record, $name), 'record' => $record, 'name' => $name, 'field' => $field, 'imageUrl' => $imageUrls[$name] ?? null, 'brandLabel' => $brandLabels[$name] ?? null])
                                             @endif
                                         </div>
                                     </div>

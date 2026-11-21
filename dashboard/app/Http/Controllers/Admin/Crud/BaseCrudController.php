@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Crud;
 
+use App\Ecommerce\Media\Services\MediaUrlService;
 use App\Http\Controllers\Admin\Traits\HasRecursiveTreeReorder;
 use App\Http\Controllers\Controller;
 use App\Support\Admin;
@@ -41,8 +42,39 @@ abstract class BaseCrudController extends Controller
     protected function findRecord(int $id): Model
     {
         $modelClass = $this->modelClass();
+        $query = $modelClass::query();
+        if (method_exists($modelClass, 'brand')) {
+            $query->with('brand');
+        }
 
-        return $modelClass::query()->findOrFail($id);
+        return $query->findOrFail($id);
+    }
+
+    protected function brandLabel(Model $record, string $name): ?string
+    {
+        return in_array($name, ['brand', 'shop_brand_id'], true) && method_exists($record, 'brand')
+            ? $record->brand?->name
+            : null;
+    }
+
+    protected function brandLabels(Model $record, array $fields): array
+    {
+        $labels = [];
+        foreach ($fields as $name => $field) {
+            $labels[$name] = $this->brandLabel($record, $name);
+        }
+
+        return $labels;
+    }
+
+    protected function brandLabelsForItems(iterable $items, array $fields): array
+    {
+        $labels = [];
+        foreach ($items as $item) {
+            $labels[$item->getKey()] = $this->brandLabels($item, $fields);
+        }
+
+        return $labels;
     }
 
     protected function redirectToIndex(string $message): RedirectResponse
@@ -50,6 +82,177 @@ abstract class BaseCrudController extends Controller
         return redirect()
             ->route($this->routePrefix() . '.index')
             ->with('status', __('admin.messages.' . $message));
+    }
+
+    protected function imageUrls(Model $record, array $fields): array
+    {
+        $service = app(MediaUrlService::class);
+        $urls = [];
+
+        foreach ($fields as $name => $field) {
+            if (($field['type'] ?? null) === 'image') {
+                $urls[$name] = $service->url(data_get($record, $name));
+            }
+        }
+
+        return $urls;
+    }
+
+    protected function imageUrlsForItems(iterable $items, array $fields): array
+    {
+        $urls = [];
+
+        foreach ($items as $item) {
+            $urls[$item->getKey()] = $this->imageUrls($item, $fields);
+        }
+
+        return $urls;
+    }
+
+    protected function crudFieldGroups(array $fields, bool $show = false, ?Model $record = null, array $formData = []): array
+    {
+        $groups = $this->groupFieldsByPurpose($fields, $show);
+        $groups['mainFields'] = $this->prioritizeFields($groups['mainFields'], ['title', 'name', 'slug', 'sku']);
+        $groups['pricingFields'] = $this->prioritizeFields($groups['pricingFields'], ['price', 'old_price', 'cost', 'sale_price', 'sale_start_date', 'sale_end_date', 'qty', 'security_stock', 'backorder', 'requires_shipping']);
+        $groups = $this->addFieldLayoutHints($groups);
+        if (! $show) {
+            $groups = $this->prepareFormFieldValues($groups, $record, $formData);
+        }
+        $groups['hasSidebar'] = $this->hasSidebarFields($groups);
+
+        return $groups;
+    }
+
+    protected function prepareFormFieldValues(array $groups, ?Model $record, array $formData): array
+    {
+        $oldInput = session()->getOldInput();
+
+        foreach ($groups as &$fields) {
+            foreach ($fields as $name => &$field) {
+                $value = $oldInput[$name] ?? $formData[$name] ?? data_get($record, $name);
+                $type = $field['type'] ?? 'text';
+                $field['displayValue'] = $this->formatFormValue($value, $type);
+                $field['selected'] = $this->selectedFormValues($name, $type, $value, $record, $formData);
+                $field['blocksData'] = $type === 'blocks' ? $this->decodeBlocks($value) : [];
+                $field['fileName'] = is_string($value) ? basename($value) : null;
+            }
+            unset($field);
+        }
+        unset($fields);
+
+        return $groups;
+    }
+
+    protected function formatFormValue(mixed $value, string $type): mixed
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $type === 'datetime-local' ? $value->format('Y-m-d\\TH:i') : $value->format('Y-m-d');
+        }
+        if ($value instanceof \BackedEnum) {
+            return $value->value;
+        }
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        }
+
+        return $value;
+    }
+
+    protected function selectedFormValues(string $name, string $type, mixed $value, ?Model $record, array $formData): array
+    {
+        if ($type === 'multiselect' && ! isset(session()->getOldInput()[$name]) && ! isset($formData[$name]) && is_iterable(data_get($record, $name))) {
+            return collect(data_get($record, $name))->pluck('name')->toArray();
+        }
+
+        return (array) $value;
+    }
+
+    protected function decodeBlocks(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = json_decode($value, true);
+        }
+
+        return is_array($value) ? $value : [];
+    }
+
+    protected function groupFieldsByPurpose(array $fields, bool $show): array
+    {
+        $metaKeys = $show
+            ? ['is_visible', 'featured', 'type', 'status', 'is_approved', 'role', 'published_at', 'author_id', 'shop_brand_id', 'department_id', 'apply_tax', 'backorder', 'requires_shipping', 'is_active', 'is_urgent']
+            : ['is_visible', 'status', 'post_type', 'type', 'featured', 'is_featured', 'published_at', 'author_id', 'shop_brand_id', 'department_id', 'apply_tax', 'backorder', 'requires_shipping', 'is_active', 'is_urgent'];
+        $pricingKeys = ['price', 'old_price', 'sale_price', 'sale_start_date', 'sale_end_date', 'cost', 'qty', 'security_stock', 'stock_quantity', 'low_stock_threshold', 'amount', 'base_salary', 'allowance', 'tax', 'insurance', 'net_salary'];
+        $groups = ['mainFields' => [], 'pricingFields' => [], 'seoFields' => [], 'sidebarMetaFields' => [], 'sidebarMediaFields' => [], 'sidebarTaxonomyFields' => []];
+
+        foreach ($fields as $name => $field) {
+            $groups[$this->fieldGroup($name, $field, $metaKeys, $pricingKeys)][$name] = $field;
+        }
+
+        return $groups;
+    }
+
+    protected function fieldGroup(string $name, array $field, array $metaKeys, array $pricingKeys): string
+    {
+        $type = $field['type'] ?? 'text';
+
+        return match (true) {
+            $type === 'image' => 'sidebarMediaFields',
+            in_array($name, ['categories', 'tags'], true) || in_array($type, ['tree-select', 'tags-checkboxes'], true) => 'sidebarTaxonomyFields',
+            in_array($name, ['seo_title', 'seo_description'], true) || Str::startsWith($name, 'seo_') => 'seoFields',
+            in_array($name, $metaKeys, true) => 'sidebarMetaFields',
+            in_array($name, $pricingKeys, true) => 'pricingFields',
+            default => 'mainFields',
+        };
+    }
+
+    protected function prioritizeFields(array $fields, array $priority): array
+    {
+        $ordered = [];
+        foreach ($priority as $name) {
+            if (isset($fields[$name])) {
+                $ordered[$name] = $fields[$name];
+                unset($fields[$name]);
+            }
+        }
+
+        return $ordered + $fields;
+    }
+
+    protected function addFieldLayoutHints(array $groups): array
+    {
+        foreach ($groups as &$fields) {
+            foreach ($fields as $name => &$field) {
+                $type = $field['type'] ?? 'text';
+                $field['type'] = $type;
+                $field['isWide'] = in_array($type, ['textarea', 'editor', 'blocks'], true)
+                    || in_array($name, ['content', 'description', 'blocks'], true)
+                    || ($field['colspan'] ?? null) === 'full';
+            }
+            unset($field);
+        }
+        unset($fields);
+
+        return $groups;
+    }
+
+    protected function hasSidebarFields(array $groups): bool
+    {
+        return (bool) ($groups['sidebarMetaFields'] || $groups['sidebarMediaFields'] || $groups['sidebarTaxonomyFields']);
+    }
+
+    protected function relatedViewData(?Model $record): array
+    {
+        $isProduct = str_contains($this->routePrefix(), 'products');
+        $isPost = str_contains($this->routePrefix(), 'posts');
+        $hasComments = $record && ($isProduct || $isPost) && method_exists($record, 'comments');
+
+        return [
+            'isProduct' => $isProduct,
+            'hasCommentSection' => (bool) $hasComments,
+            'comments' => $hasComments ? $record->comments()->with('author')->get() : collect(),
+            'categories' => $record && method_exists($record, 'categories') ? $record->categories : collect(),
+            'tags' => $record && method_exists($record, 'tags') ? $record->tags : collect(),
+        ];
     }
 
     protected function redirectWithSuccess(string $message): RedirectResponse
@@ -334,13 +537,20 @@ abstract class BaseCrudController extends Controller
     {
         $modelClass = $this->modelClass();
         $query = $modelClass::query();
+        if (method_exists($modelClass, 'brand')) {
+            $query->with('brand');
+        }
         $query = $this->indexQuery($query, $request);
         $this->applySearch($query, $request);
+        $fields = $this->visibleFields('index');
+        $items = $this->paginateIndex($query);
 
         return view('admin.crud.index', [
             'title' => __($this->title()),
-            'items' => $this->paginateIndex($query),
-            'fields' => $this->visibleFields('index'),
+            'items' => $items,
+            'fields' => $fields,
+            'imageUrls' => $this->imageUrlsForItems($items, $fields),
+            'brandLabels' => $this->brandLabelsForItems($items, $fields),
             'routePrefix' => $this->routePrefix(),
             'canCreate' => $this->canCreate(),
             'canEdit' => $this->canEdit(),
@@ -360,17 +570,21 @@ abstract class BaseCrudController extends Controller
 
     public function create(): View
     {
-        return view($this->formView(), [
+        $fields = $this->visibleFields('form');
+        $formData = $this->formData();
+
+        return view($this->formView(), array_merge([
             'title' => __('admin.actions.create') . ' - ' . __($this->title()),
             'record' => null,
-            'fields' => $this->visibleFields('form'),
+            'fields' => $fields,
+            'imageUrls' => [],
             'routePrefix' => $this->routePrefix(),
-            'formData' => $this->formData(),
+            'formData' => $formData,
             'translatableFields' => $this->translatableFields(),
             'translations' => $this->extractTranslations(null),
             'tabs' => $this->tabs(),
             'activeTab' => $this->activeTab(),
-        ]);
+        ], $this->crudFieldGroups($fields, false, null, $formData), $this->relatedViewData(null)));
     }
 
     public function show(int $id): View
@@ -389,10 +603,12 @@ abstract class BaseCrudController extends Controller
             ];
         }
 
-        return view('admin.crud.show', [
+        return view('admin.crud.show', array_merge([
             'title' => __('admin.actions.view') . ' - ' . __($this->title()),
             'record' => $record,
             'fields' => $visibleFields,
+            'imageUrls' => $this->imageUrls($record, $visibleFields),
+            'brandLabels' => $this->brandLabels($record, $visibleFields),
             'groups' => $groups,
             'routePrefix' => $this->routePrefix(),
             'canEdit' => $this->canEdit(),
@@ -400,7 +616,7 @@ abstract class BaseCrudController extends Controller
             'translations' => $this->extractTranslations($record),
             'tabs' => $this->tabs(),
             'activeTab' => $this->activeTab(),
-        ]);
+        ], $this->crudFieldGroups($visibleFields, true), $this->relatedViewData($record)));
     }
 
     public function store(Request $request): RedirectResponse
@@ -415,17 +631,21 @@ abstract class BaseCrudController extends Controller
         $modelClass = $this->modelClass();
         $record = $this->findRecord($id);
 
-        return view($this->formView(), [
+        $fields = $this->visibleFields('form');
+        $formData = $this->formData($record);
+
+        return view($this->formView(), array_merge([
             'title' => __('admin.actions.edit') . ' - ' . __($this->title()),
             'record' => $record,
-            'fields' => $this->visibleFields('form'),
+            'fields' => $fields,
+            'imageUrls' => $this->imageUrls($record, $fields),
             'routePrefix' => $this->routePrefix(),
-            'formData' => $this->formData($record),
+            'formData' => $formData,
             'translatableFields' => $this->translatableFields(),
             'translations' => $this->extractTranslations($record),
             'tabs' => $this->tabs(),
             'activeTab' => $this->activeTab(),
-        ]);
+        ], $this->crudFieldGroups($fields, false, $record, $formData), $this->relatedViewData($record)));
     }
 
     public function update(Request $request, int $id): RedirectResponse

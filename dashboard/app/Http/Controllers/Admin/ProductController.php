@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Ecommerce\Media\Services\MediaUrlService;
 use App\Ecommerce\Product\Services\ProductAttributeService;
 use App\Http\Controllers\Admin\Crud\BaseCrudController;
 use App\Http\Controllers\Admin\Traits\HasAdminSelectOptions;
@@ -11,6 +12,7 @@ use App\Models\ComboProduct;
 use App\Models\ComboProductItem;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\TaxClass;
 use App\Support\Media;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -373,6 +375,7 @@ class ProductController extends BaseCrudController
 
     protected function formData(?Model $record = null): array
     {
+        $oldInput = session()->getOldInput();
         $availableAttributes = $this->attributeService->getGlobalAttributes(true)->map(function ($attr) {
             return [
                 'id' => $attr->id,
@@ -387,22 +390,28 @@ class ProductController extends BaseCrudController
         $brandTree = $this->hierarchyTree(Brand::class);
 
         if (! $record) {
+            $productType = $oldInput['type'] ?? 'simple';
+
             return [
-                'type' => 'simple',
+                'type' => in_array($productType, ['simple', 'variable'], true) ? $productType : 'simple',
                 'attributes_json' => '[]',
                 'variants_json' => '[]',
                 'combo_items_json' => '[]',
-                'categories' => [],
-                'brands' => [],
-                'tags' => [],
-                'image' => null,
+                'categories' => $oldInput['categories'] ?? [],
+                'brands' => $oldInput['brands'] ?? [],
+                'tags' => $oldInput['tags'] ?? [],
+                'image' => $oldInput['image'] ?? null,
+                'imageUrl' => app(MediaUrlService::class)->url($oldInput['image'] ?? null),
+                'taxClasses' => TaxClass::with('rates')->get(),
+                'allTags' => Tag::getWithType('Product'),
                 'availableAttributes' => $availableAttributes,
                 'categoryTree' => $categoryTree,
                 'brandTree' => $brandTree,
             ];
         }
 
-        $imagePath = Media::path($record->product_images, $record->featuredImage, $record->image);
+        $imagePath = $oldInput['image'] ?? Media::path($record->product_images, $record->featuredImage, $record->image);
+        $imageUrl = app(MediaUrlService::class)->url($imagePath);
 
         $attributes = $record->productAttributes()->get(['id', 'attribute_id', 'name', 'options', 'is_variation'])->toArray();
         $variants = $record->variants()->get(['id', 'sku', 'price', 'sale_price', 'sale_start_date', 'sale_end_date', 'qty', 'attributes', 'is_active'])->map(function ($v) {
@@ -420,20 +429,25 @@ class ProductController extends BaseCrudController
         })->toArray();
         $comboItems = $record->comboComponents()->get(['shop_product_id', 'product_variant_id', 'quantity'])->toArray();
 
-        $selectedBrands = $record->brands()->pluck('shop_brands.id')->toArray();
+        $selectedBrands = $oldInput['brands'] ?? $record->brands()->pluck('shop_brands.id')->toArray();
         if (empty($selectedBrands) && $record->shop_brand_id) {
             $selectedBrands = [$record->shop_brand_id];
         }
 
         return [
-            'type' => $record->type?->value ?? 'simple',
+            'type' => in_array($oldInput['type'] ?? $record->type?->value, ['simple', 'variable'], true)
+                ? ($oldInput['type'] ?? $record->type?->value)
+                : 'simple',
             'attributes_json' => json_encode($attributes, JSON_UNESCAPED_UNICODE),
             'variants_json' => json_encode($variants, JSON_UNESCAPED_UNICODE),
             'combo_items_json' => json_encode($comboItems, JSON_UNESCAPED_UNICODE),
-            'categories' => $record->categories()->pluck('shop_categories.id')->toArray(),
+            'categories' => $oldInput['categories'] ?? $record->categories()->pluck('shop_categories.id')->toArray(),
             'brands' => $selectedBrands,
-            'tags' => $record->tags->pluck('name')->toArray(),
+            'tags' => $oldInput['tags'] ?? $record->tags->pluck('name')->toArray(),
             'image' => $imagePath,
+            'imageUrl' => $imageUrl,
+            'taxClasses' => TaxClass::with('rates')->get(),
+            'allTags' => Tag::getWithType('Product'),
             'availableAttributes' => $availableAttributes,
             'categoryTree' => $categoryTree,
             'brandTree' => $brandTree,

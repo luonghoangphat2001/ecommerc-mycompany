@@ -81,12 +81,8 @@
             <tr>
                 <td class="cell-muted mono text-center">#{{ $item->id }}</td>
                 @foreach ($fields as $name => $field)
-                    @php
-                        $value = data_get($item, $name);
-                        $type = $field['type'] ?? 'text';
-                    @endphp
                     <td>
-                        @include('admin.crud.show_field', ['type' => $type, 'value' => $value, 'record' => $item, 'name' => $name, 'field' => $field, 'compact' => true])
+                        @include('admin.crud.show_field', ['type' => $field['type'] ?? 'text', 'value' => data_get($item, $name), 'record' => $item, 'name' => $name, 'field' => $field, 'compact' => true, 'imageUrl' => $imageUrls[$item->id][$name] ?? null, 'brandLabel' => $brandLabels[$item->id][$name] ?? null])
                     </td>
                 @endforeach
                 <td class="text-right">
